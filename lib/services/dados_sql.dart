@@ -8,22 +8,26 @@ import '../models/militar.dart';
 import '../models/telefone.dart';
 
 class DadosSql {
-  //URL DO BANCO SQL
+  //URL DO BANCO SQL TROCAR URL AQUI E NA API PARA CONECTAR NO BANCO DE PRODUCAO
   final _Url = 'https://pmrr.net/flutter/sigrh';
+  // final _Url = 'http://192.168.190.250/flutter/sigrh';
 
   Future<String> getPasswordWithMd5(String matricula, String password) async {
+    print('entrou no md5');
     final String url = '${_Url}/loginrh.php?matricula=$matricula';
 
     final response = await http.get(Uri.parse(Uri.encodeFull(url)));
     String errorResult = 'error';
+
     try {
       final map = await jsonDecode(response.body);
       final dadosMilitar = map['result'];
       String psw = dadosMilitar[0]['pswd'];
       //Retorna a senha criptografada.
-
+      print(psw);
       return psw;
     } catch (error) {
+      print('deu erro total');
       return errorResult;
     }
   }

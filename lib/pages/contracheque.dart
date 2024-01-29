@@ -13,7 +13,7 @@ class Contracheque extends StatefulWidget {
 
   @override
   _ContrachequeState createState() => _ContrachequeState();
-  String _anoSelecionado = '2023';
+  String _anoSelecionado = '2024';
   late List<MesesContracheque> mesesContracheque;
 }
 
@@ -23,7 +23,7 @@ class _ContrachequeState extends State<Contracheque> {
 
   bool anoSelecionado = true;
 
-  final _anos = ['2023', '2022', '2021', '2020', '2019'];
+  final _anos = ['2024', '2023', '2022', '2021', '2020', '2019'];
 
   @override
   Widget build(BuildContext context) {
