@@ -334,8 +334,8 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                     },
                     child: Text('Salvar Alterações'),
                     style: ElevatedButton.styleFrom(
-                      primary: Colors.blue,
-                      onPrimary: Colors.white,
+                      foregroundColor: Colors.blue,
+                      // onPrimary: Colors.white,
                       shadowColor: Colors.grey,
                       elevation: 2,
                       shape: RoundedRectangleBorder(

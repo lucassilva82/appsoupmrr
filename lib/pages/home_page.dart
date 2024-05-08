@@ -90,9 +90,21 @@ class _HomePageState extends State<HomePage> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.lightBlue,
+                  Colors.blue.shade900,
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.topRight,
+              ),
+            ),
+          ),
           title: Text(
             'Olá, ${auth.nomeMilitar}',
-            style: TextStyle(fontSize: 16),
+            style: TextStyle(fontSize: 16, color: Colors.white),
           ),
           actions: const [
             // IconButton(

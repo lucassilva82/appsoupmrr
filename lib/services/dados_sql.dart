@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:projetonovo/models/ficha_funcional.dart';
 
 import '../models/contracheque_model.dart';
 import '../models/endereco.dart';
@@ -36,6 +37,9 @@ class DadosSql {
   Future<Militar?> buscarMilitarBancoByMatricula(String matricula) async {
     final String url = '${_Url}/buscapormatricula.php?matricula=${matricula}';
     final response = await http.get(Uri.parse(Uri.encodeFull(url)));
+    FichaFuncional fichaTemp =
+        await buscarSituacaoFuncional(matricula) ?? FichaFuncional();
+
     try {
       final map = await jsonDecode(response.body);
       final dadosMilitar = map['result'];
@@ -44,6 +48,7 @@ class DadosSql {
           ? false
           : true;
       Militar militarTemp = Militar(
+        fichaFuncional: fichaTemp,
         dataIncorporacao: dadosMilitar[0]['incorporacao'].toString(),
         quadro: dadosMilitar[0]['quadro'].toString(),
         matricula: dadosMilitar[0]['matricula'].toString(),
@@ -96,6 +101,33 @@ class DadosSql {
 
       return militarTemp;
     } catch (error) {
+      return null;
+    }
+  }
+
+  // BUSCA SITUACAO FUNCIONAL DO MILITAR
+  Future<FichaFuncional?> buscarSituacaoFuncional(String matricula) async {
+    final String url =
+        '${_Url}/buscasituacaofuncional.php?matricula=${matricula}';
+    final response = await http.get(Uri.parse(Uri.encodeFull(url)));
+    FichaFuncional fichaFuncional = FichaFuncional();
+    try {
+      final map = await jsonDecode(response.body);
+
+      map.forEach((element) {
+        AlteracaoFuncional alt = AlteracaoFuncional(
+          tipoSituacao: element['tipo_situ_func_sigla'] ?? '',
+          situacaoFuncional: element['tipo_situ_func_descricao'] ?? '',
+          dataInicio: element['index_poli_situ_func_data_inicio'] ?? '',
+          dataFim: element['index_poli_situ_func_data_fim'] ?? '',
+          ativo: element['index_poli_situ_func_activo'] ?? '',
+        );
+        fichaFuncional.alteracoesFuncional.add(alt);
+      });
+
+      return fichaFuncional;
+    } catch (error) {
+      print('o erro é $error');
       return null;
     }
   }
@@ -246,7 +278,7 @@ class DadosSql {
     if (mes == 'Fevereiro') {
       return '2';
     }
-    if (mes == 'Marco') {
+    if (mes == 'Março') {
       return '3';
     }
     if (mes == 'Abril') {

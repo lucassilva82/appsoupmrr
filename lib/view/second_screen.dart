@@ -53,42 +53,36 @@ class SecondScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       /// TOP TWO TEXT - 404 ERROR AND PAGE NOT FPUND
-                      Padding(
-                        padding: EdgeInsets.only(left: leftPadding),
-                        child: TopTwoTextError(
-                          textTheme: textTheme,
-                        ),
-                      ),
+                      // Padding(
+                      //   padding: EdgeInsets.only(left: leftPadding),
+                      //   child: TopTwoTextError(
+                      //     textTheme: textTheme,
+                      //   ),
+                      // ),
 
                       /// MAIN TEXT ERROR
                       Padding(
                         padding: EdgeInsets.only(left: leftPadding, top: 20),
-                        child: FadeAnimation(
-                          delay: 1.5,
-                          child: Text(
-                            MyStrings.mainErroText,
-                            style: textTheme.headline4,
-                          ),
+                        child: Text(
+                          MyStrings.mainErroText,
+                          style: textTheme.headline4,
                         ),
                       ),
 
                       /// MIDDLE LOTTIE
                       Align(
                         alignment: Alignment.center,
-                        child: FadeAnimation(
-                          delay: 1,
-                          child: GestureDetector(
-                              onTap: () {
-                                // Navigator.pushReplacement(
-                                //     context,
-                                //     MaterialPageRoute(
-                                //         builder: (context) =>
-                                //             const FirstScreen()));
-                              },
+                        child: GestureDetector(
+                            onTap: () {
+                              // Navigator.pushReplacement(
+                              //     context,
+                              //     MaterialPageRoute(
+                              //         builder: (context) =>
+                              //             const FirstScreen()));
+                            },
 
-                              /// LOTTIE
-                              child: MyLottie(size: size, picNum: '2')),
-                        ),
+                            /// LOTTIE
+                            child: MyLottie(size: size, picNum: '2')),
                       ),
                     ],
                   ),
@@ -106,17 +100,15 @@ class SecondScreen extends StatelessWidget {
                       borderRadius:
                           BorderRadius.only(topRight: Radius.circular(50))),
                   child: Center(
-                    child: FadeAnimation(
-                      delay: 0.5,
+                    child:
 
-                      /// BOTTOM BUTTON
-                      child: BottomButton(
-                        size: size,
-                        textTheme:
-                            textTheme.headline5?.copyWith(color: Colors.black),
-                        btnColor: Colors.white,
-                        page: HomePage(),
-                      ),
+                        /// BOTTOM BUTTON
+                        BottomButton(
+                      size: size,
+                      textTheme:
+                          textTheme.headline5?.copyWith(color: Colors.black),
+                      btnColor: Colors.white,
+                      page: HomePage(),
                     ),
                   ),
                 ),

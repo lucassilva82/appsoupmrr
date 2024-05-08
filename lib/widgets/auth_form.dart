@@ -190,11 +190,11 @@ class _AuthFormState extends State<AuthForm>
                         onPressed: _submit,
                         child: Text(
                           'Entrar',
-                          style: TextStyle(fontSize: 14),
+                          style: TextStyle(fontSize: 14, color: Colors.white),
                         ),
                         style: ElevatedButton.styleFrom(
                           fixedSize: Size(800, 16),
-                          primary: Colors.indigo.shade800,
+                          backgroundColor: Colors.indigo.shade800,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),

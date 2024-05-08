@@ -166,7 +166,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                                   height: hieght * 0.04,
                                   child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
-                                        primary:
+                                        foregroundColor:
                                             Color.fromARGB(255, 59, 101, 255),
                                       ),
                                       onPressed: removerSvi,

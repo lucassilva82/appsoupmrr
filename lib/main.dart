@@ -17,7 +17,6 @@ import 'package:projetonovo/pages/plantao_page.dart';
 import 'package:projetonovo/utils/my_colors.dart';
 import 'firebase_options.dart';
 import 'package:provider/provider.dart';
-
 import 'models/auth_model.dart';
 import 'models/meses_contracheque_model.dart';
 import 'models/militar.dart';

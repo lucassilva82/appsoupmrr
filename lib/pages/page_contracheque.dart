@@ -78,8 +78,22 @@ class PageContracheque extends StatelessWidget {
         if (snapshot.hasData) {
           return Scaffold(
             appBar: AppBar(
+              flexibleSpace: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.lightBlue,
+                      Colors.blue.shade900,
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.topRight,
+                  ),
+                ),
+              ),
               title: Text(
-                  'Contracheque - ${mesSelecionado.mes}/${mesSelecionado.ano}'),
+                'Contracheque - ${mesSelecionado.mes}/${mesSelecionado.ano}',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
             body: SafeArea(
               child: Container(

@@ -44,7 +44,7 @@ class _DadosContatoState extends State<DadosContato> {
       padding: const EdgeInsets.all(2.0),
       child: Container(
         width: width * 0.99,
-        height: height * 0.26,
+        height: height * 0.20,
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.all(Radius.circular(5)),
@@ -143,7 +143,7 @@ class _DadosContatoState extends State<DadosContato> {
                     child: Container(
                       // decoration: BoxDecoration(color: Colors.blue.shade50),
                       width: double.maxFinite,
-                      height: height * 0.17,
+                      height: height * 0.10,
                       child: Scrollbar(
                         controller: _controllerOne,
                         child: ListView.builder(
@@ -304,6 +304,7 @@ class _DadosContatoState extends State<DadosContato> {
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.blue.shade300,
         title: Text('Adicionar novo contato'),
         content: TextFormField(
           autovalidateMode: AutovalidateMode.onUserInteraction,

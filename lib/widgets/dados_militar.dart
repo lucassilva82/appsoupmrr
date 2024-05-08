@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projetonovo/widgets/dados_situacao_funcional.dart';
 import 'package:quickalert/quickalert.dart';
 
 import '../models/militar.dart';
@@ -28,7 +29,7 @@ class _DadosMilitarState extends State<DadosMilitar> {
 
     return Container(
       width: width,
-      height: height,
+      height: height + 130,
       decoration: BoxDecoration(color: Colors.white),
       //Coluna central da pagina
       child: Column(
@@ -45,11 +46,14 @@ class _DadosMilitarState extends State<DadosMilitar> {
           ),
           SizedBox(height: 1),
           DadosEndereco(militar: widget.militar),
+          DadosSituacaoFuncional(militar: widget.militar),
           DadosContato(
             militar: widget.militar,
             atualizarDados: atualizarDados,
           ),
-          SizedBox(height: 6),
+          // Dados Situacao Funcional
+          // DadosSituacaoFuncional(),
+          SizedBox(height: 1),
           widget.militar.alterouDados == true
               ? ElevatedButton(
                   onPressed: () async {
@@ -78,8 +82,8 @@ class _DadosMilitarState extends State<DadosMilitar> {
                   },
                   child: Text('Salvar Alterações'),
                   style: ElevatedButton.styleFrom(
-                    primary: Colors.blue,
-                    onPrimary: Colors.white,
+                    foregroundColor: Colors.blue,
+                    // onPrimary: Colors.white,
                     shadowColor: Colors.grey,
                     elevation: 2,
                     shape: RoundedRectangleBorder(

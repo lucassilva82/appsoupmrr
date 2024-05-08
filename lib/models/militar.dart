@@ -1,3 +1,4 @@
+import 'package:projetonovo/models/ficha_funcional.dart';
 import 'package:projetonovo/models/telefone.dart';
 
 import 'endereco.dart';
@@ -17,6 +18,8 @@ class Militar {
   final String quadro;
   bool alterouDados = false;
 
+  FichaFuncional fichaFuncional;
+
   Militar({
     required this.matricula,
     required this.postoGraduacao,
@@ -28,5 +31,6 @@ class Militar {
     required this.endereco,
     required this.dataIncorporacao,
     required this.quadro,
+    required this.fichaFuncional,
   });
 }

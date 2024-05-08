@@ -119,7 +119,7 @@ class _PlantaoPageState extends State<PlantaoPage> {
                                       height: hieght * 0.04,
                                       child: ElevatedButton(
                                           style: ElevatedButton.styleFrom(
-                                            primary: Color.fromARGB(
+                                            foregroundColor: Color.fromARGB(
                                                 255, 59, 101, 255),
                                           ),
                                           onPressed: () async {

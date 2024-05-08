@@ -13,27 +13,24 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     var textTheme = Theme.of(context).textTheme;
-    return FadeAnimation(
-      delay: 3,
-      child: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          MyStrings.logoText,
-          style: textTheme.headline1,
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).pushReplacementNamed(AppRoutes.HOME_PAGE);
-            },
-            icon: const Icon(
-              Icons.close,
-              color: Colors.black,
-            ),
-          )
-        ],
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      title: Text(
+        MyStrings.logoText,
+        style: textTheme.headline1,
       ),
+      actions: [
+        IconButton(
+          onPressed: () {
+            Navigator.of(context).pushReplacementNamed(AppRoutes.HOME_PAGE);
+          },
+          icon: const Icon(
+            Icons.close,
+            color: Colors.black,
+          ),
+        )
+      ],
     );
   }
 }

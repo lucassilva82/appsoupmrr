@@ -49,7 +49,10 @@ class _PageMilitarState extends State<PageMilitar> {
                   ),
                 ),
               ),
-              title: Text('Ficha Individual'),
+              title: Text(
+                'Ficha Individual',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
             drawer: Drawerpersonalizado(),
             body: SingleChildScrollView(
