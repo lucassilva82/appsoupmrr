@@ -24,25 +24,26 @@ class EdicaoEnderecoPage extends StatefulWidget {
   TextEditingController controllerNumero = TextEditingController();
   TextEditingController controllerCep = TextEditingController();
   TextEditingController controllerBairro = TextEditingController();
-  final formKey = GlobalKey<FormState>();
+
   @override
   _EdicaoEnderecoPageState createState() => _EdicaoEnderecoPageState();
 }
 
 class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
   DadosSql dadosSql = DadosSql();
+
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
-    if (widget.inicio == true) {
+    if (widget.inicio) {
       widget.enderecoCompleto = widget.militar.endereco;
-      widget.controllerCep.text = widget.enderecoCompleto.cep!;
-      widget.controllerMunicipio.text = widget.enderecoCompleto.municipio!.nome;
-      widget.controllerRua.text = widget.enderecoCompleto.rua!.nome;
-      widget.controllerNumero.text = widget.enderecoCompleto.numero!;
-      widget.controllerBairro.text = widget.enderecoCompleto.bairro!.nome;
-
+      widget.controllerCep.text = widget.enderecoCompleto.cep ?? '';
+      widget.controllerMunicipio.text =
+          widget.enderecoCompleto.municipio?.nome ?? '';
+      widget.controllerRua.text = widget.enderecoCompleto.rua?.nome ?? '';
+      widget.controllerNumero.text = widget.enderecoCompleto.numero ?? '';
+      widget.controllerBairro.text = widget.enderecoCompleto.bairro?.nome ?? '';
       widget.inicio = false;
     }
 
@@ -67,24 +68,24 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Container(
-                          child: Text(
+                      Text(
                         'Buscar:',
                         style: TextStyle(
                             fontSize: 14, fontWeight: FontWeight.bold),
-                      )),
+                      ),
                       SizedBox(width: width * 0.03),
                       Padding(
                         padding: const EdgeInsets.all(2.0),
                         child: Container(
-                          // decoration: BoxDecoration(
-                          //     color: Colors.blue.shade200,
-                          //     borderRadius: BorderRadius.circular(5)),
-                          width: width * 0.63,
+                          width: width * 0.60,
                           height: height * 0.06,
                           child: TypeAheadField<Endereco?>(
-                            minCharsForSuggestions: 4,
-                            noItemsFoundBuilder: (context) {
+                            controller: widget.controllerEnderecoNovo,
+                            errorBuilder: (context, error) =>
+                                const Text('Error!'),
+                            loadingBuilder: (context) =>
+                                const Text('Loading...'),
+                            emptyBuilder: (context) {
                               return ListTile(
                                 title: Text(
                                   'Nenhum item encontrado',
@@ -92,36 +93,46 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                                 ),
                               );
                             },
-                            textFieldConfiguration: TextFieldConfiguration(
+                            builder: (context, controller, focusNode) {
+                              return TextField(
+                                controller: widget.controllerEnderecoNovo,
+                                focusNode: focusNode,
+                                obscureText: false,
                                 decoration: InputDecoration(
                                   hintStyle: TextStyle(fontSize: 11),
                                   hintText: 'digite o nome da rua ou bairro',
                                 ),
                                 style: TextStyle(fontSize: 12),
-                                controller: widget.controllerEnderecoNovo),
+                              );
+                            },
                             suggestionsCallback:
                                 widget.dadosSql.listaEnderecoCompleto,
                             itemBuilder: (context, Endereco? suggestion) {
-                              final end = suggestion!;
+                              if (suggestion == null)
+                                return const SizedBox.shrink();
                               return ListTile(
                                 title: Text(
-                                  end.logradouro!,
+                                  suggestion.logradouro ?? '',
                                   style: TextStyle(fontSize: 11),
                                 ),
                               );
                             },
-                            onSuggestionSelected: (Endereco? suggestion) {
-                              alteraEndereco(suggestion!);
+                            onSelected: (end) {
+                              atualizaDados();
+                              if (end != null) {
+                                alteraEndereco(end);
+                              }
                             },
                           ),
                         ),
                       ),
                       IconButton(
-                          onPressed: limpaDados,
-                          icon: Icon(
-                            Icons.delete,
-                            color: Colors.blue,
-                          ))
+                        onPressed: limpaDados,
+                        icon: Icon(
+                          Icons.delete,
+                          color: Colors.blue,
+                        ),
+                      )
                     ],
                   ),
                 ),
@@ -131,7 +142,7 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
               padding: const EdgeInsets.all(6.0),
               child: Container(
                 width: width * 0.99,
-                height: height * 0.20,
+                height: height * 0.25,
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.all(Radius.circular(5)),
@@ -171,9 +182,7 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          SizedBox(
-                            width: 10,
-                          ),
+                          SizedBox(width: 10),
                           Text(
                             'Endereço',
                             style: TextStyle(
@@ -203,10 +212,10 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  widget.enderecoCompleto.municipio!.nome,
+                                  widget.enderecoCompleto.municipio?.nome ?? '',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: widget.alterouDados == true
+                                    color: widget.alterouDados
                                         ? Colors.green
                                         : Colors.black,
                                   ),
@@ -225,29 +234,59 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                                     fontSize: 12, fontWeight: FontWeight.bold),
                               ),
                               Text(
-                                '${widget.enderecoCompleto.rua!.nome}',
+                                widget.enderecoCompleto.rua?.nome ?? '',
                                 style: TextStyle(
                                     fontSize: 12,
-                                    color: widget.alterouDados == true
+                                    color: widget.alterouDados
                                         ? Colors.green
                                         : Colors.black),
                               ),
-                              SizedBox(width: 10),
-                              Text(
-                                'Número: ',
-                                style: TextStyle(
-                                    fontSize: 12, fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                '${widget.enderecoCompleto.numero}',
-                                style: TextStyle(
-                                    color: widget.alterouDados == true
-                                        ? Colors.green
-                                        : Colors.black),
-                              ),
+
+                              // Text(
+                              //   widget.enderecoCompleto.numero ?? '',
+                              //   style: TextStyle(
+                              //       color: widget.alterouDados
+                              //           ? Colors.green
+                              //           : Colors.black),
+                              // ),
                             ]),
                           ),
                           const SizedBox(height: 10),
+                          Container(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Número: ',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                Container(
+                                  width: width * 0.32,
+                                  height: 13,
+                                  child: TextField(
+                                    readOnly: widget.alterouDados == true
+                                        ? false
+                                        : true,
+                                    expands: false,
+                                    controller: widget.controllerNumero,
+                                    decoration: InputDecoration(
+                                      border: widget.alterouDados == true
+                                          ? null
+                                          : InputBorder.none,
+                                      hintStyle: TextStyle(
+                                          fontSize: 12, color: Colors.red),
+                                      hintText: 'número da residencia',
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    autofocus: true,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 17),
                           Container(
                             child: Row(
                               children: [
@@ -258,10 +297,10 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                                       fontWeight: FontWeight.bold),
                                 ),
                                 Text(
-                                  widget.enderecoCompleto.bairro!.nome,
+                                  widget.enderecoCompleto.bairro?.nome ?? '',
                                   style: TextStyle(
                                       fontSize: 12,
-                                      color: widget.alterouDados == true
+                                      color: widget.alterouDados
                                           ? Colors.green
                                           : Colors.black),
                                 ),
@@ -272,14 +311,34 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold),
                                 ),
-                                Text(
-                                  widget.enderecoCompleto.cep!,
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: widget.alterouDados == true
-                                          ? Colors.green
-                                          : Colors.black),
+                                Container(
+                                  width: width * 0.30,
+                                  height: 13,
+                                  child: TextField(
+                                    readOnly: widget.alterouDados == true
+                                        ? false
+                                        : true,
+                                    controller: widget.controllerCep,
+                                    decoration: InputDecoration(
+                                      border: widget.alterouDados == true
+                                          ? null
+                                          : InputBorder.none,
+                                      hintStyle: TextStyle(
+                                          fontSize: 12, color: Colors.red),
+                                      hintText: 'cep da residencia',
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    autofocus: true,
+                                  ),
                                 ),
+                                // Text(
+                                //   widget.enderecoCompleto.cep ?? '',
+                                //   style: TextStyle(
+                                //       fontSize: 12,
+                                //       color: widget.alterouDados
+                                //           ? Colors.green
+                                //           : Colors.black),
+                                // ),
                               ],
                             ),
                           ),
@@ -290,57 +349,65 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                 ),
               ),
             ),
-            SizedBox(height: height * 0.47),
-            widget.alterouDados == true
+            SizedBox(height: height * 0.30),
+            widget.alterouDados
                 ? Container(
                     child: ElevatedButton(
                     onPressed: () async {
-                      try {
-                        await dadosSql.atualizaEndereco(
-                          widget.enderecoCompleto.municipio!.id,
-                          widget.enderecoCompleto.bairro!.id,
-                          widget.enderecoCompleto.rua!.id,
-                          widget.enderecoCompleto.numero!,
-                          widget.enderecoCompleto.cep!,
-                          widget.militar.matricula,
-                        );
-                        QuickAlert.show(
-                          onConfirmBtnTap: () {
-                            Navigator.of(context)
-                                .pushReplacementNamed(AppRoutes.PAGE_MILITAR);
-                          },
-                          context: context,
-                          title: 'Sucesso',
-                          confirmBtnText: 'OK',
-                          type: QuickAlertType.success,
-                          text: 'Dados Atualizados, Obrigado',
-                          // autoCloseDuration: const Duration(seconds: 2),
-                        );
-                      } catch (error) {
-                        QuickAlert.show(
-                          onConfirmBtnTap: () {
-                            Navigator.of(context)
-                                .pushReplacementNamed(AppRoutes.PAGE_MILITAR);
-                          },
-                          context: context,
-                          title: 'Error',
-                          confirmBtnText: 'OK',
-                          type: QuickAlertType.error,
-                          text: 'Erro ao enviar os dados, tente novamente',
-                          // autoCloseDuration: const Duration(seconds: 2),
-                        );
-                        print('error $error');
+                      if (widget.controllerNumero.text.isEmpty ||
+                          widget.controllerCep.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content:
+                                Text('Por favor preencha todos os campos')));
+                      } else {
+                        widget.enderecoCompleto.cep = widget.controllerCep.text;
+                        widget.enderecoCompleto.numero =
+                            widget.controllerNumero.text;
+                        try {
+                          await dadosSql.atualizaEndereco(
+                            widget.enderecoCompleto.municipio?.id ?? '',
+                            widget.enderecoCompleto.bairro?.id ?? '',
+                            widget.enderecoCompleto.rua?.id ?? '',
+                            widget.enderecoCompleto.numero ?? '',
+                            widget.enderecoCompleto.cep ?? '',
+                            widget.militar.matricula,
+                          );
+                          QuickAlert.show(
+                            onConfirmBtnTap: () {
+                              Navigator.of(context)
+                                  .pushReplacementNamed(AppRoutes.PAGE_MILITAR);
+                            },
+                            context: context,
+                            title: 'Sucesso',
+                            confirmBtnText: 'OK',
+                            type: QuickAlertType.success,
+                            text: 'Dados Atualizados, Obrigado',
+                          );
+                        } catch (error) {
+                          QuickAlert.show(
+                            onConfirmBtnTap: () {
+                              Navigator.of(context)
+                                  .pushReplacementNamed(AppRoutes.PAGE_MILITAR);
+                            },
+                            context: context,
+                            title: 'Error',
+                            confirmBtnText: 'OK',
+                            type: QuickAlertType.error,
+                            text: 'Erro ao enviar os dados, tente novamente',
+                          );
+                          print('error $error');
+                        }
                       }
                     },
-                    child: Text('Salvar Alterações'),
+                    child: Text('Salvar Alterações',
+                        style: TextStyle(color: Colors.white)),
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.blue,
-                      // onPrimary: Colors.white,
+                      backgroundColor: Colors.blue,
                       shadowColor: Colors.grey,
                       elevation: 2,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0)),
-                      minimumSize: Size(15, 25), //////// HERE
+                      minimumSize: Size(15, 25),
                     ),
                   ))
                 : Container(),
@@ -351,132 +418,27 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
   }
 
   alteraEndereco(Endereco end) {
-    widget.alterouDados = true;
-    widget.enderecoCompleto = end;
-    widget.controllerEnderecoNovo.text = end.logradouro!;
-    widget.controllerCep.text = '';
-    widget.controllerNumero.text = '';
-    openDialogAlteraNumeroCep();
+    setState(() {
+      widget.alterouDados = true;
+      widget.enderecoCompleto = end;
+      widget.controllerEnderecoNovo.text = end.logradouro ?? '';
+      widget.controllerCep.text = '';
+      widget.controllerNumero.text = '';
+    });
+    // openDialogAlteraNumeroCep();
   }
 
   limpaDados() {
-    widget.controllerEnderecoNovo.text = '';
-    widget.alterouDados = false;
-    widget.enderecoCompleto = widget.militar.endereco;
+    setState(() {
+      widget.controllerEnderecoNovo.text = '';
+      widget.alterouDados = false;
+      widget.enderecoCompleto = widget.militar.endereco;
+    });
   }
 
-  Future openDialogAlteraNumeroCep() {
-    return showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Complete os dados'),
-          ],
-        ),
-        content: Container(
-          height: MediaQuery.of(context).size.height * 0.25,
-          child: Form(
-            key: widget.formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('Nº: '),
-                      SizedBox(width: 7),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.40,
-                        child: TextFormField(
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Por favor digite o número';
-                            }
-                            return null;
-                          },
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          controller: widget.controllerNumero,
-                          decoration: InputDecoration(
-                            hintStyle: TextStyle(fontSize: 11),
-                            hintText: 'Digite o número da residencia',
-                          ),
-                          keyboardType: TextInputType.number,
-                          autofocus: true,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('CEP: '),
-                      SizedBox(width: 7),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.40,
-                        child: TextFormField(
-                          validator: (value) {
-                            if (value == null ||
-                                value.isEmpty ||
-                                value.length < 8) {
-                              return 'Digite um CEP válido';
-                            }
-                            return null;
-                          },
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          controller: widget.controllerCep,
-                          decoration: InputDecoration(
-                              hintStyle: TextStyle(fontSize: 11),
-                              hintText: 'Digite o CEP da residencia'),
-                          keyboardType: TextInputType.number,
-                          autofocus: true,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(
-                backgroundColor: Colors.red, minimumSize: Size(10, 10)),
-            onPressed: () {
-              limpaDados();
-              Navigator.of(context).pop();
-            },
-            child: Text(
-              'Cancelar',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
-          ),
-          TextButton(
-              style: TextButton.styleFrom(
-                  backgroundColor: Colors.green, minimumSize: Size(10, 10)),
-              onPressed: () {
-                if (widget.formKey.currentState!.validate()) {
-                  Navigator.of(context).pop();
-                  widget.enderecoCompleto.cep = widget.controllerCep.text;
-                  widget.enderecoCompleto.numero = widget.controllerNumero.text;
-                  widget.alterouDados = true;
-                  setState(() {});
-                }
-              },
-              child: Text(
-                'Salvar',
-                style: TextStyle(color: Colors.white),
-              ))
-        ],
-      ),
-    );
+  atualizaDados() {
+    setState(() {
+      widget.alterouDados = true;
+    });
   }
 }

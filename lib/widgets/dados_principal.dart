@@ -72,7 +72,8 @@ class DadosPrincipal extends StatelessWidget {
               children: [
                 Container(
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    // mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text(
                         'Posto/Graduação Atual: ',
@@ -82,7 +83,7 @@ class DadosPrincipal extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         '${militar.postoGraduacao} ${militar.quadro}',
-                        style: const TextStyle(fontSize: 09),
+                        style: const TextStyle(fontSize: 10),
                       ),
                     ],
                   ),
@@ -99,12 +100,10 @@ class DadosPrincipal extends StatelessWidget {
                       ),
                       Container(
                         width: width * 0.60,
-                        height: height * 0.03,
-                        child: TextFormField(
-                          enabled: false,
-                          readOnly: true,
-                          style: TextStyle(fontSize: 10),
-                          initialValue: militar.nomeCompleto,
+                        height: 15,
+                        child: Text(
+                          militar.nomeCompleto,
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                       ),
                     ],
@@ -122,12 +121,10 @@ class DadosPrincipal extends StatelessWidget {
                       ),
                       Container(
                         width: width * 0.60,
-                        height: height * 0.03,
-                        child: TextFormField(
-                          enabled: false,
-                          readOnly: true,
-                          style: TextStyle(fontSize: 10),
-                          initialValue: militar.subUnidade,
+                        height: 20,
+                        child: Text(
+                          militar.subUnidade,
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                       ),
                     ],
@@ -145,13 +142,17 @@ class DadosPrincipal extends StatelessWidget {
                       ),
                       Container(
                         width: width * 0.60,
-                        height: height * 0.03,
-                        child: TextFormField(
-                          enabled: false,
-                          readOnly: true,
-                          style: TextStyle(fontSize: 10),
-                          initialValue: militar.dataIncorporacao,
+                        height: 15,
+                        child: Text(
+                          militar.dataIncorporacao,
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
+                        // child: TextFormField(
+                        //   enabled: false,
+                        //   readOnly: true,
+                        //   style: TextStyle(fontSize: 10),
+                        //   initialValue: militar.dataIncorporacao,
+                        // ),
                       ),
                     ],
                   ),

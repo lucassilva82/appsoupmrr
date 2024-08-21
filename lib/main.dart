@@ -1,5 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:projetonovo/pages/ajuda_page.dart';
 import 'package:projetonovo/pages/auth_or_home.dart';
 import 'package:projetonovo/pages/auth_page.dart';
@@ -23,13 +25,98 @@ import 'models/militar.dart';
 import 'utils/app_routes.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-void main() async {
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  print("Handling a background message: ${message.messageId}");
+}
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print('Firebase initialized successfully.');
+  } catch (e) {
+    print('Firebase initialization failed: $e');
+  }
+
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+  final InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
   );
+
+  try {
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    print('FlutterLocalNotificationsPlugin initialized successfully.');
+  } catch (e) {
+    print('FlutterLocalNotificationsPlugin initialization failed: $e');
+  }
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print('Got a message whilst in the foreground!');
+    print('Message data: ${message.data}');
+
+    if (message.notification != null) {
+      print('Message also contained a notification: ${message.notification}');
+      _showNotification(message);
+    }
+  });
+
+  try {
+    final fcmToken = await FirebaseMessaging.instance.getToken();
+    print('FCM Token: $fcmToken');
+  } catch (e) {
+    print('Failed to get FCM token: $e');
+  }
+
+  await requestNotificationPermission();
+
   initializeDateFormatting().then((_) => runApp(const MyApp()));
-  // runApp(const MyApp());
+}
+
+Future<void> _showNotification(RemoteMessage message) async {
+  const AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+    'your_channel_id',
+    'your_channel_name',
+    importance: Importance.max,
+    priority: Priority.high,
+    showWhen: false,
+  );
+  const NotificationDetails platformChannelSpecifics =
+      NotificationDetails(android: androidPlatformChannelSpecifics);
+  await flutterLocalNotificationsPlugin.show(
+    0,
+    message.notification?.title,
+    message.notification?.body,
+    platformChannelSpecifics,
+    payload: 'item x',
+  );
+}
+
+Future<void> requestNotificationPermission() async {
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    announcement: false,
+    badge: true,
+    carPlay: false,
+    criticalAlert: false,
+    provisional: false,
+    sound: true,
+  );
+
+  print('User granted permission: ${settings.authorizationStatus}');
 }
 
 class MyApp extends StatefulWidget {
@@ -43,54 +130,15 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // checkNotifications();
   }
-
-  // checkNotifications() async {
-  //   await Provider.of<Auth>(context, listen: false)
-  //       .notificationService
-  //       .checkForNotifications;
-  // }
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      // Cria uma escala de servico com uma data
       create: (_) => Auth(),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'SouPMRR',
-        // theme: ThemeData(
-        //   primarySwatch: Colors.blue,
-        // ),
-        theme: ThemeData(
-            textTheme: const TextTheme(
-          headline1: TextStyle(
-            fontSize: 20,
-            color: MyColors.mainTextColor,
-            fontWeight: FontWeight.w500,
-          ),
-          headline2: TextStyle(
-            fontSize: 80,
-            color: MyColors.mainTextColor,
-            fontWeight: FontWeight.bold,
-          ),
-          headline3: TextStyle(
-            fontSize: 27,
-            color: MyColors.mainTextColor,
-            fontWeight: FontWeight.bold,
-          ),
-          headline4: TextStyle(
-            fontSize: 18,
-            color: MyColors.mainSubTitileColor,
-            fontWeight: FontWeight.w400,
-          ),
-          headline5: TextStyle(
-            color: Colors.white,
-            fontSize: 19,
-          ),
-        )),
-        //home: HomePage(),
         initialRoute: '/',
         routes: {
           AppRoutes.AUTH_PAGE: (context) => const AuthPage(),
@@ -102,29 +150,18 @@ class _MyAppState extends State<MyApp> {
           AppRoutes.PLANTAO: (context) => PlantaoPage(),
           AppRoutes.NOTIFICATIONS_PAGE: (context) => NotificationsPage(),
           AppRoutes.AJUDA_PAGE: (context) => AjudaPage(),
-
           AppRoutes.CONTRACHEQUE_PAGE: (context) => Contracheque(),
           AppRoutes.CONFIGURA_PLANTAO: (context) => ConfiguraPlantao(),
           AppRoutes.DECLARACOES_IRPF_PAGE: (context) =>
               const MeuPatrimonioPage(),
-
-          // ROTA COM DADOS
           AppRoutes.ENDERECO_PAGE: (context) {
             final args = ModalRoute.of(context)?.settings.arguments as Militar;
-
-            return EdicaoEnderecoPage(
-              militar: args,
-            );
+            return EdicaoEnderecoPage(militar: args);
           },
-
-          // ROTA COM DADOS
           AppRoutes.PAGE_VIEW_CONTRACHEQUE: (context) {
             final args =
                 ModalRoute.of(context)?.settings.arguments as MesesContracheque;
-
-            return PageContracheque(
-              mesSelecionado: args,
-            );
+            return PageContracheque(mesSelecionado: args);
           },
         },
       ),

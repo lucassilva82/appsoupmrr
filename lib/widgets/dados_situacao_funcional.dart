@@ -111,14 +111,14 @@ class _DadosSituacaoFuncionalState extends State<DadosSituacaoFuncional> {
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 12),
                         ),
-                        SizedBox(width: width * 0.10),
+                        SizedBox(width: width * 0.03),
                         Text(
                           'Data Fim',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 12),
                         ),
-                        SizedBox(width: width * 0.08),
+                        SizedBox(width: width * 0.05),
                         Text(
                           'Ativo',
                           textAlign: TextAlign.center,
@@ -164,7 +164,7 @@ class _DadosSituacaoFuncionalState extends State<DadosSituacaoFuncional> {
                                             .tipoSituacao,
                                         textAlign: TextAlign.start,
                                         style: TextStyle(
-                                          fontSize: 12,
+                                          fontSize: 11,
                                         ),
                                       ),
                                     ),
@@ -178,7 +178,7 @@ class _DadosSituacaoFuncionalState extends State<DadosSituacaoFuncional> {
                                             .situacaoFuncional,
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          fontSize: 12,
+                                          fontSize: 11,
                                         ),
                                       ),
                                     ),
@@ -192,7 +192,7 @@ class _DadosSituacaoFuncionalState extends State<DadosSituacaoFuncional> {
                                             .dataInicio,
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          fontSize: 12,
+                                          fontSize: 11,
                                         ),
                                       ),
                                     ),

@@ -65,7 +65,7 @@ class SecondScreen extends StatelessWidget {
                         padding: EdgeInsets.only(left: leftPadding, top: 20),
                         child: Text(
                           MyStrings.mainErroText,
-                          style: textTheme.headline4,
+                          style: textTheme.bodyLarge,
                         ),
                       ),
 
@@ -106,7 +106,7 @@ class SecondScreen extends StatelessWidget {
                         BottomButton(
                       size: size,
                       textTheme:
-                          textTheme.headline5?.copyWith(color: Colors.black),
+                          textTheme.bodyLarge?.copyWith(color: Colors.black),
                       btnColor: Colors.white,
                       page: HomePage(),
                     ),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:projetonovo/models/ficha_funcional.dart';
 
 import '../models/contracheque_model.dart';
@@ -157,6 +158,9 @@ class DadosSql {
   }
 
   Future<List<Endereco>> listaEnderecoCompleto(String busca) async {
+    if (busca.length < 3) {
+      throw Exception();
+    }
     final String url = '${_Url}/listaenderecocompleto.php';
     final response = await http.get(Uri.parse(Uri.encodeFull(url)));
     if (response.statusCode == 200) {
@@ -180,6 +184,8 @@ class DadosSql {
   Future<bool> atualizaEndereco(String codMuni, String codBairro, String codRua,
       String numero, String cep, String matricula) async {
     try {
+      print(
+          'entrou atualiza endereco: CodMun: $codMuni, CodBairro: $codBairro, CodRua: $codRua, Numero: $numero');
       final String url =
           '${_Url}/atualizaendereco.php?codmuni=$codMuni&codbairro=$codBairro&codrua=$codRua&numero=$numero&cep=$cep&matricula=$matricula';
 
@@ -237,7 +243,7 @@ class DadosSql {
     // cpf = retiraCaracterInicial(cpf);
     mes = converteMes(mes);
 
-    print(cpf);
+    print('DADOS SAO ESSES $cpf $ano $mes $codProvento');
 
     final String url =
         "${_Url}/exibecontracheque.php?cpf=$cpf&ano=$ano&mes=$mes&cod=$codProvento";
@@ -253,9 +259,14 @@ class DadosSql {
 
         dados.forEach((element) {
           TipoProvento dp = TipoProvento(
-              dp: element['dp'].toString(),
-              descricao: element['descricao'].toString(),
-              valor: element['valor'].toString());
+            dp: element['dp'].toString(),
+            descricao: element['descricao'].toString(),
+            valor: element['valor'].toString(),
+            parcela: element['parcela'].toString(),
+          );
+          if (dp.descricao.startsWith('CONSIG')) {
+            dp.descricao += ' ${dp.parcela}';
+          }
 
           contracheque.proventos.add(dp);
         });

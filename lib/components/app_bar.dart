@@ -18,7 +18,7 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       title: Text(
         MyStrings.logoText,
-        style: textTheme.headline1,
+        style: textTheme.bodyMedium,
       ),
       actions: [
         IconButton(
