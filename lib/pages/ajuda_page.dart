@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
+import 'package:projetonovo/widgets/custom_appbar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../widgets/drawer_personalizado.dart';
@@ -12,9 +13,7 @@ class AjudaPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ajuda DTI'),
-      ),
+      appBar: CustomAppBar(title: 'Suporte DTI'),
       body: Container(
         width: MediaQuery.of(context).size.width,
         // decoration: BoxDecoration(
@@ -64,24 +63,31 @@ class AjudaPage extends StatelessWidget {
                   //     number: '95991298238');
                 },
                 child: Container(
-                  width: MediaQuery.of(context).size.width * 0.20,
+                  width: MediaQuery.of(context).size.width * 0.338,
+                  height: MediaQuery.of(context).size.height * 0.03,
                   decoration: BoxDecoration(
-                      color: Colors.blue.shade100,
+                      color: Colors.blue,
                       // border: Border.all(width: 0.5),
                       borderRadius: BorderRadius.all(Radius.circular(6))),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min, // Ajusta ao conteúdo
                     children: [
-                      // Text(
-                      //   'Solicitar Ajuda',
-                      //   style: TextStyle(color: Colors.black, fontSize: 16),
-                      // ),
-                      IconButton(
-                        onPressed: null,
-                        icon: Image.asset('assets/imagens/whatsapp.png'),
-                        // color: Colors.orange,
-                        tooltip: 'Abrir Whatsapp',
-                        iconSize: 30,
+                      // Ícone do WhatsApp
+                      Image.asset(
+                        'assets/imagens/whatsapp.png',
+                        width: 20,
+                        height: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      // Texto de suporte
+                      const Text(
+                        'Suporte SouPMRR',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.none,
+                        ),
                       ),
                     ],
                   ),
@@ -91,7 +97,7 @@ class AjudaPage extends StatelessWidget {
           ],
         ),
       ),
-      drawer: Drawerpersonalizado(),
+      // drawer: Drawerpersonalizado(),
     );
   }
 

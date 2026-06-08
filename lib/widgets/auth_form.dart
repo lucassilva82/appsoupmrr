@@ -1,9 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-
+import 'package:projetonovo/pages/confirm_email.dart';
+import 'package:projetonovo/utils/api_services.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:quickalert/models/quickalert_type.dart';
+import 'package:quickalert/widgets/quickalert_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/auth_model.dart';
 import '../utils/auth_exception.dart';
@@ -16,241 +17,359 @@ class AuthForm extends StatefulWidget {
   State<AuthForm> createState() => _AuthFormState();
 }
 
-class _AuthFormState extends State<AuthForm>
-    with SingleTickerProviderStateMixin {
-  final _passwordController = TextEditingController();
+class _AuthFormState extends State<AuthForm> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
-  Map<String, String> _authData = {
+  bool _lembrarAcesso = true;
+
+  final _matriculaController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  final Map<String, String> _authData = {
     'matricula': '',
     'password': '',
   };
 
-  // Fazendo animações na mudança de tamanho do formulário
-  AnimationController? _controller;
-  // ignore: unused_field
-  Animation<double>? _opacityAnimation;
-  // ignore: unused_field
-  Animation<Offset>? _slideAnimation;
-
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(
-        milliseconds: 300,
-      ),
-    );
-
-    _opacityAnimation = Tween(
-      begin: -1.0,
-      end: 1.0,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller!,
-        curve: Curves.slowMiddle,
-      ),
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: Offset(0, 0),
-      end: Offset(0, 0),
-    ).animate(
-      CurvedAnimation(
-        parent: _controller!,
-        curve: Curves.easeInExpo,
-      ),
-    );
-
-    // _heightAnimation?.addListener(() => setState(() {}));
+    _loadUserCredentials();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-    _controller?.dispose();
+  Future<void> _loadUserCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedM = prefs.getString('matricula') ?? '';
+    final savedP = prefs.getString('password') ?? '';
+    final lembrar = prefs.getBool('lembrarAcesso') ?? false;
+
+    if (lembrar) {
+      setState(() {
+        _matriculaController.text = savedM;
+        _passwordController.text = savedP;
+        _lembrarAcesso = lembrar;
+      });
+    }
   }
 
   void _showErrorDialog(String msg) {
+    if (!mounted) return;
     showDialog(
       context: context,
-      builder: ((context) => AlertDialog(
-            title: Text('Ocorreu um erro'),
-            content: Text(msg),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('OK'),
-              ),
-            ],
-          )),
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ocorreu um erro'),
+        content: Text(msg),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 
+  Future<void> _askEnableBiometrics() async {
+    final auth = Provider.of<Auth>(context, listen: false);
+
+    final answer = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.fingerprint, size: 60, color: Colors.blue),
+              const SizedBox(height: 16),
+              const Text(
+                'Ativar Biometria?',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Deseja habilitar login por biometria para os próximos acessos?',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[300]),
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                    child: const Text(
+                      'NÃO',
+                      style: TextStyle(color: Colors.black),
+                    ),
+                  ),
+                  ElevatedButton(
+                    style:
+                        ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                    child: const Text(
+                      'SIM',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+
+    final bool biometriaAceita = answer ?? false;
+    auth.useBiometrics = biometriaAceita;
+    await auth.saveUserData();
+  }
+
   Future<void> _submit() async {
-    //Inicia o loading.
+    if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _isLoading = true);
 
-    Auth auth = Provider.of(context, listen: false);
+    final auth = Provider.of<Auth>(context, listen: false);
     _formKey.currentState?.save();
 
     try {
-      // Efetuar login salvando os dados dentro da classe auth.
+      // 1) Se já existe um token válido, exibe QuickAlert e para
+      final tokenResult =
+          await ApiServices.checkIfTokenExists(_authData['matricula']!);
+      if (tokenResult['code'] == 1) {
+        // Token já existe e não expirou: pede pro usuário verificar e-mail
+        await QuickAlert.show(
+          context: context,
+          type: QuickAlertType.info,
+          title: 'Verifique seu e-mail',
+          text: 'Acesse o link enviado ao seu e-mail para ativar sua conta!',
+          confirmBtnText: 'OK',
+          onConfirmBtnTap: () {
+            Navigator.of(context).pop(); // Fecha o QuickAlert
+          },
+        );
+        return; // Interrompe aqui
+      }
 
-      await auth.login(
+      // 2) Se não há token válido, apenas checamos credenciais
+      //    mas NÃO setamos 'autorizado = true'.
+      await auth.checkCredentialsWithoutLogin(
         _authData['matricula']!,
         _authData['password']!,
       );
+
+      // Agora temos em 'auth.activationCode' o valor do banco,
+      // mas 'autorizado' continua false.
+
+      if (auth.activationCode != 'pmrr190!@') {
+        // 3) Se activationCode != 'pmrr190!@', manda pra ConfirmEmail
+        auth.useBiometrics = false;
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ConfirmEmailScreen()),
+        );
+        // NÃO faz login. Assim, no hot restart, o app não te vê como logado
+        return;
+      } else {
+        // 4) Se activationCode == 'pmrr190!@', aí sim faz login de fato
+        await auth.loginSemNotificar(
+            _authData['matricula']!, _authData['password']!);
+
+        // 5) Grava (ou não) as credenciais
+        final prefs = await SharedPreferences.getInstance();
+        if (_lembrarAcesso) {
+          await prefs.setString('matricula', _authData['matricula']!);
+          await prefs.setString('password', _authData['password']!);
+          await prefs.setBool('lembrarAcesso', true);
+        } else {
+          await prefs.remove('matricula');
+          await prefs.remove('password');
+          await prefs.setBool('lembrarAcesso', false);
+        }
+
+        // Pergunta biometria
+        if (!auth.useBiometrics) {
+          await _askEnableBiometrics();
+        }
+
+        // Finaliza -> vai Home
+        auth.finalizarLogin();
+      }
     } on AuthException catch (error) {
       _showErrorDialog(error.toString());
     } catch (error) {
-      print(error);
-      _showErrorDialog('Ocorreu um erro inesperado');
+      _showErrorDialog('Ocorreu um erro inesperado.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-
-    setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
     final deviceSize = MediaQuery.of(context).size;
-    return Column(
-      children: [
-        Card(
-          color: Colors.white.withOpacity(0.85),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          elevation: 8,
-          child: AnimatedContainer(
-            duration: Duration(milliseconds: 300),
-            curve: Curves.easeIn,
-            //height: _isLogin() ? 310 : 400,
-            padding: const EdgeInsets.all(6),
 
-            // height: _heightAnimation?.value.height ?? (_isLogin() ? 310 : 400),
-            width: deviceSize.width * 0.70,
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  TextFormField(
-                    style: TextStyle(fontSize: 18),
-                    decoration: const InputDecoration(
-                        enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.black12)),
-                        labelText: 'Matrícula',
-                        prefixIcon: Icon(Icons.person)),
-                    keyboardType: TextInputType.number,
-                    onSaved: (matricula) =>
-                        _authData['matricula'] = matricula ?? '',
+    return Card(
+      color: Colors.transparent,
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      child: Container(
+        width: deviceSize.width * 0.70,
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _matriculaController,
+                style: const TextStyle(fontSize: 16, color: Colors.black),
+                decoration: InputDecoration(
+                  labelText: 'Matrícula',
+                  prefixIcon: Icon(Icons.person, color: Colors.grey[700]),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.7),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-
-                  TextFormField(
-                    style: TextStyle(fontSize: 18),
-                    decoration: InputDecoration(
-                        enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.black12)),
-                        prefixIcon: Icon(Icons.lock),
-                        labelText: 'Senha',
-                        suffixIcon: IconButton(
-                            onPressed: () {
-                              widget.exibeSenha = !widget.exibeSenha;
-                              setState(() {});
-                            },
-                            icon: Icon(widget.exibeSenha == true
-                                ? Icons.visibility
-                                : Icons.visibility_off))),
-                    keyboardType: TextInputType.visiblePassword,
-                    obscureText: widget.exibeSenha,
-                    controller: _passwordController,
-                    onSaved: (password) =>
-                        _authData['password'] = password ?? '',
-                    validator: (_password) {
-                      final password = _password ?? '';
-                      if (password.isEmpty || password.length < 5) {
-                        return 'Informe uma senha válida';
-                      } else {
-                        return null;
-                      }
+                  focusedBorder: OutlineInputBorder(
+                    borderSide:
+                        BorderSide(color: Colors.indigo.shade900, width: 2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                keyboardType: TextInputType.number,
+                onSaved: (matricula) =>
+                    _authData['matricula'] = matricula?.trim() ?? '',
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Informe sua matrícula';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _passwordController,
+                style: const TextStyle(fontSize: 16, color: Colors.black),
+                decoration: InputDecoration(
+                  labelText: 'Senha',
+                  prefixIcon: Icon(Icons.lock, color: Colors.grey[700]),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      widget.exibeSenha
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      color: Colors.grey[700],
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        widget.exibeSenha = !widget.exibeSenha;
+                      });
                     },
                   ),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.7),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide:
+                        BorderSide(color: Colors.indigo.shade900, width: 2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                obscureText: widget.exibeSenha,
+                onSaved: (password) =>
+                    _authData['password'] = password?.trim() ?? '',
+                validator: (password) {
+                  if (password == null || password.length < 5) {
+                    return 'Informe uma senha válida (mín. 5 caracteres)';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
 
-                  SizedBox(height: 20),
-                  if (_isLoading == true)
-                    CircularProgressIndicator(
-                      color: Colors.indigo.shade900,
-                      strokeWidth: 2,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Lembrar Dados',
+                      style: TextStyle(fontSize: 12, color: Colors.white)),
+                  Transform.scale(
+                    scale: 0.8,
+                    child: Switch(
+                      value: _lembrarAcesso,
+                      onChanged: (bool valor) {
+                        setState(() {
+                          _lembrarAcesso = valor;
+                        });
+                      },
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      activeColor: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              _isLoading
+                  ? const CircularProgressIndicator.adaptive(
+                      backgroundColor: Colors.white,
                     )
-                  else
-                    Container(
-                      width: MediaQuery.of(context).size.width * 0.50,
+                  : SizedBox(
+                      width: double.infinity,
+                      height: 45,
                       child: ElevatedButton(
-                        onPressed: _submit,
-                        child: Text(
-                          'Entrar',
-                          style: TextStyle(fontSize: 14, color: Colors.white),
-                        ),
                         style: ElevatedButton.styleFrom(
-                          fixedSize: Size(800, 16),
-                          backgroundColor: Colors.indigo.shade800,
+                          backgroundColor: Colors.blue,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          // padding: const EdgeInsets.symmetric(
-                          //   horizontal: 30,
-                          //   vertical: 20,
-                          // ),
                         ),
+                        onPressed: _submit,
+                        child: const Text('Entrar',
+                            style:
+                                TextStyle(fontSize: 16, color: Colors.white)),
                       ),
                     ),
+              const SizedBox(height: 16),
 
-                  // Spacer(),
-
-                  SizedBox(height: 20),
-                  Container(
-                    child: TextButton(
-                      child: Text(
-                        'Recuperar Senha / Primeiro acesso',
-                        style: TextStyle(color: Colors.red),
+              // Link "Recuperar Senha"
+              TextButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Recuperar Senha'),
+                      content: const Text(
+                        'Você será redirecionado para o site do SIGRH, lá poderá recuperar sua senha.',
                       ),
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: ((context) => AlertDialog(
-                                title: Text('Recuperar Senha'),
-                                content: Text(
-                                    'Você será redirecionado para o site do SIGRH, lá poderá recuperar sua senha.'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () async {
-                                      Navigator.of(context).pop();
-                                      final Uri url = Uri.parse(
-                                          "https://rh.pmrr.net/seguranca_retrieve_pswd/");
-
-                                      if (!await launchUrl(
-                                        url,
-                                      )) {
-                                        await launchUrl(
-                                          url,
-                                        );
-                                      }
-                                    },
-                                    child: Text('OK'),
-                                  ),
-                                ],
-                              )),
-                        );
-                      },
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: const Text('OK'),
+                        ),
+                      ],
                     ),
-                  )
-                ],
+                  );
+                },
+                child: const Text(
+                  'Recuperar Senha / Primeiro acesso',
+                  style:
+                      TextStyle(color: Colors.red, fontWeight: FontWeight.w500),
+                ),
               ),
-            ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

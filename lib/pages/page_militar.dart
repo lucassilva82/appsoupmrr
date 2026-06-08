@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projetonovo/widgets/custom_appbar.dart';
 import 'package:provider/provider.dart';
 
 import '../models/auth_model.dart';
@@ -36,25 +37,8 @@ class _PageMilitarState extends State<PageMilitar> {
       builder: ((context, snapshot) {
         if (snapshot.hasData) {
           return Scaffold(
-            appBar: AppBar(
-              flexibleSpace: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.lightBlue,
-                      Colors.blue.shade900,
-                    ],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.topRight,
-                  ),
-                ),
-              ),
-              title: Text(
-                'Ficha Individual',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-            drawer: Drawerpersonalizado(),
+            appBar: CustomAppBar(title: 'Ficha Individual'),
+            // drawer: Drawerpersonalizado(),
             body: SingleChildScrollView(
               scrollDirection: Axis.vertical,
               child: DadosMilitar(
@@ -69,7 +53,7 @@ class _PageMilitarState extends State<PageMilitar> {
           return SecondScreen();
         }
         return const Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator.adaptive(),
         );
       }),
     );

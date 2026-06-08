@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../models/militar.dart';
 
 class DadosPrincipal extends StatelessWidget {
@@ -8,28 +7,30 @@ class DadosPrincipal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double width = MediaQuery.of(context).size.width;
-    double height = MediaQuery.of(context).size.height;
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
 
     return Container(
       width: width * 0.60,
       height: height * 0.28,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.all(Radius.circular(5)),
-        boxShadow: [
+        borderRadius: BorderRadius.circular(5),
+        boxShadow: const [
           BoxShadow(
             color: Colors.grey,
             blurRadius: 4,
-            offset: Offset(2, 2), // Shadow position
+            offset: Offset(2, 2),
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Cabeçalho com gradiente e fonte menor
           Container(
             width: width * 0.60,
-            height: height * 0.04,
+            height: 30,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -39,129 +40,105 @@ class DadosPrincipal extends StatelessWidget {
                 begin: Alignment.centerLeft,
                 end: Alignment.topRight,
               ),
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(5), topRight: Radius.circular(5)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey,
-                  blurRadius: 4,
-                  offset: Offset(2, 2), // Shadow position
-                ),
-              ],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(5),
+                topRight: Radius.circular(5),
+              ),
             ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 10,
-                ),
-                Text(
+            child: const Padding(
+              padding: EdgeInsets.only(left: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
                   'Policial Militar',
                   style: TextStyle(
-                      fontFamily: 'Lato',
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white),
-                )
-              ],
+                    fontFamily: 'Lato',
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    // mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Posto/Graduação Atual: ',
-                        style: TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${militar.postoGraduacao} ${militar.quadro}',
-                        style: const TextStyle(fontSize: 10),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Nome:',
-                        style: TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                      Container(
-                        width: width * 0.60,
-                        height: 15,
-                        child: Text(
-                          militar.nomeCompleto,
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Lotação:',
-                        style: TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                      Container(
-                        width: width * 0.60,
-                        height: 20,
-                        child: Text(
-                          militar.subUnidade,
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Data de incorporação:',
-                        style: TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                      Container(
-                        width: width * 0.60,
-                        height: 15,
-                        child: Text(
-                          militar.dataIncorporacao,
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                        // child: TextFormField(
-                        //   enabled: false,
-                        //   readOnly: true,
-                        //   style: TextStyle(fontSize: 10),
-                        //   initialValue: militar.dataIncorporacao,
-                        // ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+          // Corpo rolável com os dados, com padding reduzido
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildRowDetail(
+                      label: 'Posto/Graduação:',
+                      info: '${militar.postoGraduacao} ${militar.quadro}'),
+                  const SizedBox(height: 4),
+                  _buildColumnDetail(
+                      label: 'Nome:', info: militar.nomeCompleto),
+                  const SizedBox(height: 4),
+                  _buildColumnDetail(
+                      label: 'Lotação:', info: militar.subUnidade),
+                  const SizedBox(height: 4),
+                  _buildColumnDetail(
+                      label: 'Incorporação:', info: militar.dataIncorporacao),
+                  _buildColumnDetail(
+                      label: 'Matrícula SEGAD:', info: militar.matRhNova),
+                  const SizedBox(height: 2),
+                  _buildColumnDetail(
+                      label: 'Matrícula PMRR:', info: militar.matricula),
+                ],
+              ),
             ),
-          ),
+          )
         ],
       ),
+    );
+  }
+
+  Widget _buildRowDetail({required String label, required String info}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            info,
+            style: const TextStyle(fontSize: 10, color: Colors.grey),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildColumnDetail({required String label, required String info}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          info,
+          style: const TextStyle(
+            fontSize: 10,
+            color: Colors.grey,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 }

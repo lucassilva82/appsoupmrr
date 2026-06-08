@@ -1,0 +1,42 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+    }
+    includeBuild("/Users/lucassilva/Development/flutter/packages/flutter_tools/gradle")
+    plugins {
+        id("com.android.application") version "8.1.1"
+        id("org.jetbrains.kotlin.android") version "1.9.0"
+        id("com.google.gms.google-services") version "4.3.15"
+        // Não defina dev.flutter.flutter-gradle-plugin aqui
+    }
+}
+
+dependencyResolutionManagement {
+    // Aqui está o truque:
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+
+    repositories {
+        google()
+        mavenCentral()
+        
+        // (Opcional) Se o Flutter realmente precisar de algo de download.flutter.io,
+        // você inclui manualmente esse repo. Mas evite que ele procure Kotlin, Material etc.
+        maven {
+            url "https://storage.googleapis.com/download.flutter.io"
+            // "content" filtra pacotes que podem ser baixados desse repositório
+            content {
+                // EXEMPLO: só permitir o que comece com 'io.flutter' ou 'dev.flutter'
+                // e excluir 'com.google', 'org.jetbrains' etc.
+                includeGroupByRegex("io\\.flutter.*")
+                includeGroupByRegex("dev\\.flutter.*")
+
+                excludeGroupByRegex("com\\.google.*")
+                excludeGroupByRegex("org\\.jetbrains.*")
+            }
+        }
+    }
+}
+
+include(":app")

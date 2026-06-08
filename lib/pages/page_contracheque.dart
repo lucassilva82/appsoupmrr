@@ -1,7 +1,7 @@
+// ignore_for_file: must_be_immutable
 import 'package:currency_formatter/currency_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:money_formatter/money_formatter.dart';
 import 'package:pdf/pdf.dart';
 import 'package:projetonovo/pages/pdf_view_page.dart';
 import 'package:provider/provider.dart';
@@ -32,54 +32,69 @@ class PageContracheque extends StatelessWidget {
     Auth auth = Provider.of(context);
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
-    double textScaleFactor = MediaQuery.of(context).textScaleFactor;
+    // Escala responsiva baseada na largura (evita fontes grandes em telas pequenas)
+    double fs(double base) {
+      final scale = (width / 375).clamp(0.85, 1.08);
+      return base * scale;
+    }
+
     DadosSql dadosSql = DadosSql();
     TextStyle estiloCabecalho = TextStyle(
       fontWeight: FontWeight.bold,
-      fontSize: 16,
+      fontSize: fs(15),
       color: Colors.blue,
+      letterSpacing: 0.3,
     );
     TextStyle estiloCabecalho2 = TextStyle(
       fontWeight: FontWeight.bold,
-      fontSize: 13,
+      fontSize: fs(12),
       color: Colors.white,
+      letterSpacing: 0.3,
     );
     TextStyle estiloSubtitulo = TextStyle(
-      fontSize: 14,
+      fontSize: fs(13),
       color: Colors.black54,
     );
     TextStyle contrachequeTexto = TextStyle(
-      fontSize: 14,
+      fontSize: fs(12.5),
       color: Colors.black54,
     );
 
     Future<ContrachequeModel> _buscaDadosSql() async {
-      contracheque = await dadosSql.buscaContracheque(mesSelecionado.cpf,
-          mesSelecionado.ano, mesSelecionado.mes, mesSelecionado.codProvento);
+      contracheque = await dadosSql.buscaContracheque(
+          mesSelecionado.cpf,
+          mesSelecionado.ano,
+          mesSelecionado.mes,
+          mesSelecionado.mesExtenso,
+          mesSelecionado.matricula,
+          mesSelecionado.tipo,
+          mesSelecionado.codProvento,
+          mesSelecionado.relacaoTrabalho,
+          mesSelecionado.folha);
 
       proventos = 0.0;
       descontos = 0.0;
       totalLiquido = 0.0;
 
       contracheque.proventos.forEach((element) {
-        if (element.dp == 'P') {
-          proventos += double.parse(element.valor);
+        if (element.tipoRubrica == 'P') {
+          proventos += double.parse(element.provento);
         } else {
-          descontos += double.parse(element.valor);
+          descontos += double.parse(element.desconto);
         }
       });
 
       totalLiquido = proventos - descontos;
 
       contracheque.proventos.forEach((element) {
-        print(element.valor);
-        double valorDouble = double.tryParse(element.valor) ?? 0.0;
+        print(element.provento);
+        double valorDouble = double.tryParse(element.provento) ?? 0.0;
         // Formata o valor para o padrão de moeda brasileira
         final formatter = NumberFormat.currency(
             locale: 'pt_BR', symbol: '', decimalDigits: 2);
         String valorFormatado = formatter.format(valorDouble);
         print(valorFormatado);
-        element.valor = valorFormatado;
+        element.provento = valorFormatado;
       });
 
       return contracheque;
@@ -152,7 +167,7 @@ class PageContracheque extends StatelessWidget {
                           pw.Text('LOTAÇÃO',
                               style: pw.TextStyle(
                                   fontSize: 16, color: PdfColors.blue)),
-                          pw.Text(mesSelecionado.lotacao,
+                          pw.Text(mesSelecionado.relacaoTrabalho,
                               style: pw.TextStyle(
                                   fontSize: 14, color: PdfColors.black)),
                         ],
@@ -184,7 +199,7 @@ class PageContracheque extends StatelessWidget {
                           pw.Text('CARGO / TIPO',
                               style: pw.TextStyle(
                                   fontSize: 16, color: PdfColors.blue)),
-                          pw.Text(mesSelecionado.lotacao,
+                          pw.Text(mesSelecionado.relacaoTrabalho,
                               style: pw.TextStyle(
                                   fontSize: 14, color: PdfColors.black)),
                         ],
@@ -229,7 +244,11 @@ class PageContracheque extends StatelessWidget {
                     data: [
                       ['Tipo', 'Descrição', 'Valor'],
                       ...contracheque.proventos
-                          .map((p) => [p.dp, p.descricao, 'R\$ ${p.valor}'])
+                          .map((p) => [
+                                p.tipoRubrica,
+                                p.descricaoRubrica,
+                                'R\$ ${p.tipoRubrica == 'P' ? p.provento : p.desconto}'
+                              ])
                           .toList(),
                     ],
                   ),
@@ -319,8 +338,8 @@ class PageContracheque extends StatelessWidget {
                 ),
               ),
               title: Text(
-                'Contracheque - ${mesSelecionado.mes}/${mesSelecionado.ano}',
-                style: TextStyle(color: Colors.white),
+                'Contracheque - ${mesSelecionado.mesExtenso}/${mesSelecionado.ano}',
+                style: TextStyle(color: Colors.white, fontSize: 16),
               ),
               actions: [
                 IconButton(
@@ -392,7 +411,7 @@ class PageContracheque extends StatelessWidget {
                                       padding:
                                           EdgeInsets.only(left: width * 0.03),
                                       child: Text(
-                                        mesSelecionado.lotacao,
+                                        mesSelecionado.relacaoTrabalho,
                                         style: estiloSubtitulo,
                                       ),
                                     ),
@@ -445,7 +464,7 @@ class PageContracheque extends StatelessWidget {
                                       padding:
                                           EdgeInsets.only(left: width * 0.03),
                                       child: Text(
-                                        mesSelecionado.lotacao!,
+                                        mesSelecionado.relacaoTrabalho,
                                         style: estiloSubtitulo,
                                       ),
                                     ),
@@ -531,7 +550,7 @@ class PageContracheque extends StatelessWidget {
                                     child: Text(
                                       'TIPO',
                                       style: estiloCabecalho2.copyWith(
-                                          fontSize: 13 * textScaleFactor),
+                                          fontSize: fs(12)),
                                     ),
                                   ),
                                 ),
@@ -540,7 +559,7 @@ class PageContracheque extends StatelessWidget {
                                   child: Text(
                                     'DESCRIÇÃO',
                                     style: estiloCabecalho2.copyWith(
-                                        fontSize: 13 * textScaleFactor),
+                                        fontSize: fs(12)),
                                   ),
                                 ),
                                 Container(
@@ -548,7 +567,7 @@ class PageContracheque extends StatelessWidget {
                                   child: Text(
                                     'VALOR',
                                     style: estiloCabecalho2.copyWith(
-                                        fontSize: 13 * textScaleFactor),
+                                        fontSize: fs(12)),
                                   ),
                                 ),
                               ],
@@ -568,28 +587,28 @@ class PageContracheque extends StatelessWidget {
                                     return Container(
                                       padding: const EdgeInsets.only(left: 8.0),
                                       decoration: BoxDecoration(
-                                        gradient:
-                                            contracheque.proventos[index].dp ==
-                                                    'P'
-                                                ? LinearGradient(
-                                                    colors: [
-                                                      Colors.lightBlue.shade100,
-                                                      const Color.fromARGB(
-                                                          255, 89, 173, 241),
-                                                    ],
-                                                    begin: Alignment.centerLeft,
-                                                    end: Alignment.topRight,
-                                                  )
-                                                : LinearGradient(
-                                                    colors: [
-                                                      Color.fromARGB(
-                                                          255, 231, 209, 209),
-                                                      Color.fromARGB(
-                                                          255, 252, 156, 159),
-                                                    ],
-                                                    begin: Alignment.centerLeft,
-                                                    end: Alignment.topRight,
-                                                  ),
+                                        gradient: contracheque.proventos[index]
+                                                    .tipoRubrica ==
+                                                'P'
+                                            ? LinearGradient(
+                                                colors: [
+                                                  Colors.lightBlue.shade100,
+                                                  const Color.fromARGB(
+                                                      255, 89, 173, 241),
+                                                ],
+                                                begin: Alignment.centerLeft,
+                                                end: Alignment.topRight,
+                                              )
+                                            : LinearGradient(
+                                                colors: [
+                                                  Color.fromARGB(
+                                                      255, 231, 209, 209),
+                                                  Color.fromARGB(
+                                                      255, 252, 156, 159),
+                                                ],
+                                                begin: Alignment.centerLeft,
+                                                end: Alignment.topRight,
+                                              ),
                                       ),
                                       width: width,
                                       height: height * 0.05,
@@ -601,12 +620,11 @@ class PageContracheque extends StatelessWidget {
                                               padding:
                                                   const EdgeInsets.all(8.0),
                                               child: Text(
-                                                contracheque
-                                                    .proventos[index].dp,
+                                                contracheque.proventos[index]
+                                                    .tipoRubrica,
                                                 style:
                                                     contrachequeTexto.copyWith(
-                                                        fontSize: 14 *
-                                                            textScaleFactor),
+                                                        fontSize: fs(12.5)),
                                               ),
                                             ),
                                           ),
@@ -616,12 +634,11 @@ class PageContracheque extends StatelessWidget {
                                               padding: const EdgeInsets.only(
                                                   right: 5),
                                               child: Text(
-                                                contracheque
-                                                    .proventos[index].descricao,
+                                                contracheque.proventos[index]
+                                                    .descricaoRubrica,
                                                 style:
                                                     contrachequeTexto.copyWith(
-                                                        fontSize: 14 *
-                                                            textScaleFactor),
+                                                        fontSize: fs(12.5)),
                                               ),
                                             ),
                                           ),
@@ -632,12 +649,10 @@ class PageContracheque extends StatelessWidget {
                                                   const EdgeInsets.symmetric(
                                                       horizontal: 1),
                                               child: Text(
-                                                // 'R\$ ${CurrencyFormatter.format(contracheque.proventos[index].valor, realSettings)}',
-                                                'R\$ ${contracheque.proventos[index].valor}',
+                                                'R\$ ${contracheque.proventos[index].tipoRubrica == 'P' ? contracheque.proventos[index].provento : contracheque.proventos[index].desconto}',
                                                 style:
                                                     contrachequeTexto.copyWith(
-                                                        fontSize: 14 *
-                                                            textScaleFactor),
+                                                        fontSize: fs(12.5)),
                                               ),
                                             ),
                                           ),
@@ -681,7 +696,7 @@ class PageContracheque extends StatelessWidget {
                                 child: Text(
                                   'PROVENTOS',
                                   style: estiloCabecalho2.copyWith(
-                                      fontSize: 13 * textScaleFactor),
+                                      fontSize: fs(12)),
                                 ),
                               ),
                             ),
@@ -689,16 +704,16 @@ class PageContracheque extends StatelessWidget {
                               width: width * 0.30,
                               child: Text(
                                 'DESCONTOS',
-                                style: estiloCabecalho2.copyWith(
-                                    fontSize: 13 * textScaleFactor),
+                                style:
+                                    estiloCabecalho2.copyWith(fontSize: fs(12)),
                               ),
                             ),
                             Container(
                               width: width * 0.30,
                               child: Text(
                                 'TOTAL LíQUIDO',
-                                style: estiloCabecalho2.copyWith(
-                                    fontSize: 13 * textScaleFactor),
+                                style:
+                                    estiloCabecalho2.copyWith(fontSize: fs(12)),
                               ),
                             ),
                           ],
@@ -716,7 +731,7 @@ class PageContracheque extends StatelessWidget {
                               'R\$ ${CurrencyFormatter.format(proventos, realSettings)}',
                               style: TextStyle(
                                 color: Colors.blue,
-                                fontSize: 14 * textScaleFactor,
+                                fontSize: fs(13),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -729,7 +744,7 @@ class PageContracheque extends StatelessWidget {
                             style: TextStyle(
                               color: Colors.red,
                               fontWeight: FontWeight.bold,
-                              fontSize: 14 * textScaleFactor,
+                              fontSize: fs(13),
                             ),
                           ),
                         ),
@@ -740,7 +755,7 @@ class PageContracheque extends StatelessWidget {
                             style: TextStyle(
                               color: Colors.green,
                               fontWeight: FontWeight.bold,
-                              fontSize: 14 * textScaleFactor,
+                              fontSize: fs(13),
                             ),
                           ),
                         ),
@@ -778,7 +793,7 @@ class PageContracheque extends StatelessWidget {
           return SecondScreen();
         }
         return const Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator.adaptive(),
         );
       }),
     );

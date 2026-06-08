@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projetonovo/widgets/custom_appbar.dart';
 import 'package:provider/provider.dart';
 
 import '../models/auth_model.dart';
@@ -13,310 +14,324 @@ class Contracheque extends StatefulWidget {
 
   @override
   _ContrachequeState createState() => _ContrachequeState();
-  String _anoSelecionado = '2024';
+
+  // Ano inicialmente selecionado
+  String _anoSelecionado = '2025';
   late List<MesesContracheque> mesesContracheque;
 }
 
 class _ContrachequeState extends State<Contracheque> {
-  late ScrollController _controllerOne = ScrollController();
-  DadosSql dadosSql = DadosSql();
+  final DadosSql dadosSql = DadosSql();
+  final ScrollController _controllerOne = ScrollController();
 
   bool anoSelecionado = true;
 
-  final _anos = ['2024', '2023', '2022', '2021', '2020', '2019'];
+  @override
+  void initState() {
+    super.initState();
+    // Se preferir, inicie widget._anoSelecionado como o ano atual:
+    widget._anoSelecionado = DateTime.now().year.toString();
+  }
+
+  // Gera uma lista de anos do atual até 2019 (ajuste conforme sua necessidade)
+  List<int> get listaAnos {
+    int anoAtual = DateTime.now().year;
+    List<int> anos = [];
+    for (int ano = anoAtual; ano >= 2020; ano--) {
+      anos.add(ano);
+    }
+    return anos;
+  }
+
+  Future<List<MesesContracheque>> _buscaDadosSql(String ano) async {
+    final auth = Provider.of<Auth>(context, listen: false);
+    widget.mesesContracheque = await dadosSql.listaMesesContracheque(
+      auth.cpf!,
+      ano,
+    );
+    return widget.mesesContracheque;
+  }
 
   @override
   Widget build(BuildContext context) {
-    double hieght = MediaQuery.of(context).size.height;
-    double width = MediaQuery.of(context).size.height;
-    Auth auth = Provider.of(context);
-    widget.mesesContracheque = [];
-    Future<List<MesesContracheque>> _buscaDadosSql() async {
-      widget.mesesContracheque = await dadosSql.listaMesesContracheque(
-          auth.cpf!, widget._anoSelecionado);
-
-      return widget.mesesContracheque;
-    }
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      appBar: AppBar(
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.lightBlue,
-                Colors.blue.shade900,
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.topRight,
-            ),
-          ),
-        ),
-        title: Text('Contracheques'),
-      ),
+      appBar: CustomAppBar(title: 'Contracheques'),
+      // drawer: Drawerpersonalizado(),
       body: Container(
-        width: width,
-        height: hieght,
-        // decoration: BoxDecoration(color: Colors.black),
+        width: screenWidth,
+        height: screenHeight,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: hieght * 0.02),
-            Container(
-              child: DropdownButton<String>(
-                  hint: const Text("Selecione"),
-                  style: const TextStyle(color: Colors.blue, fontSize: 16),
-                  alignment: AlignmentDirectional.center,
-                  items: _anos.map((String dropDownStringItem) {
-                    return DropdownMenuItem<String>(
-                      value: dropDownStringItem,
-                      alignment: AlignmentDirectional.center,
-                      child: Container(
-                          width: width * 0.08,
-                          child: Text(
-                            dropDownStringItem,
-                            style: TextStyle(fontSize: 16),
-                          )),
-                    );
-                  }).toList(),
-                  onChanged: ((novoItemSelecionado) {
-                    _dropDownItemSelected(novoItemSelecionado!);
-                  }),
-                  value: widget._anoSelecionado),
+            SizedBox(height: screenHeight * 0.02),
+
+            // LISTA HORIZONTAL DE ANOS
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: listaAnos.map((anoInt) {
+                  final anoStr = anoInt.toString();
+                  final isSelected = anoStr == widget._anoSelecionado;
+
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        widget._anoSelecionado = anoStr;
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: MediaQuery.of(context).size.width * 0.03,
+                        vertical: MediaQuery.of(context).size.height * 0.008,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Colors.blue // cor pro ano selecionado
+                            : Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        anoStr,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : Colors.black87,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
-            SizedBox(height: hieght * 0.03),
-            anoSelecionado == true //teste
+
+            SizedBox(height: screenHeight * 0.03),
+
+            // LISTA DE CONTRACHEQUES (apenas se anoSelecionado == true, mas acho que isso já não é necessário)
+            anoSelecionado
                 ? Container(
-                    width: width * 0.99,
-                    height: hieght * 0.70,
+                    width: screenWidth * 0.99,
+                    height: screenHeight * 0.70,
                     child: FutureBuilder<List<MesesContracheque>>(
-                      future: _buscaDadosSql(),
-                      builder: ((context, snapshot) {
-                        if (snapshot.hasData) {
-                          if (widget.mesesContracheque.isEmpty) {
-                            return Center(
-                                child: Text(
-                              '* Nenhum contracheque no periodo.',
-                              style: TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold),
-                            ));
-                          } else {
-                            return Column(
-                              children: [
-                                Container(
-                                  height: hieght * 0.04,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors.lightBlue,
-                                        Colors.blue.shade900,
-                                      ],
-                                      begin: Alignment.centerLeft,
-                                      end: Alignment.topRight,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        // padding: EdgeInsets.symmetric(
-                                        //     horizontal: 10),
-                                        width: width * 0.10,
-                                        child: Center(
-                                          child: Text(
-                                            'MÊS',
-                                            style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        width: width * 0.18,
-                                        // padding:
-                                        //     EdgeInsets.symmetric(horizontal: 8),
-                                        child: Center(
-                                          child: Text(
-                                            'LOTAÇÃO',
-                                            style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        width: width * 0.18,
-                                        // padding:
-                                        //     EdgeInsets.symmetric(horizontal: 8),
-                                        child: Center(
-                                          child: Text(
-                                            'PROVENTO',
-                                            style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                SingleChildScrollView(
-                                  scrollDirection: Axis.vertical,
-                                  child: Container(
-                                      // decoration:
-                                      //     BoxDecoration(color: Colors.blue),
-                                      width: double.maxFinite,
-                                      height: hieght * 0.65,
-                                      child: Scrollbar(
-                                        controller: _controllerOne,
-                                        child: ListView.builder(
-                                          controller: _controllerOne,
-                                          itemCount:
-                                              widget.mesesContracheque.length,
-                                          itemBuilder: (context, index) {
-                                            return Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 1),
-                                              child: InkWell(
-                                                onTap: () {
-                                                  widget
-                                                      .mesesContracheque[index]
-                                                      .cpf = auth.cpf!;
-                                                  Navigator.of(context).pushNamed(
-                                                      AppRoutes
-                                                          .PAGE_VIEW_CONTRACHEQUE,
-                                                      arguments: widget
-                                                              .mesesContracheque[
-                                                          index]);
-                                                },
-                                                child: Container(
-                                                  decoration: BoxDecoration(
-                                                    gradient: LinearGradient(
-                                                      colors: [
-                                                        Colors
-                                                            .lightBlue.shade100,
-                                                        Colors.blue.shade400,
-                                                      ],
-                                                      begin:
-                                                          Alignment.centerLeft,
-                                                      end: Alignment.topRight,
-                                                    ),
-                                                  ),
-                                                  width: width,
-                                                  height: hieght * 0.05,
-                                                  child: Row(
-                                                    children: [
-                                                      Container(
-                                                        width: width * 0.10,
-                                                        child: Center(
-                                                          child: Text(
-                                                            '${widget.mesesContracheque[index].mes}',
-                                                            style: TextStyle(
-                                                                fontSize: 12,
-                                                                color: Colors
-                                                                    .black54,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      Container(
-                                                        width: width * 0.18,
-                                                        child: Center(
-                                                          child: Text(
-                                                            '${widget.mesesContracheque[index].lotacao}',
-                                                            textAlign: TextAlign
-                                                                .center,
-                                                            style: TextStyle(
-                                                                fontSize: 12,
-                                                                color: Colors
-                                                                    .black54,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      Container(
-                                                        width: width * 0.18,
-                                                        child: Center(
-                                                          child: Text(
-                                                            '${widget.mesesContracheque[index].tipoProvento}',
-                                                            textAlign: TextAlign
-                                                                .center,
-                                                            style: TextStyle(
-                                                                fontSize: 12,
-                                                                color: Colors
-                                                                    .black54,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      // Container(
-                                                      //   width: width * 0.06,
-                                                      //   child: IconButton(
-                                                      //       padding:
-                                                      //           EdgeInsets.only(
-                                                      //               bottom: 10,
-                                                      //               left: 20),
-                                                      //       onPressed: () {
-                                                      //         widget
-                                                      //             .mesesContracheque[
-                                                      //                 index]
-                                                      //             .cpf = auth.cpf!;
-                                                      //         Navigator.of(
-                                                      //                 context)
-                                                      //             .pushNamed(
-                                                      //                 AppRoutes
-                                                      //                     .PAGE_VIEW_CONTRACHEQUE,
-                                                      //                 arguments:
-                                                      //                     widget
-                                                      //                         .mesesContracheque[index]);
-                                                      //       },
-                                                      //       icon: Icon(
-                                                      //         Icons.search,
-                                                      //         color: Colors
-                                                      //             .black54,
-                                                      //         size: 28,
-                                                      //       )),
-                                                      // )
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      )),
-                                ),
-                              ],
-                            );
-                          }
-                        } else if (snapshot.hasError) {
+                      future: _buscaDadosSql(widget._anoSelecionado),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator.adaptive(),
+                          );
+                        }
+                        if (snapshot.hasError) {
                           print(snapshot.error);
                           return SecondScreen();
                         }
-                        return const Center(
-                          child: CircularProgressIndicator(),
+                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return const Center(
+                            child: Text(
+                              '* Nenhum contracheque no período.',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          );
+                        }
+
+                        // Se chegou aqui, há dados
+                        final lista = snapshot.data!;
+
+                        return Column(
+                          children: [
+                            Container(
+                              height: screenHeight * 0.04,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.lightBlue,
+                                    Colors.blue.shade900,
+                                  ],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.topRight,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: screenWidth * 0.20,
+                                    child: const Center(
+                                      child: Text(
+                                        'MÊS',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    width: screenWidth * 0.35,
+                                    child: const Center(
+                                      child: Text(
+                                        'MATRÍCULA',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    width: screenWidth * 0.35,
+                                    child: const Center(
+                                      child: Text(
+                                        'RELAÇAO TRABALHO',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Scrollbar(
+                                controller: _controllerOne,
+                                child: ListView.builder(
+                                  controller: _controllerOne,
+                                  itemCount: lista.length,
+                                  itemBuilder: (ctx, index) {
+                                    final item = lista[index];
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: InkWell(
+                                        onTap: () {
+                                          item.cpf = Provider.of<Auth>(context,
+                                                  listen: false)
+                                              .cpf!;
+                                          Navigator.of(context).pushNamed(
+                                            AppRoutes.PAGE_VIEW_CONTRACHEQUE,
+                                            arguments: item,
+                                          );
+                                        },
+                                        child: Container(
+                                          width: screenWidth,
+                                          height: screenHeight * 0.05,
+                                          decoration: lista[index].tipo == "A"
+                                              ? BoxDecoration(
+                                                  gradient: LinearGradient(
+                                                    colors: [
+                                                      Colors.lightBlue.shade100,
+                                                      Colors.blue.shade400,
+                                                    ],
+                                                    begin: Alignment.centerLeft,
+                                                    end: Alignment.topRight,
+                                                  ),
+                                                )
+                                              : BoxDecoration(
+                                                  gradient: LinearGradient(
+                                                    colors: [
+                                                      Colors.lightBlue.shade100,
+                                                      Colors
+                                                          .blueAccent.shade400,
+                                                    ],
+                                                    begin: Alignment.centerLeft,
+                                                    end: Alignment.topRight,
+                                                  ),
+                                                ),
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                width: screenWidth * 0.20,
+                                                child: Center(
+                                                  child: Text(
+                                                    item.mesExtenso,
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.black54,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              Container(
+                                                width: screenWidth * 0.35,
+                                                child: Center(
+                                                  child: Text(
+                                                    item.matricula,
+                                                    textAlign: TextAlign.center,
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.black54,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              Container(
+                                                width: screenWidth * 0.35,
+                                                child: Center(
+                                                  child: item.tipo == "A"
+                                                      ? Text(
+                                                          item.relacaoTrabalho,
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize: 12,
+                                                            color:
+                                                                Colors.black54,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        )
+                                                      : Text(
+                                                          "${item.relacaoTrabalho}-${item.folha}",
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize: 10,
+                                                            color:
+                                                                Colors.black54,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
                         );
-                      }),
+                      },
                     ),
                   )
                 : Container(),
           ],
         ),
       ),
-      drawer: Drawerpersonalizado(),
     );
   }
 
+  // Se ainda quiser manter alguma lógica para anoSelecionado,
+  // você pode usar esta função ou remover se não for mais necessária.
   void _dropDownItemSelected(String novoItem) {
     anoSelecionado = true;
     widget._anoSelecionado = novoItem;

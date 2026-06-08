@@ -5,8 +5,10 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   cloud_firestore
   firebase_core
+  local_auth_windows
   pdfx
   permission_handler_windows
+  printing
   rive_common
   share_plus
   url_launcher_windows

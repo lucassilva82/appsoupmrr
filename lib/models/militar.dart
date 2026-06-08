@@ -7,6 +7,9 @@ class Militar {
   final String matricula;
   final String postoGraduacao;
   final String qra;
+  final String grupo;
+  final String nivel;
+  final String idPosto;
   final String cpf;
   final String nomeCompleto;
   //1 = telefone comum; 2 = whatsapp;
@@ -17,13 +20,18 @@ class Militar {
   final String dataIncorporacao;
   final String quadro;
   bool alterouDados = false;
+  final String matRhNova;
 
   FichaFuncional fichaFuncional;
 
   Militar({
     required this.matricula,
+    required this.matRhNova,
     required this.postoGraduacao,
     required this.qra,
+    required this.grupo,
+    required this.nivel,
+    required this.idPosto,
     required this.cpf,
     required this.nomeCompleto,
     required this.imageUrl,

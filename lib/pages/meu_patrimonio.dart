@@ -19,7 +19,7 @@ class _MeuPatrimonioPageState extends State<MeuPatrimonioPage> {
       body: Container(
         child: Text('Dados Financeiros'),
       ),
-      drawer: Drawerpersonalizado(),
+      drawer: DrawerPersonalizado(),
     );
   }
 }

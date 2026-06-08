@@ -16,7 +16,7 @@ class _PlanoDeFeriasState extends State<PlanoDeFerias> {
       appBar: AppBar(
         title: const Text('TESTANDOdsfsdfdsf'),
       ),
-      drawer: Drawerpersonalizado(),
+      drawer: DrawerPersonalizado(),
       body: Container(),
     );
   }

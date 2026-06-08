@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projetonovo/widgets/custom_appbar.dart';
 
 import '../models/events_model.dart';
 import '../models/plantao_model.dart';
@@ -46,15 +47,13 @@ class _PlantaoPageState extends State<PlantaoPage> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
-              child: CircularProgressIndicator(),
+              child: CircularProgressIndicator.adaptive(),
             );
           } else if (snapshot.hasError) {
             return Text('Ocorreu um erro');
           } else {
             return Scaffold(
-              appBar: AppBar(
-                title: const Text('Meu Plantao'),
-              ),
+              appBar: CustomAppBar(title: 'Meu Plantao'),
               body: Container(
                 child: Column(
                   children: [
@@ -139,7 +138,7 @@ class _PlantaoPageState extends State<PlantaoPage> {
                   ],
                 ),
               ),
-              drawer: Drawerpersonalizado(),
+              // drawer: Drawerpersonalizado(),
             );
           }
         });

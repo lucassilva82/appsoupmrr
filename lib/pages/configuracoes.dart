@@ -15,7 +15,7 @@ class Configuracoes extends StatelessWidget {
           child: Container(
         child: Text('TELA DE CONFIGURACOES'),
       )),
-      drawer: Drawerpersonalizado(),
+      drawer: DrawerPersonalizado(),
     );
   }
 }

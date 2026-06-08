@@ -55,7 +55,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
 
           !pdfReady
               ? Center(
-                  child: CircularProgressIndicator(),
+                  child: CircularProgressIndicator.adaptive(),
                 )
               : Offstage()
         ],

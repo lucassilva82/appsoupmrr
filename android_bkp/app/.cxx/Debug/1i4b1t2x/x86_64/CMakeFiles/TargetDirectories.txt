@@ -1,0 +1,2 @@
+/Users/lucassilva/Documents/soupmrr/android/app/.cxx/Debug/1i4b1t2x/x86_64/CMakeFiles/edit_cache.dir
+/Users/lucassilva/Documents/soupmrr/android/app/.cxx/Debug/1i4b1t2x/x86_64/CMakeFiles/rebuild_cache.dir

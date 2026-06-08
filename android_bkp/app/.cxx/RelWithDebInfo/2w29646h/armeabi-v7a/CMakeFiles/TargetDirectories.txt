@@ -1,0 +1,2 @@
+/Users/lucassilva/Documents/soupmrr/android/app/.cxx/RelWithDebInfo/2w29646h/armeabi-v7a/CMakeFiles/rebuild_cache.dir
+/Users/lucassilva/Documents/soupmrr/android/app/.cxx/RelWithDebInfo/2w29646h/armeabi-v7a/CMakeFiles/edit_cache.dir

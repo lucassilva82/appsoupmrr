@@ -1,0 +1,42 @@
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("com.google.gms.google-services")
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
+android {
+    namespace "pm.rr.soupmrr"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "pm.rr.soupmrr"
+        minSdk 21
+        targetSdk 34
+        versionCode 15
+        versionName "1.0.15"
+    }
+
+    // Unifica a versão do compilador Java (Javac) para 17
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // Faz o Kotlin compilar em 17 também
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+
+// Opcional: força uso do JDK 17 via toolchain
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+dependencies {
+    implementation "com.google.android.material:material:1.9.0"
+    implementation "com.google.firebase:firebase-analytics:21.1.1"
+}
