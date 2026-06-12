@@ -2,6 +2,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:currency_formatter/currency_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -554,35 +555,38 @@ class _PageContrachequeState extends State<PageContracheque> {
   Widget _buildItemRow(TipoProvento item, bool isDark, int index) {
     final isProvento = item.tipoRubrica == 'P';
     final valor = isProvento ? item.provento : item.desconto;
-    final rowColor = isProvento
-        ? (isDark ? const Color(0xFF1A2A1A) : const Color(0xFFF0FDF4))
-        : (isDark ? const Color(0xFF2A1A1A) : const Color(0xFFFFF5F5));
     final accentColor =
         isProvento ? const Color(0xFF1B8A3C) : const Color(0xFFD32F2F);
-    final badgeBg = isProvento
-        ? const Color(0xFF1B8A3C).withValues(alpha: 0.12)
-        : const Color(0xFFD32F2F).withValues(alpha: 0.1);
+
+    // Zebra suave: alterna levemente o fundo par/ímpar
+    final baseBg = isProvento
+        ? (isDark ? const Color(0xFF182818) : const Color(0xFFF0FDF4))
+        : (isDark ? const Color(0xFF281818) : const Color(0xFFFFF5F5));
+    final altBg = isProvento
+        ? (isDark ? const Color(0xFF1C2E1C) : const Color(0xFFE8FAF0))
+        : (isDark ? const Color(0xFF2E1C1C) : const Color(0xFFFEECEC));
+    final rowColor = index.isEven ? baseBg : altBg;
 
     return Container(
-      margin: const EdgeInsets.only(top: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      margin: const EdgeInsets.only(top: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         color: rowColor,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isDark
-              ? Colors.white.withValues(alpha: 0.05)
-              : accentColor.withValues(alpha: 0.15),
+              ? Colors.white.withValues(alpha: 0.04)
+              : accentColor.withValues(alpha: 0.12),
         ),
       ),
       child: Row(
         children: [
           // Badge P / D
           Container(
-            width: 26,
-            height: 26,
+            width: 22,
+            height: 22,
             decoration: BoxDecoration(
-              color: badgeBg,
+              color: accentColor.withValues(alpha: 0.14),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -590,7 +594,7 @@ class _PageContrachequeState extends State<PageContracheque> {
                 item.tipoRubrica,
                 style: TextStyle(
                   color: accentColor,
-                  fontSize: 11,
+                  fontSize: 10,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -598,27 +602,36 @@ class _PageContrachequeState extends State<PageContracheque> {
           ),
           const SizedBox(width: 8),
 
-          // Descrição
+          // Descrição — ocupa todo espaço disponível
           Expanded(
             child: Text(
               item.descricaoRubrica,
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w500,
                 color: isDark
-                    ? Colors.white.withValues(alpha: 0.87)
+                    ? Colors.white.withValues(alpha: 0.85)
                     : const Color(0xFF2D3748),
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
+          const SizedBox(width: 6),
 
-          // Valor
-          Text(
-            'R\$ $valor',
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
-              color: accentColor,
+          // Valor — largura fixa + AutoSizeText para shrink automático
+          SizedBox(
+            width: 82,
+            child: AutoSizeText(
+              'R\$ $valor',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: accentColor,
+              ),
+              maxLines: 1,
+              minFontSize: 8,
+              textAlign: TextAlign.right,
             ),
           ),
         ],
@@ -668,23 +681,28 @@ class _PageContrachequeState extends State<PageContracheque> {
       {required String label, required String value, required Color color}) {
     return Expanded(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             label,
             style: const TextStyle(
-              fontSize: 10,
-              color: Colors.white70,
+              fontSize: 9,
+              color: Colors.white60,
               fontWeight: FontWeight.w500,
+              letterSpacing: 0.3,
             ),
           ),
           const SizedBox(height: 3),
-          Text(
+          // AutoSizeText: shrink automático se o valor não couber
+          AutoSizeText(
             value,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11.5,
               color: color,
               fontWeight: FontWeight.w800,
             ),
+            maxLines: 1,
+            minFontSize: 7,
             textAlign: TextAlign.center,
           ),
         ],
