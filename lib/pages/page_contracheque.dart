@@ -77,8 +77,13 @@ class _PageContrachequeState extends State<PageContracheque> {
     final formatter =
         NumberFormat.currency(locale: 'pt_BR', symbol: '', decimalDigits: 2);
     for (final e in contracheque.proventos) {
-      final val = double.tryParse(e.provento) ?? 0.0;
-      e.provento = formatter.format(val);
+      if (e.tipoRubrica == 'P') {
+        final val = double.tryParse(e.provento) ?? 0.0;
+        e.provento = formatter.format(val);
+      } else {
+        final val = double.tryParse(e.desconto) ?? 0.0;
+        e.desconto = formatter.format(val);
+      }
     }
 
     return contracheque;
@@ -623,7 +628,7 @@ class _PageContrachequeState extends State<PageContracheque> {
           SizedBox(
             width: 82,
             child: AutoSizeText(
-              'R\$ $valor',
+              'R\$\u2009$valor',
               style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
@@ -656,20 +661,22 @@ class _PageContrachequeState extends State<PageContracheque> {
         children: [
           _summaryCol(
             label: 'Proventos',
-            value: 'R\$ ${CurrencyFormatter.format(proventos, _realSettings)}',
+            value:
+                'R\$\u2009${CurrencyFormatter.format(proventos, _realSettings)}',
             color: const Color(0xFF69F0AE),
           ),
           Container(width: 1, height: 36, color: Colors.white24),
           _summaryCol(
             label: 'Descontos',
-            value: 'R\$ ${CurrencyFormatter.format(descontos, _realSettings)}',
+            value:
+                'R\$\u2009${CurrencyFormatter.format(descontos, _realSettings)}',
             color: const Color(0xFFFF8A80),
           ),
           Container(width: 1, height: 36, color: Colors.white24),
           _summaryCol(
             label: 'Líquido',
             value:
-                'R\$ ${CurrencyFormatter.format(totalLiquido, _realSettings)}',
+                'R\$\u2009${CurrencyFormatter.format(totalLiquido, _realSettings)}',
             color: Colors.white,
           ),
         ],
