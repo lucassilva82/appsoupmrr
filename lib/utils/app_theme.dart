@@ -10,7 +10,9 @@ class AppColors {
   static const lightBlue = Color(0xFF42A5F5);
   static const gold = Color(0xFFFFB300);
   static const goldLight = Color(0xFFFFD54F);
-  static const superRed = Color(0xFF7B2D00);
+  // Azul premium para modo GESTOR
+  static const superBlue = Color(0xFF003087);
+  static const superBlueDark = Color(0xFF0A1E3D);
 
   // Superfícies modo claro
   static const lightBg = Color(0xFFF0F4F8);
@@ -172,12 +174,12 @@ class AppTheme {
 
   // ── helpers ─────────────────────────────────────────────────────────────────
   static Color _primary(bool isDark, bool isSuperUser) {
-    if (isSuperUser) return isDark ? AppColors.gold : AppColors.superRed;
+    if (isSuperUser) return isDark ? AppColors.lightBlue : AppColors.superBlue;
     return isDark ? AppColors.lightBlue : AppColors.navy;
   }
 
   static Color _secondary(bool isDark, bool isSuperUser) {
-    if (isSuperUser) return isDark ? AppColors.goldLight : AppColors.gold;
+    if (isSuperUser) return isDark ? AppColors.lightBlue : AppColors.blue;
     return isDark ? AppColors.blue : AppColors.blue;
   }
 
@@ -186,13 +188,14 @@ class AppTheme {
     required bool isDark,
     required bool isSuperUser,
   }) {
-    if (isSuperUser) {
-      return isDark
-          ? [const Color(0xFF3D1800), const Color(0xFF1A0A00)]
-          : [const Color(0xFF9E3A00), AppColors.superRed];
+    if (isDark) {
+      return isSuperUser
+          ? [const Color(0xFF0D2B5A), const Color(0xFF0A1E3D)]
+          : [const Color(0xFF1E3A5F), AppColors.darkSurface];
     }
-    return isDark
-        ? [const Color(0xFF1E3A5F), AppColors.darkSurface]
-        : [AppColors.lightBlue, AppColors.navy];
+    // modo claro
+    return isSuperUser
+        ? [const Color(0xFF003D99), AppColors.superBlue] // azul royal → navy
+        : [const Color(0xFF1976D2), AppColors.navy]; // azul médio → navy
   }
 }

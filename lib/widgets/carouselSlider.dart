@@ -116,40 +116,42 @@ class _ComandanteCard extends StatelessWidget {
 
           // ── Rodapé do card ────────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(icon, size: 14, color: iconColor),
-                    const SizedBox(width: 4),
+                    Icon(icon, size: 12, color: iconColor),
+                    const SizedBox(width: 3),
                     Text(
                       label,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                         color: iconColor,
-                        letterSpacing: 0.5,
+                        letterSpacing: 0.3,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   title,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.labelMedium
+                      ?.copyWith(fontWeight: FontWeight.bold, height: 1.2),
                 ),
                 if (subtitle.isNotEmpty)
                   Text(
                     subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontSize: 10,
+                    ),
                   ),
               ],
             ),

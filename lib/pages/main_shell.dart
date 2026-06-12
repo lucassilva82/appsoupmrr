@@ -162,7 +162,6 @@ class _MainShellState extends State<MainShell> {
           // Ações à direita
           if (_currentIndex == 0) ...[
             _notificationBell(unread),
-            _superUserBadge(isSuperUser),
           ],
           if (_currentIndex == 1 && unread > 0)
             TextButton(
@@ -181,12 +180,16 @@ class _MainShellState extends State<MainShell> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (isSuperUser) ...[
+          const Icon(Icons.star_rounded, color: AppColors.gold, size: 16),
+          const SizedBox(width: 4),
+        ],
         Flexible(
           child: Text(
             'Olá, $nome',
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -201,7 +204,7 @@ class _MainShellState extends State<MainShell> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Text(
-              'ADMIN',
+              'GESTOR',
               style: TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.bold,
@@ -245,17 +248,6 @@ class _MainShellState extends State<MainShell> {
             ),
           ),
       ],
-    );
-  }
-
-  Widget _superUserBadge(bool isSuperUser) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: Icon(
-        isSuperUser ? Icons.star_rounded : Icons.shield_outlined,
-        color: isSuperUser ? AppColors.gold : Colors.white60,
-        size: 22,
-      ),
     );
   }
 

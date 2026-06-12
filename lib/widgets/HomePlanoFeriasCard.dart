@@ -197,36 +197,25 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
 
         Widget _buildParcelaRow(
             String parcela, String dataInicio, String dataFim, Color cor) {
-          if (dataInicio.isEmpty && dataFim.isEmpty) return SizedBox.shrink();
+          if (dataInicio.isEmpty && dataFim.isEmpty) return const SizedBox.shrink();
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
+            padding: const EdgeInsets.only(bottom: 10.0),
             child: Row(
               children: [
                 Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: cor,
-                    shape: BoxShape.circle,
-                  ),
+                  width: 9,
+                  height: 9,
+                  decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  '$parcela:',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: subtitleFontSize + 1,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
+                Text('$parcela:',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 13)),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     '${dataInicio.isEmpty ? '—' : dataInicio} à ${dataFim.isEmpty ? '—' : dataFim}',
-                    style: TextStyle(
-                      fontSize: subtitleFontSize,
-                      color: Colors.grey.shade700,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                   ),
                 ),
               ],
@@ -234,132 +223,135 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
           );
         }
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        const primaryBlue = Color(0xFF1565C0);
+        const bgAccent = Color(0xFFE3F2FD);
+
         return GestureDetector(
           onTap: () =>
               Navigator.of(context).pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE),
-          child: Center(
-            child: Card(
-              elevation: 4,
-              shadowColor: Colors.blue.withOpacity(0.2),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              child: Container(
-                width: cardWidth,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // header
-                    Container(
-                      width: double.infinity,
-                      height: screenHeight * 0.045,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                            colors: [
-                              Colors.blue.shade600,
-                              Colors.blue.shade800
-                            ],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight),
-                        borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(12),
-                            topRight: Radius.circular(12)),
+          child: Card(
+            elevation: isDark ? 0 : 1,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: isDark
+                    ? const Color(0xFF30363D)
+                    : const Color(0xFFE0E7F0),
+                width: 1,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ── Header ──────────────────────────────────────────────
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? primaryBlue.withOpacity(0.18)
+                              : bgAccent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.beach_access_rounded,
+                            color: primaryBlue, size: 18),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                            'Plano de Férias | ${ano.isNotEmpty ? ano : DateTime.now().year}',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: titleFontSize,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5)),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(cardPadding),
-                      child: Column(
+                      const SizedBox(width: 10),
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (integral)
-                            _buildParcelaRow('Período Integral', prevIni,
-                                prevFim, Colors.blue.shade700)
-                          else ...[
-                            _buildParcelaRow(
-                                '1ª Parcela', p1i, p1f, Colors.blue.shade500),
-                            _buildParcelaRow(
-                                '2ª Parcela', p2i, p2f, Colors.green.shade500),
-                            _buildParcelaRow(
-                                '3ª Parcela', p3i, p3f, Colors.orange.shade500),
-                          ],
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              if (antecipadoLabel.isNotEmpty)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: antecipadoColor.withOpacity(0.16),
-                                    border: Border.all(
-                                        color: Colors.blue.shade600, width: 1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.monetization_on,
-                                          size: 16,
-                                          color: Colors.blue.shade700),
-                                      const SizedBox(width: 8),
-                                      Text(antecipadoLabel,
-                                          style: TextStyle(
-                                              color: Colors.blue.shade900,
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: subtitleFontSize - 2)),
-                                    ],
-                                  ),
-                                ),
-                              const Spacer(),
-                              Text(
-                                'Toque para ver detalhes',
-                                style: TextStyle(
-                                    color: Colors.grey.shade500,
-                                    fontSize: subtitleFontSize - 1),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          if (daysLeft != null)
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.shade50,
-                                border: Border.all(
-                                    color: Colors.blue.shade600, width: 1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    daysLeft == 1
-                                        ? 'Falta 1 dia para as férias'
-                                        : 'Faltam $daysLeft dias para as férias',
-                                    style: TextStyle(
-                                        color: Colors.blue.shade900,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: subtitleFontSize - 1),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          Text('Plano de Férias',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.bold)),
+                          Text(
+                              'Ano ${ano.isNotEmpty ? ano : DateTime.now().year}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(color: Colors.grey[500])),
                         ],
                       ),
-                    )
+                      const Spacer(),
+                      if (daysLeft != null && daysLeft! > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: primaryBlue.withOpacity(isDark ? 0.18 : 0.10),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${daysLeft}d',
+                            style: const TextStyle(
+                              color: primaryBlue,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  // ── Parcelas ─────────────────────────────────────────────
+                  if (integral)
+                    _buildParcelaRow(
+                        'Período Integral', prevIni, prevFim, primaryBlue)
+                  else ...[
+                    _buildParcelaRow('1ª Parcela', p1i, p1f,
+                        const Color(0xFF1565C0)),
+                    _buildParcelaRow('2ª Parcela', p2i, p2f,
+                        const Color(0xFF2E7D32)),
+                    _buildParcelaRow('3ª Parcela', p3i, p3f,
+                        const Color(0xFFE65100)),
                   ],
-                ),
+
+                  // ── Footer ────────────────────────────────────────────────
+                  Row(
+                    children: [
+                      if (antecipadoLabel.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? primaryBlue.withOpacity(0.15)
+                                : bgAccent,
+                            border: Border.all(
+                                color: primaryBlue.withOpacity(0.3), width: 1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.monetization_on_rounded,
+                                  size: 14, color: primaryBlue),
+                              const SizedBox(width: 6),
+                              Text(antecipadoLabel,
+                                  style: const TextStyle(
+                                      color: primaryBlue,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 11)),
+                            ],
+                          ),
+                        ),
+                      const Spacer(),
+                      Text('Ver detalhes',
+                          style: TextStyle(
+                              color: Colors.grey.shade400, fontSize: 11)),
+                      const SizedBox(width: 4),
+                      Icon(Icons.chevron_right_rounded,
+                          size: 16, color: Colors.grey.shade400),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),

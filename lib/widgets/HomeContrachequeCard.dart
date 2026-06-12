@@ -184,134 +184,118 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
     required double blockHeight,
   }) {
     final formatter = NumberFormat.currency(locale: 'pt_BR', symbol: '');
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    const primaryBlue = Color(0xFF1565C0);
+    const bgAccent = Color(0xFFE3F2FD);
 
-    return Center(
+    return GestureDetector(
+      onTap: () => Navigator.of(context).pushNamed(AppRoutes.CONTRACHEQUE_PAGE),
       child: Card(
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.99,
-          // padding: EdgeInsets.symmetric(
-          //   horizontal: cardPadding,
-          // ),
+        elevation: isDark ? 0 : 1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: isDark ? const Color(0xFF30363D) : const Color(0xFFE0E7F0),
+            width: 1,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Título + Ícone (olho)
-              Container(
-                width: MediaQuery.of(context).size.width * 0.99,
-                height: MediaQuery.of(context).size.height * 0.035,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.lightBlue,
-                      Colors.blue.shade900,
-                    ],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.topRight,
-                  ),
-                  borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(5),
-                      topRight: Radius.circular(5)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color.fromARGB(255, 77, 138, 229),
-                      blurRadius: 4,
-                      offset: Offset(2, 2), // Shadow position
+              // ── Header ───────────────────────────────────────────────────
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isDark ? primaryBlue.withOpacity(0.18) : bgAccent,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Contracheque | ${mesNome ?? ''} ${ano ?? ''}',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: titleFontSize,
-                          fontWeight: FontWeight.bold,
+                    child: const Icon(Icons.receipt_long_rounded,
+                        color: primaryBlue, size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Contracheque',
+                          style: theme.textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                      ),
-                      IconButton(
-                        // Se _showValues = false, exibir olho cortado
-                        // Se _showValues = true, exibir olho normal
-                        icon: Icon(
-                          _showValues ? Icons.visibility : Icons.visibility_off,
-                          color: Colors.blue,
+                        Text(
+                          '${mesNome ?? ''} ${ano ?? ''}',
+                          style: theme.textTheme.labelSmall
+                              ?.copyWith(color: Colors.grey[500]),
                         ),
-                        onPressed: () {
-                          // Toggle do estado
-                          setState(() {
-                            _showValues = !_showValues;
-                          });
-                        },
+                      ],
+                    ),
+                  ),
+                  // Botão olho
+                  GestureDetector(
+                    onTap: () => setState(() => _showValues = !_showValues),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white10
+                            : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-
-              SizedBox(height: cardPadding * 0.03),
-
-              // Subtítulo
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0, left: 8),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Resumo do último contracheque',
-                    style: TextStyle(
-                      fontSize: subtitleFontSize,
-                      color: Colors.grey[600],
+                      child: Icon(
+                        _showValues
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        size: 18,
+                        color: Colors.grey[500],
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-              SizedBox(height: cardPadding * 0.2),
+              const SizedBox(height: 14),
 
-              // 3 blocos (Bruto / Descontos / Líquido)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildBlocoValor(
-                      titulo: 'Bruto',
-                      // Se _showValues = false => "****"
-                      valor: _showValues
-                          ? 'R\$ ${formatter.format(bruto)}'
-                          : '****',
-                      colorBorder: Colors.teal,
-                      icon: Icons.add_circle,
-                      blockHeight: blockHeight,
-                      fontSize: subtitleFontSize,
-                    ),
-                    SizedBox(width: cardPadding * 0.3),
-                    _buildBlocoValor(
-                      titulo: 'Descontos',
-                      valor: _showValues
-                          ? 'R\$ ${formatter.format(descontos)}'
-                          : '****',
-                      colorBorder: Colors.orange,
-                      icon: Icons.remove_circle,
-                      blockHeight: blockHeight,
-                      fontSize: subtitleFontSize,
-                    ),
-                    SizedBox(width: cardPadding * 0.3),
-                    _buildBlocoValor(
-                      titulo: 'Líquido',
-                      valor: _showValues
-                          ? 'R\$ ${formatter.format(bruto - descontos)}'
-                          : '****',
-                      colorBorder: Colors.blue,
-                      icon: Icons.check_circle,
-                      blockHeight: blockHeight,
-                      fontSize: subtitleFontSize,
-                    ),
-                  ],
-                ),
+              // ── 3 Blocos de valor ─────────────────────────────────────────
+              Row(
+                children: [
+                  _buildBlocoValor(
+                    context: context,
+                    titulo: 'Bruto',
+                    valor: _showValues
+                        ? 'R\$ ${formatter.format(bruto)}'
+                        : '••••••',
+                    accent: const Color(0xFF2E7D32),
+                    icon: Icons.arrow_upward_rounded,
+                    isDark: isDark,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildBlocoValor(
+                    context: context,
+                    titulo: 'Descontos',
+                    valor: _showValues
+                        ? 'R\$ ${formatter.format(descontos)}'
+                        : '••••••',
+                    accent: const Color(0xFFE65100),
+                    icon: Icons.arrow_downward_rounded,
+                    isDark: isDark,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildBlocoValor(
+                    context: context,
+                    titulo: 'Líquido',
+                    valor: _showValues
+                        ? 'R\$ ${formatter.format(bruto - descontos)}'
+                        : '••••••',
+                    accent: primaryBlue,
+                    icon: Icons.account_balance_wallet_rounded,
+                    isDark: isDark,
+                  ),
+                ],
               ),
             ],
           ),
@@ -320,53 +304,55 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
     );
   }
 
-  // Cada bloco (Bruto, Descontos, Líquido)
   Widget _buildBlocoValor({
+    required BuildContext context,
     required String titulo,
     required String valor,
-    required Color colorBorder,
+    required Color accent,
     required IconData icon,
-    required double blockHeight,
-    required double fontSize,
+    required bool isDark,
   }) {
+    final theme = Theme.of(context);
     return Expanded(
       child: Container(
-        height: blockHeight,
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: colorBorder, width: 2),
-          borderRadius: BorderRadius.circular(8),
+          color: isDark
+              ? accent.withOpacity(0.1)
+              : accent.withOpacity(0.07),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: accent.withOpacity(isDark ? 0.3 : 0.2),
+            width: 1,
+          ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Texto
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
+                Icon(icon, size: 12, color: accent),
+                const SizedBox(width: 4),
                 Text(
                   titulo,
-                  style: TextStyle(
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: accent,
                     fontWeight: FontWeight.bold,
-                    fontSize: fontSize,
-                  ),
-                ),
-                Text(
-                  valor,
-                  style: TextStyle(
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 10,
                   ),
                 ),
               ],
             ),
-            // Ícone
-            Icon(
-              icon,
-              color: colorBorder,
-              size: fontSize * 1.2, // um pouco maior que o texto
+            const SizedBox(height: 4),
+            Text(
+              valor,
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                fontSize: 11,
+                letterSpacing: valor.contains('•') ? 2 : 0,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

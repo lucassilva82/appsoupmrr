@@ -125,126 +125,129 @@ class CardTempoServico extends StatelessWidget {
         }
 
         // ---------- UI -----------------------------------------------------
-        final h = MediaQuery.of(context).size.height;
-        final w = MediaQuery.of(context).size.width;
         final t = Theme.of(context);
+        final isDark = t.brightness == Brightness.dark;
+        const primaryBlue = Color(0xFF1565C0);
+        const bgAccent = Color(0xFFE3F2FD);
 
         return Card(
-          elevation: 3,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-          child: Center(
-            child: SizedBox(
-              width: w,
-              height: h * 0.21,
-              child: Column(
-                children: [
-                  // cabeçalho
-                  Container(
-                    width: w * 0.99,
-                    height: h * 0.0335,
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.lightBlue, Color(0xFF004298)],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.topRight,
+          elevation: isDark ? 0 : 1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: isDark ? const Color(0xFF30363D) : const Color(0xFFE0E7F0),
+              width: 1,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // ── Header ─────────────────────────────────────────────────
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color:
+                            isDark ? primaryBlue.withOpacity(0.18) : bgAccent,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(5),
-                          topRight: Radius.circular(5)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Color.fromARGB(255, 77, 138, 229),
-                          blurRadius: 4,
-                          offset: Offset(2, 2),
-                        ),
+                      child: const Icon(Icons.military_tech_rounded,
+                          color: primaryBlue, size: 18),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Tempo de Serviço',
+                            style: t.textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.bold)),
+                        Text('Fonte: SIGRH',
+                            style: t.textTheme.labelSmall
+                                ?.copyWith(color: Colors.grey[500])),
                       ],
                     ),
-                    padding: const EdgeInsets.only(left: 10),
-                    alignment: Alignment.centerLeft,
-                    child: const Text(
-                      'Seu tempo de serviço - SIGRH',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color:
+                            isDark ? primaryBlue.withOpacity(0.18) : bgAccent,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${(percTotal * 100).toStringAsFixed(1)}%',
+                        style: const TextStyle(
+                          color: primaryBlue,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-                  // barra percentuada
-                  Padding(
-                    padding: const EdgeInsets.only(top: 11.0),
-                    child: LinearPercentIndicator(
-                      linearGradient: gradient,
-                      barRadius: const Radius.circular(20),
-                      animation: true,
-                      lineHeight: 24,
-                      animationDuration: 800,
-                      percent: percTotal,
-                      center: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const SizedBox(width: 30),
-                          Text(
-                            '${_extensoDias(diasTotal)} de serviço',
-                            style: t.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 6),
-                            child: Icon(
-                              Icons.surfing_sharp,
-                              size: 22,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ],
-                      ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // ── Barra de progresso ──────────────────────────────────────
+                LinearPercentIndicator(
+                  linearGradient: gradient,
+                  barRadius: const Radius.circular(20),
+                  animation: true,
+                  lineHeight: 22,
+                  animationDuration: 800,
+                  percent: percTotal,
+                  center: Text(
+                    _extensoDias(diasTotal),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(color: Colors.black38, blurRadius: 4),
+                      ],
                     ),
                   ),
-                  // legenda (vertical)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: diasAgregados == 0
-                        ? Text(
-                            '* Não possui tempo agregado no IPER.',
-                            style: t.textTheme.bodySmall?.copyWith(
-                              fontStyle: FontStyle.italic,
-                              color: Colors.grey,
-                            ),
-                          )
-                        : Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  _quad(normalB),
-                                  const SizedBox(width: 4),
-                                  Text('Tempo de serviço na PM: ',
-                                      style: t.textTheme.bodySmall),
-                                  Text(_extensoDias(diasNormal),
-                                      style: t.textTheme.bodySmall?.copyWith(
-                                          fontWeight: FontWeight.w600)),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  _quad(agregA),
-                                  const SizedBox(width: 4),
-                                  Text('Tempo agregado: ',
-                                      style: t.textTheme.bodySmall),
-                                  Text(_extensoDias(diasAgregados),
-                                      style: t.textTheme.bodySmall?.copyWith(
-                                          fontWeight: FontWeight.w600)),
-                                ],
-                              ),
-                            ],
-                          ),
+                  padding: EdgeInsets.zero,
+                ),
+                const SizedBox(height: 10),
+
+                // ── Legenda ─────────────────────────────────────────────────
+                if (diasAgregados == 0)
+                  Text(
+                    '* Não possui tempo agregado no IPER.',
+                    style: t.textTheme.bodySmall?.copyWith(
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey[500],
+                    ),
+                  )
+                else
+                  Row(
+                    children: [
+                      _quad(normalB),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'PM: ${_extensoDias(diasNormal)}',
+                          style: t.textTheme.labelSmall
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      _quad(agregA),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'IPER: ${_extensoDias(diasAgregados)}',
+                          style: t.textTheme.labelSmall
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+              ],
             ),
           ),
         );
