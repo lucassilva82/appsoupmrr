@@ -74,8 +74,7 @@ class _ContrachequeState extends State<Contracheque> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
-                    child:
-                        CircularProgressIndicator(color: AppColors.blue),
+                    child: CircularProgressIndicator(color: AppColors.blue),
                   );
                 }
                 if (snapshot.hasError) return SecondScreen();
@@ -91,47 +90,57 @@ class _ContrachequeState extends State<Contracheque> {
     );
   }
 
-  // ── Barra de anos integrada visualmente ao AppBar ─────────────────────
+  // ── Seletor de anos no estilo do restante do app ────────────────────
   Widget _buildYearBar(bool isDark) {
     return Container(
-      color: AppColors.navy,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C2128) : Colors.white,
+        border: Border(
+          bottom: BorderSide(
+            color: isDark
+                ? const Color(0xFF30363D)
+                : const Color(0xFFE8EDF5),
+          ),
+        ),
+      ),
       child: SizedBox(
-        height: 30,
+        height: 32,
         child: ListView(
           scrollDirection: Axis.horizontal,
           children: listaAnos.map((ano) {
             final anoStr = ano.toString();
             final isSelected = anoStr == widget._anoSelecionado;
             return GestureDetector(
-              onTap: () =>
-                  setState(() => widget._anoSelecionado = anoStr),
+              onTap: () => setState(() => widget._anoSelecionado = anoStr),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 margin: const EdgeInsets.only(right: 8),
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? Colors.white
-                      : Colors.white.withValues(alpha: 0.12),
+                      ? AppColors.blue
+                      : (isDark
+                          ? const Color(0xFF21262D)
+                          : Colors.grey.shade100),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isSelected
-                        ? Colors.white
-                        : Colors.white.withValues(alpha: 0.3),
-                    width: 1,
+                        ? AppColors.blue
+                        : (isDark
+                            ? const Color(0xFF30363D)
+                            : Colors.grey.shade300),
                   ),
                 ),
                 child: Text(
                   anoStr,
                   style: TextStyle(
                     color: isSelected
-                        ? AppColors.navy
-                        : Colors.white.withValues(alpha: 0.85),
-                    fontWeight: isSelected
-                        ? FontWeight.w700
-                        : FontWeight.w500,
+                        ? Colors.white
+                        : (isDark ? Colors.white70 : Colors.black87),
+                    fontWeight:
+                        isSelected ? FontWeight.w700 : FontWeight.w500,
                     fontSize: 13,
                   ),
                 ),
@@ -174,17 +183,15 @@ class _ContrachequeState extends State<Contracheque> {
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
-                  color: isDark
-                      ? Colors.white54
-                      : Colors.black45,
+                  color: isDark ? Colors.white54 : Colors.black45,
                   letterSpacing: 0.3,
                 ),
               ),
               if (items.length > 1) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 7, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
                     color: AppColors.blue.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
@@ -202,9 +209,7 @@ class _ContrachequeState extends State<Contracheque> {
               const SizedBox(width: 8),
               Expanded(
                 child: Divider(
-                  color: isDark
-                      ? Colors.white12
-                      : Colors.black12,
+                  color: isDark ? Colors.white12 : Colors.black12,
                   height: 1,
                 ),
               ),
@@ -222,12 +227,12 @@ class _ContrachequeState extends State<Contracheque> {
   Widget _buildPayslipCard(
       MesesContracheque item, bool isDark, BuildContext ctx) {
     final isAtivo = item.tipo == 'A';
-    final accentColor =
-        isAtivo ? AppColors.blue : const Color(0xFFE67E00);
+    final accentColor = isAtivo ? AppColors.blue : const Color(0xFFE67E00);
 
     final primaryText = item.tipo == 'A'
         ? _capitalizeFolha(item.relacaoTrabalho)
-        : _capitalizeFolha(item.folha.isNotEmpty ? item.folha : item.relacaoTrabalho);
+        : _capitalizeFolha(
+            item.folha.isNotEmpty ? item.folha : item.relacaoTrabalho);
 
     final badgeLabel = isAtivo ? 'Ativo' : item.tipo;
 
@@ -240,30 +245,17 @@ class _ContrachequeState extends State<Contracheque> {
           borderRadius: BorderRadius.circular(12),
           onTap: () {
             item.cpf = Provider.of<Auth>(ctx, listen: false).cpf!;
-            Navigator.of(ctx).pushNamed(
-                AppRoutes.PAGE_VIEW_CONTRACHEQUE,
-                arguments: item);
+            Navigator.of(ctx)
+                .pushNamed(AppRoutes.PAGE_VIEW_CONTRACHEQUE, arguments: item);
           },
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF1C2128) : Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border(
-                left: BorderSide(color: accentColor, width: 3),
-                top: BorderSide(
-                    color: isDark
-                        ? const Color(0xFF30363D)
-                        : const Color(0xFFE8EDF5)),
-                right: BorderSide(
-                    color: isDark
-                        ? const Color(0xFF30363D)
-                        : const Color(0xFFE8EDF5)),
-                bottom: BorderSide(
-                    color: isDark
-                        ? const Color(0xFF30363D)
-                        : const Color(0xFFE8EDF5)),
+              border: Border.all(
+                color: isDark
+                    ? const Color(0xFF30363D)
+                    : const Color(0xFFE8EDF5),
               ),
               boxShadow: isDark
                   ? []
@@ -275,7 +267,20 @@ class _ContrachequeState extends State<Contracheque> {
                       ),
                     ],
             ),
-            child: Row(
+            // clipBehavior garante que a stripe lateral respeita o borderRadius
+            clipBehavior: Clip.antiAlias,
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ── Stripe lateral colorida ──────────────────────
+                  Container(width: 3, color: accentColor),
+                  // ── Conteúdo do card ─────────────────────────────
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 11),
+                      child: Row(
               children: [
                 // Ícone do tipo de folha
                 Container(
@@ -303,9 +308,8 @@ class _ContrachequeState extends State<Contracheque> {
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 13.5,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF1A1A2E),
+                          color:
+                              isDark ? Colors.white : const Color(0xFF1A1A2E),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -313,9 +317,7 @@ class _ContrachequeState extends State<Contracheque> {
                         'Mat. ${item.matricula}',
                         style: TextStyle(
                           fontSize: 11,
-                          color: isDark
-                              ? Colors.white38
-                              : Colors.black38,
+                          color: isDark ? Colors.white38 : Colors.black38,
                         ),
                       ),
                     ],
@@ -324,8 +326,8 @@ class _ContrachequeState extends State<Contracheque> {
 
                 // Badge tipo
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: accentColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -343,9 +345,16 @@ class _ContrachequeState extends State<Contracheque> {
                 Icon(
                   Icons.chevron_right_rounded,
                   size: 18,
-                  color: isDark ? Colors.white24 : Colors.black.withValues(alpha: 0.15),
+                  color: isDark
+                      ? Colors.white24
+                      : Colors.black.withValues(alpha: 0.15),
                 ),
               ],
+            ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -359,8 +368,7 @@ class _ContrachequeState extends State<Contracheque> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.receipt_long_outlined,
-              size: 64,
-              color: isDark ? Colors.white24 : Colors.grey.shade300),
+              size: 64, color: isDark ? Colors.white24 : Colors.grey.shade300),
           const SizedBox(height: 16),
           Text(
             'Nenhum contracheque em ${widget._anoSelecionado}',
