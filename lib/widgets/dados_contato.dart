@@ -4,6 +4,7 @@ import 'package:quickalert/quickalert.dart';
 
 import '../models/militar.dart';
 import '../models/telefone.dart';
+import '../services/dados_sql.dart';
 
 class DadosContato extends StatefulWidget {
   final Militar militar;
@@ -18,6 +19,7 @@ class DadosContato extends StatefulWidget {
 
 class _DadosContatoState extends State<DadosContato> {
   late TextEditingController _telController;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -29,6 +31,71 @@ class _DadosContatoState extends State<DadosContato> {
   void dispose() {
     _telController.dispose();
     super.dispose();
+  }
+
+  // ── Salva WhatsApp direto no banco com loading + feedback ─────────────
+  Future<void> _salvarWhatsapp(Telefone tel, bool isWhats) async {
+    if (_saving) return;
+
+    // Atualiza estado local
+    for (final t in widget.militar.telefones) {
+      t.value = false;
+      t.tipo = Tipos.comum;
+    }
+    if (!isWhats) {
+      tel.tipo = Tipos.whats;
+      tel.value = true;
+    }
+    widget.militar.alterouDados = true;
+    setState(() => _saving = true);
+    widget.atualizarDados();
+
+    // Exibe loading centralizado
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (_) => const _LoadingDialog(),
+    );
+
+    try {
+      final dadosSql = DadosSql();
+      await dadosSql.excluiContatos(widget.militar.matricula);
+      for (final element in widget.militar.telefones) {
+        final tipo = element.value == false ? '0' : '1';
+        await dadosSql.adicionaContatos(
+            widget.militar.matricula, element.numeroTel, tipo);
+      }
+
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop(); // fecha loading
+
+      // Confirmação de sucesso
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.success,
+        title: 'Salvo!',
+        text: !isWhats
+            ? 'WhatsApp marcado para\n${tel.numeroTel}'
+            : 'Contato alterado para chamada comum.',
+        confirmBtnText: 'OK',
+        confirmBtnColor: AppColors.blue,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        title: 'Erro',
+        text:
+            'Não foi possível salvar.\nVerifique sua conexão e tente novamente.',
+        confirmBtnText: 'OK',
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -45,8 +112,7 @@ class _DadosContatoState extends State<DadosContato> {
           children: [
             Text('Números cadastrados',
                 style: theme.textTheme.bodySmall?.copyWith(
-                    color:
-                        theme.colorScheme.onSurface.withValues(alpha: 0.5))),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
             const Spacer(),
             TextButton.icon(
               icon: const Icon(Icons.add_call, size: 14),
@@ -85,12 +151,10 @@ class _DadosContatoState extends State<DadosContato> {
 
             return Container(
               margin: const EdgeInsets.only(bottom: 8),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF21262D)
-                    : const Color(0xFFF5F8FF),
+                color:
+                    isDark ? const Color(0xFF21262D) : const Color(0xFFF5F8FF),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: isDark
@@ -114,21 +178,9 @@ class _DadosContatoState extends State<DadosContato> {
                       ),
                     ),
                   ),
-                  // WhatsApp toggle — toque no ícone/chip para marcar
+                  // WhatsApp toggle — toque no chip para salvar direto no banco
                   GestureDetector(
-                    onTap: () {
-                      for (final t in widget.militar.telefones) {
-                        t.value = false;
-                        t.tipo = Tipos.comum;
-                      }
-                      if (!isWhats) {
-                        tel.tipo = Tipos.whats;
-                        tel.value = true;
-                      }
-                      widget.militar.alterouDados = true;
-                      setState(() {});
-                      widget.atualizarDados();
-                    },
+                    onTap: () => _salvarWhatsapp(tel, isWhats),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(
@@ -185,10 +237,8 @@ class _DadosContatoState extends State<DadosContato> {
                               'É necessário ter ao menos um contato cadastrado.',
                           backgroundColor:
                               Theme.of(context).scaffoldBackgroundColor,
-                          titleColor:
-                              Theme.of(context).colorScheme.onSurface,
-                          textColor:
-                              Theme.of(context).colorScheme.onSurface,
+                          titleColor: Theme.of(context).colorScheme.onSurface,
+                          textColor: Theme.of(context).colorScheme.onSurface,
                         );
                       } else {
                         _openDialogExclui(widget.militar.telefones, index);
@@ -255,8 +305,7 @@ class _DadosContatoState extends State<DadosContato> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Excluir contato'),
-        content:
-            Text('Excluir o número ${lista[index].numeroTel}?'),
+        content: Text('Excluir o número ${lista[index].numeroTel}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -277,4 +326,62 @@ class _DadosContatoState extends State<DadosContato> {
   }
 }
 
+// ── Loading dialog centralizado ───────────────────────────────────────────────
+class _LoadingDialog extends StatelessWidget {
+  const _LoadingDialog();
 
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 32),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1C2128) : Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.12),
+                blurRadius: 32,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 48,
+                height: 48,
+                child: CircularProgressIndicator(
+                  color: AppColors.blue,
+                  strokeWidth: 3.5,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Salvando...',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Aguarde um momento',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
