@@ -89,169 +89,289 @@ class _PageContrachequeState extends State<PageContracheque> {
     return contracheque;
   }
 
-  // ── Gera o arquivo PDF ────────────────────────────────────────────────
+  // ── Gera o arquivo PDF v2.0 ───────────────────────────────────────────
   Future<File> _generatePdf(Auth auth) async {
     final pdf = pw.Document();
 
-    final ByteData bytes = await rootBundle.load('assets/imagens/pmrrr.png');
-    final Uint8List byteList = bytes.buffer.asUint8List();
-    final ByteData bytesDti = await rootBundle.load('assets/imagens/dti.jpeg');
-    final Uint8List byteListDti = bytesDti.buffer.asUint8List();
+    final ByteData logoData = await rootBundle.load('assets/imagens/pmrrr.png');
+    final Uint8List logoBytes = logoData.buffer.asUint8List();
+    final ByteData dtiData = await rootBundle.load('assets/imagens/dti.jpeg');
+    final Uint8List dtiBytes = dtiData.buffer.asUint8List();
 
-    pdf.addPage(
-      pw.Page(
-        margin: const pw.EdgeInsets.all(10),
-        build: (pw.Context ctx) {
-          return pw.Container(
-            color: PdfColor.fromHex('#f5f5f5'),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Container(
-                  color: PdfColor.fromHex('#003366'),
-                  padding: const pw.EdgeInsets.all(10),
-                  child: pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Container(
-                        height: 100,
-                        width: 100,
-                        child: pw.Image(pw.MemoryImage(byteList),
-                            fit: pw.BoxFit.cover),
-                      ),
-                      pw.Text(
-                        'Contracheque - ${widget.mesSelecionado.mes}/${widget.mesSelecionado.ano}',
-                        style: pw.TextStyle(
-                          fontSize: 24,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                pw.SizedBox(height: 20),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Text('LOTAÇÃO',
-                            style: pw.TextStyle(
-                                fontSize: 16, color: PdfColors.blue)),
-                        pw.Text(widget.mesSelecionado.relacaoTrabalho,
-                            style: pw.TextStyle(
-                                fontSize: 14, color: PdfColors.black)),
-                      ],
-                    ),
-                    pw.Container(
-                      width: 92,
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text('MÊS/ANO',
-                              style: pw.TextStyle(
-                                  fontSize: 16, color: PdfColors.blue)),
-                          pw.Text(
-                              '${widget.mesSelecionado.mes}/${widget.mesSelecionado.ano}',
-                              style: pw.TextStyle(
-                                  fontSize: 14, color: PdfColors.black)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 10),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Text('MATRÍCULA',
-                            style: pw.TextStyle(
-                                fontSize: 16, color: PdfColors.blue)),
-                        pw.Text(auth.matricula!,
-                            style: pw.TextStyle(
-                                fontSize: 14, color: PdfColors.black)),
-                      ],
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 10),
-                pw.Text('NOME',
-                    style: pw.TextStyle(fontSize: 16, color: PdfColors.blue)),
-                pw.Text(auth.nomeCompleto!,
-                    style: pw.TextStyle(fontSize: 14, color: PdfColors.black)),
-                pw.SizedBox(height: 20),
-                pw.Container(
-                  color: PdfColor.fromHex('#003366'),
-                  padding: const pw.EdgeInsets.all(5),
-                  child: pw.Text('Proventos e Descontos',
-                      style: pw.TextStyle(
-                          fontSize: 18,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.white)),
-                ),
-                pw.Table.fromTextArray(
-                  headerStyle: pw.TextStyle(color: PdfColors.white),
-                  headerDecoration:
-                      pw.BoxDecoration(color: PdfColor.fromHex('#003366')),
-                  cellPadding: const pw.EdgeInsets.all(5),
-                  data: [
-                    ['Tipo', 'Descrição', 'Valor'],
-                    ...contracheque.proventos.map((p) => [
-                          p.tipoRubrica,
-                          p.descricaoRubrica,
-                          'R\$ ${p.tipoRubrica == 'P' ? p.provento : p.desconto}'
-                        ]),
-                  ],
-                ),
-                pw.SizedBox(height: 20),
-                pw.Container(
-                  color: PdfColor.fromHex('#003366'),
-                  padding: const pw.EdgeInsets.all(5),
-                  child: pw.Text('Resumo',
-                      style: pw.TextStyle(
-                          fontSize: 18,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.white)),
-                ),
-                pw.SizedBox(height: 10),
-                pw.Text(
-                    'Proventos: R\$ ${CurrencyFormatter.format(proventos, _realSettings)}',
-                    style: pw.TextStyle(
-                        color: PdfColors.blue,
-                        fontSize: 14,
-                        fontWeight: pw.FontWeight.bold)),
-                pw.SizedBox(height: 10),
-                pw.Text(
-                    'Descontos: R\$ ${CurrencyFormatter.format(descontos, _realSettings)}',
-                    style: pw.TextStyle(
-                        color: PdfColors.red,
-                        fontSize: 14,
-                        fontWeight: pw.FontWeight.bold)),
-                pw.SizedBox(height: 10),
-                pw.Text(
-                    'Total Líquido: R\$ ${CurrencyFormatter.format(totalLiquido, _realSettings)}',
-                    style: pw.TextStyle(
-                        color: PdfColors.green,
-                        fontSize: 14,
-                        fontWeight: pw.FontWeight.bold)),
-                pw.SizedBox(height: 80),
-                pw.Container(
-                  height: 55,
-                  width: 900,
-                  child: pw.Image(pw.MemoryImage(byteListDti),
-                      fit: pw.BoxFit.cover),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+    // ── Paleta de cores (espelha o app) ──────────────────────────────────
+    final cNavy   = PdfColor.fromHex('#002154');
+    final cBlue   = PdfColor.fromHex('#1565C0');
+    final cGold   = PdfColor.fromHex('#FFB300');
+    final cGreen  = PdfColor.fromHex('#2E7D32');
+    final cRed    = PdfColor.fromHex('#C62828');
+    final cGreenL = PdfColor.fromHex('#69F0AE');
+    final cRedL   = PdfColor.fromHex('#FF8A80');
+    final cBg     = PdfColor.fromHex('#F0F4F8');
+    final cLabel  = PdfColor.fromHex('#78909C');
+    final cValue  = PdfColor.fromHex('#1A237E');
+    final cText   = PdfColor.fromHex('#37474F');
+    final cAlt    = PdfColor.fromHex('#F5F7FA');
+    final cBorder = PdfColor.fromHex('#CFD8DC');
+    final cSep    = PdfColor.fromHex('#455A64');
+    final cLightBlue = PdfColor.fromHex('#90CAF9');
+    final cSubtle = PdfColor.fromHex('#B0BEC5');
+    final cDiscl  = PdfColor.fromHex('#90A4AE');
+
+    final mesAno = '${widget.mesSelecionado.mesExtenso.toUpperCase()} / ${widget.mesSelecionado.ano}';
+
+    // ── Helper: campo info (label + valor) ────────────────────────────────
+    pw.Widget infoField(String label, String value) => pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(label,
+            style: pw.TextStyle(
+                fontSize: 7,
+                color: cLabel,
+                fontWeight: pw.FontWeight.bold,
+                letterSpacing: 0.6)),
+        pw.SizedBox(height: 2),
+        pw.Text(value,
+            style: pw.TextStyle(
+                fontSize: 10,
+                color: cValue,
+                fontWeight: pw.FontWeight.bold)),
+      ],
     );
+
+    // ── Helper: linha de rubrica ──────────────────────────────────────────
+    pw.Widget rubraRow(TipoProvento item, int idx) {
+      final isP   = item.tipoRubrica == 'P';
+      final valor = isP ? item.provento : item.desconto;
+      final badgeBg  = isP ? cGreen : cRed;
+      final valColor = isP ? cGreen : cRed;
+      return pw.Container(
+        color: idx.isEven ? PdfColors.white : cAlt,
+        padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        child: pw.Row(
+          children: [
+            pw.Container(
+              width: 18,
+              height: 18,
+              decoration: pw.BoxDecoration(
+                color: badgeBg,
+                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(9)),
+              ),
+              child: pw.Center(
+                child: pw.Text(item.tipoRubrica,
+                    style: pw.TextStyle(
+                        color: PdfColors.white,
+                        fontSize: 8,
+                        fontWeight: pw.FontWeight.bold)),
+              ),
+            ),
+            pw.SizedBox(width: 8),
+            pw.Expanded(
+              child: pw.Text(item.descricaoRubrica,
+                  style: pw.TextStyle(fontSize: 9, color: cText)),
+            ),
+            pw.Text('R\$\u2009$valor',
+                style: pw.TextStyle(
+                    fontSize: 9,
+                    color: valColor,
+                    fontWeight: pw.FontWeight.bold)),
+          ],
+        ),
+      );
+    }
+
+    // ── Helper: coluna de resumo ──────────────────────────────────────────
+    pw.Widget summaryCol(String label, String value, PdfColor color) =>
+        pw.Expanded(
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.Text(label,
+                  style: pw.TextStyle(
+                      fontSize: 7, color: cSubtle, letterSpacing: 0.8)),
+              pw.SizedBox(height: 4),
+              pw.Text(value,
+                  style: pw.TextStyle(
+                      fontSize: 11,
+                      color: color,
+                      fontWeight: pw.FontWeight.bold)),
+            ],
+          ),
+        );
+
+    pdf.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: pw.EdgeInsets.zero,
+
+      // ── Cabeçalho (repetido em cada página) ────────────────────────────
+      header: (ctx) => pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+        children: [
+          pw.Container(
+            color: cNavy,
+            padding: const pw.EdgeInsets.fromLTRB(20, 14, 20, 14),
+            child: pw.Row(children: [
+              pw.SizedBox(
+                  width: 52,
+                  height: 52,
+                  child: pw.Image(pw.MemoryImage(logoBytes),
+                      fit: pw.BoxFit.contain)),
+              pw.SizedBox(width: 14),
+              pw.Expanded(
+                child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('CONTRACHEQUE',
+                          style: pw.TextStyle(
+                              fontSize: 17,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.white,
+                              letterSpacing: 1.5)),
+                      pw.SizedBox(height: 3),
+                      pw.Text(mesAno,
+                          style: pw.TextStyle(
+                              fontSize: 10, color: cLightBlue)),
+                    ]),
+              ),
+              pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.end, children: [
+                pw.Text('PMRR',
+                    style: pw.TextStyle(
+                        fontSize: 10,
+                        color: cGold,
+                        fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 2),
+                pw.Text('Polícia Militar de Roraima',
+                    style: pw.TextStyle(fontSize: 7, color: cSubtle)),
+              ]),
+            ]),
+          ),
+          // Faixa dourada
+          pw.Container(height: 3, color: cGold),
+          // Seção de dados do militar (apenas 1ª página)
+          if (ctx.pageNumber == 1) ...[
+            pw.Container(
+              color: cBg,
+              padding: const pw.EdgeInsets.fromLTRB(20, 10, 20, 10),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  infoField('NOME', auth.nomeCompleto ?? '-'),
+                  pw.SizedBox(height: 8),
+                  pw.Row(children: [
+                    pw.Expanded(
+                        child: infoField(
+                            'MATRÍCULA', widget.mesSelecionado.matricula)),
+                    pw.Expanded(
+                        child: infoField('MÊS / ANO',
+                            '${widget.mesSelecionado.mes} / ${widget.mesSelecionado.ano}')),
+                    pw.Expanded(
+                        child: infoField(
+                            'FOLHA',
+                            contracheque.Folha.isNotEmpty
+                                ? contracheque.Folha
+                                : widget.mesSelecionado.folha)),
+                  ]),
+                  pw.SizedBox(height: 8),
+                  pw.Row(children: [
+                    pw.Expanded(
+                        child: infoField(
+                            'UN. ORGANIZACIONAL',
+                            contracheque.UnidadeOrganizacional.isNotEmpty
+                                ? contracheque.UnidadeOrganizacional
+                                : '-')),
+                    pw.Expanded(
+                        child: infoField('RELAÇÃO DE TRABALHO',
+                            widget.mesSelecionado.relacaoTrabalho)),
+                  ]),
+                ],
+              ),
+            ),
+            pw.Container(height: 1, color: cBorder),
+            // Cabeçalho das colunas da tabela
+            pw.Container(
+              color: cBlue,
+              padding:
+                  const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: pw.Row(children: [
+                pw.SizedBox(width: 26),
+                pw.Expanded(
+                    child: pw.Text('DESCRIÇÃO DA RUBRICA',
+                        style: pw.TextStyle(
+                            fontSize: 7.5,
+                            color: PdfColors.white,
+                            fontWeight: pw.FontWeight.bold,
+                            letterSpacing: 0.8))),
+                pw.Text('VALOR',
+                    style: pw.TextStyle(
+                        fontSize: 7.5,
+                        color: PdfColors.white,
+                        fontWeight: pw.FontWeight.bold,
+                        letterSpacing: 0.8)),
+              ]),
+            ),
+          ],
+        ],
+      ),
+
+      // ── Rodapé com disclaimer e logo DTI ───────────────────────────────
+      footer: (ctx) => pw.Container(
+        color: cBg,
+        padding: const pw.EdgeInsets.fromLTRB(20, 6, 20, 6),
+        child: pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Text(
+                '* Dados apenas para visualização. Não válido como documento oficial.',
+                style: pw.TextStyle(
+                    fontSize: 6.5,
+                    color: cDiscl,
+                    fontStyle: pw.FontStyle.italic)),
+            pw.SizedBox(
+                height: 26,
+                width: 65,
+                child: pw.Image(pw.MemoryImage(dtiBytes),
+                    fit: pw.BoxFit.contain)),
+          ],
+        ),
+      ),
+
+      // ── Conteúdo: rubricas + resumo ────────────────────────────────────
+      build: (ctx) => [
+        ...contracheque.proventos
+            .asMap()
+            .entries
+            .map((e) => rubraRow(e.value, e.key)),
+
+        // Barra de resumo (proventos / descontos / líquido)
+        pw.SizedBox(height: 10),
+        pw.Container(
+          color: cNavy,
+          padding:
+              const pw.EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: pw.Row(
+            children: [
+              summaryCol(
+                'PROVENTOS',
+                'R\$\u2009${CurrencyFormatter.format(proventos, _realSettings)}',
+                cGreenL,
+              ),
+              pw.Container(width: 1, height: 36, color: cSep),
+              summaryCol(
+                'DESCONTOS',
+                'R\$\u2009${CurrencyFormatter.format(descontos, _realSettings)}',
+                cRedL,
+              ),
+              pw.Container(width: 1, height: 36, color: cSep),
+              summaryCol(
+                'LÍQUIDO',
+                'R\$\u2009${CurrencyFormatter.format(totalLiquido, _realSettings)}',
+                PdfColors.white,
+              ),
+            ],
+          ),
+        ),
+        pw.Container(height: 3, color: cGold),
+      ],
+    ));
 
     final output = await getTemporaryDirectory();
     final file = File('${output.path}/contracheque.pdf');
