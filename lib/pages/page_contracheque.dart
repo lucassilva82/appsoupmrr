@@ -37,7 +37,8 @@ class _PageContrachequeState extends State<PageContracheque> {
   late double proventos;
   late double descontos;
   late double totalLiquido;
-  bool _sharing = false;
+  bool _sharingPdf = false;
+  bool _sharingImage = false;
 
   final CurrencyFormatterSettings _realSettings = CurrencyFormatterSettings(
     symbol: '',
@@ -331,9 +332,9 @@ class _PageContrachequeState extends State<PageContracheque> {
           child: pw.Table(
             border: pw.TableBorder.all(color: cBorder, width: 0.5),
             columnWidths: const {
-              0: pw.FixedColumnWidth(48),  // badge P/D
-              1: pw.FlexColumnWidth(),      // descrição
-              2: pw.FixedColumnWidth(110),  // valor
+              0: pw.FixedColumnWidth(48), // badge P/D
+              1: pw.FlexColumnWidth(), // descrição
+              2: pw.FixedColumnWidth(110), // valor
             },
             children: [
               // ── Linha de cabeçalho das colunas ────────────────────
@@ -374,60 +375,61 @@ class _PageContrachequeState extends State<PageContracheque> {
               ),
               // ── Linhas de dados ───────────────────────────────────
               ...contracheque.proventos.asMap().entries.map((entry) {
-              final item = entry.value;
-              final idx = entry.key;
-              final isP = item.tipoRubrica == 'P';
-              final valor = isP ? item.provento : item.desconto;
-              final badgeBg = isP ? cGreenDk : cRedDk;
-              final valColor = isP ? cGreenDk : cRedDk;
+                final item = entry.value;
+                final idx = entry.key;
+                final isP = item.tipoRubrica == 'P';
+                final valor = isP ? item.provento : item.desconto;
+                final badgeBg = isP ? cGreenDk : cRedDk;
+                final valColor = isP ? cGreenDk : cRedDk;
 
-              return pw.TableRow(
-                decoration: pw.BoxDecoration(color: idx.isEven ? cCard : cAlt),
-                children: [
-                  // Coluna badge
-                  pw.Padding(
-                    padding: const pw.EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 9),
-                    child: pw.Center(
-                      child: pw.Container(
-                        width: 22,
-                        height: 22,
-                        decoration: pw.BoxDecoration(
-                          color: badgeBg,
-                          borderRadius:
-                              const pw.BorderRadius.all(pw.Radius.circular(11)),
-                        ),
-                        child: pw.Center(
-                          child: pw.Text(item.tipoRubrica,
-                              style: pw.TextStyle(
-                                  color: PdfColors.white,
-                                  fontSize: 9,
-                                  fontWeight: pw.FontWeight.bold)),
+                return pw.TableRow(
+                  decoration:
+                      pw.BoxDecoration(color: idx.isEven ? cCard : cAlt),
+                  children: [
+                    // Coluna badge
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 9),
+                      child: pw.Center(
+                        child: pw.Container(
+                          width: 22,
+                          height: 22,
+                          decoration: pw.BoxDecoration(
+                            color: badgeBg,
+                            borderRadius: const pw.BorderRadius.all(
+                                pw.Radius.circular(11)),
+                          ),
+                          child: pw.Center(
+                            child: pw.Text(item.tipoRubrica,
+                                style: pw.TextStyle(
+                                    color: PdfColors.white,
+                                    fontSize: 9,
+                                    fontWeight: pw.FontWeight.bold)),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  // Coluna descrição
-                  pw.Padding(
-                    padding: const pw.EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 9),
-                    child: pw.Text(item.descricaoRubrica,
-                        style: pw.TextStyle(fontSize: 10, color: cText)),
-                  ),
-                  // Coluna valor
-                  pw.Padding(
-                    padding: const pw.EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 9),
-                    child: pw.Text('R\$\u2009$valor',
-                        textAlign: pw.TextAlign.right,
-                        style: pw.TextStyle(
-                            fontSize: 10,
-                            color: valColor,
-                            fontWeight: pw.FontWeight.bold)),
-                  ),
-                ],
-              );
-            }).toList(),
+                    // Coluna descrição
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 9),
+                      child: pw.Text(item.descricaoRubrica,
+                          style: pw.TextStyle(fontSize: 10, color: cText)),
+                    ),
+                    // Coluna valor
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 9),
+                      child: pw.Text('R\$\u2009$valor',
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                              fontSize: 10,
+                              color: valColor,
+                              fontWeight: pw.FontWeight.bold)),
+                    ),
+                  ],
+                );
+              }).toList(),
             ],
           ),
         ),
@@ -482,8 +484,8 @@ class _PageContrachequeState extends State<PageContracheque> {
 
   // ── Compartilhar PDF ──────────────────────────────────────────────────
   Future<void> _sharePdf(Auth auth) async {
-    if (_sharing) return;
-    setState(() => _sharing = true);
+    if (_sharingPdf || _sharingImage) return;
+    setState(() => _sharingPdf = true);
     try {
       final file = await _generatePdf(auth);
       await Share.shareXFiles(
@@ -501,14 +503,14 @@ class _PageContrachequeState extends State<PageContracheque> {
         confirmBtnText: 'OK',
       );
     } finally {
-      if (mounted) setState(() => _sharing = false);
+      if (mounted) setState(() => _sharingPdf = false);
     }
   }
 
   // ── Compartilhar Imagem (rasteriza o PDF) ─────────────────────────────
   Future<void> _shareImage(Auth auth) async {
-    if (_sharing) return;
-    setState(() => _sharing = true);
+    if (_sharingImage || _sharingPdf) return;
+    setState(() => _sharingImage = true);
     try {
       final file = await _generatePdf(auth);
       final pdfBytes = await file.readAsBytes();
@@ -534,7 +536,7 @@ class _PageContrachequeState extends State<PageContracheque> {
         confirmBtnText: 'OK',
       );
     } finally {
-      if (mounted) setState(() => _sharing = false);
+      if (mounted) setState(() => _sharingImage = false);
     }
   }
 
@@ -973,8 +975,17 @@ class _PageContrachequeState extends State<PageContracheque> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: _sharing ? null : () => _shareImage(auth),
-                    icon: const Icon(Icons.image_outlined, size: 18),
+                    onPressed: (_sharingImage || _sharingPdf) ? null : () => _shareImage(auth),
+                    icon: _sharingImage
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.blue,
+                            ),
+                          )
+                        : const Icon(Icons.image_outlined, size: 18),
                     label: const Text('Compartilhar\nImagem',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 12)),
@@ -990,8 +1001,8 @@ class _PageContrachequeState extends State<PageContracheque> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: _sharing ? null : () => _sharePdf(auth),
-                    icon: _sharing
+                    onPressed: (_sharingPdf || _sharingImage) ? null : () => _sharePdf(auth),
+                    icon: _sharingPdf
                         ? const SizedBox(
                             width: 16,
                             height: 16,
