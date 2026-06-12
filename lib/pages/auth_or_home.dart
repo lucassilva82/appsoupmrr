@@ -9,6 +9,7 @@ import '../models/auth_model.dart';
 import 'auth_page.dart';
 import 'biometric_auth_page.dart';
 import 'home_page.dart';
+import 'main_shell.dart';
 
 class AuthOrHome extends StatefulWidget {
   const AuthOrHome({Key? key}) : super(key: key);
@@ -151,8 +152,8 @@ class _AuthOrHomeState extends State<AuthOrHome> {
 
           // Caso contrário, exibe a lógica normal
           if (auth.isAuth) {
-            debugPrint("[LOG] FutureBuilder: auth.isAuth => HomePage");
-            return HomePage();
+            debugPrint("[LOG] FutureBuilder: auth.isAuth => MainShell");
+            return const MainShell();
           } else if (auth.useBiometrics) {
             debugPrint(
                 "[LOG] FutureBuilder: auth.useBiometrics => BiometricAuthPage");

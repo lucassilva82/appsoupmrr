@@ -211,165 +211,175 @@ class _AuthFormState extends State<AuthForm> {
 
   @override
   Widget build(BuildContext context) {
-    final deviceSize = MediaQuery.of(context).size;
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Matrícula ───────────────────────────────────────────────────
+          TextFormField(
+            controller: _matriculaController,
+            style: const TextStyle(fontSize: 15, color: Colors.white),
+            keyboardType: TextInputType.number,
+            decoration: _fieldDeco(
+              label: 'Matrícula',
+              icon: Icons.badge_outlined,
+            ),
+            onSaved: (v) => _authData['matricula'] = v?.trim() ?? '',
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'Informe sua matrícula';
+              return null;
+            },
+          ),
+          const SizedBox(height: 14),
 
-    return Card(
-      color: Colors.transparent,
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: Container(
-        width: deviceSize.width * 0.70,
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
+          // ── Senha ────────────────────────────────────────────────────────
+          TextFormField(
+            controller: _passwordController,
+            style: const TextStyle(fontSize: 15, color: Colors.white),
+            obscureText: widget.exibeSenha,
+            decoration: _fieldDeco(
+              label: 'Senha',
+              icon: Icons.lock_outline_rounded,
+              suffixIcon: IconButton(
+                icon: Icon(
+                  widget.exibeSenha
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  color: Colors.white60,
+                  size: 20,
+                ),
+                onPressed: () =>
+                    setState(() => widget.exibeSenha = !widget.exibeSenha),
+              ),
+            ),
+            onSaved: (v) => _authData['password'] = v?.trim() ?? '',
+            validator: (v) {
+              if (v == null || v.length < 5) {
+                return 'Senha inválida (mín. 5 caracteres)';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 10),
+
+          // ── Lembrar Dados ────────────────────────────────────────────────
+          Row(
             children: [
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _matriculaController,
-                style: const TextStyle(fontSize: 16, color: Colors.black),
-                decoration: InputDecoration(
-                  labelText: 'Matrícula',
-                  prefixIcon: Icon(Icons.person, color: Colors.grey[700]),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.7),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide.none,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Colors.indigo.shade900, width: 2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+              Transform.scale(
+                scale: 0.85,
+                alignment: Alignment.centerLeft,
+                child: Switch(
+                  value: _lembrarAcesso,
+                  onChanged: (v) => setState(() => _lembrarAcesso = v),
+                  activeColor: const Color(0xFF42A5F5),
+                  inactiveTrackColor: Colors.white24,
+                  inactiveThumbColor: Colors.white38,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                keyboardType: TextInputType.number,
-                onSaved: (matricula) =>
-                    _authData['matricula'] = matricula?.trim() ?? '',
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Informe sua matrícula';
-                  }
-                  return null;
-                },
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _passwordController,
-                style: const TextStyle(fontSize: 16, color: Colors.black),
-                decoration: InputDecoration(
-                  labelText: 'Senha',
-                  prefixIcon: Icon(Icons.lock, color: Colors.grey[700]),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      widget.exibeSenha
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                      color: Colors.grey[700],
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        widget.exibeSenha = !widget.exibeSenha;
-                      });
-                    },
-                  ),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.7),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide.none,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Colors.indigo.shade900, width: 2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                obscureText: widget.exibeSenha,
-                onSaved: (password) =>
-                    _authData['password'] = password?.trim() ?? '',
-                validator: (password) {
-                  if (password == null || password.length < 5) {
-                    return 'Informe uma senha válida (mín. 5 caracteres)';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Lembrar Dados',
-                      style: TextStyle(fontSize: 12, color: Colors.white)),
-                  Transform.scale(
-                    scale: 0.8,
-                    child: Switch(
-                      value: _lembrarAcesso,
-                      onChanged: (bool valor) {
-                        setState(() {
-                          _lembrarAcesso = valor;
-                        });
-                      },
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      activeColor: Colors.green,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              _isLoading
-                  ? const CircularProgressIndicator.adaptive(
-                      backgroundColor: Colors.white,
-                    )
-                  : SizedBox(
-                      width: double.infinity,
-                      height: 45,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        onPressed: _submit,
-                        child: const Text('Entrar',
-                            style:
-                                TextStyle(fontSize: 16, color: Colors.white)),
-                      ),
-                    ),
-              const SizedBox(height: 16),
-
-              // Link "Recuperar Senha"
-              TextButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Recuperar Senha'),
-                      content: const Text(
-                        'Você será redirecionado para o site do SIGRH, lá poderá recuperar sua senha.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(),
-                          child: const Text('OK'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                child: const Text(
-                  'Recuperar Senha / Primeiro acesso',
-                  style:
-                      TextStyle(color: Colors.red, fontWeight: FontWeight.w500),
-                ),
+              const Text(
+                'Lembrar dados de acesso',
+                style: TextStyle(fontSize: 12, color: Colors.white70),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 18),
+
+          // ── Botão entrar ─────────────────────────────────────────────────
+          _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                )
+              : SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1565C0),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Entrar',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+          const SizedBox(height: 14),
+
+          // ── Recuperar Senha ──────────────────────────────────────────────
+          TextButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Recuperar Senha'),
+                  content: const Text(
+                    'Você será redirecionado ao SIGRH para recuperar sua senha ou realizar seu primeiro acesso.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('Fechar'),
+                    ),
+                  ],
+                ),
+              );
+            },
+            child: const Text(
+              'Recuperar Senha / Primeiro acesso',
+              style: TextStyle(
+                color: Color(0xFF90CAF9),
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  /// Decoração padronizada dos campos com estilo glassmorphism
+  InputDecoration _fieldDeco({
+    required String label,
+    required IconData icon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Colors.white70, fontSize: 14),
+      prefixIcon: Icon(icon, color: Colors.white60, size: 20),
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.08),
+      contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.20)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF42A5F5), width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.redAccent),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+      ),
+      errorStyle: const TextStyle(color: Colors.orangeAccent, fontSize: 11),
     );
   }
 }

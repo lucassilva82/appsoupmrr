@@ -17,6 +17,8 @@ import 'package:projetonovo/pages/planodeferias.dart';
 import 'package:projetonovo/pages/pop_page.dart';
 import 'package:projetonovo/services/notification_service.dart';
 import 'package:projetonovo/utils/notification_provider.dart';
+import 'package:projetonovo/utils/theme_provider.dart';
+import 'package:projetonovo/utils/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:screen_protector/screen_protector.dart';
 import 'package:screenshot_recording_detector/models/detection_event.dart';
@@ -51,6 +53,7 @@ import 'package:projetonovo/pages/page_contracheque.dart';
 import 'package:projetonovo/pages/page_militar.dart';
 import 'package:projetonovo/pages/plano_de_ferias.dart';
 import 'package:projetonovo/pages/plantao_page.dart';
+import 'package:projetonovo/pages/main_shell.dart';
 import 'package:projetonovo/utils/app_routes.dart';
 
 import 'firebase_options.dart';
@@ -206,6 +209,7 @@ Future<void> main() async {
         providers: [
           ChangeNotifierProvider(create: (_) => NotificationProvider()),
           ChangeNotifierProvider(create: (_) => Auth()),
+          ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ],
         child: const MyApp(),
       ),
@@ -538,78 +542,85 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => Auth(),
-      child: MaterialApp(
-        navigatorKey: navigatorKey, // Define a navigatorKey aqui.
-        debugShowCheckedModeBanner: false,
-        title: 'SouPMRR',
-        builder: (context, child) => Stack(
-          children: [
-            child!,
-            if (_needBlur) const BlurOverlay(),
-          ],
-        ),
-        home: const AuthOrHome(),
-        routes: {
-          AppRoutes.AUTH_PAGE: (_) => const AuthPage(),
-          AppRoutes.BIOMETRIC_AUTH_PAGE: (_) => const BiometricAuthPage(),
-          AppRoutes.PAGE_MILITAR: (_) => const PageMilitar(),
-          AppRoutes.CONFIGURACOES: (_) => const Configuracoes(),
-          AppRoutes.PLANODEFERIAS: (_) => const PlanoDeFerias(),
-          AppRoutes.HOME_PAGE: (_) => HomePage(),
-          AppRoutes.PLANTAO: (_) => PlantaoPage(),
-          AppRoutes.NOTIFICATIONS_PAGE: (_) => NotificationsPage(),
-          AppRoutes.AJUDA_PAGE: (_) => AjudaPage(),
-          AppRoutes.CONTRACHEQUE_PAGE: (_) => Contracheque(),
-          AppRoutes.CONFIGURA_PLANTAO: (_) => ConfiguraPlantao(),
-          AppRoutes.DECLARACOES_PAGE: (_) => DeclaracoesPage(),
-          AppRoutes.CERTIDOES_PAGE: (_) => CertidoesPage(),
-          AppRoutes.MAPA_DA_FORCA: (_) => MapadaforcaPage(),
-          AppRoutes.DECLARACAODEBENS: (_) {
-            final ano = ModalRoute.of(_)?.settings.arguments as String;
-            return DeclaracaoBensPage(ano: ano);
+    return Consumer2<ThemeProvider, Auth>(
+      builder: (context, themeProvider, auth, _) {
+        final isDark = themeProvider.isDark;
+        final isSuperUser = auth.isSuperUser;
+        final theme = AppTheme.build(isDark: isDark, isSuperUser: isSuperUser);
+        return MaterialApp(
+          navigatorKey: navigatorKey,
+          debugShowCheckedModeBanner: false,
+          title: 'SouPMRR',
+          theme: theme,
+          darkTheme: AppTheme.build(isDark: true, isSuperUser: isSuperUser),
+          themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+          builder: (context, child) => Stack(
+            children: [
+              child!,
+              if (_needBlur) const BlurOverlay(),
+            ],
+          ),
+          home: const AuthOrHome(),
+          routes: {
+            AppRoutes.AUTH_PAGE: (_) => const AuthPage(),
+            AppRoutes.BIOMETRIC_AUTH_PAGE: (_) => const BiometricAuthPage(),
+            AppRoutes.PAGE_MILITAR: (_) => const PageMilitar(),
+            AppRoutes.CONFIGURACOES: (_) => const Configuracoes(),
+            AppRoutes.PLANODEFERIAS: (_) => const PlanoDeFerias(),
+            AppRoutes.HOME_PAGE: (_) => MainShell(),
+            AppRoutes.PLANTAO: (_) => PlantaoPage(),
+            AppRoutes.NOTIFICATIONS_PAGE: (_) => NotificationsPage(),
+            AppRoutes.AJUDA_PAGE: (_) => AjudaPage(),
+            AppRoutes.CONTRACHEQUE_PAGE: (_) => Contracheque(),
+            AppRoutes.CONFIGURA_PLANTAO: (_) => ConfiguraPlantao(),
+            AppRoutes.DECLARACOES_PAGE: (_) => DeclaracoesPage(),
+            AppRoutes.CERTIDOES_PAGE: (_) => CertidoesPage(),
+            AppRoutes.MAPA_DA_FORCA: (_) => MapadaforcaPage(),
+            AppRoutes.DECLARACAODEBENS: (_) {
+              final ano = ModalRoute.of(_)?.settings.arguments as String;
+              return DeclaracaoBensPage(ano: ano);
+            },
+            AppRoutes.DECLARACAO_BENS_PDF_PAGE: (_) {
+              final ano = ModalRoute.of(_)?.settings.arguments as String;
+              return DeclaracaoBensPdfPage(ano: ano);
+            },
+            AppRoutes.DECLARACAO_PARENTESCO_PAGE: (_) {
+              final ano = ModalRoute.of(_)?.settings.arguments as String;
+              return DeclaracaoParentescoPage(ano: ano);
+            },
+            AppRoutes.DECLARACAO_ACUMULO_CARGOS_PAGE: (_) {
+              final ano = ModalRoute.of(_)?.settings.arguments as String;
+              return DeclaracaoAcumuloCargosPage(ano: ano);
+            },
+            AppRoutes.ENDERECO_PAGE: (_) {
+              final militar = ModalRoute.of(_)?.settings.arguments as Militar;
+              return EdicaoEnderecoPage(militar: militar);
+            },
+            AppRoutes.DETALHES_MAPA_FORCA_PAGE: (_) {
+              final args =
+                  ModalRoute.of(_)?.settings.arguments as MapBuscaDetalhesModel;
+              return DetalhesMapaForcaPage(dadosBusca: args);
+            },
+            AppRoutes.DETALHES_MAPA_FORCA_COMANDO_PAGE: (_) {
+              final args =
+                  ModalRoute.of(_)?.settings.arguments as MapBuscaDetalhesModel;
+              return DetalhesMapaForcaComandoPage(dadosBusca: args);
+            },
+            AppRoutes.PAGE_VIEW_CONTRACHEQUE: (_) {
+              final mes =
+                  ModalRoute.of(_)?.settings.arguments as MesesContracheque;
+              return PageContracheque(mesSelecionado: mes);
+            },
+            AppRoutes.MILITAR_DETALHE_FULL_PAGE: (_) {
+              final matricula = ModalRoute.of(_)?.settings.arguments as String;
+              return MilitarDetalheFullPage(matricula: matricula);
+            },
+            AppRoutes.LEGISLACOES_PAGE: (_) => LegislacoesPage(),
+            AppRoutes.PLANO_DE_FERIAS_PAGE: (_) => PlanoDeFeriasPage(),
+            AppRoutes.POP_PAGE: (_) => PopPage(),
           },
-          AppRoutes.DECLARACAO_BENS_PDF_PAGE: (_) {
-            final ano = ModalRoute.of(_)?.settings.arguments as String;
-            return DeclaracaoBensPdfPage(ano: ano);
-          },
-          AppRoutes.DECLARACAO_PARENTESCO_PAGE: (_) {
-            final ano = ModalRoute.of(_)?.settings.arguments as String;
-            return DeclaracaoParentescoPage(ano: ano);
-          },
-          AppRoutes.DECLARACAO_ACUMULO_CARGOS_PAGE: (_) {
-            final ano = ModalRoute.of(_)?.settings.arguments as String;
-            return DeclaracaoAcumuloCargosPage(ano: ano);
-          },
-          AppRoutes.ENDERECO_PAGE: (_) {
-            final militar = ModalRoute.of(_)?.settings.arguments as Militar;
-            return EdicaoEnderecoPage(militar: militar);
-          },
-          AppRoutes.DETALHES_MAPA_FORCA_PAGE: (_) {
-            final args =
-                ModalRoute.of(_)?.settings.arguments as MapBuscaDetalhesModel;
-            return DetalhesMapaForcaPage(dadosBusca: args);
-          },
-          AppRoutes.DETALHES_MAPA_FORCA_COMANDO_PAGE: (_) {
-            final args =
-                ModalRoute.of(_)?.settings.arguments as MapBuscaDetalhesModel;
-            return DetalhesMapaForcaComandoPage(dadosBusca: args);
-          },
-          AppRoutes.PAGE_VIEW_CONTRACHEQUE: (_) {
-            final mes =
-                ModalRoute.of(_)?.settings.arguments as MesesContracheque;
-            return PageContracheque(mesSelecionado: mes);
-          },
-          AppRoutes.MILITAR_DETALHE_FULL_PAGE: (_) {
-            final matricula = ModalRoute.of(_)?.settings.arguments as String;
-            return MilitarDetalheFullPage(matricula: matricula);
-          },
-          AppRoutes.LEGISLACOES_PAGE: (_) => LegislacoesPage(),
-          AppRoutes.PLANO_DE_FERIAS_PAGE: (_) => PlanoDeFeriasPage(),
-          AppRoutes.POP_PAGE: (_) => PopPage(),
-        },
-      ),
+        );
+      },
     );
   }
 }

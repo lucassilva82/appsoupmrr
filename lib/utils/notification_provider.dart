@@ -55,4 +55,11 @@ class NotificationProvider extends ChangeNotifier {
     await loadNotifications();
     return _notifications.where((n) => !n.clicked).length;
   }
+
+  Future<void> markAllAsRead() async {
+    for (final n in _notifications.where((n) => !n.clicked)) {
+      await _service.markAsClicked(n.id);
+    }
+    await loadNotifications();
+  }
 }

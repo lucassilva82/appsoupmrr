@@ -2,156 +2,123 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:projetonovo/utils/notification_provider.dart';
 import 'package:projetonovo/widgets/HomeContrachequeCard.dart';
 import 'package:projetonovo/widgets/HomePlanoFeriasCard.dart';
 import 'package:projetonovo/widgets/card_tempo_servico.dart';
 import 'package:projetonovo/widgets/carouselSlider.dart';
-import 'package:projetonovo/widgets/custom_appbar.dart';
-import 'package:projetonovo/widgets/drawer_personalizado.dart';
 import 'package:projetonovo/widgets/grid_menu.dart';
 import 'package:provider/provider.dart';
 
 import '../models/auth_model.dart';
 
-class HomePage extends StatefulWidget {
-  HomePage({Key? key}) : super(key: key);
+// ── HomeBody ─────────────────────────────────────────────────────────────────
+// Conteúdo da aba "Início" dentro do MainShell.
+// Não tem Scaffold — o appBar e o bottomNavBar são do MainShell.
+class HomeBody extends StatefulWidget {
+  const HomeBody({Key? key}) : super(key: key);
 
   @override
-  _HomePageState createState() => _HomePageState();
+  State<HomeBody> createState() => _HomeBodyState();
 }
 
-class _HomePageState extends State<HomePage> {
-  // Controlador para páginas (se necessário)
-  final PageController controller = PageController();
+class _HomeBodyState extends State<HomeBody>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true; // preserva estado ao trocar de aba
 
   @override
   void initState() {
     super.initState();
-    // Garante que o carregamento ocorra após a criação do contexto
-    Future.microtask(() {
-      Provider.of<NotificationProvider>(context, listen: false)
-          .loadNotifications();
-    });
-    getPermissions();
+    _requestPermissions();
   }
 
-  /// Pede as permissões de armazenamento (Android) de forma segura,
-  /// tratando a possibilidade de `sdkInt` ser null.
-  Future<bool> getPermissions() async {
-    bool gotPermissions = false;
-
-    // Se for Android, tratamos o fluxo de permissões de armazenamento.
-    if (Platform.isAndroid) {
-      final deviceInfo = DeviceInfoPlugin();
-      try {
-        final androidInfo = await deviceInfo.androidInfo;
-        // `sdkInt` pode ser null em algumas ROMs/emuladores:
-        final sdkInt = androidInfo.version.sdkInt;
-
-        // Checamos a permissão de "storage" primeiro
-        var storageStatus = await Permission.storage.status;
-        if (!storageStatus.isGranted) {
-          await Permission.storage.request();
-          // Atualiza o status
-          storageStatus = await Permission.storage.status;
-        }
-
-        // Se sdkInt não é null e >= 30, precisamos da permissão "manageExternalStorage"
-        if (sdkInt != null && sdkInt >= 30) {
-          var storageExternalStatus =
-              await Permission.manageExternalStorage.status;
-          if (!storageExternalStatus.isGranted) {
-            await Permission.manageExternalStorage.request();
-            storageExternalStatus =
-                await Permission.manageExternalStorage.status;
-          }
-
-          // Se ambas permissões forem concedidas, marcamos `gotPermissions = true`.
-          if (storageExternalStatus.isGranted && storageStatus.isGranted) {
-            gotPermissions = true;
-          }
-        } else {
-          // Se sdkInt é null ou menor que 30, confiamos apenas em "storage"
-          if (storageStatus.isGranted) {
-            gotPermissions = true;
-          }
-        }
-      } catch (e) {
-        // Se der erro ao obter info do device, evitamos crash
-        debugPrint('Erro ao obter info do device: $e');
-        // gotPermissions permanece false ou você pode assumir true se preferir
+  Future<void> _requestPermissions() async {
+    if (!Platform.isAndroid) return;
+    try {
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      final sdkInt = androidInfo.version.sdkInt;
+      await Permission.storage.request();
+      if (sdkInt != null && sdkInt >= 30) {
+        await Permission.manageExternalStorage.request();
       }
-    } else {
-      // iOS ou outra plataforma: se não precisar de nada, pode marcar como true diretamente
-      gotPermissions = true;
+    } catch (e) {
+      debugPrint('getPermissions error: $e');
     }
-
-    return gotPermissions;
   }
 
   @override
   Widget build(BuildContext context) {
-    // Pegamos as dimensões da tela
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
+    super.build(context);
     final auth = Provider.of<Auth>(context);
+    final screenH = MediaQuery.of(context).size.height;
 
-    return Scaffold(
-      appBar: CustomAppBar(title: 'Olá, ${auth.nomeMilitar}'),
-      drawer: DrawerPersonalizado(),
-      body: Column(
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Área principal rolável
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Carousel – ajuste a altura para não ficar exagerado
-                  SizedBox(
-                    height: screenHeight * 0.34,
-                    child: WidgetCarouselSlider(),
-                  ),
+          // ── Comandante / Sub-Comandante ──────────────────────────────────
+          WidgetCarouselSlider(),
 
-                  // Card de Tempo de Serviço centralizado
-                  SizedBox(
-                    height: screenHeight * 0.15,
-                    child: CardTempoServico(),
-                  ),
+          const SizedBox(height: 12),
 
-                  // Contracheque Card (fixado com altura definida)
-                  SizedBox(
-                    height: screenHeight * 0.14,
-                    child: const HomeContrachequeCard(),
-                  ),
+          // ── Widgets de resumo ────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Column(
+              children: [
+                SizedBox(
+                  height: screenH * 0.15,
+                  child: CardTempoServico(),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: screenH * 0.14,
+                  child: const HomeContrachequeCard(),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: screenH * 0.24,
+                  child: const HomePlanoFeriasCard(),
+                ),
+              ],
+            ),
+          ),
 
-                  // Plano de Férias resumo (baixo do contracheque)
-                  SizedBox(
-                    height: screenHeight * 0.24,
-                    child: const HomePlanoFeriasCard(),
-                  ),
+          const SizedBox(height: 16),
 
-                  // Menu Horizontal
-                  HorizontalMenu(),
-                  // Caso queira adicionar outro widget, adicione abaixo...
-                ],
+          // ── Menu de funcionalidades (grid 3 colunas) ─────────────────────
+          HorizontalMenu(),
+
+          const SizedBox(height: 12),
+
+          // ── Rodapé DTI ───────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/imagens/dti.jpeg',
+                fit: BoxFit.fitWidth,
               ),
             ),
           ),
-
-          // Rodapé com imagem
-          SizedBox(
-            width: screenWidth,
-            height: screenHeight * 0.07, // ajuste conforme desejar
-            child: Image.asset(
-              'assets/imagens/dti.jpeg',
-              fit: BoxFit.fitWidth,
-            ),
-          ),
+          const SizedBox(height: 8),
         ],
       ),
     );
+  }
+}
+
+// ── HomePage ──────────────────────────────────────────────────────────────────
+// Mantida por compatibilidade com rotas existentes.
+// Redireciona para o MainShell (que contém o HomeBody na aba 0).
+class HomePage extends StatelessWidget {
+  HomePage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const HomeBody();
   }
 }

@@ -5,7 +5,7 @@ import '../components/app_bar.dart';
 import '../components/bottom_button.dart';
 import '../components/my_lottie_widget.dart';
 import '../components/top_two_text_error.dart';
-import '../pages/home_page.dart';
+import '../pages/main_shell.dart';
 import '../utils/my_colors.dart';
 import '../animation/fade_animation.dart';
 import '../utils/my_strings.dart';
@@ -108,7 +108,7 @@ class SecondScreen extends StatelessWidget {
                       textTheme:
                           textTheme.bodyLarge?.copyWith(color: Colors.black),
                       btnColor: Colors.white,
-                      page: HomePage(),
+                      page: const MainShell(),
                     ),
                   ),
                 ),

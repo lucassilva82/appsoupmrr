@@ -4,6 +4,7 @@ import 'package:quickalert/quickalert.dart';
 
 import '../models/auth_model.dart';
 import '../utils/app_routes.dart';
+import '../utils/app_theme.dart';
 
 class Choice {
   final String title;
@@ -16,187 +17,189 @@ class HorizontalMenu extends StatelessWidget {
   HorizontalMenu({Key? key}) : super(key: key);
 
   final List<Choice> allChoices = <Choice>[
-    Choice(title: 'Ficha Individual', icon: Icons.account_circle, id: 1),
-    Choice(title: 'Meu Plantão', icon: Icons.car_crash, id: 2),
-    Choice(title: 'Plano de Férias', icon: Icons.beach_access, id: 9),
-    Choice(title: 'Declarações', icon: Icons.attach_money, id: 3),
-    Choice(title: 'Contracheques', icon: Icons.request_quote, id: 4),
-    Choice(title: 'Mapa da Força', icon: Icons.groups_2, id: 5),
+    Choice(
+        title: 'Ficha Individual', icon: Icons.account_circle_rounded, id: 1),
+    Choice(title: 'Meu Plantão', icon: Icons.car_crash_rounded, id: 2),
+    Choice(title: 'Plano de Férias', icon: Icons.beach_access_rounded, id: 9),
+    Choice(title: 'Declarações', icon: Icons.attach_money_rounded, id: 3),
+    Choice(title: 'Contracheques', icon: Icons.request_quote_rounded, id: 4),
+    Choice(title: 'Mapa da Força', icon: Icons.groups_2_rounded, id: 5),
     Choice(title: 'Certidões', icon: Icons.edit_document, id: 6),
-    // Novo atalho para a página de Legislações
-    Choice(title: 'Legislações', icon: Icons.library_books, id: 8),
-    Choice(title: 'POPS', icon: Icons.gavel, id: 10),
+    Choice(title: 'Legislações', icon: Icons.library_books_rounded, id: 8),
+    Choice(title: 'POPS', icon: Icons.gavel_rounded, id: 10),
     Choice(title: 'Sair', icon: Icons.logout_rounded, id: 7),
   ];
 
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<Auth>(context);
+    final theme = Theme.of(context);
+    final isSuperUser = auth.isSuperUser;
 
-    final isUser = auth.isSuperUser;
     // Remove Mapa da Força para usuários comuns
-    final choices = allChoices.where((c) => c.id != 5 || isUser).toList();
+    final choices = allChoices.where((c) => c.id != 5 || isSuperUser).toList();
 
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final menuHeight = screenHeight * 0.20;
-    final itemWidth = screenWidth * 0.25;
-    final itemHeight = menuHeight * 0.6;
-
-    return Container(
-      // color: Colors.amber,
-      width: screenWidth,
-      height: menuHeight,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 18),
-            child: Row(
-              children: choices.map((choice) {
-                return _MenuItem(
-                  choice: choice,
-                  itemWidth: itemWidth,
-                  itemHeight: itemHeight,
-                  isPrivileged: choice.id == 5,
-                );
-              }).toList(),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text(
+              'Acesso Rápido',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.3,
+              ),
             ),
+          ),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: choices.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 1.0,
+            ),
+            itemBuilder: (context, index) {
+              return _GridMenuItem(
+                choice: choices[index],
+                isSuperUser: isSuperUser,
+              );
+            },
           ),
         ],
       ),
     );
   }
 }
+// end of file
 
-class _MenuItem extends StatelessWidget {
+class _GridMenuItem extends StatelessWidget {
   final Choice choice;
-  final double itemWidth;
-  final double itemHeight;
-  final bool isPrivileged;
+  final bool isSuperUser;
 
-  const _MenuItem(
-      {Key? key,
-      required this.choice,
-      required this.itemWidth,
-      required this.itemHeight,
-      this.isPrivileged = false})
-      : super(key: key);
+  const _GridMenuItem({
+    Key? key,
+    required this.choice,
+    required this.isSuperUser,
+  }) : super(key: key);
+
+  void _onTap(BuildContext context) {
+    switch (choice.id) {
+      case 1:
+        Navigator.of(context).pushNamed(AppRoutes.PAGE_MILITAR);
+        break;
+      case 2:
+        Navigator.of(context).pushNamed(AppRoutes.PLANTAO);
+        break;
+      case 9:
+        Navigator.of(context).pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE);
+        break;
+      case 3:
+        Navigator.of(context).pushNamed(AppRoutes.DECLARACOES_PAGE);
+        break;
+      case 4:
+        Navigator.of(context).pushNamed(AppRoutes.CONTRACHEQUE_PAGE);
+        break;
+      case 5:
+        Navigator.of(context).pushNamed(AppRoutes.MAPA_DA_FORCA);
+        break;
+      case 6:
+        Navigator.of(context).pushNamed(AppRoutes.CERTIDOES_PAGE);
+        break;
+      case 8:
+        Navigator.of(context).pushNamed(AppRoutes.LEGISLACOES_PAGE);
+        break;
+      case 10:
+        Navigator.of(context).pushNamed(AppRoutes.POP_PAGE);
+        break;
+      case 7:
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.confirm,
+          title: 'Deseja sair?',
+          text: 'Sua sessão será encerrada.',
+          confirmBtnText: 'Sim',
+          cancelBtnText: 'Cancelar',
+          confirmBtnColor: Colors.redAccent,
+          onConfirmBtnTap: () {
+            Provider.of<Auth>(context, listen: false).logout();
+            Navigator.pushReplacementNamed(context, AppRoutes.AUTH_OR_HOME);
+          },
+        );
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Auth não é utilizado diretamente neste widget
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    // Gradiente padrão:
-    // - Mapa da Força (privileged): branco → azul → preto
-    // - Plano de Férias (id 6): cinza → cinza escuro
-    // - Demais (usuários e outros): azul claro → azul escuro
-    final gradientColors = isPrivileged
-        ? [Colors.white, const Color.fromARGB(255, 58, 95, 112), Colors.black87]
-        : [Colors.lightBlue, Colors.blue.shade900];
+    // Cores especiais por item
+    final isPrivileged = choice.id == 5; // Mapa da Força
+    final isLogout = choice.id == 7;
 
-    return InkWell(
-      onTap: () {
-        switch (choice.id) {
-          case 1:
-            Navigator.of(context).pushNamed(AppRoutes.PAGE_MILITAR);
-            break;
-          case 2:
-            Navigator.of(context).pushNamed(AppRoutes.PLANTAO);
-            break;
-          case 9:
-            Navigator.of(context).pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE);
-            break;
-          case 3:
-            Navigator.of(context).pushNamed(AppRoutes.DECLARACOES_PAGE);
-            break;
-          case 4:
-            Navigator.of(context).pushNamed(AppRoutes.CONTRACHEQUE_PAGE);
-            break;
-          case 5:
-            Navigator.of(context).pushNamed(AppRoutes.MAPA_DA_FORCA);
-            break;
-          case 6:
-            Navigator.of(context).pushNamed(AppRoutes.CERTIDOES_PAGE);
-            break;
-          case 8:
-            // Navega para a página de Legislações
-            Navigator.of(context).pushNamed(AppRoutes.LEGISLACOES_PAGE);
-            break;
-          case 10:
-            Navigator.of(context).pushNamed(AppRoutes.POP_PAGE);
-            break;
-          case 7:
-            QuickAlert.show(
-              context: context,
-              type: QuickAlertType.confirm,
-              title: 'Deseja sair?',
-              text: 'Sua sessão será encerrada',
-              confirmBtnText: 'Sim',
-              cancelBtnText: 'Cancelar',
-              confirmBtnColor: Colors.redAccent,
-              onConfirmBtnTap: () {
-                Provider.of<Auth>(context, listen: false).logout();
-                Navigator.pushReplacementNamed(
-                  context,
-                  AppRoutes.AUTH_OR_HOME,
-                );
-              },
-            );
-            break;
-        }
-      },
-      child: Stack(
-        children: [
-          Container(
-            width: itemWidth,
-            height: itemHeight,
-            margin: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              gradient: LinearGradient(
-                colors: gradientColors,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 5,
-                    offset: const Offset(2, 2)),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(choice.icon, size: itemHeight * 0.5, color: Colors.white),
-                const SizedBox(height: 4),
-                Flexible(
-                  child: Text(
-                    choice.title,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: itemHeight * 0.10,
-                      fontWeight: FontWeight.bold,
+    Color bgColor;
+    Color iconColor;
+    if (isLogout) {
+      bgColor = Colors.red.withOpacity(isDark ? 0.18 : 0.10);
+      iconColor = Colors.redAccent;
+    } else if (isPrivileged) {
+      bgColor = AppColors.gold.withOpacity(isDark ? 0.18 : 0.12);
+      iconColor = AppColors.gold;
+    } else {
+      bgColor =
+          theme.colorScheme.primaryContainer.withOpacity(isDark ? 0.35 : 0.55);
+      iconColor = theme.colorScheme.primary;
+    }
+
+    return Material(
+      color: bgColor,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: () => _onTap(context),
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(choice.icon, size: 32, color: iconColor),
+                  const SizedBox(height: 6),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Text(
+                      choice.title,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                        color: isLogout
+                            ? Colors.redAccent
+                            : theme.colorScheme.onSurface,
+                      ),
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
-            ),
-          ),
-          if (isPrivileged)
-            Positioned(
-              top: 8,
-              right: 12,
-              child: Icon(
-                Icons.supervisor_account,
-                size: 16,
-                color: Colors.white70,
+                ],
               ),
             ),
-        ],
+            if (isPrivileged)
+              Positioned(
+                top: 6,
+                right: 6,
+                child: Icon(Icons.star_rounded,
+                    size: 12, color: AppColors.gold.withOpacity(0.7)),
+              ),
+          ],
+        ),
       ),
     );
   }
