@@ -39,33 +39,40 @@ class WidgetCarouselSlider extends StatelessWidget {
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: SizedBox(
-            height: 230,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (comandante != null)
-                  Expanded(
-                    child: _ComandanteCard(
-                      data: comandante,
-                      label: 'Comandante',
-                      icon: Icons.star_rounded,
-                      iconColor: AppColors.gold,
-                    ),
-                  ),
-                if (comandante != null && sub != null)
-                  const SizedBox(width: 10),
-                if (sub != null)
-                  Expanded(
-                    child: _ComandanteCard(
-                      data: sub,
-                      label: 'Sub-Comandante',
-                      icon: Icons.shield_rounded,
-                      iconColor: AppColors.lightBlue,
-                    ),
-                  ),
-              ],
-            ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Altura responsiva: ~65% da largura disponível, clampada entre 200 e 280
+              final cardHeight =
+                  (constraints.maxWidth * 0.65).clamp(200.0, 280.0);
+              return SizedBox(
+                height: cardHeight,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (comandante != null)
+                      Expanded(
+                        child: _ComandanteCard(
+                          data: comandante,
+                          label: 'Comandante',
+                          icon: Icons.star_rounded,
+                          iconColor: AppColors.gold,
+                        ),
+                      ),
+                    if (comandante != null && sub != null)
+                      const SizedBox(width: 10),
+                    if (sub != null)
+                      Expanded(
+                        child: _ComandanteCard(
+                          data: sub,
+                          label: 'Sub-Comandante',
+                          icon: Icons.shield_rounded,
+                          iconColor: AppColors.lightBlue,
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
           ),
         );
       },
@@ -117,46 +124,52 @@ class _ComandanteCard extends StatelessWidget {
                   ),
           ),
 
-          // ── Rodapé do card ────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(icon, size: 12, color: iconColor),
-                    const SizedBox(width: 3),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: iconColor,
-                        letterSpacing: 0.3,
+          // ── Rodapé do card (altura fixa para alinhar os dois cards) ───────
+          SizedBox(
+            height: 78,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Icon(icon, size: 11, color: iconColor),
+                      const SizedBox(width: 3),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: iconColor,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium
+                        ?.copyWith(fontWeight: FontWeight.bold, height: 1.2),
+                  ),
+                  if (subtitle.isNotEmpty)
+                    Flexible(
+                      child: Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 10,
+                        ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(fontWeight: FontWeight.bold, height: 1.2),
-                ),
-                if (subtitle.isNotEmpty)
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontSize: 10,
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
