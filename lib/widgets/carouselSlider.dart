@@ -39,7 +39,8 @@ class WidgetCarouselSlider extends StatelessWidget {
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: IntrinsicHeight(
+          child: SizedBox(
+            height: 230,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -52,7 +53,8 @@ class WidgetCarouselSlider extends StatelessWidget {
                       iconColor: AppColors.gold,
                     ),
                   ),
-                if (comandante != null && sub != null) const SizedBox(width: 10),
+                if (comandante != null && sub != null)
+                  const SizedBox(width: 10),
                 if (sub != null)
                   Expanded(
                     child: _ComandanteCard(
