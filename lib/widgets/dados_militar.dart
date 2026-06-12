@@ -184,7 +184,6 @@ class _DadosMilitarState extends State<DadosMilitar> {
           isDark: isDark,
           child: DadosContato(
             militar: widget.militar,
-            atualizarDados: atualizarDados,
           ),
         ),
 
@@ -212,46 +211,6 @@ class _DadosMilitarState extends State<DadosMilitar> {
           isDark: isDark,
           child: DadosSituacaoFuncional(militar: widget.militar),
         ),
-
-        // ── Botão salvar ──────────────────────────────────────────────────
-        if (widget.militar.alterouDados == true)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                icon: const Icon(Icons.save_rounded, size: 18),
-                label: const Text('Salvar Alterações'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: primaryBlue,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () async {
-                  try {
-                    await dadosSql.excluiContatos(widget.militar.matricula);
-                    for (final element in widget.militar.telefones) {
-                      String tipo = element.value == false ? '0' : '1';
-                      await dadosSql.adicionaContatos(
-                          widget.militar.matricula, element.numeroTel, tipo);
-                    }
-                    QuickAlert.show(
-                      onConfirmBtnTap: () => Navigator.of(context)
-                          .pushReplacementNamed(AppRoutes.PAGE_MILITAR),
-                      context: context,
-                      title: 'Sucesso',
-                      confirmBtnText: 'OK',
-                      type: QuickAlertType.success,
-                      text: 'Dados atualizados com sucesso!',
-                    );
-                  } catch (error) {
-                    debugPrint('error $error');
-                  }
-                },
-              ),
-            ),
-          ),
 
         const SizedBox(height: 24),
       ],
@@ -373,9 +332,5 @@ class _DadosMilitarState extends State<DadosMilitar> {
         ),
       ),
     );
-  }
-
-  atualizarDados() {
-    setState(() {});
   }
 }

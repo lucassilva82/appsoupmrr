@@ -8,10 +8,7 @@ import '../services/dados_sql.dart';
 
 class DadosContato extends StatefulWidget {
   final Militar militar;
-  final Function atualizarDados;
-  const DadosContato(
-      {Key? key, required this.militar, required this.atualizarDados})
-      : super(key: key);
+  const DadosContato({Key? key, required this.militar}) : super(key: key);
 
   @override
   State<DadosContato> createState() => _DadosContatoState();
@@ -48,7 +45,6 @@ class _DadosContatoState extends State<DadosContato> {
     }
     widget.militar.alterouDados = true;
     setState(() => _saving = true);
-    widget.atualizarDados();
 
     // Exibe loading centralizado
     showDialog(
@@ -124,9 +120,7 @@ class _DadosContatoState extends State<DadosContato> {
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               onPressed: () async {
-                widget.militar.alterouDados = true;
                 await _openDialogAdd(widget.militar.telefones);
-                widget.atualizarDados();
               },
             ),
           ],
@@ -241,9 +235,8 @@ class _DadosContatoState extends State<DadosContato> {
                           textColor: Theme.of(context).colorScheme.onSurface,
                         );
                       } else {
-                        widget.militar.alterouDados = true;
-                        await _openDialogExclui(widget.militar.telefones, index);
-                        widget.atualizarDados();
+                        await _openDialogExclui(
+                            widget.militar.telefones, index);
                       }
                     },
                     child: Container(
