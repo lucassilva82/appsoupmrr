@@ -189,17 +189,20 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
     const primaryBlue = Color(0xFF1565C0);
     const bgAccent = Color(0xFFE3F2FD);
 
-    return GestureDetector(
-      onTap: () => Navigator.of(context).pushNamed(AppRoutes.CONTRACHEQUE_PAGE),
-      child: Card(
-        elevation: isDark ? 0 : 1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: isDark ? const Color(0xFF30363D) : const Color(0xFFE0E7F0),
-            width: 1,
-          ),
+    return Card(
+      elevation: isDark ? 0 : 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: isDark ? const Color(0xFF30363D) : const Color(0xFFE0E7F0),
+          width: 1,
         ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () =>
+            Navigator.of(context).pushNamed(AppRoutes.CONTRACHEQUE_PAGE),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
           child: Column(
@@ -242,9 +245,7 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white10
-                            : Colors.grey.shade100,
+                        color: isDark ? Colors.white10 : Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
@@ -297,6 +298,25 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
                   ),
                 ],
               ),
+
+              // ── Footer clicável ───────────────────────────────────────────
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    'Ver detalhes',
+                    style: TextStyle(
+                      color: primaryBlue,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  const Icon(Icons.chevron_right_rounded,
+                      size: 16, color: primaryBlue),
+                ],
+              ),
             ],
           ),
         ),
@@ -317,9 +337,7 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
         decoration: BoxDecoration(
-          color: isDark
-              ? accent.withOpacity(0.1)
-              : accent.withOpacity(0.07),
+          color: isDark ? accent.withOpacity(0.1) : accent.withOpacity(0.07),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: accent.withOpacity(isDark ? 0.3 : 0.2),

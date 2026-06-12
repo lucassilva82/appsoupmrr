@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:projetonovo/services/notification_service.dart';
+import 'package:projetonovo/utils/app_theme.dart';
 import 'package:projetonovo/utils/notification_provider.dart';
 import 'package:provider/provider.dart';
 import '../models/auth_model.dart';
@@ -8,18 +8,54 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   const CustomAppBar({Key? key, required this.title}) : super(key: key);
 
+  /// Badge de função: Admin ⭐ | ⭐ GESTOR | vazio
+  Widget _buildUserBadge(Auth auth) {
+    final isAdmin = auth.nivel == 1;
+    final isGestor = auth.isSuperUser && !isAdmin;
+
+    if (!auth.isSuperUser) return const SizedBox.shrink();
+
+    final label = isAdmin ? 'Admin' : 'GESTOR';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+        border:
+            Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.star_rounded, color: AppColors.gold, size: 12),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildNotificationIcon(BuildContext context) {
     return Consumer<NotificationProvider>(
       builder: (context, notificationProvider, _) {
-        int count =
+        final count =
             notificationProvider.notifications.where((n) => !n.clicked).length;
         return Stack(
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).pushNamed('/notifications-page');
-              },
+              icon:
+                  const Icon(Icons.notifications_outlined, color: Colors.white),
+              onPressed: () =>
+                  Navigator.of(context).pushNamed('/notifications-page'),
             ),
             if (count > 0)
               Positioned(
@@ -31,10 +67,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     color: Colors.red,
                     shape: BoxShape.circle,
                   ),
-                  constraints: const BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
+                  constraints:
+                      const BoxConstraints(minWidth: 16, minHeight: 16),
                   child: Text(
                     '$count',
                     style: const TextStyle(
@@ -60,15 +94,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       centerTitle: true,
       flexibleSpace: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.lightBlue, Colors.blue.shade900],
+            colors: [Color(0xFF1976D2), Color(0xFF002154)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-          ),
-          borderRadius: const BorderRadius.only(
-            bottomLeft: Radius.circular(20),
-            bottomRight: Radius.circular(20),
           ),
         ),
       ),
@@ -91,11 +121,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: [
         Padding(
-          padding: const EdgeInsets.only(right: 10.0),
-          child: Icon(
-            auth.isSuperUser ? Icons.supervisor_account : Icons.person,
-            color: Colors.white,
-          ),
+          padding: const EdgeInsets.only(right: 8),
+          child: Center(child: _buildUserBadge(auth)),
         ),
         if (title.toLowerCase().startsWith('olá'))
           _buildNotificationIcon(context),

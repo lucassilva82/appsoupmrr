@@ -197,7 +197,8 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
 
         Widget _buildParcelaRow(
             String parcela, String dataInicio, String dataFim, Color cor) {
-          if (dataInicio.isEmpty && dataFim.isEmpty) return const SizedBox.shrink();
+          if (dataInicio.isEmpty && dataFim.isEmpty)
+            return const SizedBox.shrink();
           return Padding(
             padding: const EdgeInsets.only(bottom: 10.0),
             child: Row(
@@ -227,20 +228,19 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
         const primaryBlue = Color(0xFF1565C0);
         const bgAccent = Color(0xFFE3F2FD);
 
-        return GestureDetector(
-          onTap: () =>
-              Navigator.of(context).pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE),
-          child: Card(
-            elevation: isDark ? 0 : 1,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: isDark
-                    ? const Color(0xFF30363D)
-                    : const Color(0xFFE0E7F0),
-                width: 1,
-              ),
+        return Card(
+          elevation: isDark ? 0 : 1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: isDark ? const Color(0xFF30363D) : const Color(0xFFE0E7F0),
+              width: 1,
             ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () =>
+                Navigator.of(context).pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
               child: Column(
@@ -253,9 +253,8 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? primaryBlue.withOpacity(0.18)
-                              : bgAccent,
+                          color:
+                              isDark ? primaryBlue.withOpacity(0.18) : bgAccent,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(Icons.beach_access_rounded,
@@ -284,7 +283,8 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: primaryBlue.withOpacity(isDark ? 0.18 : 0.10),
+                            color:
+                                primaryBlue.withOpacity(isDark ? 0.18 : 0.10),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -305,12 +305,12 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
                     _buildParcelaRow(
                         'Período Integral', prevIni, prevFim, primaryBlue)
                   else ...[
-                    _buildParcelaRow('1ª Parcela', p1i, p1f,
-                        const Color(0xFF1565C0)),
-                    _buildParcelaRow('2ª Parcela', p2i, p2f,
-                        const Color(0xFF2E7D32)),
-                    _buildParcelaRow('3ª Parcela', p3i, p3f,
-                        const Color(0xFFE65100)),
+                    _buildParcelaRow(
+                        '1ª Parcela', p1i, p1f, const Color(0xFF1565C0)),
+                    _buildParcelaRow(
+                        '2ª Parcela', p2i, p2f, const Color(0xFF2E7D32)),
+                    _buildParcelaRow(
+                        '3ª Parcela', p3i, p3f, const Color(0xFFE65100)),
                   ],
 
                   // ── Footer ────────────────────────────────────────────────
@@ -345,10 +345,12 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
                       const Spacer(),
                       Text('Ver detalhes',
                           style: TextStyle(
-                              color: Colors.grey.shade400, fontSize: 11)),
-                      const SizedBox(width: 4),
-                      Icon(Icons.chevron_right_rounded,
-                          size: 16, color: Colors.grey.shade400),
+                              color: primaryBlue,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600)),
+                      const SizedBox(width: 2),
+                      const Icon(Icons.chevron_right_rounded,
+                          size: 16, color: primaryBlue),
                     ],
                   ),
                 ],

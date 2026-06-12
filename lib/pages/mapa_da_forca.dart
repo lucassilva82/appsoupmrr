@@ -2,12 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:projetonovo/models/map_busca_detalhes_model.dart';
 import 'package:projetonovo/pages/detalhes_mapa_forca_page.dart';
+import 'package:projetonovo/utils/app_theme.dart';
 import 'package:projetonovo/widgets/custom_appbar.dart';
 import '../widgets/widget_graficos.dart';
 import '../widgets/widget_mapa_geral.dart';
 import '../widgets/widget_grandes_comandos.dart';
-
-enum Modo { graficos, mapaGeral, grandesComandos }
 
 class MapadaforcaPage extends StatefulWidget {
   const MapadaforcaPage({super.key});
@@ -16,142 +15,212 @@ class MapadaforcaPage extends StatefulWidget {
   State<MapadaforcaPage> createState() => _MapadaforcaPageState();
 }
 
-class _MapadaforcaPageState extends State<MapadaforcaPage> {
-  Modo _modo = Modo.mapaGeral;
+class _MapadaforcaPageState extends State<MapadaforcaPage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  final _searchFocus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this, initialIndex: 1);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _searchFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    const primary = Colors.lightBlue;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    const primaryBlue = AppColors.blue;
 
     return Scaffold(
       appBar: const CustomAppBar(title: 'Mapa da Força'),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 5),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Banner de efetivo ──────────────────────────────────────────
+          _bannerEfetivo(context, isDark),
 
-            // ---------- BANNER ----------
-            _bannerTotal(context),
+          const SizedBox(height: 12),
 
-            // ---------- NOVO CAMPO DE BUSCA ----------
-            const SizedBox(height: 8),
-            _campoBusca(context),
+          // ── Campo de busca ─────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => DetalhesMapaForcaPage(
+                        dadosBusca: MapBuscaDetalhesModel(
+                          idSituacao: '',
+                          descricao: '— Busca Geral',
+                          postoGraduacao: [],
+                          quantidade: '',
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? theme.colorScheme.surface
+                        : const Color(0xFFF2F6FF),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF30363D)
+                          : const Color(0xFFDDE6F5),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 14),
+                      Icon(Icons.search_rounded,
+                          color: primaryBlue.withValues(alpha: 0.7), size: 20),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Pesquisar militar por nome...',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.45),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
 
-            const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-            // ---------- BOTÕES ----------
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.04,
-              child: Row(
-                children: [
-                  _botao('Gráficos', Modo.graficos, primary),
-                  _botao('Mapa Geral', Modo.mapaGeral, primary),
-                  _botao('Grandes Comandos', Modo.grandesComandos, primary),
+          // ── TabBar ─────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              height: 42,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? theme.colorScheme.surface
+                    : const Color(0xFFF2F6FF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF30363D)
+                      : const Color(0xFFDDE6F5),
+                ),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: primaryBlue,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                labelColor: Colors.white,
+                unselectedLabelColor:
+                    theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                labelStyle:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                unselectedLabelStyle:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                dividerColor: Colors.transparent,
+                splashFactory: NoSplash.splashFactory,
+                overlayColor: WidgetStateProperty.all(Colors.transparent),
+                tabs: const [
+                  Tab(text: 'Gráficos'),
+                  Tab(text: 'Mapa Geral'),
+                  Tab(text: 'Comandos'),
                 ],
               ),
             ),
+          ),
 
-            const SizedBox(height: 12),
+          const SizedBox(height: 12),
 
-            // ---------- CONTEÚDO DINÂMICO ----------
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.75,
-              child: _body(),
+          // ── Conteúdo dinâmico ──────────────────────────────────────────
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: const [
+                WidgetGraficos(),
+                WidgetMapaGeral(),
+                WidgetGrandesComandos(),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  // ------------------------------------------------------------------
-  // WIDGET – CAMPO DE BUSCA
-  // ------------------------------------------------------------------
-  Widget _campoBusca(BuildContext ctx) {
+  Widget _bannerEfetivo(BuildContext context, bool isDark) {
     return Container(
       width: double.infinity,
-      height: MediaQuery.of(context).size.height * 0.042,
-      child: TextFormField(
-        readOnly: true, // impede digitação e aciona apenas o onTap
-        onTap: () {
-          // TODO: redirecionar para a sua página de pesquisa
-          Navigator.of(context).push(
-            MaterialPageRoute(
-                builder: (_) => DetalhesMapaForcaPage(
-                    dadosBusca: MapBuscaDetalhesModel(
-                        idSituacao: "",
-                        descricao: "- Busca Geral",
-                        postoGraduacao: [],
-                        quantidade: ""))),
-          );
-        },
-        decoration: InputDecoration(
-          hintText: 'Pesquisar militar por nome...',
-          prefixIcon: const Icon(Icons.search_rounded),
-          filled: true,
-          fillColor: Colors.grey.shade200,
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1976D2), Color(0xFF002154)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.blue.withValues(alpha: isDark ? 0.20 : 0.28),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-        ),
+        ],
       ),
-    );
-  }
-
-  // ------------------------------------------------------------------
-  // RESTO DA SUA LÓGICA MANTIDA
-  // ------------------------------------------------------------------
-  Widget _body() {
-    switch (_modo) {
-      case Modo.graficos:
-        return const WidgetGraficos();
-      case Modo.mapaGeral:
-        return const WidgetMapaGeral();
-      case Modo.grandesComandos:
-        return const WidgetGrandesComandos();
-    }
-  }
-
-  Expanded _botao(String t, Modo m, Color c) {
-    final ativo = _modo == m;
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: ativo ? c : Colors.grey.shade300,
-            foregroundColor: ativo ? Colors.white : Colors.black87,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.shield_outlined,
+                color: Colors.white, size: 22),
           ),
-          onPressed: () => setState(() => _modo = m),
-          child: Text(t,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12)),
-        ),
-      ),
-    );
-  }
-
-  Widget _bannerTotal(BuildContext ctx) => Container(
-        width: double.infinity,
-        height: MediaQuery.of(context).size.height * 0.042,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          gradient:
-              LinearGradient(colors: [Colors.lightBlue, Colors.blue.shade900]),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text('Efetivo Total Previsto: 3500 Militares',
-            textAlign: TextAlign.center,
-            style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+          const SizedBox(width: 14),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Efetivo Total Previsto',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const Text(
+                '3.500 Militares',
+                style: TextStyle(
                   color: Colors.white,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                )),
-      );
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }

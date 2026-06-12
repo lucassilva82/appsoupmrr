@@ -7,138 +7,58 @@ class DadosPrincipal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final height = MediaQuery.of(context).size.height;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      width: width * 0.60,
-      height: height * 0.28,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(5),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.grey,
-            blurRadius: 4,
-            offset: Offset(2, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Cabeçalho com gradiente e fonte menor
-          Container(
-            width: width * 0.60,
-            height: 30,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.lightBlue,
-                  Colors.blue.shade900,
-                ],
-                begin: Alignment.centerLeft,
-                end: Alignment.topRight,
-              ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(5),
-                topRight: Radius.circular(5),
-              ),
-            ),
-            child: const Padding(
-              padding: EdgeInsets.only(left: 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Policial Militar',
-                  style: TextStyle(
-                    fontFamily: 'Lato',
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          // Corpo rolável com os dados, com padding reduzido
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildRowDetail(
-                      label: 'Posto/Graduação:',
-                      info: '${militar.postoGraduacao} ${militar.quadro}'),
-                  const SizedBox(height: 4),
-                  _buildColumnDetail(
-                      label: 'Nome:', info: militar.nomeCompleto),
-                  const SizedBox(height: 4),
-                  _buildColumnDetail(
-                      label: 'Lotação:', info: militar.subUnidade),
-                  const SizedBox(height: 4),
-                  _buildColumnDetail(
-                      label: 'Incorporação:', info: militar.dataIncorporacao),
-                  _buildColumnDetail(
-                      label: 'Matrícula SEGAD:', info: militar.matRhNova),
-                  const SizedBox(height: 2),
-                  _buildColumnDetail(
-                      label: 'Matrícula PMRR:', info: militar.matricula),
-                ],
-              ),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRowDetail({required String label, required String info}) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 100,
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            info,
-            style: const TextStyle(fontSize: 10, color: Colors.grey),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildColumnDetail({required String label, required String info}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          info,
-          style: const TextStyle(
-            fontSize: 10,
-            color: Colors.grey,
-          ),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
+        _row(
+            theme,
+            'Posto / Graduação',
+            '${militar.postoGraduacao} ${militar.quadro}',
+            Icons.military_tech_outlined),
+        _row(
+            theme, 'Nome Completo', militar.nomeCompleto, Icons.person_outline),
+        _row(theme, 'Lotação', militar.subUnidade, Icons.apartment_outlined),
+        _row(theme, 'Incorporação', militar.dataIncorporacao,
+            Icons.calendar_today_outlined),
+        _row(theme, 'Matrícula SEGAD', militar.matRhNova,
+            Icons.fingerprint_outlined),
+        _row(theme, 'Matrícula PMRR', militar.matricula, Icons.badge_outlined),
       ],
+    );
+  }
+
+  Widget _row(ThemeData theme, String label, String value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon,
+              size: 16,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurface
+                            .withValues(alpha: 0.5))),
+                const SizedBox(height: 2),
+                Text(
+                  value.isNotEmpty ? value : '—',
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
