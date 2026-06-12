@@ -100,14 +100,14 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
             blob(w: 32, h: 32, r: 10),
           ]),
           const SizedBox(height: 14),
-          Center(child: blob(w: 140, h: 32, r: 8)),
-          const SizedBox(height: 4),
-          Center(child: blob(w: 60, h: 10, r: 4)),
-          const SizedBox(height: 12),
+          Center(child: blob(w: 120, h: 24, r: 8)),
+          const SizedBox(height: 3),
+          Center(child: blob(w: 50, h: 9, r: 4)),
+          const SizedBox(height: 8),
           Row(children: [
-            Expanded(child: blob(h: 52, r: 10)),
+            Expanded(child: blob(h: 44, r: 10)),
             const SizedBox(width: 8),
-            Expanded(child: blob(h: 52, r: 10)),
+            Expanded(child: blob(h: 44, r: 10)),
           ]),
         ]),
       ),
@@ -210,7 +210,7 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
               ),
             ]),
 
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
 
             // ── Líquido em destaque ────────────────────────────────
             Center(
@@ -218,18 +218,18 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
                 AutoSizeText(
                   _showValues ? 'R\$\u2009${fmt.format(liquido)}' : '••••••',
                   style: TextStyle(
-                    fontSize: 26,
+                    fontSize: 20,
                     fontWeight: FontWeight.w800,
                     color: isDark ? Colors.white : const Color(0xFF1A1A2E),
                     letterSpacing: _showValues ? -0.5 : 4,
                   ),
                   maxLines: 1,
-                  minFontSize: 16,
+                  minFontSize: 13,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 Text('LÍQUIDO',
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.5,
                       color: isDark ? Colors.white38 : Colors.black38,
@@ -237,7 +237,7 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
               ]),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
 
             // ── Bruto e Descontos (menores, 2 colunas) ─────────────
             Row(children: [
@@ -261,10 +261,10 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
             ]),
 
             // ── Footer ───────────────────────────────────────────────
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Row(mainAxisAlignment: MainAxisAlignment.end, children: [
               Text('Ver detalhes',
-                  style: TextStyle(color: primaryBlue, fontSize: 12, fontWeight: FontWeight.w600)),
+                  style: TextStyle(color: primaryBlue, fontSize: 11, fontWeight: FontWeight.w600)),
               const SizedBox(width: 2),
               const Icon(Icons.chevron_right_rounded, size: 16, color: primaryBlue),
             ]),
@@ -284,7 +284,7 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
         decoration: BoxDecoration(
           color: isDark ? accent.withValues(alpha: 0.1) : accent.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(12),
@@ -296,14 +296,14 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
             const SizedBox(width: 4),
             Text(titulo,
                 style: TextStyle(
-                    color: accent, fontSize: 10, fontWeight: FontWeight.bold)),
+                    color: accent, fontSize: 9, fontWeight: FontWeight.bold)),
           ]),
-          const SizedBox(height: 5),
+          const SizedBox(height: 4),
           AutoSizeText(
             valor,
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              fontSize: 12,
+              fontSize: 11,
               color: isDark ? Colors.white : const Color(0xFF1A1A2E),
               letterSpacing: valor.contains('•') ? 2 : 0,
             ),

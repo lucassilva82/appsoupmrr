@@ -211,20 +211,20 @@ class CardTempoServico extends StatelessWidget {
                 ),
               ]),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
 
               // ── Barra de progresso
               LinearPercentIndicator(
                 linearGradient: gradient,
                 barRadius: const Radius.circular(20),
                 animation: true,
-                lineHeight: 22,
+                lineHeight: 18,
                 animationDuration: 800,
                 percent: percTotal,
                 center: AutoSizeText(
                   _extensoDias(diasTotal),
                   style: const TextStyle(
-                    fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white,
+                    fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white,
                     shadows: [Shadow(color: Colors.black38, blurRadius: 4)],
                   ),
                   maxLines: 1,
@@ -233,7 +233,7 @@ class CardTempoServico extends StatelessWidget {
                 padding: EdgeInsets.zero,
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
               // ── Legenda PM / IPER
               if (isLoading)
@@ -272,22 +272,22 @@ class CardTempoServico extends StatelessWidget {
 
               // ── Projeção de aposentadoria (30 anos)
               if (retirementLabel != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: isDark ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF0F4F8),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(children: [
-                    Icon(Icons.flag_outlined, size: 13, color: isDark ? Colors.white38 : Colors.black38),
+                    Icon(Icons.flag_outlined, size: 12, color: isDark ? Colors.white38 : Colors.black38),
                     const SizedBox(width: 6),
                     Text('Meta 30 anos: $retirementLabel',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600,
                             color: isDark ? Colors.white60 : Colors.black54)),
                     const Spacer(),
                     Text(retirementDiff ?? '',
-                        style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.black38)),
+                        style: TextStyle(fontSize: 10.5, color: isDark ? Colors.white38 : Colors.black38)),
                   ]),
                 ),
               ],

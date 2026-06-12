@@ -138,8 +138,8 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
     final borderColor = isDark ? AppColors.darkBorder : AppColors.blue.withValues(alpha: 0.15);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 7),
-      padding: const EdgeInsets.fromLTRB(11, 9, 11, 9),
+      margin: const EdgeInsets.only(bottom: 5),
+      padding: const EdgeInsets.fromLTRB(10, 7, 10, 7),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(10),
@@ -151,12 +151,12 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(label.toUpperCase(),
-                style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, letterSpacing: 0.4,
+                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.4,
                     color: isDark ? Colors.white54 : Colors.black45)),
-            const SizedBox(height: 3),
+            const SizedBox(height: 2),
             Text(
               '${startFmt.isNotEmpty ? startFmt : "—"}  →  ${endFmt.isNotEmpty ? endFmt : "—"}',
-              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600,
+              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600,
                   color: isDark ? Colors.white : const Color(0xFF1E293B)),
             ),
           ]),
@@ -173,7 +173,7 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
               Icon(status.icon, size: 10, color: status.color),
               const SizedBox(width: 3),
               Text(status.label,
-                  style: TextStyle(fontSize: 10, color: status.color, fontWeight: FontWeight.w700)),
+                  style: TextStyle(fontSize: 9, color: status.color, fontWeight: FontWeight.w700)),
             ]),
           ),
         ],
@@ -327,7 +327,7 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
                     ),
                 ]),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
                 // ── Períodos com status ────────────────────────────────
                 if (integral) ...[
