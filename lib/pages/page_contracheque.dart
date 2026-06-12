@@ -332,33 +332,37 @@ class _PageContrachequeState extends State<PageContracheque> {
         return Scaffold(
           backgroundColor:
               isDark ? const Color(0xFF0D1117) : const Color(0xFFF4F6FA),
-          // ── AppBar com gradiente ────────────────────────────────────
+          // ── AppBar idêntico ao CustomAppBar ────────────────────────
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
+            centerTitle: true,
+            iconTheme: const IconThemeData(color: Colors.white),
             flexibleSpace: Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.blue, AppColors.navy],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
+                  colors: [Color(0xFF1976D2), Color(0xFF002154)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
               ),
             ),
-            iconTheme: const IconThemeData(color: Colors.white),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+            ),
             title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'Contracheque',
                   style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
-                      fontWeight: FontWeight.w700),
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2),
                 ),
                 Text(
                   '${widget.mesSelecionado.mesExtenso} / ${widget.mesSelecionado.ano}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
                 ),
               ],
             ),
