@@ -17,7 +17,7 @@ admin.initializeApp();
  * Busca o fcmToken de cada militar no Firestore e envia via FCM.
  * Suporta 1 ou N militares com o mesmo endpoint.
  */
-exports.notificarEscala = onRequest(async (req, res) => {
+exports.notificarEscala = onRequest({ invoker: "public", cors: true }, async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método não permitido" });
   }
