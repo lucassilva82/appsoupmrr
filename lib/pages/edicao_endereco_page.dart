@@ -439,8 +439,7 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                           widget.enderecoCompleto.numero =
                               widget.controllerNumero.text;
 
-                          setState(() => _saving = true);
-
+                          // Dialog ANTES do setState para renderizar imediatamente
                           showDialog(
                             context: context,
                             barrierDismissible: false,
@@ -448,15 +447,22 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                             builder: (_) => const _EnderecoLoadingDialog(),
                           );
 
+                          setState(() => _saving = true);
+
                           try {
-                            await dadosSql.atualizaEndereco(
-                              widget.enderecoCompleto.municipio?.id ?? '',
-                              widget.enderecoCompleto.bairro?.id ?? '',
-                              widget.enderecoCompleto.rua?.id ?? '',
-                              widget.enderecoCompleto.numero ?? '',
-                              widget.enderecoCompleto.cep ?? '',
-                              widget.militar.matricula,
-                            );
+                            // Future.wait garante mín. 700ms de loading visível
+                            await Future.wait([
+                              dadosSql.atualizaEndereco(
+                                widget.enderecoCompleto.municipio?.id ?? '',
+                                widget.enderecoCompleto.bairro?.id ?? '',
+                                widget.enderecoCompleto.rua?.id ?? '',
+                                widget.enderecoCompleto.numero ?? '',
+                                widget.enderecoCompleto.cep ?? '',
+                                widget.militar.matricula,
+                              ),
+                              Future<void>.delayed(
+                                  const Duration(milliseconds: 700)),
+                            ]);
 
                             if (!mounted) return;
                             Navigator.of(context, rootNavigator: true).pop();
