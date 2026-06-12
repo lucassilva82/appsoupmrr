@@ -468,10 +468,10 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                             Navigator.of(context, rootNavigator: true).pop();
 
                             QuickAlert.show(
-                              onConfirmBtnTap: () =>
-                                  Navigator.of(context).popUntil(
-                                ModalRoute.withName(AppRoutes.PAGE_MILITAR),
-                              ),
+                              onConfirmBtnTap: () {
+                                Navigator.of(context).pop(); // fecha QuickAlert
+                                Navigator.of(context).pop(); // volta para perfil
+                              },
                               context: context,
                               title: 'Sucesso',
                               confirmBtnText: 'OK',
