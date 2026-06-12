@@ -32,6 +32,7 @@ class EdicaoEnderecoPage extends StatefulWidget {
 
 class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
   final DadosSql dadosSql = DadosSql();
+  String _query = '';
 
   @override
   Widget build(BuildContext context) {
@@ -46,8 +47,7 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
           widget.enderecoCompleto.municipio?.nome ?? '';
       widget.controllerRua.text = widget.enderecoCompleto.rua?.nome ?? '';
       widget.controllerNumero.text = widget.enderecoCompleto.numero ?? '';
-      widget.controllerBairro.text =
-          widget.enderecoCompleto.bairro?.nome ?? '';
+      widget.controllerBairro.text = widget.enderecoCompleto.bairro?.nome ?? '';
       widget.inicio = false;
     }
 
@@ -105,16 +105,34 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                   Expanded(
                     child: TypeAheadField<Endereco?>(
                       controller: widget.controllerEnderecoNovo,
-                      errorBuilder: (context, error) =>
-                          const Text('Erro ao buscar'),
+                      errorBuilder: (context, error) => ListTile(
+                        leading: const Icon(Icons.search_rounded,
+                            size: 18, color: AppColors.blue),
+                        title: Text(
+                          _query.length < 3
+                              ? 'Mín. 3 caracteres para buscar'
+                              : 'Erro ao buscar. Tente novamente.',
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
                       loadingBuilder: (context) => const Padding(
                         padding: EdgeInsets.all(12),
                         child: LinearProgressIndicator(),
                       ),
-                      emptyBuilder: (context) => const ListTile(
-                        leading: Icon(Icons.info_outline),
-                        title:
-                            Text('Nenhum resultado encontrado', style: TextStyle(fontSize: 13)),
+                      emptyBuilder: (context) => ListTile(
+                        leading: Icon(
+                          _query.length < 3
+                              ? Icons.keyboard_outlined
+                              : Icons.search_off_rounded,
+                          size: 18,
+                          color: AppColors.blue.withValues(alpha: 0.6),
+                        ),
+                        title: Text(
+                          _query.length < 3
+                              ? 'Mín. 3 caracteres para buscar'
+                              : 'Nenhum resultado encontrado',
+                          style: const TextStyle(fontSize: 13),
+                        ),
                       ),
                       builder: (context, controller, focusNode) {
                         return TextField(
@@ -135,7 +153,11 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                           ),
                         );
                       },
-                      suggestionsCallback: widget.dadosSql.listaEnderecoCompleto,
+                      suggestionsCallback: (query) async {
+                        setState(() => _query = query);
+                        if (query.trim().length < 3) return [];
+                        return widget.dadosSql.listaEnderecoCompleto(query);
+                      },
                       itemBuilder: (context, Endereco? suggestion) {
                         if (suggestion == null) return const SizedBox.shrink();
                         return ListTile(
@@ -156,8 +178,8 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                   IconButton(
                     onPressed: limpaDados,
                     icon: Icon(Icons.close_rounded,
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.4),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.4),
                         size: 20),
                   ),
                 ],
@@ -195,10 +217,10 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                   Container(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                     decoration: BoxDecoration(
-                      color: primaryBlue.withValues(
-                          alpha: isDark ? 0.18 : 0.08),
-                      borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(16)),
+                      color:
+                          primaryBlue.withValues(alpha: isDark ? 0.18 : 0.08),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(16)),
                     ),
                     child: Row(
                       children: [
@@ -217,8 +239,8 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                           widget.alterouDados
                               ? 'Novo Endereço'
                               : 'Endereço Atual',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold),
+                          style: theme.textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         if (widget.alterouDados) ...[
                           const Spacer(),
@@ -247,13 +269,22 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                     padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
                     child: Column(
                       children: [
-                        _endRow(theme, isDark, 'Município',
+                        _endRow(
+                            theme,
+                            isDark,
+                            'Município',
                             widget.enderecoCompleto.municipio?.nome ?? '—',
                             Icons.location_city_outlined),
-                        _endRow(theme, isDark, 'Rua',
+                        _endRow(
+                            theme,
+                            isDark,
+                            'Rua',
                             widget.enderecoCompleto.rua?.nome ?? '—',
                             Icons.map_outlined),
-                        _endRow(theme, isDark, 'Bairro',
+                        _endRow(
+                            theme,
+                            isDark,
+                            'Bairro',
                             widget.enderecoCompleto.bairro?.nome ?? '—',
                             Icons.holiday_village_outlined),
 
@@ -270,12 +301,11 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text('Número',
-                                        style:
-                                            theme.textTheme.labelSmall?.copyWith(
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
                                           color: theme.colorScheme.onSurface
                                               .withValues(alpha: 0.5),
                                         )),
@@ -325,12 +355,11 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text('CEP',
-                                        style:
-                                            theme.textTheme.labelSmall?.copyWith(
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
                                           color: theme.colorScheme.onSurface
                                               .withValues(alpha: 0.5),
                                         )),
@@ -399,8 +428,7 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                         ),
                       );
                     } else {
-                      widget.enderecoCompleto.cep =
-                          widget.controllerCep.text;
+                      widget.enderecoCompleto.cep = widget.controllerCep.text;
                       widget.enderecoCompleto.numero =
                           widget.controllerNumero.text;
                       try {
@@ -442,8 +470,8 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
     );
   }
 
-  Widget _endRow(ThemeData theme, bool isDark, String label, String value,
-      IconData icon) {
+  Widget _endRow(
+      ThemeData theme, bool isDark, String label, String value, IconData icon) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -464,8 +492,8 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                 const SizedBox(height: 2),
                 Text(
                   value.isNotEmpty ? value : '—',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600, fontSize: 13),
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w600, fontSize: 13),
                 ),
               ],
             ),
@@ -499,4 +527,3 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
     });
   }
 }
-
