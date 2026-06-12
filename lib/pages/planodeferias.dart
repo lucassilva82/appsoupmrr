@@ -1,12 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
-// import '../widgets/drawer_personalizado.dart'; // removido: import não utilizado
-import '../widgets/custom_appbar.dart';
 import '../models/auth_model.dart';
+import '../utils/app_theme.dart';
+import '../widgets/custom_appbar.dart';
 
 class PlanoDeFeriasPage extends StatefulWidget {
   const PlanoDeFeriasPage({super.key});
@@ -152,7 +152,279 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
     return _all.where((r) => _extractYear(r) == _selectedYear).toList();
   }
 
-  Widget _buildRow(Map<String, dynamic> r) {
+  // ── UI: barra de seleção de ano ─────────────────────────────────────
+  Widget _buildYearBar(bool isDark) {
+    if (_years.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: 44,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: _years.map((year) {
+          final isSelected = year == _selectedYear;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(year.toString()),
+              selected: isSelected,
+              onSelected: (_) {
+                setState(() => _selectedYear = year);
+                _loadData();
+              },
+              selectedColor: AppColors.blue,
+              backgroundColor:
+                  isDark ? AppColors.darkCard : Colors.white,
+              labelStyle: TextStyle(
+                color: isSelected
+                    ? Colors.white
+                    : (isDark ? Colors.white70 : Colors.black87),
+                fontWeight:
+                    isSelected ? FontWeight.w700 : FontWeight.normal,
+                fontSize: 13,
+              ),
+              checkmarkColor: Colors.white,
+              side: BorderSide(
+                color: isSelected
+                    ? AppColors.blue
+                    : (isDark
+                        ? AppColors.darkBorder
+                        : Colors.grey.shade300),
+              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // ── UI: estado vazio / erro ──────────────────────────────────────────
+  Widget _buildEmptyState(bool isDark) {
+    final isError = _error != null;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: (isDark ? Colors.white : AppColors.blue)
+                    .withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isError
+                    ? Icons.cloud_off_outlined
+                    : Icons.beach_access_outlined,
+                size: 40,
+                color: isDark ? Colors.white24 : AppColors.blue.withValues(alpha: 0.4),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              isError ? 'Não foi possível carregar' : 'Nenhum plano encontrado',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _error ??
+                  'Você não possui um plano de férias cadastrado para $_selectedYear.\nProcure a administração da sua OM.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.5,
+                color: isDark ? Colors.white38 : Colors.black38,
+              ),
+            ),
+            if (isError) ...[
+              const SizedBox(height: 20),
+              OutlinedButton.icon(
+                onPressed: _loadData,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Tentar novamente'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.blue,
+                  side: const BorderSide(color: AppColors.blue),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── UI: chip de status de um período ────────────────────────────────
+  Widget _buildStatusChip(DateTime? startDt, DateTime? endDt) {
+    final now = DateTime.now();
+    Color color;
+    IconData icon;
+    String label;
+
+    if (startDt == null) {
+      return const SizedBox.shrink();
+    } else if (endDt != null && endDt.isBefore(now)) {
+      color = Colors.grey;
+      icon = Icons.check_circle_outline;
+      label = 'Concluído';
+    } else if (startDt.isBefore(now) ||
+        startDt.isAtSameMomentAs(DateTime(now.year, now.month, now.day))) {
+      color = const Color(0xFF22C55E);
+      icon = Icons.play_circle_outline;
+      label = 'Em andamento';
+    } else {
+      final days = startDt.difference(now).inDays + 1;
+      color = AppColors.blue;
+      icon = Icons.schedule_outlined;
+      label = days == 1 ? 'Amanhã' : 'Em ${days}d';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 4),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 10.5, color: color, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+
+  // ── UI: linha de período (parcela / integral) ────────────────────────
+  Widget _buildPeriodRow({
+    required String label,
+    required String startRaw,
+    required String startFormatted,
+    required String endRaw,
+    required String endFormatted,
+    required bool isDark,
+  }) {
+    DateTime? tryParse(String s) {
+      if (s.trim().isEmpty) return null;
+      final str = s.trim();
+      final iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})');
+      final m = iso.firstMatch(str);
+      if (m != null) {
+        return DateTime(int.parse(m.group(1)!), int.parse(m.group(2)!),
+            int.parse(m.group(3)!));
+      }
+      final br = RegExp(r'^(\d{2})\/(\d{2})\/(\d{4})');
+      final m3 = br.firstMatch(str);
+      if (m3 != null) {
+        return DateTime(int.parse(m3.group(3)!), int.parse(m3.group(2)!),
+            int.parse(m3.group(1)!));
+      }
+      return null;
+    }
+
+    final startDt = tryParse(startRaw);
+    final endDt = tryParse(endRaw);
+
+    String duration = '';
+    if (startDt != null && endDt != null) {
+      final d = endDt.difference(startDt).inDays + 1;
+      duration = '$d dias';
+    }
+
+    final borderColor = isDark
+        ? AppColors.darkBorder
+        : AppColors.blue.withValues(alpha: 0.15);
+    final bgColor = isDark
+        ? Colors.white.withValues(alpha: 0.04)
+        : AppColors.blue.withValues(alpha: 0.04);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: borderColor, width: 0.8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                  color: isDark ? Colors.white54 : Colors.black45,
+                ),
+              ),
+              const Spacer(),
+              _buildStatusChip(startDt, endDt),
+            ],
+          ),
+          const SizedBox(height: 7),
+          Row(
+            children: [
+              Icon(Icons.flight_takeoff_rounded,
+                  size: 14, color: AppColors.blue),
+              const SizedBox(width: 5),
+              Text(
+                startFormatted.isNotEmpty ? startFormatted : '—',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Icon(Icons.arrow_forward_rounded,
+                    size: 13,
+                    color: isDark ? Colors.white38 : Colors.black26),
+              ),
+              Icon(Icons.flight_land_rounded,
+                  size: 14, color: Colors.red.shade400),
+              const SizedBox(width: 5),
+              Text(
+                endFormatted.isNotEmpty ? endFormatted : '—',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                ),
+              ),
+              if (duration.isNotEmpty) ...[
+                const Spacer(),
+                Text(
+                  duration,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? Colors.white38 : Colors.black38,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── UI: card principal de férias ─────────────────────────────────────
+  Widget _buildVacationCard(Map<String, dynamic> r, bool isDark) {
     String getField(List<String> keys) {
       for (final k in keys) {
         final v = r[k];
@@ -164,13 +436,7 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
       return '';
     }
 
-    final nome =
-        getField(['nome', 'nome_militar', 'nomeMilitar', 'nomeCompleto']);
-    final posto = getField(['posto', 'posto_graduacao', 'PostoGraduacao']);
-    final comando = getField(['comando', 'orgao', 'lotacao']);
-    final unidade = getField(['unidade', 'unidade_sigla']);
-
-    String formatDateStr(String s) {
+    String fmtDate(String s) {
       if (s.trim().isEmpty) return '';
       final str = s.trim();
       final iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})');
@@ -179,416 +445,309 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
       final iso2 = RegExp(r'^(\d{4})\/(\d{2})\/(\d{2})');
       final m2 = iso2.firstMatch(str);
       if (m2 != null) return '${m2.group(3)}/${m2.group(2)}/${m2.group(1)}';
-      final br = RegExp(r'^(\d{2})\/(\d{2})\/(\d{4})');
-      if (br.hasMatch(str)) return str;
       return str;
     }
 
-    // integral (previsto)
-    final integralInicio = getField([
-      'prev_feri_inicio',
-      'prev_feri_inicio_format',
-      'integral_inicio',
-      'integral_inicio_format',
-      'integra_inicio'
-    ]);
-    final integralFinal = getField([
-      'prev_feri_final',
-      'prev_feri_final_format',
-      'integral_final',
-      'integral_final_format',
-      'integra_final'
-    ]);
+    final nome = getField(['nome', 'nome_militar', 'nomeMilitar', 'nomeCompleto']);
+    final posto = getField(['posto', 'posto_graduacao', 'PostoGraduacao']);
+    final comando = getField(['comando', 'orgao', 'lotacao']);
+    final unidade = getField(['unidade', 'unidade_sigla']);
+    final subInfo = [comando, unidade].where((s) => s.isNotEmpty).join(' · ');
 
-    // parcelas
-    final frac1Inicio = getField(['1p_inicio', '1p_inicio_format']);
-    final frac1Final = getField(['1p_fim', '1p_fim_format']);
-    final frac2Inicio = getField(['2p_inicio', '2p_inicio_format']);
-    final frac2Final = getField(['2p_fim', '2p_fim_format']);
-    final frac3Inicio = getField(['3p_inicio', '3p_inicio_format']);
-    final frac3Final = getField(['3p_fim', '3p_fim_format']);
+    // Períodos
+    final integralInicioRaw = getField([
+      'prev_feri_inicio', 'prev_feri_inicio_format', 'integral_inicio',
+      'integral_inicio_format', 'integra_inicio'
+    ]);
+    final integralFinalRaw = getField([
+      'prev_feri_final', 'prev_feri_final_format', 'integral_final',
+      'integral_final_format', 'integra_final'
+    ]);
+    final frac1InicioRaw = getField(['1p_inicio', '1p_inicio_format']);
+    final frac1FinalRaw = getField(['1p_fim', '1p_fim_format']);
+    final frac2InicioRaw = getField(['2p_inicio', '2p_inicio_format']);
+    final frac2FinalRaw = getField(['2p_fim', '2p_fim_format']);
+    final frac3InicioRaw = getField(['3p_inicio', '3p_inicio_format']);
+    final frac3FinalRaw = getField(['3p_fim', '3p_fim_format']);
 
-    final fIntegralInicio =
-        integralInicio.isNotEmpty ? formatDateStr(integralInicio) : '';
-    final fIntegralFinal =
-        integralFinal.isNotEmpty ? formatDateStr(integralFinal) : '';
-    final f1i = frac1Inicio.isNotEmpty ? formatDateStr(frac1Inicio) : '';
-    final f1f = frac1Final.isNotEmpty ? formatDateStr(frac1Final) : '';
-    final f2i = frac2Inicio.isNotEmpty ? formatDateStr(frac2Inicio) : '';
-    final f2f = frac2Final.isNotEmpty ? formatDateStr(frac2Final) : '';
-    final f3i = frac3Inicio.isNotEmpty ? formatDateStr(frac3Inicio) : '';
-    final f3f = frac3Final.isNotEmpty ? formatDateStr(frac3Final) : '';
-    // antecipação do 13º
+    final fIntI = fmtDate(integralInicioRaw);
+    final fIntF = fmtDate(integralFinalRaw);
+    final f1i = fmtDate(frac1InicioRaw);
+    final f1f = fmtDate(frac1FinalRaw);
+    final f2i = fmtDate(frac2InicioRaw);
+    final f2f = fmtDate(frac2FinalRaw);
+    final f3i = fmtDate(frac3InicioRaw);
+    final f3f = fmtDate(frac3FinalRaw);
+
+    // 13º
     final prevAnt = getField([
-      'prev_feri_antecipado',
-      'prev_feri_antecipado_format',
+      'prev_feri_antecipado', 'prev_feri_antecipado_format',
       'prev_feri_antecipado_raw'
     ]);
     String antecipadoLabel = '';
     if (prevAnt.isNotEmpty) {
       final v = prevAnt.toLowerCase();
-      if (v == 'a')
-        antecipadoLabel = 'O 13º Salário é pago no aniversário.';
-      else if (v == 'b')
-        antecipadoLabel = 'O 13º Salário é pago parcelado.';
-      else
+      if (v == 'a') {
+        antecipadoLabel = '13º Salário pago no aniversário.';
+      } else if (v == 'b') {
+        antecipadoLabel = '13º Salário pago parcelado.';
+      } else {
         antecipadoLabel = prevAnt;
+      }
     }
 
-    // Decide mode robustly:
-    // - if prev_feri_inicio/prev_feri_final exist -> integral
-    // - else if any frac fields exist -> parcelado
-    // - else fall back to frac_int flag
-    final hasPrev = integralInicio.isNotEmpty || integralFinal.isNotEmpty;
-    final hasFrac = frac1Inicio.isNotEmpty ||
-        frac1Final.isNotEmpty ||
-        frac2Inicio.isNotEmpty ||
-        frac2Final.isNotEmpty ||
-        frac3Inicio.isNotEmpty ||
-        frac3Final.isNotEmpty;
+    // Tipo: integral ou parcelada
+    final hasPrev = integralInicioRaw.isNotEmpty || integralFinalRaw.isNotEmpty;
+    final hasFrac = frac1InicioRaw.isNotEmpty || frac1FinalRaw.isNotEmpty ||
+        frac2InicioRaw.isNotEmpty || frac2FinalRaw.isNotEmpty ||
+        frac3InicioRaw.isNotEmpty || frac3FinalRaw.isNotEmpty;
     final fracIntRaw = r['frac_int'];
-    final bool isIntegral = hasPrev ||
-        (!(hasFrac) &&
+    final isIntegral = hasPrev ||
+        (!hasFrac &&
             fracIntRaw != null &&
             (fracIntRaw.toString() == '1' ||
                 fracIntRaw.toString().toLowerCase() == 'true'));
 
-    Widget header() {
-      String clean(String s) => s.replaceAll(RegExp(r'[\-\.]+'), '').trim();
-      final p = clean(posto);
-      final n = clean(nome);
-      final subParts = <String>[];
-      if (comando.isNotEmpty) subParts.add(comando);
-      if (unidade.isNotEmpty) subParts.add(unidade);
-      final sub = subParts.join(' • ');
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Card(
+      margin: const EdgeInsets.only(bottom: 14),
+      elevation: isDark ? 0 : 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      color: isDark ? AppColors.darkCard : Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (p.isNotEmpty)
-            Text(p,
-                style: TextStyle(
-                    color: Colors.blueGrey.shade700,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600)),
-          if (n.isNotEmpty)
-            Text(n,
-                style:
-                    const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-          if (sub.isNotEmpty) SizedBox(height: 6),
-          if (sub.isNotEmpty)
-            Text(sub, style: TextStyle(color: Colors.grey.shade700)),
-        ],
-      );
-    }
-
-    // helper: try parse many date formats to DateTime
-    DateTime? tryParseDate(String s) {
-      if (s.trim().isEmpty) return null;
-      final str = s.trim();
-      final iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})');
-      final m = iso.firstMatch(str);
-      if (m != null)
-        return DateTime(int.parse(m.group(1)!), int.parse(m.group(2)!),
-            int.parse(m.group(3)!));
-      final iso2 = RegExp(r'^(\d{4})\/(\d{2})\/(\d{2})');
-      final m2 = iso2.firstMatch(str);
-      if (m2 != null)
-        return DateTime(int.parse(m2.group(1)!), int.parse(m2.group(2)!),
-            int.parse(m2.group(3)!));
-      final br = RegExp(r'^(\d{2})\/(\d{2})\/(\d{4})');
-      final m3 = br.firstMatch(str);
-      if (m3 != null)
-        return DateTime(int.parse(m3.group(3)!), int.parse(m3.group(2)!),
-            int.parse(m3.group(1)!));
-      return null;
-    }
-
-    // collect candidate start dates (integral or parcel starts)
-    final candidatesRaw = <String>[
-      integralInicio,
-      frac1Inicio,
-      frac2Inicio,
-      frac3Inicio
-    ];
-    final now = DateTime.now();
-    DateTime? nearest;
-    for (final raw in candidatesRaw) {
-      if (raw.trim().isEmpty) continue;
-      final dt = tryParseDate(raw);
-      if (dt == null) continue;
-      if (!dt.isBefore(now)) {
-        if (nearest == null || dt.isBefore(nearest)) nearest = dt;
-      }
-    }
-
-    // if no future dates found, do not show badge
-    int? daysLeft;
-    if (nearest != null) {
-      final diff = nearest.difference(now).inDays;
-      daysLeft = diff >= 0 ? diff : 0;
-    }
-
-    // provide screen width for badge constraints
-    final sw = MediaQuery.of(context).size.width;
-
-    // build the card content and include a small trailing badge column so it doesn't overlap the header
-    final cardWithOptionalBadge = Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 4,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          // ── Header gradient ──────────────────────────────────────
           Container(
-            width: 6,
-            height: 160,
-            decoration: BoxDecoration(
-              color: Colors.blueAccent.shade200,
-              borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  bottomLeft: Radius.circular(12)),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.blue, AppColors.navy],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
             ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.beach_access_rounded,
+                      color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const CircleAvatar(
-                          backgroundColor: Colors.white,
-                          child: Icon(Icons.beach_access,
-                              color: Colors.blueAccent)),
-                      const SizedBox(width: 12),
-                      Expanded(child: header()),
+                      if (posto.isNotEmpty)
+                        Text(posto,
+                            style: const TextStyle(
+                                color: Colors.white60,
+                                fontSize: 11,
+                                letterSpacing: 0.3)),
+                      Text(
+                        nome.isNotEmpty ? nome : 'Plano de Férias',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (subInfo.isNotEmpty)
+                        Text(subInfo,
+                            style: const TextStyle(
+                                color: Colors.white54, fontSize: 11)),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  // Integral
-                  if (fIntegralInicio.isNotEmpty || fIntegralFinal.isNotEmpty)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.cyanAccent.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.all(8),
-                      child: Row(
-                        children: [
-                          const Expanded(
-                              child: Text('Integral',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.w800))),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                  'Início: ${fIntegralInicio.isEmpty ? '—' : fIntegralInicio}',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w600)),
-                              Text(
-                                  'Fim: ${fIntegralFinal.isEmpty ? '—' : fIntegralFinal}',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w600)),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  const SizedBox(height: 8),
-                  // Parcelas (only when not integral)
-                  if (!isIntegral) ...[
-                    if (f1i.isNotEmpty || f1f.isNotEmpty)
-                      _buildParcelaRow('Frac 1P', f1i, f1f),
-                    if (f2i.isNotEmpty || f2f.isNotEmpty)
-                      _buildParcelaRow('Frac 2P', f2i, f2f),
-                    if (f3i.isNotEmpty || f3f.isNotEmpty)
-                      _buildParcelaRow('Frac 3P', f3i, f3f),
-                  ],
-                  // If integral and there are no dates, show a small note
-                  if (isIntegral &&
-                      fIntegralInicio.isEmpty &&
-                      fIntegralFinal.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text('Plano integral (sem datas previstas)',
-                          style: TextStyle(color: Colors.grey.shade600)),
-                    ),
-
-                  // Exibe info de antecipação do 13º salário (se houver)
-                  if (antecipadoLabel.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.yellow.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.monetization_on,
-                              size: 18, color: Colors.green),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              antecipadoLabel,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w700),
-                              softWrap: true,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          // trailing badge area (keeps space and avoids overlapping header)
-          if (daysLeft != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 12.0, right: 12.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: sw * 0.36),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        border:
-                            Border.all(color: Colors.blue.shade600, width: 1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            daysLeft == 1
-                                ? 'Falta 1 dia'
-                                : 'Faltam $daysLeft dias',
-                            style: TextStyle(
-                                color: Colors.blue.shade900,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 12),
-                          ),
-                          const SizedBox(height: 2),
-                          Text('para as férias',
-                              style: TextStyle(
-                                  color: Colors.blue.shade700, fontSize: 10)),
-                        ],
-                      ),
+                ),
+                const SizedBox(width: 10),
+                // Badge tipo
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: isIntegral
+                        ? const Color(0xFF1DE9B6).withValues(alpha: 0.18)
+                        : Colors.amber.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isIntegral
+                          ? const Color(0xFF1DE9B6)
+                          : Colors.amber.shade400,
+                      width: 1,
                     ),
                   ),
-                ],
-              ),
-            )
-        ],
-      ),
-    );
+                  child: Text(
+                    isIntegral ? 'INTEGRAL' : 'PARCELADA',
+                    style: TextStyle(
+                      color: isIntegral
+                          ? const Color(0xFF1DE9B6)
+                          : Colors.amber.shade300,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.7,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
 
-    // return the card (let it size itself) — badge constrained to avoid overflow
-    return cardWithOptionalBadge;
-  }
-
-  Widget _buildParcelaRow(String title, String inicio, String fim) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        children: [
-          Expanded(
-              child: Text(title,
-                  style: const TextStyle(fontWeight: FontWeight.w700))),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text('Início: ${inicio == '-' ? '----' : inicio}'),
-              Text('Fim: ${fim == '-' ? '----' : fim}'),
-            ],
-          )
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const CustomAppBar(title: 'Meu Plano de Ferias'),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            children: [
-              Card(
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_month, color: Colors.black54),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: DropdownButton<int>(
-                          isExpanded: true,
-                          value: _selectedYear,
-                          hint: const Text('Selecione o ano'),
-                          items: _years
-                              .map((y) => DropdownMenuItem(
-                                  value: y, child: Text(y.toString())))
-                              .toList(),
-                          onChanged: (v) async {
-                            // when user picks a year, update selection and re-fetch
-                            setState(() => _selectedYear = v);
-                            await _loadData();
-                          },
+          // ── Períodos ─────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
+            child: Column(
+              children: [
+                if (isIntegral) ...[
+                  if (fIntI.isNotEmpty || fIntF.isNotEmpty)
+                    _buildPeriodRow(
+                      label: 'Período Integral',
+                      startRaw: integralInicioRaw,
+                      startFormatted: fIntI,
+                      endRaw: integralFinalRaw,
+                      endFormatted: fIntF,
+                      isDark: isDark,
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        'Plano integral — datas ainda não disponíveis.',
+                        style: TextStyle(
+                          color: isDark ? Colors.white38 : Colors.black38,
+                          fontSize: 13,
                         ),
                       ),
-                    ],
+                    ),
+                ] else ...[
+                  if (f1i.isNotEmpty || f1f.isNotEmpty)
+                    _buildPeriodRow(
+                      label: '1ª Parcela',
+                      startRaw: frac1InicioRaw,
+                      startFormatted: f1i,
+                      endRaw: frac1FinalRaw,
+                      endFormatted: f1f,
+                      isDark: isDark,
+                    ),
+                  if (f2i.isNotEmpty || f2f.isNotEmpty)
+                    _buildPeriodRow(
+                      label: '2ª Parcela',
+                      startRaw: frac2InicioRaw,
+                      startFormatted: f2i,
+                      endRaw: frac2FinalRaw,
+                      endFormatted: f2f,
+                      isDark: isDark,
+                    ),
+                  if (f3i.isNotEmpty || f3f.isNotEmpty)
+                    _buildPeriodRow(
+                      label: '3ª Parcela',
+                      startRaw: frac3InicioRaw,
+                      startFormatted: f3i,
+                      endRaw: frac3FinalRaw,
+                      endFormatted: f3f,
+                      isDark: isDark,
+                    ),
+                ],
+              ],
+            ),
+          ),
+
+          // ── Info 13º ─────────────────────────────────────────────
+          if (antecipadoLabel.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.amber.withValues(alpha: 0.08)
+                      : Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.amber.shade300.withValues(alpha: 0.6),
+                    width: 0.8,
                   ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.monetization_on_outlined,
+                        size: 16,
+                        color: isDark
+                            ? Colors.amber.shade300
+                            : Colors.amber.shade800),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        antecipadoLabel,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? Colors.amber.shade300
+                              : Colors.amber.shade900,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              if (_loading)
-                const Expanded(
-                    child: Center(child: CircularProgressIndicator()))
-              else if ((_filtered.isEmpty))
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      _error == null
-                          ? 'Você não possui um plano de ferias para o ano selecionado. Procure a administração da sua OM.'
-                          : _error!,
-                      textAlign: TextAlign.center,
-                      style:
-                          TextStyle(color: Colors.grey.shade700, fontSize: 16),
-                    ),
-                  ),
-                )
-              else
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: _loadData,
-                    child: ListView.separated(
-                      itemCount: _filtered.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (_, i) => _buildRow(_filtered[i]),
-                    ),
-                  ),
-                ),
-            ],
+            )
+          else
+            const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  // ── build ────────────────────────────────────────────────────────────
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor:
+          isDark ? AppColors.darkBg : AppColors.lightBg,
+      appBar: const CustomAppBar(title: 'Plano de Férias'),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Seletor de ano (chips)
+          if (_years.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _buildYearBar(isDark),
+            const SizedBox(height: 4),
+          ],
+
+          // Conteúdo principal
+          Expanded(
+            child: _loading
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.blue))
+                : _filtered.isEmpty
+                    ? _buildEmptyState(isDark)
+                    : RefreshIndicator(
+                        color: AppColors.blue,
+                        onRefresh: _loadData,
+                        child: ListView.builder(
+                          padding:
+                              const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                          itemCount: _filtered.length,
+                          itemBuilder: (_, i) =>
+                              _buildVacationCard(_filtered[i], isDark),
+                        ),
+                      ),
           ),
-        ),
+        ],
       ),
     );
   }
