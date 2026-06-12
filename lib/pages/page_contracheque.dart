@@ -332,16 +332,19 @@ class _PageContrachequeState extends State<PageContracheque> {
         return Scaffold(
           backgroundColor:
               isDark ? const Color(0xFF0D1117) : const Color(0xFFF4F6FA),
-          // ── AppBar idêntico ao CustomAppBar ────────────────────────
+          // ── AppBar — mesma cor que CustomAppBar ──────────────────
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
             centerTitle: true,
             iconTheme: const IconThemeData(color: Colors.white),
             flexibleSpace: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF1976D2), Color(0xFF002154)],
+                  colors: AppTheme.appBarGradient(
+                    isDark: isDark,
+                    isSuperUser: auth.isSuperUser,
+                  ),
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),

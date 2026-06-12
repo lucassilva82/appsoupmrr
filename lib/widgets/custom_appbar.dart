@@ -88,15 +88,20 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<Auth>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final gradColors = AppTheme.appBarGradient(
+      isDark: isDark,
+      isSuperUser: auth.isSuperUser,
+    );
     return AppBar(
       iconTheme: const IconThemeData(color: Colors.white),
       backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
       flexibleSpace: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF1976D2), Color(0xFF002154)],
+            colors: gradColors,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
