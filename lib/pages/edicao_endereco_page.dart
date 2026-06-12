@@ -33,6 +33,7 @@ class EdicaoEnderecoPage extends StatefulWidget {
 class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
   final DadosSql dadosSql = DadosSql();
   String _query = '';
+  bool _saving = false;
 
   @override
   Widget build(BuildContext context) {
@@ -418,50 +419,75 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
-                  onPressed: () async {
-                    if (widget.controllerNumero.text.isEmpty ||
-                        widget.controllerCep.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Por favor preencha número e CEP'),
-                          backgroundColor: Colors.orange,
-                        ),
-                      );
-                    } else {
-                      widget.enderecoCompleto.cep = widget.controllerCep.text;
-                      widget.enderecoCompleto.numero =
-                          widget.controllerNumero.text;
-                      try {
-                        await dadosSql.atualizaEndereco(
-                          widget.enderecoCompleto.municipio?.id ?? '',
-                          widget.enderecoCompleto.bairro?.id ?? '',
-                          widget.enderecoCompleto.rua?.id ?? '',
-                          widget.enderecoCompleto.numero ?? '',
-                          widget.enderecoCompleto.cep ?? '',
-                          widget.militar.matricula,
-                        );
-                        QuickAlert.show(
-                          onConfirmBtnTap: () => Navigator.of(context)
-                              .pushReplacementNamed(AppRoutes.PAGE_MILITAR),
-                          context: context,
-                          title: 'Sucesso',
-                          confirmBtnText: 'OK',
-                          type: QuickAlertType.success,
-                          text: 'Endereço atualizado com sucesso!',
-                        );
-                      } catch (error) {
-                        QuickAlert.show(
-                          onConfirmBtnTap: () => Navigator.of(context)
-                              .pushReplacementNamed(AppRoutes.PAGE_MILITAR),
-                          context: context,
-                          title: 'Erro',
-                          confirmBtnText: 'OK',
-                          type: QuickAlertType.error,
-                          text: 'Erro ao salvar. Tente novamente.',
-                        );
-                      }
-                    }
-                  },
+                  onPressed: _saving
+                      ? null
+                      : () async {
+                          if (widget.controllerNumero.text.isEmpty ||
+                              widget.controllerCep.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Por favor preencha número e CEP'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                            return;
+                          }
+
+                          widget.enderecoCompleto.cep =
+                              widget.controllerCep.text;
+                          widget.enderecoCompleto.numero =
+                              widget.controllerNumero.text;
+
+                          setState(() => _saving = true);
+
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            barrierColor: Colors.black.withValues(alpha: 0.45),
+                            builder: (_) => const _EnderecoLoadingDialog(),
+                          );
+
+                          try {
+                            await dadosSql.atualizaEndereco(
+                              widget.enderecoCompleto.municipio?.id ?? '',
+                              widget.enderecoCompleto.bairro?.id ?? '',
+                              widget.enderecoCompleto.rua?.id ?? '',
+                              widget.enderecoCompleto.numero ?? '',
+                              widget.enderecoCompleto.cep ?? '',
+                              widget.militar.matricula,
+                            );
+
+                            if (!mounted) return;
+                            Navigator.of(context, rootNavigator: true).pop();
+
+                            QuickAlert.show(
+                              onConfirmBtnTap: () => Navigator.of(context)
+                                  .pushReplacementNamed(AppRoutes.PAGE_MILITAR),
+                              context: context,
+                              title: 'Sucesso',
+                              confirmBtnText: 'OK',
+                              type: QuickAlertType.success,
+                              text: 'Endereço atualizado com sucesso!',
+                              confirmBtnColor: AppColors.blue,
+                            );
+                          } catch (error) {
+                            if (!mounted) return;
+                            Navigator.of(context, rootNavigator: true).pop();
+
+                            QuickAlert.show(
+                              onConfirmBtnTap: () =>
+                                  Navigator.of(context).pop(),
+                              context: context,
+                              title: 'Erro',
+                              confirmBtnText: 'OK',
+                              type: QuickAlertType.error,
+                              text: 'Erro ao salvar. Tente novamente.',
+                            );
+                          } finally {
+                            if (mounted) setState(() => _saving = false);
+                          }
+                        },
                 ),
               ),
           ],
@@ -525,5 +551,65 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
     setState(() {
       widget.alterouDados = true;
     });
+  }
+}
+
+// ── Loading dialog (reutilizável) ─────────────────────────────────────────────
+class _EnderecoLoadingDialog extends StatelessWidget {
+  const _EnderecoLoadingDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 32),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1C2128) : Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.12),
+                blurRadius: 32,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 48,
+                height: 48,
+                child: CircularProgressIndicator(
+                  color: AppColors.blue,
+                  strokeWidth: 3.5,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Salvando...',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Aguarde um momento',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
