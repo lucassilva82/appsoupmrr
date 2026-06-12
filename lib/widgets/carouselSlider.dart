@@ -39,28 +39,31 @@ class WidgetCarouselSlider extends StatelessWidget {
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            children: [
-              if (comandante != null)
-                Expanded(
-                  child: _ComandanteCard(
-                    data: comandante,
-                    label: 'Comandante',
-                    icon: Icons.star_rounded,
-                    iconColor: AppColors.gold,
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (comandante != null)
+                  Expanded(
+                    child: _ComandanteCard(
+                      data: comandante,
+                      label: 'Comandante',
+                      icon: Icons.star_rounded,
+                      iconColor: AppColors.gold,
+                    ),
                   ),
-                ),
-              if (comandante != null && sub != null) const SizedBox(width: 10),
-              if (sub != null)
-                Expanded(
-                  child: _ComandanteCard(
-                    data: sub,
-                    label: 'Sub-Comandante',
-                    icon: Icons.shield_rounded,
-                    iconColor: AppColors.lightBlue,
+                if (comandante != null && sub != null) const SizedBox(width: 10),
+                if (sub != null)
+                  Expanded(
+                    child: _ComandanteCard(
+                      data: sub,
+                      label: 'Sub-Comandante',
+                      icon: Icons.shield_rounded,
+                      iconColor: AppColors.lightBlue,
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -95,12 +98,10 @@ class _ComandanteCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.antiAlias,
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ── Foto ─────────────────────────────────────────────────────────
-          SizedBox(
-            height: 130,
-            width: double.infinity,
+          Expanded(
             child: imageUrl.isNotEmpty &&
                     (imageUrl.startsWith('http://') ||
                         imageUrl.startsWith('https://'))
