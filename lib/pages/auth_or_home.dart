@@ -8,7 +8,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/auth_model.dart';
 import 'auth_page.dart';
 import 'biometric_auth_page.dart';
-import 'home_page.dart';
 import 'main_shell.dart';
 
 class AuthOrHome extends StatefulWidget {

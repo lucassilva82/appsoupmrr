@@ -46,7 +46,6 @@ import 'package:projetonovo/pages/declaracoes_page.dart';
 import 'package:projetonovo/pages/detalhes_mapa_forca_comando_page.dart';
 import 'package:projetonovo/pages/detalhes_mapa_forca_page.dart';
 import 'package:projetonovo/pages/edicao_endereco_page.dart';
-import 'package:projetonovo/pages/home_page.dart';
 import 'package:projetonovo/pages/mapa_da_forca.dart';
 import 'package:projetonovo/pages/notifications_page.dart';
 import 'package:projetonovo/pages/page_contracheque.dart';

@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/auth_model.dart';
-import '../utils/app_theme.dart';
 import '../widgets/auth_form.dart';
 import '../utils/app_routes.dart';
 

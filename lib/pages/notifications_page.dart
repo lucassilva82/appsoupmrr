@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:projetonovo/models/notification_model.dart';
-import 'package:projetonovo/services/notification_service.dart';
 import 'package:projetonovo/utils/app_routes.dart';
 import 'package:projetonovo/utils/notification_provider.dart';
 import 'package:projetonovo/widgets/custom_appbar.dart';

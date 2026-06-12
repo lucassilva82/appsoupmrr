@@ -5,8 +5,6 @@ import 'package:provider/provider.dart';
 import '../models/auth_model.dart';
 import '../models/militar.dart';
 import '../services/dados_sql.dart';
-import '../utils/app_theme.dart';
-import '../view/second_screen.dart';
 import '../widgets/dados_militar.dart';
 
 // ── PageMilitarBody ───────────────────────────────────────────────────────────
