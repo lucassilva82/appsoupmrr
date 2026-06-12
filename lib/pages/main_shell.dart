@@ -41,6 +41,7 @@ class _MainShellState extends State<MainShell> {
     final notifProvider = Provider.of<NotificationProvider>(context);
 
     final isSuperUser = auth.isSuperUser;
+    final isAdmin = auth.nivel == 1;
     final isDark = themeProvider.isDark;
     final unread = notifProvider.notifications.where((n) => !n.clicked).length;
     final nome = auth.nomeMilitar ?? 'Militar';
@@ -66,6 +67,7 @@ class _MainShellState extends State<MainShell> {
               context,
               nome: nome,
               isSuperUser: isSuperUser,
+              isAdmin: isAdmin,
               unread: unread,
               notifProvider: notifProvider,
             ),
@@ -130,6 +132,7 @@ class _MainShellState extends State<MainShell> {
     BuildContext context, {
     required String nome,
     required bool isSuperUser,
+    required bool isAdmin,
     required int unread,
     required NotificationProvider notifProvider,
   }) {
@@ -142,7 +145,7 @@ class _MainShellState extends State<MainShell> {
           // Título dinâmico por aba
           Expanded(
             child: _currentIndex == 0
-                ? _titleHome(nome, isSuperUser)
+                ? _titleHome(nome, isSuperUser, isAdmin)
                 : Text(
                     [
                       'Início',
@@ -176,7 +179,8 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  Widget _titleHome(String nome, bool isSuperUser) {
+  Widget _titleHome(String nome, bool isSuperUser, bool isAdmin) {
+    final label = isAdmin ? 'Admin' : 'GESTOR';
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -203,9 +207,9 @@ class _MainShellState extends State<MainShell> {
               color: AppColors.gold,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Text(
-              'GESTOR',
-              style: TextStyle(
+            child: Text(
+              label,
+              style: const TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
