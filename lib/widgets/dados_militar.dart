@@ -39,7 +39,7 @@ class _DadosMilitarState extends State<DadosMilitar> {
             // Banner gradiente
             Container(
               width: double.infinity,
-              height: 120,
+              height: 90,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Color(0xFF1976D2), Color(0xFF002154)],
@@ -50,7 +50,7 @@ class _DadosMilitarState extends State<DadosMilitar> {
             ),
             // Avatar centralizado sobrepondo o banner
             Positioned(
-              bottom: -44,
+              bottom: -40,
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
@@ -79,7 +79,7 @@ class _DadosMilitarState extends State<DadosMilitar> {
           ],
         ),
 
-        const SizedBox(height: 52), // espaço para o avatar que sobressai
+        const SizedBox(height: 48), // espaço para o avatar que sobressai
 
         // ── Nome + Posto + Unidade ────────────────────────────────────────
         Padding(
@@ -179,6 +179,17 @@ class _DadosMilitarState extends State<DadosMilitar> {
 
         _sectionCard(
           context: context,
+          icon: Icons.phone_outlined,
+          title: 'Contato',
+          isDark: isDark,
+          child: DadosContato(
+            militar: widget.militar,
+            atualizarDados: atualizarDados,
+          ),
+        ),
+
+        _sectionCard(
+          context: context,
           icon: Icons.home_outlined,
           title: 'Endereço',
           isDark: isDark,
@@ -200,17 +211,6 @@ class _DadosMilitarState extends State<DadosMilitar> {
           title: 'Situação Funcional',
           isDark: isDark,
           child: DadosSituacaoFuncional(militar: widget.militar),
-        ),
-
-        _sectionCard(
-          context: context,
-          icon: Icons.phone_outlined,
-          title: 'Contato',
-          isDark: isDark,
-          child: DadosContato(
-            militar: widget.militar,
-            atualizarDados: atualizarDados,
-          ),
         ),
 
         // ── Botão salvar ──────────────────────────────────────────────────

@@ -153,6 +153,7 @@ class _MainShellState extends State<MainShell> {
                       'Ficha Individual',
                       'Configurações'
                     ][_currentIndex],
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,

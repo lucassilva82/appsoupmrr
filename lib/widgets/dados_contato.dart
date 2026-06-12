@@ -101,23 +101,10 @@ class _DadosContatoState extends State<DadosContato> {
               ),
               child: Row(
                 children: [
-                  // WhatsApp icon
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: isWhats
-                          ? const Color(0xFF25D366).withValues(alpha: 0.12)
-                          : Colors.grey.withValues(alpha: 0.10),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Image.asset(
-                      'assets/imagens/whatsapp.png',
-                      width: 16,
-                      height: 16,
-                      color: isWhats ? const Color(0xFF25D366) : Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
+                  // Número
+                  const Icon(Icons.phone_outlined,
+                      size: 16, color: Color(0xFF1565C0)),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       tel.numeroTel,
@@ -127,16 +114,14 @@ class _DadosContatoState extends State<DadosContato> {
                       ),
                     ),
                   ),
-                  // Toggle WhatsApp
-                  Switch.adaptive(
-                    value: isWhats,
-                    activeColor: const Color(0xFF25D366),
-                    onChanged: (val) {
+                  // WhatsApp toggle — toque no ícone/chip para marcar
+                  GestureDetector(
+                    onTap: () {
                       for (final t in widget.militar.telefones) {
                         t.value = false;
                         t.tipo = Tipos.comum;
                       }
-                      if (val) {
+                      if (!isWhats) {
                         tel.tipo = Tipos.whats;
                         tel.value = true;
                       }
@@ -144,14 +129,52 @@ class _DadosContatoState extends State<DadosContato> {
                       setState(() {});
                       widget.atualizarDados();
                     },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: isWhats
+                            ? const Color(0xFF25D366)
+                            : (isDark
+                                ? const Color(0xFF2D333B)
+                                : Colors.grey.shade100),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isWhats
+                              ? const Color(0xFF25D366)
+                              : (isDark
+                                  ? const Color(0xFF444D56)
+                                  : Colors.grey.shade300),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Image.asset(
+                            'assets/imagens/whatsapp.png',
+                            width: 14,
+                            height: 14,
+                            color: isWhats ? Colors.white : Colors.grey,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            'WhatsApp',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: isWhats ? Colors.white : Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   // Excluir
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded,
-                        size: 18, color: Colors.redAccent),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    onPressed: () {
+                  GestureDetector(
+                    onTap: () {
                       if (widget.militar.telefones.length <= 1) {
                         QuickAlert.show(
                           confirmBtnText: 'OK',
@@ -173,6 +196,15 @@ class _DadosContatoState extends State<DadosContato> {
                         widget.atualizarDados();
                       }
                     },
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.delete_outline_rounded,
+                          size: 15, color: Colors.redAccent),
+                    ),
                   ),
                 ],
               ),
