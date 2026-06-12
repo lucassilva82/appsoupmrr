@@ -50,7 +50,6 @@ class _HomeBodyState extends State<HomeBody>
   Widget build(BuildContext context) {
     super.build(context);
     final auth = Provider.of<Auth>(context);
-    final screenH = MediaQuery.of(context).size.height;
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -68,20 +67,11 @@ class _HomeBodyState extends State<HomeBody>
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Column(
               children: [
-                SizedBox(
-                  height: screenH * 0.15,
-                  child: CardTempoServico(),
-                ),
+                CardTempoServico(),
                 const SizedBox(height: 10),
-                SizedBox(
-                  height: screenH * 0.14,
-                  child: const HomeContrachequeCard(),
-                ),
+                const HomeContrachequeCard(),
                 const SizedBox(height: 10),
-                SizedBox(
-                  height: screenH * 0.24,
-                  child: const HomePlanoFeriasCard(),
-                ),
+                const HomePlanoFeriasCard(),
               ],
             ),
           ),
