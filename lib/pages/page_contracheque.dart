@@ -287,7 +287,7 @@ class _PageContrachequeState extends State<PageContracheque> {
                                   : '-'),
                           infoCell('RELAÇÃO DE TRABALHO',
                               widget.mesSelecionado.relacaoTrabalho),
-                          pw.SizedBox.shrink(),
+                          pw.Container(),
                         ]),
                       ],
                     ),
@@ -296,32 +296,7 @@ class _PageContrachequeState extends State<PageContracheque> {
                 pw.SizedBox(height: 16),
               ]),
             ),
-            // Cabeçalho das colunas da tabela de rubricas
-            pw.Container(
-              color: cSlate,
-              padding: const pw.EdgeInsets.fromLTRB(30, 8, 30, 8),
-              child: pw.Row(children: [
-                pw.SizedBox(width: 40),
-                pw.Expanded(
-                  child: pw.Text('DESCRIÇÃO DA RUBRICA',
-                      style: pw.TextStyle(
-                          fontSize: 8.5,
-                          color: PdfColors.white,
-                          fontWeight: pw.FontWeight.bold,
-                          letterSpacing: 0.8)),
-                ),
-                pw.SizedBox(
-                  width: 110,
-                  child: pw.Text('VALOR',
-                      textAlign: pw.TextAlign.right,
-                      style: pw.TextStyle(
-                          fontSize: 8.5,
-                          color: PdfColors.white,
-                          fontWeight: pw.FontWeight.bold,
-                          letterSpacing: 0.8)),
-                ),
-              ]),
-            ),
+            // (cabeçalho de colunas movido para dentro do pw.Table)
           ],
         ],
       ),
@@ -354,12 +329,51 @@ class _PageContrachequeState extends State<PageContracheque> {
         pw.Padding(
           padding: const pw.EdgeInsets.symmetric(horizontal: 30),
           child: pw.Table(
+            border: pw.TableBorder.all(color: cBorder, width: 0.5),
             columnWidths: const {
-              0: pw.FixedColumnWidth(48), // badge P/D
-              1: pw.FlexColumnWidth(), // descrição
-              2: pw.FixedColumnWidth(110), // valor alinhado à direita
+              0: pw.FixedColumnWidth(48),  // badge P/D
+              1: pw.FlexColumnWidth(),      // descrição
+              2: pw.FixedColumnWidth(110),  // valor
             },
-            children: contracheque.proventos.asMap().entries.map((entry) {
+            children: [
+              // ── Linha de cabeçalho das colunas ────────────────────
+              pw.TableRow(
+                decoration: pw.BoxDecoration(color: cSlate),
+                children: [
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 8),
+                    child: pw.Text('TIPO',
+                        textAlign: pw.TextAlign.center,
+                        style: pw.TextStyle(
+                            fontSize: 8,
+                            color: PdfColors.white,
+                            fontWeight: pw.FontWeight.bold,
+                            letterSpacing: 0.6)),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.fromLTRB(8, 8, 8, 8),
+                    child: pw.Text('DESCRIÇÃO DA RUBRICA',
+                        style: pw.TextStyle(
+                            fontSize: 8.5,
+                            color: PdfColors.white,
+                            fontWeight: pw.FontWeight.bold,
+                            letterSpacing: 0.8)),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.fromLTRB(8, 8, 8, 8),
+                    child: pw.Text('VALOR',
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                            fontSize: 8.5,
+                            color: PdfColors.white,
+                            fontWeight: pw.FontWeight.bold,
+                            letterSpacing: 0.8)),
+                  ),
+                ],
+              ),
+              // ── Linhas de dados ───────────────────────────────────
+              ...contracheque.proventos.asMap().entries.map((entry) {
               final item = entry.value;
               final idx = entry.key;
               final isP = item.tipoRubrica == 'P';
@@ -414,6 +428,7 @@ class _PageContrachequeState extends State<PageContracheque> {
                 ],
               );
             }).toList(),
+            ],
           ),
         ),
 
