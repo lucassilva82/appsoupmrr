@@ -66,23 +66,45 @@ class CardTempoServico extends StatelessWidget {
   }
 
   String _mesAbrev(int mes) {
-    const m = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const m = [
+      'Jan',
+      'Fev',
+      'Mar',
+      'Abr',
+      'Mai',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Set',
+      'Out',
+      'Nov',
+      'Dez'
+    ];
     return m[mes - 1];
   }
 
-  Widget _blob({double w = double.infinity, double h = 12, double r = 6, required bool isDark}) =>
+  Widget _blob(
+          {double w = double.infinity,
+          double h = 12,
+          double r = 6,
+          required bool isDark}) =>
       Container(
-        width: w, height: h,
+        width: w,
+        height: h,
         margin: const EdgeInsets.only(bottom: 6),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withValues(alpha: 0.07) : Colors.grey.shade200,
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.07)
+              : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(r),
         ),
       );
 
   Widget _quad(Color c) => Container(
-      width: 10, height: 10,
-      decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(2)));
+      width: 10,
+      height: 10,
+      decoration:
+          BoxDecoration(color: c, borderRadius: BorderRadius.circular(2)));
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +130,9 @@ class CardTempoServico extends StatelessWidget {
             elevation: isDark ? 0 : 1,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
+              side: BorderSide(
+                  color:
+                      isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
             ),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -116,10 +140,12 @@ class CardTempoServico extends StatelessWidget {
                 Row(children: [
                   _blob(w: 36, h: 36, r: 10, isDark: isDark),
                   const SizedBox(width: 10),
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    _blob(w: 130, h: 12, isDark: isDark),
-                    _blob(w: 80, h: 10, isDark: isDark),
-                  ]),
+                  Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _blob(w: 130, h: 12, isDark: isDark),
+                        _blob(w: 80, h: 10, isDark: isDark),
+                      ]),
                   const Spacer(),
                   _blob(w: 48, h: 24, r: 20, isDark: isDark),
                 ]),
@@ -140,17 +166,24 @@ class CardTempoServico extends StatelessWidget {
 
         const normalA = Color(0xFFBFE2F3);
         const normalB = Color(0xFF004298);
-        const agregA  = Color(0xFF0D80C6);
-        const agregB  = Color(0xFF00C8D7);
+        const agregA = Color(0xFF0D80C6);
+        const agregB = Color(0xFF00C8D7);
 
         final LinearGradient gradient;
         if (diasAgregados == 0) {
-          gradient = const LinearGradient(colors: [normalA, normalB], begin: Alignment.centerLeft, end: Alignment.centerRight);
+          gradient = const LinearGradient(
+              colors: [normalA, normalB],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight);
         } else {
           final split = percTotal == 0 ? 1.0 : percNormal / percTotal;
           final s0 = (split - 0.02).clamp(0.0, 1.0);
           final s1 = (split + 0.02).clamp(0.0, 1.0);
-          gradient = LinearGradient(colors: [normalA, normalB, agregA, agregB], stops: [0.0, s0, s1, 1.0], begin: Alignment.centerLeft, end: Alignment.centerRight);
+          gradient = LinearGradient(
+              colors: [normalA, normalB, agregA, agregB],
+              stops: [0.0, s0, s1, 1.0],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight);
         }
 
         // Projeção de aposentadoria (30 anos de serviço)
@@ -173,125 +206,167 @@ class CardTempoServico extends StatelessWidget {
         }
 
         return Card(
+          margin: EdgeInsets.zero,
           elevation: isDark ? 0 : 1,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
+            side: BorderSide(
+                color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
           ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              // ── Header
-              Row(children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isDark ? primaryBlue.withValues(alpha: 0.18) : bgAccent,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.military_tech_rounded, color: primaryBlue, size: 18),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Tempo de Serviço', style: t.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-                    Text('Fonte: SIGRH', style: t.textTheme.labelSmall?.copyWith(color: Colors.grey[500])),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ── Header
+                  Row(children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? primaryBlue.withValues(alpha: 0.18)
+                            : bgAccent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.military_tech_rounded,
+                          color: primaryBlue, size: 18),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Tempo de Serviço',
+                                style: t.textTheme.titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.bold)),
+                            Text('Fonte: SIGRH',
+                                style: t.textTheme.labelSmall
+                                    ?.copyWith(color: Colors.grey[500])),
+                          ]),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? primaryBlue.withValues(alpha: 0.18)
+                            : bgAccent,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${(percTotal * 100).toStringAsFixed(1)}%',
+                        style: const TextStyle(
+                            color: primaryBlue,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ]),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isDark ? primaryBlue.withValues(alpha: 0.18) : bgAccent,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${(percTotal * 100).toStringAsFixed(1)}%',
-                    style: const TextStyle(color: primaryBlue, fontSize: 11, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ]),
 
-              const SizedBox(height: 10),
+                  const SizedBox(height: 10),
 
-              // ── Barra de progresso
-              LinearPercentIndicator(
-                linearGradient: gradient,
-                barRadius: const Radius.circular(20),
-                animation: true,
-                lineHeight: 18,
-                animationDuration: 800,
-                percent: percTotal,
-                center: AutoSizeText(
-                  _extensoDias(diasTotal),
-                  style: const TextStyle(
-                    fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white,
-                    shadows: [Shadow(color: Colors.black38, blurRadius: 4)],
+                  // ── Barra de progresso
+                  LinearPercentIndicator(
+                    linearGradient: gradient,
+                    barRadius: const Radius.circular(20),
+                    animation: true,
+                    lineHeight: 18,
+                    animationDuration: 800,
+                    percent: percTotal,
+                    center: AutoSizeText(
+                      _extensoDias(diasTotal),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        shadows: [Shadow(color: Colors.black38, blurRadius: 4)],
+                      ),
+                      maxLines: 1,
+                      minFontSize: 7,
+                    ),
+                    padding: EdgeInsets.zero,
                   ),
-                  maxLines: 1,
-                  minFontSize: 7,
-                ),
-                padding: EdgeInsets.zero,
-              ),
 
-              const SizedBox(height: 6),
+                  const SizedBox(height: 6),
 
-              // ── Legenda PM / IPER
-              if (isLoading)
-                Row(children: [
-                  _quad(normalB),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text('PM: ${_extensoDias(diasNormal)}',
-                        style: t.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600)),
-                  ),
-                  SizedBox(
-                    width: 12, height: 12,
-                    child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.grey[400]),
-                  ),
-                  const SizedBox(width: 6),
-                  Text('IPER: carregando…', style: t.textTheme.labelSmall?.copyWith(color: Colors.grey[500])),
-                ])
-              else if (diasAgregados == 0)
-                Text('* Não possui tempo agregado no IPER.',
-                    style: t.textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic, color: Colors.grey[500]))
-              else
-                Row(children: [
-                  _quad(normalB),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text('PM: ${_extensoDias(diasNormal)}',
-                        style: t.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600)),
-                  ),
-                  _quad(agregA),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text('IPER: ${_extensoDias(diasAgregados)}',
-                        style: t.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600)),
-                  ),
+                  // ── Legenda PM / IPER
+                  if (isLoading)
+                    Row(children: [
+                      _quad(normalB),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text('PM: ${_extensoDias(diasNormal)}',
+                            style: t.textTheme.labelSmall
+                                ?.copyWith(fontWeight: FontWeight.w600)),
+                      ),
+                      SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 1.5, color: Colors.grey[400]),
+                      ),
+                      const SizedBox(width: 6),
+                      Text('IPER: carregando…',
+                          style: t.textTheme.labelSmall
+                              ?.copyWith(color: Colors.grey[500])),
+                    ])
+                  else if (diasAgregados == 0)
+                    Text('* Não possui tempo agregado no IPER.',
+                        style: t.textTheme.bodySmall?.copyWith(
+                            fontStyle: FontStyle.italic,
+                            color: Colors.grey[500]))
+                  else
+                    Row(children: [
+                      _quad(normalB),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text('PM: ${_extensoDias(diasNormal)}',
+                            style: t.textTheme.labelSmall
+                                ?.copyWith(fontWeight: FontWeight.w600)),
+                      ),
+                      _quad(agregA),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text('IPER: ${_extensoDias(diasAgregados)}',
+                            style: t.textTheme.labelSmall
+                                ?.copyWith(fontWeight: FontWeight.w600)),
+                      ),
+                    ]),
+
+                  // ── Projeção de aposentadoria (30 anos)
+                  if (retirementLabel != null) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.04)
+                            : const Color(0xFFF0F4F8),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(children: [
+                        Icon(Icons.flag_outlined,
+                            size: 12,
+                            color: isDark ? Colors.white38 : Colors.black38),
+                        const SizedBox(width: 6),
+                        Text('Meta 30 anos: $retirementLabel',
+                            style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                                color:
+                                    isDark ? Colors.white60 : Colors.black54)),
+                        const Spacer(),
+                        Text(retirementDiff ?? '',
+                            style: TextStyle(
+                                fontSize: 10.5,
+                                color:
+                                    isDark ? Colors.white38 : Colors.black38)),
+                      ]),
+                    ),
+                  ],
                 ]),
-
-              // ── Projeção de aposentadoria (30 anos)
-              if (retirementLabel != null) ...[
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF0F4F8),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(children: [
-                    Icon(Icons.flag_outlined, size: 12, color: isDark ? Colors.white38 : Colors.black38),
-                    const SizedBox(width: 6),
-                    Text('Meta 30 anos: $retirementLabel',
-                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white60 : Colors.black54)),
-                    const Spacer(),
-                    Text(retirementDiff ?? '',
-                        style: TextStyle(fontSize: 10.5, color: isDark ? Colors.white38 : Colors.black38)),
-                  ]),
-                ),
-              ],
-            ]),
           ),
         );
       },

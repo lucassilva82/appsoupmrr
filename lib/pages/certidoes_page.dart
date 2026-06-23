@@ -29,6 +29,20 @@ class _CertidoesPageState extends State<CertidoesPage> {
   List<CertidaoModel> _certidoes = [];
   final Set<int> _expanded = {}; // controla expansão por certidão
 
+  ButtonStyle _compactActionStyle(ThemeData theme) => ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        minimumSize: const WidgetStatePropertyAll(Size(0, 34)),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        ),
+        textStyle: const WidgetStatePropertyAll(
+          TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+        ),
+        backgroundColor: WidgetStatePropertyAll(theme.colorScheme.primary),
+        foregroundColor: WidgetStatePropertyAll(theme.colorScheme.onPrimary),
+      );
+
   @override
   void initState() {
     super.initState();
@@ -133,6 +147,8 @@ class _CertidoesPageState extends State<CertidoesPage> {
         }
 
         return StatefulBuilder(builder: (c2, setStateModal) {
+          final theme = Theme.of(c2);
+          final isDark = theme.brightness == Brightness.dark;
           // layout sem altura fixa para não ser coberto pelo teclado
 
           // Helpers de progresso precisam de c2 e setStateModal
@@ -381,12 +397,13 @@ class _CertidoesPageState extends State<CertidoesPage> {
                 children: [
                   Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Solicitar nova certidão',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 16.5,
                             fontWeight: FontWeight.w700,
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -406,8 +423,9 @@ class _CertidoesPageState extends State<CertidoesPage> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Escolha o tipo de certidão e informe uma justificativa (opcional).',
+                    style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12.5),
                   ),
                   const SizedBox(height: 12),
 
@@ -417,10 +435,10 @@ class _CertidoesPageState extends State<CertidoesPage> {
                       padding: const EdgeInsets.all(12),
                       margin: const EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.red.shade700.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.red.shade200,
+                          color: Colors.red.shade700.withValues(alpha: 0.25),
                         ),
                       ),
                       child: Text(
@@ -428,13 +446,16 @@ class _CertidoesPageState extends State<CertidoesPage> {
                         style: TextStyle(
                           color: Colors.red.shade700,
                           fontWeight: FontWeight.w600,
+                          fontSize: 12,
                         ),
                       ),
                     ),
 
                   // opções e justificativa
                   RadioListTile<int>(
-                    activeColor: Colors.blue.shade900,
+                    dense: true,
+                    visualDensity: const VisualDensity(vertical: -2),
+                    activeColor: theme.colorScheme.primary,
                     title: const Text('Certidão de Tempo de Serviço'),
                     value: 1,
                     groupValue: selectedType,
@@ -446,7 +467,9 @@ class _CertidoesPageState extends State<CertidoesPage> {
                     },
                   ),
                   RadioListTile<int>(
-                    activeColor: Colors.blue.shade900,
+                    dense: true,
+                    visualDensity: const VisualDensity(vertical: -2),
+                    activeColor: theme.colorScheme.primary,
                     title: const Text('Ficha Funcional'),
                     value: 2,
                     groupValue: selectedType,
@@ -458,7 +481,9 @@ class _CertidoesPageState extends State<CertidoesPage> {
                     },
                   ),
                   RadioListTile<int>(
-                    activeColor: Colors.blue.shade900,
+                    dense: true,
+                    visualDensity: const VisualDensity(vertical: -2),
+                    activeColor: theme.colorScheme.primary,
                     title: const Text('Certidão de Vínculo Funcional'),
                     value: 3,
                     groupValue: selectedType,
@@ -484,6 +509,9 @@ class _CertidoesPageState extends State<CertidoesPage> {
                     decoration: const InputDecoration(
                       labelText: 'Justificativa (opcional)',
                       border: OutlineInputBorder(),
+                      isDense: true,
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                     ),
                   ),
 
@@ -512,13 +540,15 @@ class _CertidoesPageState extends State<CertidoesPage> {
                               await _enviarSolicitacao();
                             },
                       child: Container(
-                        height: 48,
+                        height: 44,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          color: Colors.blue.shade900.withOpacity(0.12),
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.12),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.blue.shade900.withOpacity(0.12),
+                              color: theme.colorScheme.primary
+                                  .withValues(alpha: isDark ? 0.0 : 0.12),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
@@ -530,10 +560,10 @@ class _CertidoesPageState extends State<CertidoesPage> {
                               AnimatedContainer(
                                 duration: const Duration(milliseconds: 70),
                                 width: barWidth,
-                                height: 48,
+                                height: 44,
                                 decoration: BoxDecoration(
-                                  color:
-                                      Colors.blue.shade400, // azul mais fraco
+                                  color: theme.colorScheme.primary
+                                      .withValues(alpha: 0.35),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
@@ -543,8 +573,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
                                 children: [
                                   Icon(
                                     Icons.send_outlined,
-                                    color: Colors.blue
-                                        .shade900, // mantém azul escuro sempre
+                                    color: theme.colorScheme.primary,
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
@@ -552,9 +581,9 @@ class _CertidoesPageState extends State<CertidoesPage> {
                                         ? 'Enviando solicitação...'
                                         : 'Solicitar',
                                     style: TextStyle(
-                                      color: Colors.blue
-                                          .shade900, // mantém azul escuro sempre
+                                      color: theme.colorScheme.primary,
                                       fontWeight: FontWeight.w700,
+                                      fontSize: 12.5,
                                     ),
                                   ),
                                 ],
@@ -700,205 +729,192 @@ class _CertidoesPageState extends State<CertidoesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final titleStyle = TextStyle(
-      fontSize: 15,
-      fontWeight: FontWeight.w600,
-      color: Colors.grey.shade900,
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final titleStyle = theme.textTheme.titleSmall?.copyWith(
+      fontSize: 14,
+      fontWeight: FontWeight.w700,
+      color: theme.colorScheme.onSurface,
       letterSpacing: 0.1,
     );
-    final sectionStyle = TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w600,
-      color: Colors.blue.shade900,
+    final sectionStyle = theme.textTheme.titleSmall?.copyWith(
+      fontSize: 13.5,
+      fontWeight: FontWeight.w700,
+      color: theme.colorScheme.onSurface,
       letterSpacing: 0.1,
       height: 1.1,
     );
-    final smallStyle = TextStyle(fontSize: 13, color: Colors.grey.shade700);
-
-    final gradientApp = LinearGradient(
-      colors: [Colors.lightBlue, Colors.blue.shade900],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
+    final smallStyle = theme.textTheme.bodyMedium?.copyWith(
+      fontSize: 12.5,
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
     );
 
     return Scaffold(
       appBar: CustomAppBar(title: 'Certidões'),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Card(
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 2,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  child: Row(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade900.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(10),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              isDark ? const Color(0xFF0E1B2E) : const Color(0xFFEAF2FF),
+              theme.scaffoldBackgroundColor,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Card(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 11),
+                    child: Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                          padding: const EdgeInsets.all(9),
+                          child: Icon(Icons.how_to_reg_outlined,
+                              color: theme.colorScheme.primary, size: 20),
                         ),
-                        padding: const EdgeInsets.all(10),
-                        child: Icon(Icons.how_to_reg_outlined,
-                            color: Colors.blue.shade900, size: 24),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Solicitar nova certidão',
-                                style: titleStyle.copyWith(fontSize: 14)),
-                            const SizedBox(height: 4),
-                            Text('Abra um pedido para emissão de certidão.',
-                                style: smallStyle),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: gradientApp,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.blue.shade900.withOpacity(0.12),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            )
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(10),
-                            onTap: _onSolicitar,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 10),
-                              child: Row(
-                                children: const [
-                                  Icon(Icons.add,
-                                      color: Colors.white, size: 18),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Solicitar',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Solicitar nova certidão',
+                                  style: titleStyle),
+                              const SizedBox(height: 4),
+                              Text('Abra um pedido para emissão de certidão.',
+                                  style: smallStyle),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Minhas Certidões',
-                      style: sectionStyle.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black,
-                      ),
+                        const SizedBox(width: 6),
+                        FilledButton.icon(
+                          style: _compactActionStyle(theme),
+                          onPressed: _onSolicitar,
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text('Solicitar'),
+                        ),
+                      ],
                     ),
                   ),
-                  if (!_loading && _certidoes.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade900.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
                       child: Text(
-                        '${_certidoes.length}',
-                        style: TextStyle(
-                          color: Colors.blue.shade900,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        'Minhas Certidões',
+                        style: sectionStyle,
                       ),
-                    )
-                ],
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _loadCertidoes,
-                  child: Builder(builder: (context) {
-                    if (_loading && _certidoes.isEmpty) {
-                      return ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: [
-                          SizedBox(
-                            height: 120,
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                color: Colors.blue.shade900,
+                    ),
+                    if (!_loading && _certidoes.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '${_certidoes.length}',
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      )
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _loadCertidoes,
+                    child: Builder(builder: (context) {
+                      if (_loading && _certidoes.isEmpty) {
+                        return ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(
+                              height: 120,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            )
+                          ],
+                        );
+                      }
+
+                      if (_error != null && _certidoes.isEmpty) {
+                        return ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.only(top: 8),
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.error
+                                    .withValues(alpha: 0.10),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: theme.colorScheme.error
+                                      .withValues(alpha: 0.20),
+                                ),
+                              ),
+                              child: Text(
+                                "Você ainda não solicitou nenhuma certidão.\nPara solicitar, clique no botão 'Solicitar' acima.",
+                                style: TextStyle(
+                                  color: theme.colorScheme.error,
+                                  fontSize: 12.5,
+                                ),
                               ),
                             ),
-                          )
-                        ],
-                      );
-                    }
+                          ],
+                        );
+                      }
 
-                    if (_error != null && _certidoes.isEmpty) {
-                      return ListView(
+                      return ListView.separated(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.only(top: 8),
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              "Você ainda não solicitou nenhuma certidão.\nPara solicitar, clique no botão 'Solicitar' acima.",
-                              style: TextStyle(color: Colors.red.shade800),
-                            ),
-                          ),
-                        ],
+                        padding: const EdgeInsets.only(top: 8, bottom: 20),
+                        itemCount: _certidoes.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final c = _certidoes[index];
+                          return _buildCard(c, theme, smallStyle);
+                        },
                       );
-                    }
-
-                    return ListView.separated(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.only(top: 8, bottom: 20),
-                      itemCount: _certidoes.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final c = _certidoes[index];
-                        return _buildCard(
-                            c, titleStyle, smallStyle, Colors.blue.shade900);
-                      },
-                    );
-                  }),
+                    }),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-            ],
+                const SizedBox(height: 12),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _statusStepper(int currentStatus, Color activeColor) {
+  Widget _statusStepper(int currentStatus, Color activeColor, ThemeData theme) {
     Widget step(String label, bool active) {
       return Column(
         mainAxisSize: MainAxisSize.min,
@@ -908,13 +924,13 @@ class _CertidoesPageState extends State<CertidoesPage> {
             width: active ? 28 : 22,
             height: active ? 28 : 22,
             decoration: BoxDecoration(
-              color: active ? activeColor : Colors.white,
-              border: Border.all(
-                  color: active ? activeColor : Colors.grey.shade300),
+              color: active ? activeColor : theme.cardColor,
+              border:
+                  Border.all(color: active ? activeColor : theme.dividerColor),
               boxShadow: active
                   ? [
                       BoxShadow(
-                        color: activeColor.withOpacity(0.18),
+                        color: activeColor.withValues(alpha: 0.18),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       )
@@ -935,7 +951,10 @@ class _CertidoesPageState extends State<CertidoesPage> {
             fit: BoxFit.scaleDown,
             child: Text(
               label,
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+              style: TextStyle(
+                fontSize: 10.5,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -959,7 +978,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 350),
                 height: 3,
-                color: s2 ? activeColor : Colors.grey.shade300,
+                color: s2 ? activeColor : theme.dividerColor,
                 margin: const EdgeInsets.symmetric(horizontal: 8),
               ),
             ),
@@ -971,7 +990,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 350),
                 height: 3,
-                color: s3 ? activeColor : Colors.grey.shade300,
+                color: s3 ? activeColor : theme.dividerColor,
                 margin: const EdgeInsets.symmetric(horizontal: 8),
               ),
             ),
@@ -984,9 +1003,8 @@ class _CertidoesPageState extends State<CertidoesPage> {
 
   Widget _buildCard(
     CertidaoModel c,
-    TextStyle titleStyle,
-    TextStyle smallStyle,
-    Color primary,
+    ThemeData theme,
+    TextStyle? smallStyle,
   ) {
     final borderRadius = BorderRadius.circular(12);
     final statusColor = _statusColor(c.fkStceCod);
@@ -994,7 +1012,8 @@ class _CertidoesPageState extends State<CertidoesPage> {
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: borderRadius),
-      elevation: 1.5,
+      elevation: 0,
+      margin: EdgeInsets.zero,
       child: ClipRRect(
         borderRadius: borderRadius,
         child: ExpansionTile(
@@ -1009,16 +1028,16 @@ class _CertidoesPageState extends State<CertidoesPage> {
           },
           initiallyExpanded: isExpanded,
           tilePadding:
-              const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+              const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
           childrenPadding:
-              const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+              const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
           leading: CircleAvatar(
-            radius: 20,
-            backgroundColor: statusColor.withOpacity(0.12),
+            radius: 18,
+            backgroundColor: statusColor.withValues(alpha: 0.12),
             child: Icon(
               Icons.insert_drive_file_outlined,
               color: statusColor,
-              size: 20,
+              size: 18,
             ),
           ),
           title: Column(
@@ -1026,10 +1045,10 @@ class _CertidoesPageState extends State<CertidoesPage> {
             children: [
               Text(
                 _tipoNomeListagem(c),
-                style: smallStyle.copyWith(
-                  fontSize: 13,
+                style: smallStyle?.copyWith(
+                  fontSize: 12.5,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 6),
@@ -1039,9 +1058,10 @@ class _CertidoesPageState extends State<CertidoesPage> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.08),
+                      color: statusColor.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: statusColor.withOpacity(0.12)),
+                      border: Border.all(
+                          color: statusColor.withValues(alpha: 0.20)),
                     ),
                     child: Text(
                       _statusLabel(c.fkStceCod),
@@ -1090,13 +1110,13 @@ class _CertidoesPageState extends State<CertidoesPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _statusStepper(c.fkStceCod ?? 0, statusColor),
+                  _statusStepper(c.fkStceCod ?? 0, statusColor, theme),
                   const SizedBox(height: 6),
                   Text(
                     _statusMessage(c.fkStceCod),
-                    style: smallStyle.copyWith(
+                    style: smallStyle?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: Colors.amber.shade800,
+                      color: statusColor,
                     ),
                   ),
                 ],
@@ -1160,11 +1180,21 @@ class _CertidoesPageState extends State<CertidoesPage> {
                     icon: const Icon(Icons.open_in_new_outlined, size: 18),
                     label: const Text('Abrir Certidão'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Colors.green.shade700, // Homologada: botão verde
+                      visualDensity: VisualDensity.compact,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      minimumSize: const Size(0, 34),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 9,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      backgroundColor: Colors.green.shade700,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   )
@@ -1186,6 +1216,7 @@ class PdfViewerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: CustomAppBar(title: title ?? 'Certidão'),
       body: PDFView(
@@ -1196,8 +1227,8 @@ class PdfViewerScreen extends StatelessWidget {
         pageFling: true,
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: Colors.blue.shade900,
-        foregroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         icon: const Icon(Icons.share_outlined),
         label: const Text(
           'Compartilhar',

@@ -132,8 +132,41 @@ class _AuthOrHomeState extends State<AuthOrHome> {
 
         if (snapshot.connectionState == ConnectionState.waiting) {
           debugPrint("[LOG] FutureBuilder: Loading...");
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator.adaptive()),
+          return Scaffold(
+            body: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  'assets/imagens/entradacapa.png',
+                  fit: BoxFit.cover,
+                ),
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0x44000D1A),
+                        Color(0xAA001233),
+                        Color(0xEE001233)
+                      ],
+                      stops: [0.0, 0.50, 1.0],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                ),
+                const Center(
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF42A5F5),
+                      backgroundColor: Color(0x2642A5F5),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           );
         } else if (snapshot.hasError) {
           debugPrint(

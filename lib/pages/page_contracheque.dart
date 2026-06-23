@@ -975,7 +975,9 @@ class _PageContrachequeState extends State<PageContracheque> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: (_sharingImage || _sharingPdf) ? null : () => _shareImage(auth),
+                    onPressed: (_sharingImage || _sharingPdf)
+                        ? null
+                        : () => _shareImage(auth),
                     icon: _sharingImage
                         ? const SizedBox(
                             width: 16,
@@ -1001,7 +1003,9 @@ class _PageContrachequeState extends State<PageContracheque> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: (_sharingPdf || _sharingImage) ? null : () => _sharePdf(auth),
+                    onPressed: (_sharingPdf || _sharingImage)
+                        ? null
+                        : () => _sharePdf(auth),
                     icon: _sharingPdf
                         ? const SizedBox(
                             width: 16,

@@ -12,7 +12,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 import '../models/map_busca_detalhes_model.dart';
-import '../models/militar_detalhe_model.dart';
 import '../pages/militar_detalhe_full_page.dart';
 import '../widgets/custom_appbar.dart';
 
@@ -175,23 +174,6 @@ class _DetalhesMapaForcaComandoPageState
     return filtrado;
   }
 
-  /* ---------------- BADGE DE CONTADOR ---------------- */
-  Widget _badge(int qtd, {Gradient? grad}) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          gradient: grad ?? _grad,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-                color: _primaryEnd.withOpacity(.25),
-                blurRadius: 4,
-                offset: const Offset(0, 1))
-          ],
-        ),
-        child: Text('$qtd',
-            style: const TextStyle(fontSize: 11, color: Colors.white)),
-      );
-
   /* ---------------- CARTÃO DE MILITAR ---------------- */
   Widget _militarCard(MilitarDetalheModel m) => Card(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -201,14 +183,16 @@ class _DetalhesMapaForcaComandoPageState
           borderRadius: BorderRadius.circular(16),
           splashColor: _primaryStart.withOpacity(.20),
           onTap: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => MilitarDetalheFullPage(matricula: m.matricula))),
+              builder: (_) => MilitarDetalheFullPage(
+                  matricula: m.matricula,
+                  preloadedImageUrl: _resolveImgUrl(m.imagemUrl)))),
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Row(children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: CachedNetworkImage(
-                  imageUrl: m.imagemUrl ?? '',
+                  imageUrl: _resolveImgUrl(m.imagemUrl) ?? '',
                   width: 70,
                   height: 70,
                   fit: BoxFit.cover,
@@ -278,6 +262,19 @@ class _DetalhesMapaForcaComandoPageState
         ),
       );
 
+  /* ---------------- URL resolver de imagem ---------------- */
+  String? _resolveImgUrl(String? raw) {
+    final v = (raw ?? '').trim();
+    if (v.isEmpty || v.toLowerCase() == 'null') return null;
+    if (v.endsWith('/pix_db/') || v.endsWith('/pix_db')) return null;
+    if (v.startsWith('https://')) return v;
+    if (v.startsWith('http://')) return 'https://${v.substring(7)}';
+    if (v.startsWith('//')) return 'https:$v';
+    if (v.startsWith('/')) return 'https://rh.pmrr.net$v';
+    if (v.contains('.') && v.contains('/')) return 'https://$v';
+    return 'https://rh.pmrr.net/$v';
+  }
+
   /* ---------------- HEADER DE FILTROS ---------------- */
   Widget _filtroHeader() {
     final postos = widget.dadosBusca.postoGraduacao;
@@ -288,36 +285,36 @@ class _DetalhesMapaForcaComandoPageState
     final comando = widget.dadosBusca.descricao;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-            gradient: _grad,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                  color: _primaryEnd.withOpacity(.25),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2))
-            ]),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          gradient: _grad,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
           children: [
-            Row(children: const [
-              Icon(Icons.filter_alt, color: Colors.white, size: 18),
-              SizedBox(width: 6),
-              Text('Filtros aplicados',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.4))
-            ]),
-            const SizedBox(height: 6),
-            Text('Comando: $comando',
-                style: const TextStyle(color: Colors.white, fontSize: 12)),
-            const SizedBox(height: 2),
-            Text('Postos/Graduações: $postosStr',
-                style: const TextStyle(color: Colors.white, fontSize: 12)),
+            const Icon(Icons.account_balance_rounded,
+                color: Colors.white, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(comando,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13)),
+                  const SizedBox(height: 2),
+                  Text('Filtro: $postosStr',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: Colors.white70, fontSize: 10.5)),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -335,14 +332,36 @@ class _DetalhesMapaForcaComandoPageState
 
           // ---------- CAMPO DE BUSCA ----------
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: SearchBar(
-              controller: _searchCtrl,
-              hintText: 'Pesquisar militar por nome...',
-              leading: const Icon(Icons.search),
-              elevation: const MaterialStatePropertyAll(0),
-              onTap: () => _searchCtrl.selection = TextSelection(
-                  baseOffset: 0, extentOffset: _searchCtrl.text.length),
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 2),
+            child: SizedBox(
+              height: 38,
+              child: TextField(
+                controller: _searchCtrl,
+                style: const TextStyle(fontSize: 13),
+                decoration: InputDecoration(
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                  hintText: 'Pesquisar por nome...',
+                  hintStyle:
+                      TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                  prefixIcon:
+                      Icon(Icons.search, size: 18, color: Colors.grey.shade500),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                    borderSide: BorderSide(color: Color(0xFF1976D2)),
+                  ),
+                  filled: true,
+                  fillColor: Theme.of(context).colorScheme.surface,
+                ),
+              ),
             ),
           ),
 
@@ -439,6 +458,7 @@ class _DetalhesMapaForcaComandoPageState
                           primaryStart: _primaryStart,
                           primaryMid: _primaryMid,
                           grad: _grad,
+                          referenceTotal: totalUnid,
                           childTiles: [
                             situacaoTile,
                             ...children,
@@ -460,6 +480,7 @@ class _DetalhesMapaForcaComandoPageState
                         primaryStart: _primaryStart,
                         primaryMid: _primaryMid,
                         grad: _grad,
+                        referenceTotal: allMilitares.length,
                         childTiles: unitChilds,
                       );
                     }).toList()
@@ -485,6 +506,7 @@ class _GradientTile extends StatelessWidget {
   final Color primaryStart;
   final Color primaryMid;
   final Gradient grad;
+  final int? referenceTotal;
   final List<Widget> childTiles;
 
   const _GradientTile({
@@ -495,6 +517,7 @@ class _GradientTile extends StatelessWidget {
     required this.primaryStart,
     required this.primaryMid,
     required this.grad,
+    this.referenceTotal,
     required this.childTiles,
   });
 
@@ -513,6 +536,12 @@ class _GradientTile extends StatelessWidget {
     final bgCollapsed =
         isSubLevel ? primaryStart.withOpacity(.25) : primaryStart;
     final bgExpanded = isSubLevel ? primaryStart.withOpacity(.15) : primaryMid;
+    final rawPct = referenceTotal == null || referenceTotal == 0
+        ? 0.0
+        : total / referenceTotal!;
+    final pct = rawPct.clamp(0.0, 1.0);
+    final visualPct = total > 0 && pct < 0.05 ? 0.05 : pct;
+    final pctText = '${(pct * 100).toStringAsFixed(pct < 0.1 ? 1 : 0)}%';
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -537,6 +566,51 @@ class _GradientTile extends StatelessWidget {
                         fontWeight:
                             isSubLevel ? FontWeight.w500 : FontWeight.bold)),
               ),
+              if (referenceTotal != null) ...[
+                Text(
+                  pctText,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.92),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                SizedBox(
+                  width: isSubLevel ? 52 : 64,
+                  height: 6,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(
+                          color: Colors.white.withOpacity(0.45), width: .8),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(99),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Container(color: Colors.white.withOpacity(0.16)),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: FractionallySizedBox(
+                              widthFactor: visualPct,
+                              child: Container(
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Color(0xFFBEE8FF), Colors.white],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
               _badge()
             ],
           ),
@@ -595,9 +669,15 @@ class _SituacaoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const double scale = 0.8; // 20% menor que padrão
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF1C2536) : Colors.white;
+    final onCard = theme.colorScheme.onSurface;
+    final subtleBorder = isDark
+        ? Colors.white.withOpacity(0.08)
+        : Colors.black.withOpacity(0.06);
+    const double scale = 0.82;
 
-    // agrupa por situacaoDescricao (fallback 'Sem Situação')
     final Map<String, List<MilitarDetalheModel>> porSituacao = {};
     for (final m in militares) {
       final s = (m.situacaoDescricao ?? '').trim();
@@ -607,122 +687,173 @@ class _SituacaoTile extends StatelessWidget {
     }
 
     final situacoes = porSituacao.keys.toList()..sort();
+    const LinearGradient pillGrad =
+        LinearGradient(colors: [Color(0xFF1976D2), Color(0xFF002154)]);
 
-    // badge teal vibrante
-    final Gradient pillGrad =
-        LinearGradient(colors: [Colors.teal.shade400, Colors.teal.shade600]);
-
-    // tamanhos base (20% menores)
-    final double rootTitleSize = 14 * scale;
-    final double rootBadgeSize = 11 * scale;
-    final double itemTitleSize = 13 * scale;
-    final double itemBadgeSize = 11 * scale;
-    final double listNameSize = 12 * scale;
-    final double listSubSize = 11 * scale;
-
-    // borda discreta quase imperceptível
-    final Color subtleBorder = Colors.black.withOpacity(0.06);
-    const double subtleWidth = 0.5;
+    final double rootTitleSize = 13.0 * scale;
+    final double rootBadgeSize = 10.0 * scale;
+    final double itemTitleSize = 11.5 * scale;
+    final double itemBadgeSize = 9.5 * scale;
+    final double listNameSize = 11.0 * scale;
+    final double listSubSize = 10.0 * scale;
 
     return Padding(
       padding:
-          EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 6 * scale),
+          EdgeInsets.symmetric(horizontal: 10.0 * scale, vertical: 5.0 * scale),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white, // fundo branco puro
-          // agora usa mesmo arredondamento dos outros blocos (16)
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: subtleBorder, width: subtleWidth),
+          color: cardBg,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: subtleBorder, width: 0.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 6 * scale,
-              offset: Offset(0, 3 * scale),
+              color: Colors.black.withOpacity(isDark ? 0.15 : 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             )
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           child: ExpansionTile(
             key: PageStorageKey('situacao_root_${militares.hashCode}'),
             tilePadding: EdgeInsets.symmetric(
-                horizontal: 12 * scale, vertical: 8 * scale),
-            collapsedBackgroundColor: Colors.white,
-            backgroundColor: Colors.white,
+                horizontal: 10.0 * scale, vertical: 4.0 * scale),
+            collapsedBackgroundColor: cardBg,
+            backgroundColor: cardBg,
             leading: Icon(Icons.flag_outlined,
-                color: Colors.grey.shade800, size: 18 * scale),
-            iconColor: Colors.grey.shade800,
-            collapsedIconColor: Colors.grey.shade800,
+                color: onCard.withOpacity(0.7), size: 16.0 * scale),
+            iconColor: onCard.withOpacity(0.6),
+            collapsedIconColor: onCard.withOpacity(0.6),
             title: Row(
               children: [
                 Expanded(
                   child: Text('Situação Funcional',
                       style: TextStyle(
-                          color: Colors.black87,
+                          color: onCard,
                           fontWeight: FontWeight.w700,
                           fontSize: rootTitleSize)),
                 ),
                 Container(
                   padding: EdgeInsets.symmetric(
-                      horizontal: 8 * scale, vertical: 4 * scale),
+                      horizontal: 7.0 * scale, vertical: 3.0 * scale),
                   decoration: BoxDecoration(
                       gradient: pillGrad,
-                      borderRadius: BorderRadius.circular(20 * scale)),
+                      borderRadius: BorderRadius.circular(20.0 * scale)),
                   child: Text('${militares.length}',
                       style: TextStyle(
                           color: Colors.white, fontSize: rootBadgeSize)),
                 )
               ],
             ),
-            childrenPadding: EdgeInsets.only(bottom: 6 * scale, top: 4 * scale),
+            childrenPadding:
+                EdgeInsets.only(bottom: 5.0 * scale, top: 2.0 * scale),
             children: situacoes.map((sit) {
               final lista = porSituacao[sit]!;
+              final rawPct =
+                  militares.isEmpty ? 0.0 : lista.length / militares.length;
+              final pct = rawPct.clamp(0.0, 1.0);
+              final visualPct = lista.isNotEmpty && pct < 0.05 ? 0.05 : pct;
+              final pctText =
+                  '${(pct * 100).toStringAsFixed(pct < 0.1 ? 1 : 0)}%';
+
               return Padding(
                 padding: EdgeInsets.symmetric(
-                    horizontal: 8 * scale, vertical: 6 * scale),
+                    horizontal: 6.0 * scale, vertical: 3.0 * scale),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    // sub-bloco com radius levemente menor, mas alinhado visualmente
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: subtleBorder, width: subtleWidth),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 5 * scale,
-                        offset: Offset(0, 2 * scale),
-                      )
-                    ],
+                    color: isDark
+                        ? Colors.white.withOpacity(0.04)
+                        : Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: subtleBorder, width: 0.5),
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(10),
                     child: ExpansionTile(
                       key: PageStorageKey(
                           'situacao_item_${militares.hashCode}_$sit'),
+                      initiallyExpanded: false,
                       tilePadding: EdgeInsets.symmetric(
-                          horizontal: 12 * scale, vertical: 8 * scale),
-                      collapsedBackgroundColor: Colors.white,
-                      backgroundColor: Colors.white,
+                          horizontal: 8.0 * scale, vertical: 3.0 * scale),
+                      collapsedBackgroundColor: Colors.transparent,
+                      backgroundColor: Colors.transparent,
                       leading: Icon(Icons.work_outline,
-                          color: Colors.grey.shade800, size: 16 * scale),
-                      iconColor: Colors.grey.shade800,
-                      collapsedIconColor: Colors.grey.shade800,
+                          color: onCard.withOpacity(0.6), size: 13.0 * scale),
+                      iconColor: onCard.withOpacity(0.6),
+                      collapsedIconColor: onCard.withOpacity(0.6),
                       title: Row(
                         children: [
                           Expanded(
                             child: Text(sit,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                    color: Colors.black87,
+                                    color: onCard,
                                     fontSize: itemTitleSize,
                                     fontWeight: FontWeight.w600)),
                           ),
+                          Text(
+                            pctText,
+                            style: TextStyle(
+                              color: onCard.withOpacity(0.65),
+                              fontSize: 9.0 * scale,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(width: 5.0 * scale),
+                          SizedBox(
+                            width: 50.0 * scale,
+                            height: 5.0 * scale,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(99),
+                                border: Border.all(
+                                  color: isDark
+                                      ? Colors.white.withOpacity(0.2)
+                                      : const Color(0xFF1976D2)
+                                          .withOpacity(0.3),
+                                  width: .7,
+                                ),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(99),
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    Container(
+                                      color: const Color(0xFF1976D2)
+                                          .withOpacity(isDark ? 0.12 : 0.08),
+                                    ),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: FractionallySizedBox(
+                                        widthFactor: visualPct,
+                                        child: Container(
+                                          decoration: const BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                Color(0xFF64B5F6),
+                                                Color(0xFF1976D2),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 5.0 * scale),
                           Container(
                             padding: EdgeInsets.symmetric(
-                                horizontal: 8 * scale, vertical: 4 * scale),
+                                horizontal: 6.0 * scale, vertical: 2.0 * scale),
                             decoration: BoxDecoration(
                                 gradient: pillGrad,
                                 borderRadius:
-                                    BorderRadius.circular(20 * scale)),
+                                    BorderRadius.circular(20.0 * scale)),
                             child: Text('${lista.length}',
                                 style: TextStyle(
                                     color: Colors.white,
@@ -730,11 +861,11 @@ class _SituacaoTile extends StatelessWidget {
                           )
                         ],
                       ),
-                      childrenPadding:
-                          EdgeInsets.only(bottom: 6 * scale, top: 4 * scale),
+                      childrenPadding: EdgeInsets.only(
+                          bottom: 3.0 * scale, top: 1.0 * scale),
                       children: lista
                           .map((m) => _situacaoListItem(context, m, pillGrad,
-                              listNameSize, listSubSize, scale))
+                              listNameSize, listSubSize, scale, isDark, onCard))
                           .toList(),
                     ),
                   ),
@@ -747,69 +878,104 @@ class _SituacaoTile extends StatelessWidget {
     );
   }
 
-  // item estilizado para lista dentro da situação (agora texto escuro sobre branco)
-  Widget _situacaoListItem(BuildContext context, MilitarDetalheModel m,
-      Gradient pillGrad, double nameSize, double subSize, double scale) {
-    // detecta situação e escolhe cor
-    final situ = (m.situacaoDescricao ?? '').trim().toUpperCase();
-
-    final Color mainColor = Colors.black87;
-    final Color subColor = Colors.black54;
-
+  Widget _situacaoListItem(
+      BuildContext context,
+      MilitarDetalheModel m,
+      LinearGradient pillGrad,
+      double nameSize,
+      double subSize,
+      double scale,
+      bool isDark,
+      Color onCard) {
     final nameStyle = TextStyle(
-        fontSize: nameSize, fontWeight: FontWeight.w600, color: mainColor);
-    final subStyle =
-        TextStyle(fontSize: subSize, color: subColor, height: 1.05);
+        fontSize: nameSize, fontWeight: FontWeight.w600, color: onCard);
+    final subStyle = TextStyle(
+        fontSize: subSize, color: onCard.withOpacity(0.55), height: 1.05);
+    final borderColor = isDark
+        ? Colors.white.withOpacity(0.06)
+        : Colors.black.withOpacity(0.04);
+    final bgColor = isDark ? const Color(0xFF1C2536) : Colors.white;
+
+    String? resolveUrl(String? raw) {
+      final v = (raw ?? '').trim();
+      if (v.isEmpty || v.toLowerCase() == 'null') return null;
+      if (v.endsWith('/pix_db/') || v.endsWith('/pix_db')) return null;
+      if (v.startsWith('https://')) return v;
+      if (v.startsWith('http://')) return 'https://${v.substring(7)}';
+      if (v.startsWith('//')) return 'https:$v';
+      if (v.startsWith('/')) return 'https://rh.pmrr.net$v';
+      if (v.contains('.') && v.contains('/')) return 'https://$v';
+      return 'https://rh.pmrr.net/$v';
+    }
+
+    final resolvedUrl = resolveUrl(m.imagemUrl);
 
     return InkWell(
       onTap: () {
         Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => MilitarDetalheFullPage(matricula: m.matricula)));
+            builder: (_) => MilitarDetalheFullPage(
+                matricula: m.matricula,
+                preloadedImageUrl: resolveUrl(m.imagemUrl))));
       },
       child: Container(
-        margin:
-            EdgeInsets.symmetric(horizontal: 8 * scale, vertical: 6 * scale),
-        padding:
-            EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 8 * scale),
+        margin: EdgeInsets.symmetric(
+            horizontal: 8.0 * scale, vertical: 5.0 * scale),
+        padding: EdgeInsets.symmetric(
+            horizontal: 9.0 * scale, vertical: 7.0 * scale),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12 * scale),
-          border: Border.all(color: Colors.black.withOpacity(0.04), width: 0.4),
+          color: bgColor,
+          borderRadius: BorderRadius.circular(10.0 * scale),
+          border: Border.all(color: borderColor, width: 0.4),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 4 * scale,
-                offset: Offset(0, 1 * scale))
+                color: Colors.black.withOpacity(isDark ? 0.08 : 0.02),
+                blurRadius: 3.0 * scale,
+                offset: Offset(0, 1.0 * scale))
           ],
         ),
         child: Row(
           children: [
-            // avatar com recorte superior (alignment topCenter)
             ClipRRect(
-              borderRadius: BorderRadius.circular(6 * scale),
-              child: CachedNetworkImage(
-                imageUrl: m.imagemUrl ?? '',
-                width: 44 * scale,
-                height: 44 * scale,
-                fit: BoxFit.cover,
-                alignment: Alignment.topCenter,
-                cacheManager: DefaultCacheManager(),
-                placeholder: (_, __) => Container(
-                  width: 44 * scale,
-                  height: 44 * scale,
-                  color: Colors.grey.shade200,
-                  child: const Center(
-                      child: Icon(Icons.person, size: 18, color: Colors.grey)),
-                ),
-                errorWidget: (_, __, ___) => Container(
-                  width: 44 * scale,
-                  height: 44 * scale,
-                  color: Colors.grey.shade200,
-                  child: const Icon(Icons.person, color: Colors.grey, size: 18),
-                ),
-              ),
+              borderRadius: BorderRadius.circular(6.0 * scale),
+              child: resolvedUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: resolvedUrl,
+                      width: 40.0 * scale,
+                      height: 40.0 * scale,
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                      cacheManager: DefaultCacheManager(),
+                      placeholder: (_, __) => Container(
+                        width: 40.0 * scale,
+                        height: 40.0 * scale,
+                        color: Colors.grey.shade200,
+                        child: const Center(
+                            child: SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 1.5))),
+                      ),
+                      errorWidget: (_, __, ___) => Container(
+                        width: 40.0 * scale,
+                        height: 40.0 * scale,
+                        color: Colors.grey.shade200,
+                        child: const Icon(Icons.person,
+                            color: Colors.grey, size: 16),
+                      ),
+                    )
+                  : Container(
+                      width: 40.0 * scale,
+                      height: 40.0 * scale,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(6.0 * scale),
+                      ),
+                      child: const Icon(Icons.person,
+                          color: Colors.grey, size: 16),
+                    ),
             ),
-            SizedBox(width: 10 * scale),
+            SizedBox(width: 8.0 * scale),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -818,20 +984,20 @@ class _SituacaoTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: nameStyle),
-                  SizedBox(height: 4 * scale),
+                  SizedBox(height: 3.0 * scale),
                   Text(m.postoGraduacao, style: subStyle, maxLines: 1),
                 ],
               ),
             ),
-            SizedBox(width: 8 * scale),
+            SizedBox(width: 6.0 * scale),
             Container(
               padding: EdgeInsets.symmetric(
-                  horizontal: 8 * scale, vertical: 6 * scale),
+                  horizontal: 7.0 * scale, vertical: 5.0 * scale),
               decoration: BoxDecoration(
                   gradient: pillGrad,
-                  borderRadius: BorderRadius.circular(16 * scale)),
+                  borderRadius: BorderRadius.circular(12.0 * scale)),
               child: Icon(Icons.arrow_forward_ios,
-                  size: 14 * scale, color: Colors.white),
+                  size: 10.0 * scale, color: Colors.white),
             )
           ],
         ),

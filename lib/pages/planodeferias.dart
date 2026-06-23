@@ -172,26 +172,21 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
                 _loadData();
               },
               selectedColor: AppColors.blue,
-              backgroundColor:
-                  isDark ? AppColors.darkCard : Colors.white,
+              backgroundColor: isDark ? AppColors.darkCard : Colors.white,
               labelStyle: TextStyle(
                 color: isSelected
                     ? Colors.white
                     : (isDark ? Colors.white70 : Colors.black87),
-                fontWeight:
-                    isSelected ? FontWeight.w700 : FontWeight.normal,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
                 fontSize: 13,
               ),
               checkmarkColor: Colors.white,
               side: BorderSide(
                 color: isSelected
                     ? AppColors.blue
-                    : (isDark
-                        ? AppColors.darkBorder
-                        : Colors.grey.shade300),
+                    : (isDark ? AppColors.darkBorder : Colors.grey.shade300),
               ),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             ),
           );
         }).toList(),
@@ -221,7 +216,9 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
                     ? Icons.cloud_off_outlined
                     : Icons.beach_access_outlined,
                 size: 40,
-                color: isDark ? Colors.white24 : AppColors.blue.withValues(alpha: 0.4),
+                color: isDark
+                    ? Colors.white24
+                    : AppColors.blue.withValues(alpha: 0.4),
               ),
             ),
             const SizedBox(height: 20),
@@ -342,9 +339,8 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
       duration = '$d dias';
     }
 
-    final borderColor = isDark
-        ? AppColors.darkBorder
-        : AppColors.blue.withValues(alpha: 0.15);
+    final borderColor =
+        isDark ? AppColors.darkBorder : AppColors.blue.withValues(alpha: 0.15);
     final bgColor = isDark
         ? Colors.white.withValues(alpha: 0.04)
         : AppColors.blue.withValues(alpha: 0.04);
@@ -392,8 +388,7 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Icon(Icons.arrow_forward_rounded,
-                    size: 13,
-                    color: isDark ? Colors.white38 : Colors.black26),
+                    size: 13, color: isDark ? Colors.white38 : Colors.black26),
               ),
               Icon(Icons.flight_land_rounded,
                   size: 14, color: Colors.red.shade400),
@@ -448,7 +443,8 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
       return str;
     }
 
-    final nome = getField(['nome', 'nome_militar', 'nomeMilitar', 'nomeCompleto']);
+    final nome =
+        getField(['nome', 'nome_militar', 'nomeMilitar', 'nomeCompleto']);
     final posto = getField(['posto', 'posto_graduacao', 'PostoGraduacao']);
     final comando = getField(['comando', 'orgao', 'lotacao']);
     final unidade = getField(['unidade', 'unidade_sigla']);
@@ -456,12 +452,18 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
 
     // Períodos
     final integralInicioRaw = getField([
-      'prev_feri_inicio', 'prev_feri_inicio_format', 'integral_inicio',
-      'integral_inicio_format', 'integra_inicio'
+      'prev_feri_inicio',
+      'prev_feri_inicio_format',
+      'integral_inicio',
+      'integral_inicio_format',
+      'integra_inicio'
     ]);
     final integralFinalRaw = getField([
-      'prev_feri_final', 'prev_feri_final_format', 'integral_final',
-      'integral_final_format', 'integra_final'
+      'prev_feri_final',
+      'prev_feri_final_format',
+      'integral_final',
+      'integral_final_format',
+      'integra_final'
     ]);
     final frac1InicioRaw = getField(['1p_inicio', '1p_inicio_format']);
     final frac1FinalRaw = getField(['1p_fim', '1p_fim_format']);
@@ -481,7 +483,8 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
 
     // 13º
     final prevAnt = getField([
-      'prev_feri_antecipado', 'prev_feri_antecipado_format',
+      'prev_feri_antecipado',
+      'prev_feri_antecipado_format',
       'prev_feri_antecipado_raw'
     ]);
     String antecipadoLabel = '';
@@ -498,9 +501,12 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
 
     // Tipo: integral ou parcelada
     final hasPrev = integralInicioRaw.isNotEmpty || integralFinalRaw.isNotEmpty;
-    final hasFrac = frac1InicioRaw.isNotEmpty || frac1FinalRaw.isNotEmpty ||
-        frac2InicioRaw.isNotEmpty || frac2FinalRaw.isNotEmpty ||
-        frac3InicioRaw.isNotEmpty || frac3FinalRaw.isNotEmpty;
+    final hasFrac = frac1InicioRaw.isNotEmpty ||
+        frac1FinalRaw.isNotEmpty ||
+        frac2InicioRaw.isNotEmpty ||
+        frac2FinalRaw.isNotEmpty ||
+        frac3InicioRaw.isNotEmpty ||
+        frac3FinalRaw.isNotEmpty;
     final fracIntRaw = r['frac_int'];
     final isIntegral = hasPrev ||
         (!hasFrac &&
@@ -715,8 +721,7 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBg : AppColors.lightBg,
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
       appBar: const CustomAppBar(title: 'Plano de Férias'),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -739,8 +744,7 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
                         color: AppColors.blue,
                         onRefresh: _loadData,
                         child: ListView.builder(
-                          padding:
-                              const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                           itemCount: _filtered.length,
                           itemBuilder: (_, i) =>
                               _buildVacationCard(_filtered[i], isDark),

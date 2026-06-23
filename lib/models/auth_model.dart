@@ -24,6 +24,7 @@ class Auth with ChangeNotifier {
   bool isSuperUser = false;
   bool hasCheckedBiometry = false;
   bool biometricModalShown = false;
+  bool notificationsEnabled = true;
 
   DateTime? _expireDate;
   Timer? _logoutTimer;
@@ -211,6 +212,7 @@ class Auth with ChangeNotifier {
         'nivel': nivel?.toString() ?? '',
         'idPosto': idPosto?.toString() ?? '',
         'isSuperUser': isSuperUser.toString(),
+        'notificationsEnabled': notificationsEnabled.toString(),
       });
 
   /// Salva (ou atualiza) o FCM token do dispositivo no Firestore,
@@ -228,6 +230,52 @@ class Auth with ChangeNotifier {
           '[LOG] FCM token salvo no Firestore para matrícula $matricula');
     } catch (e) {
       debugPrint('[LOG] Erro ao salvar FCM token no Firestore: $e');
+    }
+  }
+
+  /* ===============================================================
+   *  Preferências do usuário
+   * ============================================================= */
+  Future<void> setBiometrics(bool val) async {
+    useBiometrics = val;
+    notifyListeners();
+    await saveUserData();
+  }
+
+  Future<void> setNotificationsEnabled(bool val) async {
+    notificationsEnabled = val;
+    notifyListeners();
+    await saveUserData();
+    try {
+      if (val) {
+        // Reinscreve nos tópicos globais
+        await FirebaseMessaging.instance.subscribeToTopic('todos_militares');
+        await FirebaseMessaging.instance.subscribeToTopic('pmrr_usuarios');
+        // Salva token individual no Firestore
+        if (matricula != null) {
+          final token = await FirebaseMessaging.instance.getToken();
+          if (token != null) {
+            await FirebaseFirestore.instance
+                .collection('militares')
+                .doc(matricula)
+                .set({'fcmToken': token}, SetOptions(merge: true));
+          }
+        }
+      } else {
+        // Desinscreve dos tópicos globais
+        await FirebaseMessaging.instance
+            .unsubscribeFromTopic('todos_militares');
+        await FirebaseMessaging.instance.unsubscribeFromTopic('pmrr_usuarios');
+        // Remove token individual do Firestore
+        if (matricula != null) {
+          await FirebaseFirestore.instance
+              .collection('militares')
+              .doc(matricula)
+              .update({'fcmToken': FieldValue.delete()});
+        }
+      }
+    } catch (e) {
+      debugPrint('[LOG] Erro ao atualizar notificações: $e');
     }
   }
 
@@ -278,6 +326,7 @@ class Auth with ChangeNotifier {
     localImagePath = userData['localImagePath'];
     useBiometrics = userData['useBiometrics'] == 'true';
     biometricModalShown = userData['biometricModalShown'] == 'true';
+    notificationsEnabled = userData['notificationsEnabled'] != 'false';
     emailUser = userData['emailUser'];
     activationCode = userData['activationCode'];
     grupo = userData['grupo'];
@@ -333,25 +382,27 @@ class Auth with ChangeNotifier {
     _expireDate = null;
     autorizado = false;
     hasCheckedBiometry = false;
+    biometricModalShown = false;
     _clearLogoutTimer();
 
+    // Notifica imediatamente: o estado em memória já está correto.
+    // Não espera o storage para atualizar a UI.
+    notifyListeners();
+
+    // Salva o logout no storage em background
     final userData = await Store.getMap('userData');
     if (userData.isNotEmpty) {
       userData['autorizado'] = 'false';
       userData['expireDate'] = '';
       await Store.saveMap('userData', userData);
     }
-    notifyListeners();
   }
 
   Future<void> clearAllCacheData() async {
     try {
-      if (localImagePath != null && localImagePath!.isNotEmpty) {
-        final f = File(localImagePath!);
-        if (await f.exists()) await f.delete();
-      }
-      await Store.remove('userData');
+      final imagePath = localImagePath; // salva antes de nullar
 
+      // Reset imediato de todo o estado em memória
       autorizado = false;
       useBiometrics = false;
       hasCheckedBiometry = false;
@@ -373,6 +424,16 @@ class Auth with ChangeNotifier {
       grupo = null;
       nivel = null;
       idPosto = null;
+
+      // Notifica imediatamente — AuthOrHome exibe AuthPage
+      notifyListeners();
+
+      // Limpeza de arquivos e storage em background
+      if (imagePath != null && imagePath.isNotEmpty) {
+        final f = File(imagePath);
+        if (await f.exists()) await f.delete();
+      }
+      await Store.remove('userData');
     } catch (e) {
       debugPrint('[LOG] Erro ao limpar dados: $e');
     }

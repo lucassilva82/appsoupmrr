@@ -11,7 +11,6 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 import '../models/map_busca_detalhes_model.dart';
-import '../models/militar_detalhe_model.dart';
 import '../models/auth_model.dart';
 import '../pages/militar_detalhe_full_page.dart';
 import '../widgets/custom_appbar.dart';
@@ -120,7 +119,8 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
   /* ---------------- BUILD ---------------- */
   @override
   Widget build(BuildContext context) {
-    final primary = Colors.lightBlue;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final auth = Provider.of<Auth>(context, listen: false);
 
     return Scaffold(
@@ -156,12 +156,18 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
                 Expanded(
                   child: dados.isEmpty
                       ? const Center(child: Text('Não possui dados.'))
-                      : ListView.builder(
+                      : ListView.separated(
                           key: ValueKey(_searchCtrl.text),
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           itemCount: dados.length,
+                          separatorBuilder: (_, __) => Divider(
+                            height: 1,
+                            indent: 70,
+                            endIndent: 16,
+                            color: theme.dividerColor.withValues(alpha: 0.2),
+                          ),
                           itemBuilder: (_, index) =>
-                              _itemCard(dados[index], auth, primary),
+                              _itemCard(dados[index], auth, theme, isDark),
                         ),
                 ),
               ],
@@ -172,31 +178,41 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
     );
   }
 
+  String? _resolveImgUrl(String? raw) {
+    final v = (raw ?? '').trim();
+    if (v.isEmpty || v.toLowerCase() == 'null') return null;
+    if (v.endsWith('/pix_db/') || v.endsWith('/pix_db')) return null;
+    if (v.startsWith('https://')) return v;
+    if (v.startsWith('http://')) return 'https://${v.substring(7)}';
+    if (v.startsWith('//')) return 'https:$v';
+    if (v.startsWith('/')) return 'https://rh.pmrr.net$v';
+    if (v.contains('.') && v.contains('/')) return 'https://$v';
+    return 'https://rh.pmrr.net/$v';
+  }
+
   /* ----------------- Card ----------------- */
-  Widget _itemCard(MilitarDetalheModel m, Auth auth, Color primary) {
+  Widget _itemCard(
+      MilitarDetalheModel m, Auth auth, ThemeData theme, bool isDark) {
     return InkWell(
-      splashColor: primary.withOpacity(.15),
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => MilitarDetalheFullPage(matricula: m.matricula),
+          builder: (_) => MilitarDetalheFullPage(
+              matricula: m.matricula,
+              preloadedImageUrl: _resolveImgUrl(m.imagemUrl)),
         ),
       ),
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 2,
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          height: 100,
-          child: Row(
-            children: [
-              _fotoCarimbada(m, auth),
-              const SizedBox(width: 8),
-              _dadosTexto(m),
-              const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
-            ],
-          ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            _fotoCarimbada(m, auth),
+            const SizedBox(width: 12),
+            _dadosTexto(m, theme, isDark),
+            Icon(Icons.chevron_right_rounded,
+                size: 16,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),
+          ],
         ),
       ),
     );
@@ -204,15 +220,15 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
 
   Widget _fotoCarimbada(MilitarDetalheModel m, Auth auth) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(7),
       child: SizedBox(
-        width: 80,
-        height: 80,
+        width: 52,
+        height: 52,
         child: Stack(
           fit: StackFit.expand,
           children: [
             CachedNetworkImage(
-              imageUrl: m.imagemUrl ?? '',
+              imageUrl: _resolveImgUrl(m.imagemUrl) ?? '',
               fit: BoxFit.cover,
               alignment: Alignment.topCenter,
               memCacheWidth: 120,
@@ -221,7 +237,7 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
               placeholder: (_, __) => _placeholderImg(),
               errorWidget: (_, __, ___) => Container(
                 color: Colors.grey.shade300,
-                child: const Icon(Icons.person, size: 40, color: Colors.white),
+                child: const Icon(Icons.person, size: 28, color: Colors.white),
               ),
             ),
             IgnorePointer(
@@ -266,7 +282,8 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
             child: CircularProgressIndicator(strokeWidth: 2)),
       );
 
-  Widget _dadosTexto(MilitarDetalheModel m) => Expanded(
+  Widget _dadosTexto(MilitarDetalheModel m, ThemeData theme, bool isDark) =>
+      Expanded(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,18 +291,23 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
             Text(m.nome,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style:
-                    const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-            Text('Posto/Graduação: ${m.postoGraduacao}',
-                style: const TextStyle(fontSize: 12)),
-            Text('Unidade: ${m.comando} • ${m.unidade}',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                )),
+            const SizedBox(height: 2),
+            Text(m.postoGraduacao,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontSize: 11.5,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                )),
+            Text('${m.comando} • ${m.unidade}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11)),
-            Text('Subunidade: ${m.subunidade}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11)),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontSize: 11,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                )),
           ],
         ),
       );

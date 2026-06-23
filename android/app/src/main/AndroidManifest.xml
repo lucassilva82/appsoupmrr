@@ -33,7 +33,7 @@
     <!-- ────────────── APPLICATION ────────────── -->
     <application
         android:name="${applicationName}"
-        android:label="soupmrr"
+        android:label="SouPMRR"
         android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="true">
 

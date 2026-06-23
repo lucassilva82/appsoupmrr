@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:quickalert/quickalert.dart';
 
 import '../models/auth_model.dart';
 import '../utils/app_routes.dart';
@@ -156,8 +155,8 @@ class _DrawerPersonalizadoState extends State<DrawerPersonalizado> {
                 ),
                 _buildTile(
                   icon: Icons.car_crash,
-                  label: 'Meu Plantão',
-                  onTap: () => Navigator.pushNamed(context, AppRoutes.PLANTAO),
+                  label: 'Escalas',
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.ESCALAS),
                 ),
                 _buildTile(
                   icon: Icons.beach_access,
@@ -251,22 +250,32 @@ class _DrawerPersonalizadoState extends State<DrawerPersonalizado> {
                 _buildTile(
                   icon: Icons.logout_rounded,
                   label: 'Sair',
-                  onTap: () => QuickAlert.show(
-                    context: context,
-                    type: QuickAlertType.confirm,
-                    title: 'Deseja sair?',
-                    text: 'Sua sessão será encerrada',
-                    confirmBtnText: 'Sim',
-                    cancelBtnText: 'Cancelar',
-                    confirmBtnColor: Colors.redAccent,
-                    onConfirmBtnTap: () {
+                  onTap: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                        title: const Text('Deseja sair?'),
+                        content: const Text('Sua sessão será encerrada.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: const Text('Cancelar'),
+                          ),
+                          TextButton(
+                            style: TextButton.styleFrom(
+                                foregroundColor: Colors.redAccent),
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            child: const Text('Sim'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true && context.mounted) {
                       Provider.of<Auth>(context, listen: false).logout();
-                      Navigator.pushReplacementNamed(
-                        context,
-                        AppRoutes.AUTH_OR_HOME,
-                      );
-                    },
-                  ),
+                    }
+                  },
                 ),
               ],
             ),

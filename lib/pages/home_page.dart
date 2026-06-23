@@ -7,9 +7,7 @@ import 'package:projetonovo/widgets/HomePlanoFeriasCard.dart';
 import 'package:projetonovo/widgets/card_tempo_servico.dart';
 import 'package:projetonovo/widgets/carouselSlider.dart';
 import 'package:projetonovo/widgets/grid_menu.dart';
-import 'package:provider/provider.dart';
-
-import '../models/auth_model.dart';
+import 'package:projetonovo/widgets/widget_dicas_app.dart';
 
 // ── HomeBody ─────────────────────────────────────────────────────────────────
 // Conteúdo da aba "Início" dentro do MainShell.
@@ -38,7 +36,7 @@ class _HomeBodyState extends State<HomeBody>
       final androidInfo = await DeviceInfoPlugin().androidInfo;
       final sdkInt = androidInfo.version.sdkInt;
       await Permission.storage.request();
-      if (sdkInt != null && sdkInt >= 30) {
+      if (sdkInt >= 30) {
         await Permission.manageExternalStorage.request();
       }
     } catch (e) {
@@ -49,18 +47,22 @@ class _HomeBodyState extends State<HomeBody>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final auth = Provider.of<Auth>(context);
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ── Comandante / Sub-Comandante ──────────────────────────────────
           WidgetCarouselSlider(),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+
+          // ── Balão de dicas / avisos ──────────────────────────────────────
+          WidgetDicasApp(),
+
+          const SizedBox(height: 10),
 
           // ── Widgets de resumo ────────────────────────────────────────────
           Padding(
@@ -76,25 +78,24 @@ class _HomeBodyState extends State<HomeBody>
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // ── Menu de funcionalidades (grid 3 colunas) ─────────────────────
           HorizontalMenu(),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
 
           // ── Rodapé DTI ───────────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
               child: Image.asset(
                 'assets/imagens/dti.jpeg',
                 fit: BoxFit.fitWidth,
               ),
             ),
           ),
-          const SizedBox(height: 8),
         ],
       ),
     );

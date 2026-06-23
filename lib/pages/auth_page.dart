@@ -68,9 +68,11 @@ class _AuthPageState extends State<AuthPage> {
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Color(0xCC000D1A),
-                      Color(0xEE001233),
+                      Color(0x44000D1A), // topo — imagem bem visível
+                      Color(0xAA001233), // meio
+                      Color(0xEE001233), // base — legibilidade do form
                     ],
+                    stops: [0.0, 0.50, 1.0],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
@@ -86,46 +88,16 @@ class _AuthPageState extends State<AuthPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Spacer(flex: 2),
+                      const Spacer(flex: 4),
 
-                      // Brasão / logo
-                      Container(
-                        width: 90,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.1),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
-                            width: 2,
-                          ),
-                        ),
-                        child: ClipOval(
-                          child: Image.asset(
-                            'assets/imagens/entradacapa.png',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Título
-                      const Text(
-                        'SouPMRR',
-                        style: TextStyle(
-                          fontSize: 34,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 2,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
+                      // Texto institucional — abaixo do SouPMRR da imagem
                       Text(
-                        'Polícia Militar de Roraima',
+                        'POLÍCIA MILITAR DE RORAIMA',
                         style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white.withOpacity(0.65),
-                          letterSpacing: 1.5,
+                          fontSize: 11,
+                          color: Colors.white.withOpacity(0.70),
+                          letterSpacing: 3.5,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
 
@@ -155,7 +127,7 @@ class _AuthPageState extends State<AuthPage> {
                         ),
                       ),
 
-                      const Spacer(flex: 2),
+                      const Spacer(flex: 1),
 
                       // ── Suporte WhatsApp ───────────────────────────────
                       GestureDetector(
@@ -198,15 +170,16 @@ class _AuthPageState extends State<AuthPage> {
                         ),
                       ),
 
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       Text(
-                        'v2.0 • PMRR',
+                        'v2.0 — DTI/PMRR',
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.white.withOpacity(0.35),
+                          letterSpacing: 0.5,
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),

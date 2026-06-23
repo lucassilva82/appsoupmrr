@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:quickalert/quickalert.dart';
 
 import '../models/auth_model.dart';
 import '../utils/app_routes.dart';
@@ -19,7 +18,7 @@ class HorizontalMenu extends StatelessWidget {
   final List<Choice> allChoices = <Choice>[
     Choice(
         title: 'Ficha Individual', icon: Icons.account_circle_rounded, id: 1),
-    Choice(title: 'Meu Plantão', icon: Icons.car_crash_rounded, id: 2),
+    Choice(title: 'Escalas', icon: Icons.assignment_rounded, id: 2),
     Choice(title: 'Plano de Férias', icon: Icons.beach_access_rounded, id: 9),
     Choice(title: 'Declarações', icon: Icons.attach_money_rounded, id: 3),
     Choice(title: 'Contracheques', icon: Icons.request_quote_rounded, id: 4),
@@ -40,12 +39,12 @@ class HorizontalMenu extends StatelessWidget {
     final choices = allChoices.where((c) => c.id != 5 || isSuperUser).toList();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.only(bottom: 12),
             child: Text(
               'Acesso Rápido',
               style: theme.textTheme.titleSmall?.copyWith(
@@ -88,13 +87,13 @@ class _GridMenuItem extends StatelessWidget {
     required this.isSuperUser,
   }) : super(key: key);
 
-  void _onTap(BuildContext context) {
+  Future<void> _onTap(BuildContext context) async {
     switch (choice.id) {
       case 1:
         Navigator.of(context).pushNamed(AppRoutes.PAGE_MILITAR);
         break;
       case 2:
-        Navigator.of(context).pushNamed(AppRoutes.PLANTAO);
+        Navigator.of(context).pushNamed(AppRoutes.ESCALAS);
         break;
       case 9:
         Navigator.of(context).pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE);
@@ -118,19 +117,29 @@ class _GridMenuItem extends StatelessWidget {
         Navigator.of(context).pushNamed(AppRoutes.POP_PAGE);
         break;
       case 7:
-        QuickAlert.show(
+        final confirmed = await showDialog<bool>(
           context: context,
-          type: QuickAlertType.confirm,
-          title: 'Deseja sair?',
-          text: 'Sua sessão será encerrada.',
-          confirmBtnText: 'Sim',
-          cancelBtnText: 'Cancelar',
-          confirmBtnColor: Colors.redAccent,
-          onConfirmBtnTap: () {
-            Provider.of<Auth>(context, listen: false).logout();
-            Navigator.pushReplacementNamed(context, AppRoutes.AUTH_OR_HOME);
-          },
+          builder: (ctx) => AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('Deseja sair?'),
+            content: const Text('Sua sessão será encerrada.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Sim'),
+              ),
+            ],
+          ),
         );
+        if (confirmed == true && context.mounted) {
+          Provider.of<Auth>(context, listen: false).logout();
+        }
         break;
     }
   }

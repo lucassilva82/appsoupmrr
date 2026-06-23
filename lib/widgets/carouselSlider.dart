@@ -81,7 +81,7 @@ class WidgetCarouselSlider extends StatelessWidget {
 }
 
 // ── _ComandanteCard ───────────────────────────────────────────────────────────
-class _ComandanteCard extends StatelessWidget {
+class _ComandanteCard extends StatefulWidget {
   final Map<String, dynamic> data;
   final String label;
   final IconData icon;
@@ -96,83 +96,138 @@ class _ComandanteCard extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<_ComandanteCard> createState() => _ComandanteCardState();
+}
+
+class _ComandanteCardState extends State<_ComandanteCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+  late final Animation<double> _elevation;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _scale = Tween<double>(begin: 1.0, end: 1.07).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack),
+    );
+    _elevation = Tween<double>(begin: 3.0, end: 14.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails _) => _ctrl.forward();
+
+  void _onTapUp(TapUpDetails _) {
+    Future.delayed(const Duration(milliseconds: 80), () {
+      if (mounted) _ctrl.reverse();
+    });
+  }
+
+  void _onTapCancel() => _ctrl.reverse();
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final imageUrl = (data['img'] ?? '') as String;
-    final title = (data['title'] ?? '') as String;
-    final subtitle = (data['subtitle'] ?? '') as String;
+    final imageUrl = (widget.data['img'] ?? '') as String;
+    final title = (widget.data['title'] ?? '') as String;
+    final subtitle = (widget.data['subtitle'] ?? '') as String;
 
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // ── Foto ─────────────────────────────────────────────────────────
-          Expanded(
-            child: imageUrl.isNotEmpty &&
-                    (imageUrl.startsWith('http://') ||
-                        imageUrl.startsWith('https://'))
-                ? CachedImageFromPrefs(imageUrl: imageUrl)
-                : Container(
-                    color: theme.colorScheme.surfaceVariant,
-                    child: Icon(Icons.person_rounded,
-                        size: 64,
-                        color: theme.colorScheme.onSurfaceVariant
-                            .withOpacity(0.4)),
-                  ),
+    return GestureDetector(
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (context, child) => Transform.scale(
+          scale: _scale.value,
+          child: Card(
+            elevation: _elevation.value,
+            shadowColor: theme.colorScheme.primary.withOpacity(0.35),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            clipBehavior: Clip.antiAlias,
+            child: child,
           ),
-
-          // ── Rodapé do card (altura fixa para alinhar os dois cards) ───────
-          SizedBox(
-            height: 78,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Icon(icon, size: 11, color: iconColor),
-                      const SizedBox(width: 3),
-                      Text(
-                        label,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: iconColor,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelMedium
-                        ?.copyWith(fontWeight: FontWeight.bold, height: 1.2),
-                  ),
-                  if (subtitle.isNotEmpty)
-                    Flexible(
-                      child: Text(
-                        subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          fontSize: 10,
-                        ),
-                      ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Foto ─────────────────────────────────────────────────────────
+            Expanded(
+              child: imageUrl.isNotEmpty &&
+                      (imageUrl.startsWith('http://') ||
+                          imageUrl.startsWith('https://'))
+                  ? CachedImageFromPrefs(imageUrl: imageUrl)
+                  : Container(
+                      color: theme.colorScheme.surfaceVariant,
+                      child: Icon(Icons.person_rounded,
+                          size: 64,
+                          color: theme.colorScheme.onSurfaceVariant
+                              .withOpacity(0.4)),
                     ),
-                ],
+            ),
+
+            // ── Rodapé do card (altura fixa para alinhar os dois cards) ───────
+            SizedBox(
+              height: 78,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(widget.icon, size: 11, color: widget.iconColor),
+                        const SizedBox(width: 3),
+                        Text(
+                          widget.label,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: widget.iconColor,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelMedium
+                          ?.copyWith(fontWeight: FontWeight.bold, height: 1.2),
+                    ),
+                    if (subtitle.isNotEmpty)
+                      Flexible(
+                        child: Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

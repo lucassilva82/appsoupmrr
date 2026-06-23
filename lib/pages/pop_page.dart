@@ -30,6 +30,20 @@ class _PopPageState extends State<PopPage> {
   Timer? _debounce;
   final ScrollController _scrollCtrl = ScrollController();
 
+  ButtonStyle _compactActionStyle(ThemeData theme) => ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        minimumSize: const WidgetStatePropertyAll(Size(0, 34)),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        ),
+        textStyle: const WidgetStatePropertyAll(
+          TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+        ),
+        backgroundColor: WidgetStatePropertyAll(theme.colorScheme.primary),
+        foregroundColor: WidgetStatePropertyAll(theme.colorScheme.onPrimary),
+      );
+
   int _toInt(dynamic v, [int fallback = 0]) {
     if (v == null) return fallback;
     if (v is int) return v;
@@ -202,118 +216,193 @@ class _PopPageState extends State<PopPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       appBar: const CustomAppBar(title: 'POP'),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-              child: TextField(
-                controller: _searchCtrl,
-                decoration: InputDecoration(
-                  hintText: 'Buscar por texto (min. 3 caracteres)',
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.lightBlue.shade200),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              isDark ? const Color(0xFF0E1B2E) : const Color(0xFFEAF2FF),
+              theme.scaffoldBackgroundColor,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.primary.withValues(alpha: 0.18),
+                        theme.cardColor,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                        color: theme.dividerColor.withValues(alpha: 0.3)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide:
-                        BorderSide(color: Colors.blue.shade900, width: 1.5),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.description_rounded,
+                          size: 17,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Procedimentos Operacionais (POP)',
+                          style: theme.textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      Container(
+                        margin: const EdgeInsets.only(right: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.20),
+                          ),
+                        ),
+                        child: Text(
+                          '${_items.length}',
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      FilledButton.icon(
+                        style: _compactActionStyle(theme),
+                        onPressed: _applyFilters,
+                        icon: const Icon(Icons.refresh_rounded, size: 15),
+                        label: const Text('Atualizar'),
+                      ),
+                    ],
                   ),
-                  prefixIcon: const Icon(Icons.search),
                 ),
-                onChanged: (value) {
-                  _debounce?.cancel();
-                  _debounce = Timer(const Duration(milliseconds: 350), () {
-                    final q = _searchCtrl.text.trim();
-                    if (q.isEmpty || q.length >= 3) {
-                      _applyFilters();
-                    }
-                  });
-                },
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-              child: DropdownButtonFormField<String>(
-                value: _orderSelection,
-                isExpanded: true,
-                items: const [
-                  DropdownMenuItem(
-                    value: 'data',
-                    child: Text('Data (recentes)'),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                child: TextField(
+                  controller: _searchCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Buscar por texto (min. 3 caracteres)',
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 11),
+                    filled: true,
+                    fillColor: isDark
+                        ? theme.colorScheme.surface.withValues(alpha: 0.72)
+                        : Colors.white,
+                    prefixIcon: const Icon(Icons.search, size: 18),
                   ),
-                  DropdownMenuItem(
-                    value: 'titulo',
-                    child: Text('Título (A–Z)'),
-                  ),
-                ],
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.lightBlue.shade200),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide:
-                        BorderSide(color: Colors.blue.shade900, width: 1.5),
-                  ),
-                ),
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() {
-                    _orderSelection = value;
-                    if (value == 'titulo') {
-                      _orderBy = 'titulo';
-                      _orderDir = 'ASC';
-                    } else {
-                      _orderBy = 'data_publicacao';
-                      _orderDir = 'DESC';
-                    }
-                  });
-                  _applyFilters();
-                },
-              ),
-            ),
-            Expanded(child: _buildGallery(context)),
-            if (_loading && _items.isNotEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: SizedBox(
-                  height: 24,
-                  width: 24,
-                  child: CircularProgressIndicator(),
+                  onChanged: (value) {
+                    _debounce?.cancel();
+                    _debounce = Timer(const Duration(milliseconds: 350), () {
+                      final q = _searchCtrl.text.trim();
+                      if (q.isEmpty || q.length >= 3) {
+                        _applyFilters();
+                      }
+                    });
+                  },
                 ),
               ),
-          ],
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                child: DropdownButtonFormField<String>(
+                  value: _orderSelection,
+                  isExpanded: true,
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'data',
+                      child: Text('Data (recentes)'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'titulo',
+                      child: Text('Título (A–Z)'),
+                    ),
+                  ],
+                  decoration: InputDecoration(
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 11),
+                    filled: true,
+                    fillColor: isDark
+                        ? theme.colorScheme.surface.withValues(alpha: 0.72)
+                        : Colors.white,
+                  ),
+                  dropdownColor: isDark
+                      ? theme.colorScheme.surface
+                      : theme.colorScheme.background,
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      _orderSelection = value;
+                      if (value == 'titulo') {
+                        _orderBy = 'titulo';
+                        _orderDir = 'ASC';
+                      } else {
+                        _orderBy = 'data_publicacao';
+                        _orderDir = 'DESC';
+                      }
+                    });
+                    _applyFilters();
+                  },
+                ),
+              ),
+              Expanded(child: _buildGallery(context, theme)),
+              if (_loading && _items.isNotEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildGallery(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-    int crossAxisCount = 2;
-    if (w < 500) {
-      crossAxisCount = 1;
-    } else if (w < 900) {
-      crossAxisCount = 2;
-    } else if (w < 1200) {
-      crossAxisCount = 3;
-    } else {
-      crossAxisCount = 4;
-    }
-
+  Widget _buildGallery(BuildContext context, ThemeData theme) {
     if (_items.isEmpty) {
       if (_errorMsg != null) {
         return Center(
@@ -328,10 +417,14 @@ class _PopPageState extends State<PopPage> {
                 Text(
                   _errorMsg!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 14),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ),
                 const SizedBox(height: 12),
-                ElevatedButton.icon(
+                FilledButton.icon(
+                  style: _compactActionStyle(theme),
                   onPressed: () => _applyFilters(),
                   icon: const Icon(Icons.refresh),
                   label: const Text('Tentar novamente'),
@@ -344,31 +437,54 @@ class _PopPageState extends State<PopPage> {
       if (_loading) {
         return const Center(child: CircularProgressIndicator());
       }
+      return Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(14),
+            border:
+                Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+          ),
+          child: Text(
+            'Nenhum resultado para os filtros selecionados.',
+            style: theme.textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
     }
 
-    return GridView.builder(
+    return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       controller: _scrollCtrl,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        childAspectRatio: 2.0,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
       itemCount: _items.length,
-      itemBuilder: (_, i) => _PopCard(
-        item: _items[i],
-        onOpen: () => _openPdf(_items[i]),
+      itemBuilder: (_, i) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: _PopCard(
+          index: i,
+          item: _items[i],
+          onOpen: () => _openPdf(_items[i]),
+          theme: theme,
+        ),
       ),
     );
   }
 }
 
 class _PopCard extends StatelessWidget {
+  final int index;
   final Map<String, dynamic> item;
   final VoidCallback onOpen;
+  final ThemeData theme;
 
-  const _PopCard({required this.item, required this.onOpen});
+  const _PopCard({
+    required this.index,
+    required this.item,
+    required this.onOpen,
+    required this.theme,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -377,85 +493,115 @@ class _PopCard extends StatelessWidget {
     final numero = (item['numero'] ?? '') as String;
     final dataPub = (item['data_publicacao'] ?? '') as String;
     final tag = 'pop-$id';
+    final delay = (index * 40).clamp(0, 220);
 
-    return Hero(
-      tag: tag,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onOpen,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              gradient: LinearGradient(
-                colors: [Colors.lightBlue.shade200, Colors.blue.shade900],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 260 + delay),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, (1 - value) * 8),
+            child: child,
+          ),
+        );
+      },
+      child: Hero(
+        tag: tag,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onOpen,
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                    color: theme.dividerColor.withValues(alpha: 0.25)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  )
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 6,
-                  offset: const Offset(2, 2),
-                )
-              ],
-            ),
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.picture_as_pdf,
-                        color: Colors.white, size: 22),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        titulo,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                        ),
-                      ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  ],
-                ),
-                const Spacer(),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        dataPub.isNotEmpty ? 'Publicação: ${_br(dataPub)}' : '',
-                        style: TextStyle(color: Colors.white.withOpacity(0.9)),
-                      ),
-                    ),
-                    Text(
-                      numero.isNotEmpty ? 'Nº $numero' : '',
-                      style: TextStyle(color: Colors.white.withOpacity(0.9)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: ElevatedButton.icon(
-                    onPressed: onOpen,
-                    icon: const Icon(Icons.open_in_new),
-                    label: const Text('Ver PDF'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade700,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      textStyle: const TextStyle(fontSize: 12),
+                    child: const Icon(
+                      Icons.picture_as_pdf_rounded,
+                      color: Colors.red,
+                      size: 18,
                     ),
                   ),
-                )
-              ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          titulo,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                        if (dataPub.isNotEmpty || numero.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Row(
+                            children: [
+                              if (numero.isNotEmpty)
+                                Text(
+                                  'Nº $numero',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.55),
+                                  ),
+                                ),
+                              if (numero.isNotEmpty && dataPub.isNotEmpty)
+                                const SizedBox(width: 8),
+                              if (dataPub.isNotEmpty)
+                                Text(
+                                  _br(dataPub),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.55),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: onOpen,
+                    icon: const Icon(Icons.open_in_new_rounded, size: 17),
+                    color: theme.colorScheme.primary,
+                    style: IconButton.styleFrom(
+                      minimumSize: const Size(32, 32),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -494,6 +640,7 @@ class _PdfViewerPop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final rawTitle = title.isEmpty ? 'POP' : title;
     final compactTitle = rawTitle.replaceAll(RegExp(r'\s+'), ' ').trim();
     final shownTitle = compactTitle.length > 48
@@ -510,8 +657,8 @@ class _PdfViewerPop extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: null,
-        backgroundColor: Colors.blue.shade900,
-        foregroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         icon: const Icon(Icons.share_outlined),
         label: const Text('Compartilhar'),
         onPressed: () async {

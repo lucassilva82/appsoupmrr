@@ -62,30 +62,54 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
     if (s.trim().isEmpty) return null;
     final str = s.trim();
     var m = RegExp(r'^(\d{4})-(\d{2})-(\d{2})').firstMatch(str);
-    if (m != null) return DateTime(int.parse(m.group(1)!), int.parse(m.group(2)!), int.parse(m.group(3)!));
+    if (m != null)
+      return DateTime(int.parse(m.group(1)!), int.parse(m.group(2)!),
+          int.parse(m.group(3)!));
     m = RegExp(r'^(\d{2})\/(\d{2})\/(\d{4})').firstMatch(str);
-    if (m != null) return DateTime(int.parse(m.group(3)!), int.parse(m.group(2)!), int.parse(m.group(1)!));
+    if (m != null)
+      return DateTime(int.parse(m.group(3)!), int.parse(m.group(2)!),
+          int.parse(m.group(1)!));
     return null;
   }
 
   bool _isIntegral(Map<String, dynamic> r) {
-    final hasPrev = r['prev_feri_inicio'] != null || r['prev_feri_final'] != null;
-    final hasFrac = (r['1p_inicio'] ?? r['1p_fim'] ?? r['2p_inicio'] ?? r['2p_fim'] ?? r['3p_inicio'] ?? r['3p_fim']) != null;
+    final hasPrev =
+        r['prev_feri_inicio'] != null || r['prev_feri_final'] != null;
+    final hasFrac = (r['1p_inicio'] ??
+            r['1p_fim'] ??
+            r['2p_inicio'] ??
+            r['2p_fim'] ??
+            r['3p_inicio'] ??
+            r['3p_fim']) !=
+        null;
     final fi = r['frac_int'];
-    return hasPrev || (!hasFrac && fi != null && (fi.toString() == '1' || fi.toString().toLowerCase() == 'true'));
+    return hasPrev ||
+        (!hasFrac &&
+            fi != null &&
+            (fi.toString() == '1' || fi.toString().toLowerCase() == 'true'));
   }
 
   // Retorna {label, color, icon} para o status do período
-  ({String label, Color color, IconData icon})? _periodoStatus(String startRaw, String endRaw) {
+  ({String label, Color color, IconData icon})? _periodoStatus(
+      String startRaw, String endRaw) {
     final startDt = _tryParse(startRaw);
     if (startDt == null) return null;
     final endDt = _tryParse(endRaw);
     final now = DateTime.now();
     if (endDt != null && endDt.isBefore(now)) {
-      return (label: 'Concluído', color: Colors.grey, icon: Icons.check_circle_outline);
+      return (
+        label: 'Concluído',
+        color: Colors.grey,
+        icon: Icons.check_circle_outline
+      );
     }
-    if (startDt.isBefore(now) || startDt.isAtSameMomentAs(DateTime(now.year, now.month, now.day))) {
-      return (label: 'Em andamento', color: const Color(0xFF22C55E), icon: Icons.play_circle_outline);
+    if (startDt.isBefore(now) ||
+        startDt.isAtSameMomentAs(DateTime(now.year, now.month, now.day))) {
+      return (
+        label: 'Em andamento',
+        color: const Color(0xFF22C55E),
+        icon: Icons.play_circle_outline
+      );
     }
     final days = startDt.difference(now).inDays + 1;
     final label = days == 1 ? 'Amanhã' : 'Em ${days}d';
@@ -94,33 +118,43 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
 
   // ── Skeleton ─────────────────────────────────────────────────────────
   Widget _buildSkeleton(bool isDark) {
-    final base = isDark ? Colors.white.withValues(alpha: 0.07) : Colors.grey.shade200;
+    final base =
+        isDark ? Colors.white.withValues(alpha: 0.07) : Colors.grey.shade200;
     blob({double w = double.infinity, double h = 12.0, double r = 6.0}) =>
         Container(
-          width: w, height: h, margin: const EdgeInsets.only(bottom: 6),
-          decoration: BoxDecoration(color: base, borderRadius: BorderRadius.circular(r)),
+          width: w,
+          height: h,
+          margin: const EdgeInsets.only(bottom: 6),
+          decoration: BoxDecoration(
+              color: base, borderRadius: BorderRadius.circular(r)),
         );
     return Card(
       elevation: isDark ? 0 : 1,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
+        side: BorderSide(
+            color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            blob(w: 36, h: 36, r: 10),
-            const SizedBox(width: 10),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [blob(w: 110, h: 12), blob(w: 60, h: 10)]),
-            const Spacer(),
-            blob(w: 52, h: 24, r: 20),
-          ]),
-          const SizedBox(height: 14),
-          blob(h: 44, r: 10),
-          const SizedBox(height: 6),
-          blob(h: 44, r: 10),
-        ]),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                blob(w: 36, h: 36, r: 10),
+                const SizedBox(width: 10),
+                Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [blob(w: 110, h: 12), blob(w: 60, h: 10)]),
+                const Spacer(),
+                blob(w: 52, h: 24, r: 20),
+              ]),
+              const SizedBox(height: 14),
+              blob(h: 44, r: 10),
+              const SizedBox(height: 6),
+              blob(h: 44, r: 10),
+            ]),
       ),
     );
   }
@@ -133,9 +167,13 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
     required String endFmt,
     required bool isDark,
   }) {
-    final status = _periodoStatus(startRaw, _tryParse(endFmt) != null ? endFmt : '');
-    final bgColor = isDark ? Colors.white.withValues(alpha: 0.04) : AppColors.blue.withValues(alpha: 0.04);
-    final borderColor = isDark ? AppColors.darkBorder : AppColors.blue.withValues(alpha: 0.15);
+    final status =
+        _periodoStatus(startRaw, _tryParse(endFmt) != null ? endFmt : '');
+    final bgColor = isDark
+        ? Colors.white.withValues(alpha: 0.04)
+        : AppColors.blue.withValues(alpha: 0.04);
+    final borderColor =
+        isDark ? AppColors.darkBorder : AppColors.blue.withValues(alpha: 0.15);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 5),
@@ -149,14 +187,20 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
         Icon(Icons.event_outlined, size: 14, color: AppColors.blue),
         const SizedBox(width: 8),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(label.toUpperCase(),
-                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.4,
+                style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.4,
                     color: isDark ? Colors.white54 : Colors.black45)),
             const SizedBox(height: 2),
             Text(
               '${startFmt.isNotEmpty ? startFmt : "—"}  →  ${endFmt.isNotEmpty ? endFmt : "—"}',
-              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600,
+              style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
                   color: isDark ? Colors.white : const Color(0xFF1E293B)),
             ),
           ]),
@@ -173,7 +217,10 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
               Icon(status.icon, size: 10, color: status.color),
               const SizedBox(width: 3),
               Text(status.label,
-                  style: TextStyle(fontSize: 9, color: status.color, fontWeight: FontWeight.w700)),
+                  style: TextStyle(
+                      fontSize: 9,
+                      color: status.color,
+                      fontWeight: FontWeight.w700)),
             ]),
           ),
         ],
@@ -191,21 +238,26 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
     return FutureBuilder<Map<String, dynamic>?>(
       future: _futurePlan,
       builder: (ctx, snap) {
-        if (snap.connectionState == ConnectionState.waiting) return _buildSkeleton(isDark);
+        if (snap.connectionState == ConnectionState.waiting)
+          return _buildSkeleton(isDark);
 
         final r = snap.data;
 
         // Estado vazio / erro
         if (r == null) {
           return Card(
+            margin: EdgeInsets.zero,
             elevation: isDark ? 0 : 1,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
+              side: BorderSide(
+                  color:
+                      isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
             ),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE),
+              onTap: () => Navigator.of(context)
+                  .pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE),
               borderRadius: BorderRadius.circular(16),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -213,17 +265,22 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: isDark ? primaryBlue.withValues(alpha: 0.18) : bgAccent,
+                      color: isDark
+                          ? primaryBlue.withValues(alpha: 0.18)
+                          : bgAccent,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.beach_access_rounded, color: primaryBlue, size: 18),
+                    child: const Icon(Icons.beach_access_rounded,
+                        color: primaryBlue, size: 18),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text('Nenhum plano de férias para o ano atual.',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+                        style:
+                            TextStyle(color: Colors.grey[500], fontSize: 13)),
                   ),
-                  const Icon(Icons.chevron_right_rounded, size: 16, color: primaryBlue),
+                  const Icon(Icons.chevron_right_rounded,
+                      size: 16, color: primaryBlue),
                 ]),
               ),
             ),
@@ -231,7 +288,8 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
         }
 
         // Dados disponíveis
-        final ano = (r['ano_base_nome'] ?? r['ano'] ?? r['year'])?.toString() ?? '';
+        final ano =
+            (r['ano_base_nome'] ?? r['ano'] ?? r['year'])?.toString() ?? '';
         final integral = _isIntegral(r);
 
         final prevIniRaw = _fmtDate(r['prev_feri_inicio']);
@@ -243,13 +301,19 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
         final p3i = _fmtDate(r['3p_inicio']);
         final p3f = _fmtDate(r['3p_fim']);
 
-        final prevAntRaw = (r['prev_feri_antecipado'] ?? r['prev_feri_antecipado_format'] ?? '').toString();
+        final prevAntRaw = (r['prev_feri_antecipado'] ??
+                r['prev_feri_antecipado_format'] ??
+                '')
+            .toString();
         String? antecipadoLabel;
         if (prevAntRaw.isNotEmpty) {
           final v = prevAntRaw.toLowerCase();
-          if (v == 'a') antecipadoLabel = '13º pago no aniversário';
-          else if (v == 'b') antecipadoLabel = '13º pago parcelado';
-          else antecipadoLabel = prevAntRaw;
+          if (v == 'a')
+            antecipadoLabel = '13º pago no aniversário';
+          else if (v == 'b')
+            antecipadoLabel = '13º pago parcelado';
+          else
+            antecipadoLabel = prevAntRaw;
         }
 
         // Próxima data futura (para badge global)
@@ -267,107 +331,160 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
             : null;
 
         return Card(
+          margin: EdgeInsets.zero,
           elevation: isDark ? 0 : 1,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
+            side: BorderSide(
+                color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => Navigator.of(context).pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE),
+            onTap: () =>
+                Navigator.of(context).pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE),
             borderRadius: BorderRadius.circular(16),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                // ── Header ────────────────────────────────────────────
-                Row(children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isDark ? primaryBlue.withValues(alpha: 0.18) : bgAccent,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.beach_access_rounded, color: primaryBlue, size: 18),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Plano de Férias', style: t.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-                      Row(children: [
-                        Text('Ano ${ano.isNotEmpty ? ano : DateTime.now().year}',
-                            style: t.textTheme.labelSmall?.copyWith(color: Colors.grey[500])),
-                        if (!integral) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.withValues(alpha: isDark ? 0.18 : 0.12),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text('PARCELADA',
-                                style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800,
-                                    color: isDark ? Colors.amber.shade300 : Colors.amber.shade800)),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ── Header ────────────────────────────────────────────
+                    Row(children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? primaryBlue.withValues(alpha: 0.18)
+                              : bgAccent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.beach_access_rounded,
+                            color: primaryBlue, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Plano de Férias',
+                                  style: t.textTheme.titleSmall
+                                      ?.copyWith(fontWeight: FontWeight.bold)),
+                              Row(children: [
+                                Text(
+                                    'Ano ${ano.isNotEmpty ? ano : DateTime.now().year}',
+                                    style: t.textTheme.labelSmall
+                                        ?.copyWith(color: Colors.grey[500])),
+                                if (!integral) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber.withValues(
+                                          alpha: isDark ? 0.18 : 0.12),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text('PARCELADA',
+                                        style: TextStyle(
+                                            fontSize: 8.5,
+                                            fontWeight: FontWeight.w800,
+                                            color: isDark
+                                                ? Colors.amber.shade300
+                                                : Colors.amber.shade800)),
+                                  ),
+                                ],
+                              ]),
+                            ]),
+                      ),
+                      // Countdown badge
+                      if (daysLeft != null && daysLeft > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: primaryBlue.withValues(
+                                alpha: isDark ? 0.18 : 0.10),
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                        ],
-                      ]),
+                          child: Text(
+                            daysLeft == 1 ? 'Amanhã' : 'Em ${daysLeft}d',
+                            style: const TextStyle(
+                                color: primaryBlue,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
                     ]),
-                  ),
-                  // Countdown badge
-                  if (daysLeft != null && daysLeft > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: primaryBlue.withValues(alpha: isDark ? 0.18 : 0.10),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        daysLeft == 1 ? 'Amanhã' : 'Em ${daysLeft}d',
-                        style: const TextStyle(color: primaryBlue, fontSize: 11, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                ]),
 
-                const SizedBox(height: 8),
+                    const SizedBox(height: 8),
 
-                // ── Períodos com status ────────────────────────────────
-                if (integral) ...[
-                  if (prevIniRaw.isNotEmpty || prevFimRaw.isNotEmpty)
-                    _buildPeriodRow(
-                      label: 'Período Integral',
-                      startRaw: prevIniRaw,
-                      startFmt: prevIniRaw,
-                      endFmt: prevFimRaw,
-                      isDark: isDark,
-                    ),
-                ] else ...[
-                  if (p1i.isNotEmpty || p1f.isNotEmpty)
-                    _buildPeriodRow(label: '1ª Parcela', startRaw: p1i, startFmt: p1i, endFmt: p1f, isDark: isDark),
-                  if (p2i.isNotEmpty || p2f.isNotEmpty)
-                    _buildPeriodRow(label: '2ª Parcela', startRaw: p2i, startFmt: p2i, endFmt: p2f, isDark: isDark),
-                  if (p3i.isNotEmpty || p3f.isNotEmpty)
-                    _buildPeriodRow(label: '3ª Parcela', startRaw: p3i, startFmt: p3i, endFmt: p3f, isDark: isDark),
-                ],
+                    // ── Períodos com status ────────────────────────────────
+                    if (integral) ...[
+                      if (prevIniRaw.isNotEmpty || prevFimRaw.isNotEmpty)
+                        _buildPeriodRow(
+                          label: 'Período Integral',
+                          startRaw: prevIniRaw,
+                          startFmt: prevIniRaw,
+                          endFmt: prevFimRaw,
+                          isDark: isDark,
+                        ),
+                    ] else ...[
+                      if (p1i.isNotEmpty || p1f.isNotEmpty)
+                        _buildPeriodRow(
+                            label: '1ª Parcela',
+                            startRaw: p1i,
+                            startFmt: p1i,
+                            endFmt: p1f,
+                            isDark: isDark),
+                      if (p2i.isNotEmpty || p2f.isNotEmpty)
+                        _buildPeriodRow(
+                            label: '2ª Parcela',
+                            startRaw: p2i,
+                            startFmt: p2i,
+                            endFmt: p2f,
+                            isDark: isDark),
+                      if (p3i.isNotEmpty || p3f.isNotEmpty)
+                        _buildPeriodRow(
+                            label: '3ª Parcela',
+                            startRaw: p3i,
+                            startFmt: p3i,
+                            endFmt: p3f,
+                            isDark: isDark),
+                    ],
 
-                // ── Footer: 13º + Ver detalhes ───────────────────────
-                Row(children: [
-                  if (antecipadoLabel != null) ...[
-                    Icon(Icons.monetization_on_outlined, size: 13,
-                        color: isDark ? Colors.amber.shade300 : Colors.amber.shade700),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: Text(antecipadoLabel,
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.amber.shade300 : Colors.amber.shade800),
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                    ),
-                  ] else
-                    const Spacer(),
-                  Text('Ver detalhes',
-                      style: TextStyle(color: primaryBlue, fontSize: 12, fontWeight: FontWeight.w600)),
-                  const SizedBox(width: 2),
-                  const Icon(Icons.chevron_right_rounded, size: 16, color: primaryBlue),
-                ]),
-              ]),
+                    // ── Footer: 13º + Ver detalhes ───────────────────────
+                    Row(children: [
+                      if (antecipadoLabel != null) ...[
+                        Icon(Icons.monetization_on_outlined,
+                            size: 13,
+                            color: isDark
+                                ? Colors.amber.shade300
+                                : Colors.amber.shade700),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Text(antecipadoLabel,
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? Colors.amber.shade300
+                                      : Colors.amber.shade800),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
+                        ),
+                      ] else
+                        const Spacer(),
+                      Text('Ver detalhes',
+                          style: TextStyle(
+                              color: primaryBlue,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600)),
+                      const SizedBox(width: 2),
+                      const Icon(Icons.chevron_right_rounded,
+                          size: 16, color: primaryBlue),
+                    ]),
+                  ]),
             ),
           ),
         );

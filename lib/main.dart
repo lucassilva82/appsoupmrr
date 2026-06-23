@@ -37,6 +37,7 @@ import 'package:projetonovo/pages/auth_page.dart';
 import 'package:projetonovo/pages/biometric_auth_page.dart';
 import 'package:projetonovo/pages/configura_plantao.dart';
 import 'package:projetonovo/pages/configuracoes.dart';
+import 'package:projetonovo/pages/contracheque_grafico_page.dart';
 import 'package:projetonovo/pages/contracheque.dart';
 import 'package:projetonovo/pages/declaracao_acumulo_cargos_page.dart';
 import 'package:projetonovo/pages/declaracao_bens_page.dart';
@@ -52,6 +53,8 @@ import 'package:projetonovo/pages/page_contracheque.dart';
 import 'package:projetonovo/pages/page_militar.dart';
 import 'package:projetonovo/pages/plano_de_ferias.dart';
 import 'package:projetonovo/pages/plantao_page.dart';
+import 'package:projetonovo/pages/escala_page.dart';
+import 'package:projetonovo/pages/escala_detalhe_page.dart';
 import 'package:projetonovo/pages/main_shell.dart';
 import 'package:projetonovo/utils/app_routes.dart';
 
@@ -552,7 +555,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           title: 'SouPMRR',
           theme: theme,
           darkTheme: AppTheme.build(isDark: true, isSuperUser: isSuperUser),
-          themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+          themeMode: themeProvider.themeMode,
           builder: (context, child) => Stack(
             children: [
               child!,
@@ -568,9 +571,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             AppRoutes.PLANODEFERIAS: (_) => const PlanoDeFerias(),
             AppRoutes.HOME_PAGE: (_) => MainShell(),
             AppRoutes.PLANTAO: (_) => PlantaoPage(),
+            AppRoutes.ESCALAS: (_) => const EscalasPage(),
+            AppRoutes.ESCALA_DETALHE: (_) => const EscalaDetalhePage(),
             AppRoutes.NOTIFICATIONS_PAGE: (_) => NotificationsPage(),
             AppRoutes.AJUDA_PAGE: (_) => AjudaPage(),
             AppRoutes.CONTRACHEQUE_PAGE: (_) => Contracheque(),
+            AppRoutes.CONTRACHEQUE_GRAFICO_PAGE: (ctx) {
+              final args =
+                  ModalRoute.of(ctx)!.settings.arguments as Map<String, String>;
+              return ContrachequeGraficoPage(
+                  cpf: args['cpf']!, ano: args['ano']!);
+            },
             AppRoutes.CONFIGURA_PLANTAO: (_) => ConfiguraPlantao(),
             AppRoutes.DECLARACOES_PAGE: (_) => DeclaracoesPage(),
             AppRoutes.CERTIDOES_PAGE: (_) => CertidoesPage(),

@@ -9,6 +9,8 @@ class AppRoutes {
   static const CONFIGURACOES = '/configuracoes';
   static const PLANODEFERIAS = '/planodeferias';
   static const PLANTAO = '/plantao';
+  static const ESCALAS = '/escalas';
+  static const ESCALA_DETALHE = '/escala-detalhe';
   static const NOTIFICATIONS_PAGE = '/notifications-page';
   static const AJUDA_PAGE = '/ajuda-page';
   static const CONTRACHEQUE_PAGE = '/contracheque-page';
@@ -34,4 +36,6 @@ class AppRoutes {
   static const PLANO_DE_FERIAS_PAGE =
       "/plano-de-ferias-page"; // Rota para a página de plano de férias
   static const POP_PAGE = "/pop-page"; // Rota para a página de plano de férias
+  static const CONTRACHEQUE_GRAFICO_PAGE =
+      "/contracheque-grafico-page"; // Evolução salarial
 }

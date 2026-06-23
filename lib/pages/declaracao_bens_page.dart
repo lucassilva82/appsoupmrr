@@ -18,6 +18,7 @@ import 'package:quickalert/quickalert.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/auth_model.dart';
+import '../utils/app_theme.dart';
 
 class DeclaracaoBensPage extends StatefulWidget {
   final String ano;
@@ -94,11 +95,26 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
 
   TextStyle _titleStyle(BuildContext ctx) => TextStyle(
         fontWeight: FontWeight.bold,
-        fontSize: _fs(ctx, 18),
-        color: Colors.blue.shade900,
+        fontSize: _fs(ctx, 17),
+        color: Theme.of(ctx).colorScheme.primary,
       );
 
-  TextStyle _labelStyle(BuildContext ctx) => TextStyle(fontSize: _fs(ctx, 14));
+  TextStyle _labelStyle(BuildContext ctx) => TextStyle(
+        fontSize: _fs(ctx, 13),
+        color: Theme.of(ctx).colorScheme.onSurface,
+      );
+
+  ButtonStyle _compactActionStyle() => const ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        minimumSize: WidgetStatePropertyAll(Size(0, 34)),
+        padding: WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        ),
+        textStyle: WidgetStatePropertyAll(
+          TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+        ),
+      );
 
   //--------------------------------------------------------------------
   // FETCH BENS
@@ -202,6 +218,12 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   }
 
   Future<void> _excluirNaoPossui() async {
+    final confirm = await _showConfirmDialog(
+      title: 'Excluir declaração',
+      message: 'Deseja realmente excluir a declaração de não possuir bens?',
+    );
+    if (!confirm) return;
+
     if (naoPossuiRegistro == null) return;
     final id = naoPossuiRegistro!['id'];
     final url = 'https://pmrr.net/flutter/sigrh/excluibem.php?id_bem=$id';
@@ -230,6 +252,12 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   }
 
   Future<void> _excluirBem(int index) async {
+    final confirm = await _showConfirmDialog(
+      title: 'Excluir bem',
+      message: 'Deseja realmente excluir este item declarado?',
+    );
+    if (!confirm) return;
+
     final id = bensEnviados[index]['id'];
     final url = 'https://pmrr.net/flutter/sigrh/excluibem.php?id_bem=$id';
     _showLoading();
@@ -366,15 +394,83 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   }
 
   void _showQuickAlert(String message, QuickAlertType type) {
-    QuickAlert.show(context: context, type: type, text: message);
+    final isError =
+        type == QuickAlertType.error || type == QuickAlertType.warning;
+    final color = isError ? Colors.red.shade700 : Colors.green.shade700;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(
+              isError ? Icons.error_outline_rounded : Icons.check_circle,
+              color: color,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Text(isError ? 'Atenção' : 'Sucesso'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showLoading() {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator.adaptive()),
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2.2),
+              ),
+              SizedBox(width: 10),
+              Text('Processando...'),
+            ],
+          ),
+        ),
+      ),
     );
+  }
+
+  Future<bool> _showConfirmDialog({
+    required String title,
+    required String message,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+    return result == true;
   }
 
   //--------------------------------------------------------------------
@@ -382,6 +478,8 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   //--------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final width = MediaQuery.of(context).size.width;
     final radius = BorderRadius.circular(12);
 
@@ -391,7 +489,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF3AA0FF), Color(0xFF006DFF)],
+              colors: [AppColors.navy, AppColors.blue],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
@@ -402,15 +500,18 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
         leading: const BackButton(color: Colors.white),
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFF6F7FB), Color(0xFFFBFBFD)],
+            colors: [
+              isDark ? const Color(0xFF0E1B2E) : const Color(0xFFEAF2FF),
+              theme.scaffoldBackgroundColor,
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             // ---------- Título ----------
@@ -421,9 +522,9 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
             Row(children: [
               _radio('Imóvel'),
               _radio('Móvel'),
-              _radio('Nenhum', label: 'Não\nPossui'),
+              _radio('Nenhum', label: 'Não possui'),
             ]),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
             // ---------- Conteúdo dinâmico ----------
             AnimatedSwitcher(
@@ -442,18 +543,37 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   // RADIO
   //--------------------------------------------------------------------
   Widget _radio(String value, {String? label}) {
+    final theme = Theme.of(context);
     return Expanded(
-      child: RadioListTile(
-        contentPadding: EdgeInsets.zero,
-        dense: true,
-        title: Text(label ?? value,
-            textAlign: TextAlign.center, style: _labelStyle(context)),
-        value: value,
-        groupValue: tipoBem,
-        onChanged: (v) => setState(() {
-          tipoBem = v as String;
-          _resetForm();
-        }),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3),
+        child: ChoiceChip(
+          selected: tipoBem == value,
+          label: SizedBox(
+            width: double.infinity,
+            child: Text(
+              label ?? value,
+              textAlign: TextAlign.center,
+              style: _labelStyle(context).copyWith(
+                fontSize: _fs(context, 12.5),
+                fontWeight: FontWeight.w600,
+                color: tipoBem == value
+                    ? theme.colorScheme.onPrimary
+                    : theme.colorScheme.onSurface,
+              ),
+            ),
+          ),
+          showCheckmark: false,
+          selectedColor: theme.colorScheme.primary,
+          backgroundColor: theme.cardColor.withValues(alpha: 0.88),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.35)),
+          onSelected: (_) => setState(() {
+            tipoBem = value;
+            _resetForm();
+          }),
+        ),
       ),
     );
   }
@@ -462,14 +582,15 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   // NÃO POSSUI UI
   //--------------------------------------------------------------------
   Widget _buildNaoPossui(BorderRadius radius, double width) {
+    final theme = Theme.of(context);
     return Column(children: [
       Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.blue.shade50,
+          color: theme.cardColor,
           borderRadius: radius,
-          border: Border.all(color: Colors.blue.shade100),
+          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.32)),
         ),
         child: Text(
           jaDeclarouNaoPossui
@@ -478,7 +599,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
           textAlign: TextAlign.center,
           style: TextStyle(
               fontWeight: FontWeight.w600,
-              color: Colors.blue.shade900,
+              color: theme.colorScheme.onSurface,
               fontSize: _fs(context, 16)),
         ),
       ),
@@ -486,6 +607,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
       Row(children: [
         Expanded(
           child: FilledButton.tonal(
+            style: _compactActionStyle(),
             onPressed: jaDeclarouNaoPossui ? null : _enviarBem,
             child: const Text('Enviar Declaração'),
           ),
@@ -494,7 +616,15 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
           const SizedBox(width: 12),
           Expanded(
             child: FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              style: const ButtonStyle(
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                minimumSize: WidgetStatePropertyAll(Size(0, 34)),
+                padding: WidgetStatePropertyAll(
+                  EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                ),
+                backgroundColor: WidgetStatePropertyAll(Colors.red),
+              ),
               onPressed: _excluirNaoPossui,
               child: const Text('Excluir Declaração'),
             ),
@@ -508,20 +638,23 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   // FORMULARIO DE BENS
   //--------------------------------------------------------------------
   Widget _buildForm(BorderRadius radius, double width) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Column(children: [
       Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: radius,
+          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.28)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: isDark ? 0.14 : 0.05),
+              blurRadius: isDark ? 12 : 8,
+              offset: const Offset(0, 3),
             )
           ],
         ),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           if (tipoBem == 'Imóvel') ...[
             _buildTextField(
@@ -546,13 +679,13 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
             Row(children: [
               Expanded(
                   child: _buildTextField('Parcelas Pagas', parcelasController)),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                   child:
                       _buildTextField('Gastos Relacionados', gastosController)),
             ]),
           ],
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           TextField(
             controller: valorController,
             keyboardType: TextInputType.number,
@@ -564,27 +697,33 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
                 labelText: 'Valor', border: OutlineInputBorder()),
             style: _labelStyle(context),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           if (valorExtenso.isNotEmpty)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.green.shade50,
+                color: Colors.green.shade700.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                    color: Colors.green.shade700.withValues(alpha: 0.22)),
               ),
               child: Text(valorExtenso,
                   style: TextStyle(
-                      fontSize: _fs(context, 13), fontStyle: FontStyle.italic)),
+                      fontSize: _fs(context, 13),
+                      color: theme.colorScheme.onSurface,
+                      fontStyle: FontStyle.italic)),
             ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Center(
             child: FilledButton.tonal(
-                onPressed: _enviarBem, child: const Text('Enviar Bem')),
+                style: _compactActionStyle(),
+                onPressed: _enviarBem,
+                child: const Text('Enviar Bem')),
           ),
         ]),
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: 20),
       _buildResumo(radius),
     ]);
   }
@@ -593,12 +732,15 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   // RESUMO / LISTA
   //--------------------------------------------------------------------
   Widget _buildResumo(BorderRadius radius) {
+    final theme = Theme.of(context);
     return FadeTransition(
       opacity: _fadeCtrl.drive(CurveTween(curve: Curves.easeIn)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Declarações de Bens - Total do Ano R\$ ${_calcularValorTotal()}',
             style: TextStyle(
-                fontWeight: FontWeight.bold, fontSize: _fs(context, 15))),
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface,
+                fontSize: _fs(context, 15))),
         const SizedBox(height: 8),
         if (bensEnviados.isEmpty)
           Text('Nenhum bem cadastrado', style: _labelStyle(context))
@@ -612,21 +754,45 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
               final tipoTexto = bem['tipo_bem'] == 1 ? 'Imóvel' : 'Móvel';
               return Card(
                 margin: const EdgeInsets.only(bottom: 8),
-                elevation: 1,
-                child: ListTile(
-                  title: Text('$tipoTexto: ${bem['descricao'] ?? ''}',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: _fs(context, 14))),
-                  subtitle: bem['valor'] != null
-                      ? Text(
-                          'R\$ ${NumberFormat.currency(locale: 'pt_BR', symbol: '').format(double.tryParse((bem['valor'] as String).replaceAll(',', '.')) ?? 0)}',
-                          style: _labelStyle(context)
-                              .copyWith(color: Colors.green.shade700))
-                      : null,
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => _excluirBem(i),
+                elevation: 0,
+                color: theme.cardColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: theme.dividerColor.withValues(alpha: 0.28),
+                  ),
+                ),
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: Duration(milliseconds: 240 + (i * 45)),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) => Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, (1 - value) * 8),
+                      child: child,
+                    ),
+                  ),
+                  child: ListTile(
+                    dense: true,
+                    visualDensity: const VisualDensity(vertical: -2),
+                    title: Text('$tipoTexto: ${bem['descricao'] ?? ''}',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: _fs(context, 12.5))),
+                    subtitle: bem['valor'] != null
+                        ? Text(
+                            'R\$ ${NumberFormat.currency(locale: 'pt_BR', symbol: '').format(double.tryParse((bem['valor'] as String).replaceAll(',', '.')) ?? 0)}',
+                            style: _labelStyle(context)
+                                .copyWith(color: Colors.green.shade700))
+                        : null,
+                    trailing: IconButton(
+                      visualDensity: VisualDensity.compact,
+                      iconSize: 18,
+                      icon: const Icon(Icons.delete_outline_rounded,
+                          color: Colors.red),
+                      onPressed: () => _excluirBem(i),
+                    ),
                   ),
                 ),
               );
@@ -640,32 +806,49 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   // INPUT WIDGETS
   //--------------------------------------------------------------------
   Widget _buildTextField(String label, TextEditingController ctrl) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: TextField(
         controller: ctrl,
         decoration: InputDecoration(
-            labelText: label, border: const OutlineInputBorder()),
+          labelText: label,
+          border: const OutlineInputBorder(),
+          isDense: true,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          filled: true,
+          fillColor: isDark
+              ? theme.colorScheme.surface.withValues(alpha: 0.7)
+              : Colors.white,
+        ),
         style: _labelStyle(context),
       ),
     );
   }
 
   Widget _buildFormaAquisicaoDropdown() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: DropdownButtonFormField<String>(
         value: formaAquisicao,
-        items: const [
+        items: [
           DropdownMenuItem(
               value: 'À vista',
               child: Text(
                 'À vista',
-                style: TextStyle(color: Colors.black),
+                style: TextStyle(color: theme.colorScheme.onSurface),
               )),
           DropdownMenuItem(
-              value: 'Financiado',
-              child: Text('Financiado', style: TextStyle(color: Colors.black))),
+            value: 'Financiado',
+            child: Text(
+              'Financiado',
+              style: TextStyle(color: theme.colorScheme.onSurface),
+            ),
+          ),
         ],
         onChanged: (v) => setState(() {
           formaAquisicao = v!;
@@ -676,8 +859,14 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
           }
         }),
         decoration: const InputDecoration(
-            labelText: 'Forma de Aquisição', border: OutlineInputBorder()),
+          labelText: 'Forma de Aquisição',
+          border: OutlineInputBorder(),
+          isDense: true,
+          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        ),
         style: _labelStyle(context),
+        dropdownColor:
+            isDark ? theme.colorScheme.surface : theme.colorScheme.background,
       ),
     );
   }

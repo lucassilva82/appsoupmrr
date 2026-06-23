@@ -1,15 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:projetonovo/models/auth_model.dart';
+import 'package:projetonovo/utils/app_theme.dart';
 import 'package:provider/provider.dart';
-import 'package:quickalert/quickalert.dart';
 
-/// Função para converter o status numérico para o nome correspondente
 String statusText(int status) {
   switch (status) {
     case 1:
@@ -19,17 +19,16 @@ String statusText(int status) {
     case 3:
       return 'Retificado';
     case 4:
-      return 'Retificaçao Atual';
+      return 'Retificação Atual';
     default:
       return 'Desconhecido';
   }
 }
 
-/// Modelo para representar cada declaração retornada da API
 class DeclaracaoEntry {
   final String nome;
   final DateTime dataEnvio;
-  final String status; // status recebido da API, após conversão para nome.
+  final String status;
   final String pdfBase64;
 
   DeclaracaoEntry({
@@ -52,25 +51,20 @@ class DeclaracaoBensPdfPage extends StatefulWidget {
 class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
   File? selectedFile;
   bool isLoading = true;
-
-  // Lista de declarações obtidas da API
   List<DeclaracaoEntry> _listaDeclaracoes = [];
-
-  // Controla se o painel de envio (retificação) deve ser exibido
   bool _showUploadSection = false;
 
-  // Estilo de botão unificado
-  final ButtonStyle _defaultButtonStyle = ElevatedButton.styleFrom(
-    backgroundColor: Colors.blue, // Cor de fundo padrão
-    textStyle: const TextStyle(
-      color: Colors.white, // Cor do texto
-      fontSize: 16, // Tamanho de fonte padrão
-    ),
-    padding: const EdgeInsets.symmetric(
-      horizontal: 20,
-      vertical: 12,
-    ),
-  );
+  ButtonStyle _compactActionStyle() => const ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        minimumSize: WidgetStatePropertyAll(Size(0, 34)),
+        padding: WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        ),
+        textStyle: WidgetStatePropertyAll(
+          TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+        ),
+      );
 
   @override
   void initState() {
@@ -78,7 +72,6 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
     _checkPdfExists();
   }
 
-  /// Busca as declarações (PDFs) para o CPF e ano informado.
   Future<void> _checkPdfExists() async {
     final auth = Provider.of<Auth>(context, listen: false);
     final url =
@@ -89,36 +82,31 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print("Resposta da API: $data"); // Para debug
 
         if (data['code'] == 1) {
-          if (data.containsKey('declaracoes') &&
-              data['declaracoes'] is List &&
+          if (data['declaracoes'] is List &&
               (data['declaracoes'] as List).isNotEmpty) {
-            // A API retornou uma lista de declarações
-            List<dynamic> listData = data['declaracoes'];
+            final listData = data['declaracoes'] as List<dynamic>;
             _listaDeclaracoes = listData.asMap().entries.map((entry) {
               final index = entry.key;
               final item = entry.value;
               return DeclaracaoEntry(
-                nome: "Documento ${index + 1}",
-                dataEnvio: DateTime.tryParse(item['data_envio'] ?? "") ??
+                nome: 'Documento ${index + 1}',
+                dataEnvio: DateTime.tryParse(item['data_envio'] ?? '') ??
                     DateTime.now(),
                 status: statusText(item['status']),
-                pdfBase64: item['pdf'] ?? "",
+                pdfBase64: item['pdf'] ?? '',
               );
             }).toList();
           } else if (data['pdf'] != null) {
-            // Modo antigo: apenas um PDF foi retornado; transforma em lista com 1 item
-            final base64Pdf = data['pdf'] as String;
             _listaDeclaracoes = [
               DeclaracaoEntry(
-                nome: "Documento 1",
-                dataEnvio: DateTime.tryParse(data['data_envio'] ?? "") ??
+                nome: 'Documento 1',
+                dataEnvio: DateTime.tryParse(data['data_envio'] ?? '') ??
                     DateTime.now(),
                 status: statusText(data['status']),
-                pdfBase64: base64Pdf,
-              )
+                pdfBase64: data['pdf'] as String,
+              ),
             ];
           } else {
             _listaDeclaracoes = [];
@@ -127,29 +115,28 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
           _listaDeclaracoes = [];
         }
       } else {
-        QuickAlert.show(
-          context: context,
-          type: QuickAlertType.error,
+        await _showNotice(
           title: 'Erro',
-          text: 'Erro ao buscar declarações. Código: ${response.statusCode}',
+          message: 'Erro ao buscar declarações (${response.statusCode}).',
+          isError: true,
         );
       }
     } catch (e) {
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
+      await _showNotice(
         title: 'Erro',
-        text: 'Erro inesperado: $e',
+        message: 'Erro inesperado: $e',
+        isError: true,
       );
     } finally {
-      setState(() {
-        isLoading = false;
-        if (_listaDeclaracoes.isNotEmpty) _showUploadSection = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          if (_listaDeclaracoes.isNotEmpty) _showUploadSection = false;
+        });
+      }
     }
   }
 
-  /// Abre o seletor de arquivos para escolher um PDF.
   Future<void> _pickPdfFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -157,14 +144,11 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
     );
 
     if (result != null && result.files.single.path != null) {
-      // Verifica se o tamanho do arquivo é maior que 5MB (5 * 1024 * 1024 bytes)
       if (result.files.single.size > 5 * 1024 * 1024) {
-        QuickAlert.show(
-          context: context,
-          type: QuickAlertType.error,
-          title: 'Tamanho Excedido',
-          text:
-              'O PDF deve ser de até 5MB, por favor dimua o tamanho e envie novamente.',
+        await _showNotice(
+          title: 'Tamanho excedido',
+          message: 'O PDF deve ter no máximo 5MB.',
+          isError: true,
         );
         return;
       }
@@ -173,92 +157,76 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
         selectedFile = File(result.files.single.path!);
       });
     } else {
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.info,
+      await _showNotice(
         title: 'Atenção',
-        text: 'Nenhum arquivo foi selecionado.',
+        message: 'Nenhum arquivo foi selecionado.',
+        isError: true,
       );
     }
   }
 
-  /// Envia o PDF selecionado para o servidor.
   Future<void> _uploadPdfFile(String cpf) async {
     if (selectedFile == null) {
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.warning,
-        title: 'Erro',
-        text: 'Selecione um arquivo PDF antes de enviar.',
+      await _showNotice(
+        title: 'Arquivo ausente',
+        message: 'Selecione um PDF antes de enviar.',
+        isError: true,
       );
       return;
     }
 
-    final url = 'https://pmrr.net/flutter/sigrh/enviapdfirpf.php';
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) =>
-          const Center(child: CircularProgressIndicator.adaptive()),
-    );
+    const url = 'https://pmrr.net/flutter/sigrh/enviapdfirpf.php';
+    _showBusyDialog('Enviando PDF...');
 
     try {
       final request = http.MultipartRequest('POST', Uri.parse(url))
         ..fields['cpf'] = cpf
         ..fields['ano'] = widget.ano
-        ..files.add(
-          await http.MultipartFile.fromPath('pdf', selectedFile!.path),
-        );
+        ..files
+            .add(await http.MultipartFile.fromPath('pdf', selectedFile!.path));
 
       final response = await request.send();
-      Navigator.of(context).pop();
+      _dismissDialogIfOpen();
 
       if (response.statusCode == 200) {
         final responseData = await response.stream.bytesToString();
         final data = Map<String, dynamic>.from(json.decode(responseData));
 
         if (data['code'] == 1) {
-          QuickAlert.show(
-            context: context,
-            type: QuickAlertType.success,
+          await _showNotice(
             title: 'Sucesso',
-            text: 'PDF enviado com sucesso!',
+            message: 'PDF enviado com sucesso.',
+            isError: false,
           );
-          // Atualiza a lista após envio.
           setState(() {
             selectedFile = null;
             _showUploadSection = false;
           });
           _checkPdfExists();
         } else {
-          QuickAlert.show(
-            context: context,
-            type: QuickAlertType.error,
+          await _showNotice(
             title: 'Erro',
-            text: data['message'] ?? 'Erro ao enviar o PDF.',
+            message: data['message'] ?? 'Erro ao enviar PDF.',
+            isError: true,
           );
         }
       } else {
-        QuickAlert.show(
-          context: context,
-          type: QuickAlertType.error,
+        await _showNotice(
           title: 'Erro',
-          text: 'Erro ao conectar ao servidor (${response.statusCode}).',
+          message: 'Erro ao conectar ao servidor (${response.statusCode}).',
+          isError: true,
         );
       }
     } catch (e) {
-      Navigator.of(context).pop();
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
+      _dismissDialogIfOpen();
+      await _showNotice(
         title: 'Erro',
-        text: 'Erro inesperado: $e',
+        message: 'Erro inesperado: $e',
+        isError: true,
       );
     }
   }
 
-  /// Abre o PDF de uma declaração em uma nova página.
   Future<void> _openPdf(DeclaracaoEntry entry) async {
     try {
       final bytes = base64Decode(entry.pdfBase64);
@@ -266,6 +234,8 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
       final filePath = '${tempDir.path}/${entry.nome}.pdf';
       final file = File(filePath);
       await file.writeAsBytes(bytes);
+      if (!mounted) return;
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -273,132 +243,200 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
         ),
       );
     } catch (e) {
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
+      await _showNotice(
         title: 'Erro',
-        text: 'Erro ao abrir o PDF: $e',
+        message: 'Erro ao abrir o PDF: $e',
+        isError: true,
       );
     }
   }
 
-  /// Formata a data como dd/mm/yyyy hh:mm
   String _formatDateTime(DateTime dateTime) {
     final day = dateTime.day.toString().padLeft(2, '0');
     final month = dateTime.month.toString().padLeft(2, '0');
     final year = dateTime.year.toString();
     final hour = dateTime.hour.toString().padLeft(2, '0');
     final minute = dateTime.minute.toString().padLeft(2, '0');
-    return "$day/$month/$year $hour:$minute";
+    return '$day/$month/$year $hour:$minute';
   }
 
-  /// Exibe a lista de declarações já enviadas
-  Widget _buildListaDeclaracoes() {
-    return _listaDeclaracoes.isNotEmpty
-        ? ListView.builder(
-            itemCount: _listaDeclaracoes.length,
-            itemBuilder: (context, index) {
-              final entry = _listaDeclaracoes[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                child: ListTile(
-                  leading: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.picture_as_pdf,
-                          size: 40, color: Colors.red),
-                    ),
-                  ),
-                  title: Text(entry.nome),
-                  subtitle: Text(
-                    "Data de envio: ${_formatDateTime(entry.dataEnvio)}",
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 2),
-                        decoration: BoxDecoration(
-                          // Mantém a cor verde apenas para status "Recebido", caso contrário branco
-                          color: entry.status == 'Recebido'
-                              ? Colors.green
-                              : Colors.white,
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          entry.status,
-                          style: TextStyle(
-                            color: entry.status == 'Recebido'
-                                ? Colors.white
-                                : Colors.black,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      IconButton(
-                        iconSize: 20,
-                        icon: const Icon(Icons.remove_red_eye),
-                        onPressed: () => _openPdf(entry),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          )
-        : const Center(child: Text("Nenhuma declaração enviada."));
-  }
+  Widget _buildListaDeclaracoes(ThemeData theme) {
+    if (_listaDeclaracoes.isEmpty) {
+      return Center(
+        child: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(14),
+            border:
+                Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+          ),
+          child: Text(
+            'Nenhuma declaração enviada.',
+            style: theme.textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
 
-  /// Exibe a seção de upload de PDF em tela cheia
-  Widget _buildUploadSection(String cpf) {
-    return Center(
-      child: Column(
-        children: [
-          const SizedBox(height: 16),
-          // Se ainda não selecionou arquivo, mostra o botão de seleção
-          if (selectedFile == null) ...[
-            ElevatedButton(
-              style: _defaultButtonStyle,
-              onPressed: _pickPdfFile,
-              child: const Text(
-                'Selecionar Arquivo PDF',
-                style: TextStyle(color: Colors.white),
+    return ListView.builder(
+      itemCount: _listaDeclaracoes.length,
+      itemBuilder: (context, index) {
+        final entry = _listaDeclaracoes[index];
+        final color = entry.status == 'Recebido'
+            ? Colors.green.shade700
+            : Colors.blueGrey.shade700;
+        final delay = (index * 45).clamp(0, 240);
+
+        return TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: 1),
+          duration: Duration(milliseconds: 250 + delay),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, child) {
+            return Opacity(
+              opacity: value,
+              child: Transform.translate(
+                offset: Offset(0, (1 - value) * 8),
+                child: child,
               ),
+            );
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(14),
+              border:
+                  Border.all(color: theme.dividerColor.withValues(alpha: 0.28)),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: _defaultButtonStyle.copyWith(
-                backgroundColor: MaterialStateProperty.all(Colors.red),
-              ),
-              onPressed: () {
-                // Cancela e volta para a lista
-                setState(() {
-                  _showUploadSection = false;
-                  selectedFile = null;
-                });
-              },
-              child: const Text(
-                'Cancelar',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ]
-          // Se o arquivo foi selecionado, mostra a pré-visualização
-          else ...[
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.all(10),
+            child: ListTile(
+              dense: true,
+              visualDensity: const VisualDensity(vertical: -2),
+              leading: Container(
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
+                  color: Colors.red.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                child: const Icon(Icons.picture_as_pdf_rounded,
+                    color: Colors.red, size: 17),
+              ),
+              title: Text(entry.nome,
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w600)),
+              subtitle: Text('Enviado em ${_formatDateTime(entry.dataEnvio)}',
+                  style: theme.textTheme.bodySmall),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: color.withValues(alpha: 0.22)),
+                    ),
+                    child: Text(
+                      entry.status,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    iconSize: 17,
+                    icon: const Icon(Icons.visibility_rounded),
+                    onPressed: () => _openPdf(entry),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildUploadSection(String cpf, ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    return Column(
+      children: [
+        const SizedBox(height: 10),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.all(11),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(14),
+            border:
+                Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: AppColors.blue.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.upload_file_rounded,
+                  size: 16,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Envie o PDF com até 5MB',
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w600, fontSize: 12.5),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (selectedFile == null) ...[
+          FilledButton.icon(
+            style: _compactActionStyle(),
+            onPressed: _pickPdfFile,
+            icon: const Icon(Icons.upload_file_rounded, size: 15),
+            label: const Text('Selecionar PDF'),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            style: _compactActionStyle(),
+            onPressed: () {
+              setState(() {
+                _showUploadSection = false;
+                selectedFile = null;
+              });
+            },
+            child: const Text('Cancelar'),
+          ),
+        ] else ...[
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: theme.dividerColor),
+                color: isDark
+                    ? theme.colorScheme.surface.withValues(alpha: 0.65)
+                    : Colors.white,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
                 child: PDFView(
                   filePath: selectedFile!.path,
                   enableSwipe: true,
@@ -406,120 +444,213 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
                   autoSpacing: false,
                   pageFling: true,
                   onError: (error) {
-                    QuickAlert.show(
-                      context: context,
-                      type: QuickAlertType.error,
+                    _showNotice(
                       title: 'Erro',
-                      text: 'Erro ao carregar o PDF: $error',
+                      message: 'Erro ao carregar o PDF: $error',
+                      isError: true,
                     );
                   },
                 ),
               ),
             ),
-            ElevatedButton(
-              style: _defaultButtonStyle.copyWith(
-                backgroundColor: MaterialStateProperty.all(Colors.green),
-              ),
-              onPressed: () => _uploadPdfFile(cpf),
-              child: const Text('Enviar PDF'),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              style: _defaultButtonStyle.copyWith(
-                backgroundColor: MaterialStateProperty.all(Colors.red),
-              ),
-              onPressed: () {
-                // Cancela e volta para a lista
-                setState(() {
-                  _showUploadSection = false;
-                  selectedFile = null;
-                });
-              },
-              child: const Text('Cancelar'),
-            ),
-            const SizedBox(height: 16),
-          ],
+          ),
+          FilledButton.icon(
+            style: _compactActionStyle(),
+            onPressed: () => _uploadPdfFile(cpf),
+            icon: const Icon(Icons.send_rounded, size: 15),
+            label: const Text('Enviar PDF'),
+          ),
+          const SizedBox(height: 6),
+          OutlinedButton(
+            style: _compactActionStyle(),
+            onPressed: () {
+              setState(() {
+                _showUploadSection = false;
+                selectedFile = null;
+              });
+            },
+            child: const Text('Cancelar'),
+          ),
+          const SizedBox(height: 10),
         ],
-      ),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<Auth>(context, listen: false);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
+        iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'Declaração de Bens (PDF)',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
         ),
-        backgroundColor: Colors.blue,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.navy, AppColors.blue],
+              begin: Alignment.centerLeft,
+              end: Alignment.topRight,
+            ),
+          ),
+        ),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator.adaptive())
-          : SizedBox.expand(
-              child: _showUploadSection
-                  // Caso esteja no modo de envio/retificação, mostra só a seção de upload
-                  ? _buildUploadSection(auth.cpf!)
-                  // Caso contrário, mostra a lista e um botão lá embaixo com espaço abaixo
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Cabeçalho
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Colors.lightBlue, Colors.blue.shade900],
-                              begin: Alignment.centerLeft,
-                              end: Alignment.topRight,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              isDark ? const Color(0xFF0E1B2E) : const Color(0xFFEAF2FF),
+              theme.scaffoldBackgroundColor,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator.adaptive())
+            : SizedBox.expand(
+                child: _showUploadSection
+                    ? _buildUploadSection(auth.cpf!, theme)
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.fromLTRB(12, 12, 12, 2),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: theme.cardColor,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                  color: theme.dividerColor
+                                      .withValues(alpha: 0.3)),
+                            ),
+                            child: Text(
+                              'Declaração de Bens (IRPF)',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700, fontSize: 13),
                             ),
                           ),
-                          child: const Center(
+                          Container(
+                            margin: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: theme.cardColor,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                  color: theme.dividerColor
+                                      .withValues(alpha: 0.3)),
+                            ),
                             child: Text(
-                              'Suas declarações enviadas:',
-                              style: TextStyle(
-                                fontSize: 16.0,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
+                              'Seus documentos enviados',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700, fontSize: 13),
                               textAlign: TextAlign.center,
                             ),
                           ),
-                        ),
-                        // Lista de declarações (ocupa todo o resto da tela)
-                        Expanded(child: _buildListaDeclaracoes()),
-                        // Botão para enviar outra declaração + espaço abaixo
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: ElevatedButton(
-                            style: _defaultButtonStyle,
-                            onPressed: () {
-                              setState(() {
-                                _showUploadSection = true;
-                                selectedFile = null;
-                              });
-                            },
-                            child: const Text(
-                              'Enviar outra declaração',
-                              style: TextStyle(color: Colors.white),
+                          Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              child: _buildListaDeclaracoes(theme),
                             ),
                           ),
-                        ),
-                        // Espaço extra no final da página
-                        const SizedBox(height: 24),
-                      ],
-                    ),
-            ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(14, 8, 14, 16),
+                            child: FilledButton.icon(
+                              style: _compactActionStyle(),
+                              onPressed: () {
+                                setState(() {
+                                  _showUploadSection = true;
+                                  selectedFile = null;
+                                });
+                              },
+                              icon: const Icon(Icons.upload_rounded, size: 15),
+                              label: const Text('Enviar outra declaração'),
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+      ),
     );
+  }
+
+  Future<void> _showNotice({
+    required String title,
+    required String message,
+    required bool isError,
+  }) async {
+    final color = isError ? Colors.red.shade700 : Colors.green.shade700;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Icon(
+                isError ? Icons.error_outline_rounded : Icons.check_circle,
+                color: color,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(title),
+            ],
+          ),
+          content: Text(message),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showBusyDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2.2),
+                ),
+                const SizedBox(width: 10),
+                Text(message),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _dismissDialogIfOpen() {
+    if (!mounted) return;
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
   }
 }
 
-/// Página para visualização do PDF (em tela inteira).
 class PdfViewerPage extends StatelessWidget {
   final String filePath;
   final String title;
@@ -531,8 +662,20 @@ class PdfViewerPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
-        backgroundColor: Colors.blue,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          title,
+          style: const TextStyle(color: Colors.white),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.navy, AppColors.blue],
+              begin: Alignment.centerLeft,
+              end: Alignment.topRight,
+            ),
+          ),
+        ),
       ),
       body: PDFView(
         filePath: filePath,
@@ -540,14 +683,6 @@ class PdfViewerPage extends StatelessWidget {
         swipeHorizontal: true,
         autoSpacing: false,
         pageFling: true,
-        onError: (error) {
-          QuickAlert.show(
-            context: context,
-            type: QuickAlertType.error,
-            title: 'Erro',
-            text: 'Erro ao carregar o PDF: $error',
-          );
-        },
       ),
     );
   }

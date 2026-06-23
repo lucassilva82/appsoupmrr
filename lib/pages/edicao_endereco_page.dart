@@ -470,7 +470,8 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                             QuickAlert.show(
                               onConfirmBtnTap: () {
                                 Navigator.of(context).pop(); // fecha QuickAlert
-                                Navigator.of(context).pop(); // volta para perfil
+                                Navigator.of(context)
+                                    .pop(); // volta para perfil
                               },
                               context: context,
                               title: 'Sucesso',
