@@ -145,7 +145,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                                 ),
                                 SizedBox(width: width * 0.01),
                                 Text(
-                                  '${diaSelecionado!.day}/${diaSelecionado!.month}/${diaSelecionado!.year}',
+                                  '${diaSelecionado!.day.toString().padLeft(2, '0')}/${diaSelecionado!.month.toString().padLeft(2, '0')}/${diaSelecionado!.year}',
                                   style: TextStyle(color: Colors.white),
                                 ),
                               ],
@@ -235,7 +235,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                   ),
                   SizedBox(height: 10),
                   Text(
-                    'Dia: ${diaSelecionado!.day}/${diaSelecionado!.month}/${diaSelecionado!.year}',
+                    'Dia: ${diaSelecionado!.day.toString().padLeft(2, '0')}/${diaSelecionado!.month.toString().padLeft(2, '0')}/${diaSelecionado!.year}',
                     // style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: MediaQuery.of(context).size.height * 0.03),

@@ -28,6 +28,7 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard>
   String? ano;
   int? _mesNumero;
   bool _showValues = false;
+  MesesContracheque? _ultimoMes;
 
   late final AnimationController _pulseCtrl;
   late final Animation<double> _pulseAnim;
@@ -71,40 +72,70 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard>
           await dadosSql.listaMesesContracheque(cpf, (anoAtual - 1).toString());
     }
     if (lista.isEmpty) return null;
-    return _buscarDadosContracheque(lista.first);
+    final ultimo = lista.first;
+    ultimo.cpf = cpf;
+    _ultimoMes = ultimo;
+
+    // Seleciona TODAS as folhas/vínculos do último mês (mesmo mês e ano),
+    // para que o card mostre o total que o usuário efetivamente recebe
+    // somando todos os vínculos (usuários podem ter 3 ou mais).
+    final mesTopo = dadosSql.converteMes(ultimo.mesExtenso);
+    final seen = <String>{};
+    final folhasDoMes = <MesesContracheque>[];
+    for (final m in lista) {
+      if (dadosSql.converteMes(m.mesExtenso) == mesTopo &&
+          m.ano == ultimo.ano) {
+        // Evita contagem dupla do mesmo vínculo/folha vindo das duas APIs.
+        final key =
+            '${m.tipo}|${m.matricula}|${m.folha}|${m.relacaoTrabalho}|${m.codProvento}';
+        if (seen.add(key)) {
+          m.cpf = cpf;
+          folhasDoMes.add(m);
+        }
+      }
+    }
+
+    return _buscarDadosContracheque(folhasDoMes, ultimo);
   }
 
   Future<ContrachequeModel> _buscarDadosContracheque(
-      MesesContracheque mesSel) async {
+      List<MesesContracheque> folhas, MesesContracheque mesRef) async {
     final dadosSql = DadosSql();
-    final contracheque = await dadosSql.buscaContracheque(
-      mesSel.cpf,
-      mesSel.ano,
-      mesSel.mes,
-      mesSel.mesExtenso,
-      mesSel.matricula,
-      mesSel.tipo,
-      mesSel.codProvento,
-      mesSel.relacaoTrabalho,
-      mesSel.folha,
-    );
     double somaP = 0.0, somaD = 0.0;
-    for (final item in contracheque.proventos) {
-      if (item.tipoRubrica == 'P') {
-        somaP += double.tryParse(item.provento) ?? 0.0;
-      } else {
-        somaD += double.tryParse(item.desconto) ?? 0.0;
+    ContrachequeModel? primeiro;
+
+    // Soma proventos e descontos de todas as folhas/vínculos do mês.
+    for (final folha in folhas) {
+      final contracheque = await dadosSql.buscaContracheque(
+        folha.cpf,
+        folha.ano,
+        folha.mes,
+        folha.mesExtenso,
+        folha.matricula,
+        folha.tipo,
+        folha.codProvento,
+        folha.relacaoTrabalho,
+        folha.folha,
+      );
+      primeiro ??= contracheque;
+      for (final item in contracheque.proventos) {
+        if (item.tipoRubrica == 'P') {
+          somaP += double.tryParse(item.provento) ?? 0.0;
+        } else {
+          somaD += double.tryParse(item.desconto) ?? 0.0;
+        }
       }
     }
+
     setState(() {
       bruto = somaP;
       descontos = somaD;
       liquido = somaP - somaD;
-      mesNome = mesSel.mesExtenso;
-      ano = mesSel.ano.toString();
-      _mesNumero = int.tryParse(mesSel.mes);
+      mesNome = mesRef.mesExtenso;
+      ano = mesRef.ano.toString();
+      _mesNumero = int.tryParse(dadosSql.converteMes(mesRef.mesExtenso));
     });
-    return contracheque;
+    return primeiro ?? ContrachequeModel();
   }
 
   // ── Skeleton compacto (espelha o novo layout) ───────────────────────
@@ -252,8 +283,17 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard>
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () =>
-            Navigator.of(context).pushNamed(AppRoutes.CONTRACHEQUE_PAGE),
+        onTap: () {
+          final mes = _ultimoMes;
+          if (mes != null) {
+            Navigator.of(context).pushNamed(
+              AppRoutes.PAGE_VIEW_CONTRACHEQUE,
+              arguments: mes,
+            );
+          } else {
+            Navigator.of(context).pushNamed(AppRoutes.CONTRACHEQUE_PAGE);
+          }
+        },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),

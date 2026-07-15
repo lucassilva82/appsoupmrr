@@ -153,8 +153,11 @@ class Auth with ChangeNotifier {
 
     /* ------------------------------------------------------------
      * 5) Salvar FCM token no Firestore vinculado à matrícula
+     *    Fire-and-forget: não bloqueia o login.
+     *    Se falhar (ex: APNs indisponível no simulador), o listener
+     *    onTokenRefresh em main.dart salva quando o token aparecer.
      * ---------------------------------------------------------- */
-    await _saveFcmToken();
+    unawaited(_saveFcmToken());
 
     _autoLogout();
     debugPrint('[LOG] _authenticateLocalNoNotify finalizado');
@@ -218,18 +221,54 @@ class Auth with ChangeNotifier {
   /// Salva (ou atualiza) o FCM token do dispositivo no Firestore,
   /// usando a matrícula como ID do documento em /militares/{matricula}.
   Future<void> _saveFcmToken() async {
-    if (matricula == null) return;
+    debugPrint('[FCM] ── _saveFcmToken() iniciado ──');
+    if (matricula == null) {
+      debugPrint('[FCM] ❌ Matrícula nula — token NÃO salvo.');
+      return;
+    }
+    debugPrint('[FCM] Matrícula: $matricula');
+    String? token;
+
+    // 1) Tenta obter via plugin Flutter (funciona em device físico).
     try {
-      final token = await FirebaseMessaging.instance.getToken();
-      if (token == null) return;
+      token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        debugPrint('[FCM] Token via plugin: ${token.substring(0, 40)}...');
+      }
+    } catch (e) {
+      debugPrint('[FCM] getToken() falhou ($e)');
+    }
+
+    // 2) Fallback: token capturado nativamente no AppDelegate
+    //    (necessário no simulador iOS, onde o plugin lança apns-token-not-set).
+    if (token == null) {
+      token = await Store.getString('native_fcm_token');
+      if (token.isNotEmpty) {
+        debugPrint(
+            '[FCM] Token via nativo (UserDefaults): ${token.substring(0, 40)}...');
+      } else {
+        token = null;
+      }
+    }
+
+    if (token == null) {
+      debugPrint(
+          '[FCM] ❌ Nenhum token disponível — será salvo via onTokenRefresh.');
+      return;
+    }
+
+    // 3) Salva no Firestore
+    try {
+      debugPrint('[FCM] Salvando em Firestore → militares/$matricula ...');
       await FirebaseFirestore.instance
           .collection('militares')
           .doc(matricula)
           .set({'fcmToken': token}, SetOptions(merge: true));
-      debugPrint(
-          '[LOG] FCM token salvo no Firestore para matrícula $matricula');
-    } catch (e) {
-      debugPrint('[LOG] Erro ao salvar FCM token no Firestore: $e');
+      debugPrint('[FCM] ✅ Token salvo com sucesso! '
+          'Firestore: militares/$matricula → fcmToken OK');
+    } catch (e, stack) {
+      debugPrint('[FCM] ❌ ERRO ao salvar token no Firestore: $e');
+      debugPrint('[FCM] Stack: $stack');
     }
   }
 

@@ -11,6 +11,8 @@ class AppRoutes {
   static const PLANTAO = '/plantao';
   static const ESCALAS = '/escalas';
   static const ESCALA_DETALHE = '/escala-detalhe';
+  static const SVI_ESCALAS = '/svi/escalas';
+  static const SVI_MEUS_VOLUNTARIOS = '/svi/meus-voluntarios';
   static const NOTIFICATIONS_PAGE = '/notifications-page';
   static const AJUDA_PAGE = '/ajuda-page';
   static const CONTRACHEQUE_PAGE = '/contracheque-page';

@@ -49,8 +49,8 @@ android {
         applicationId = "pm.rr.soupmrr"
         minSdk = 21
         targetSdk = 35
-        versionCode = 39
-        versionName = "1.0.39"
+        versionCode = 41
+        versionName = "2.0.1"
     }
 }
 

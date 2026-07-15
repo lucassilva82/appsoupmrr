@@ -34,8 +34,16 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
       _escalaId = args?['escalaId'] as int?;
       _service = args?['service'] as EscalaService?;
       _service ??= EscalaService();
+      // Escala já carregada na listagem: usamos como dado inicial para a tela
+      // renderizar imediatamente, mesmo que o refresh via /escala/{id} falhe.
+      final escalaArg = args?['escala'];
+      if (escalaArg is EscalaModel) {
+        _escala = escalaArg;
+        _escalaId ??= escalaArg.escalaId;
+        _loading = false;
+      }
       _logUi(
-          'didChangeDependencies escalaId=$_escalaId serviceNull=${_service == null}');
+          'didChangeDependencies escalaId=$_escalaId temFallback=${_escala != null}');
       _load();
     }
   }
@@ -43,10 +51,13 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
   Future<void> _load() async {
     if (_escalaId == null) return;
     _logUi('load start escalaId=$_escalaId');
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    // Só mostra o spinner de tela cheia se ainda não temos nenhum dado.
+    if (_escala == null) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final escala = await _service!.getEscalaDetalhe(_escalaId!);
       _logUi(
@@ -55,20 +66,25 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
       setState(() {
         _escala = escala;
         _loading = false;
+        _error = null;
       });
     } on EscalaServiceException catch (e) {
       _logUi('load falhou code=${e.code} message=${e.message}');
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = e.message;
+        // Se já temos a escala vinda da listagem, mantemos exibindo e não
+        // bloqueamos a tela — o usuário ainda consegue dar ciência.
+        _error = _escala != null ? null : e.message;
       });
     } catch (_) {
       _logUi('load erro inesperado');
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Erro ao carregar detalhes. Verifique sua conexão.';
+        _error = _escala != null
+            ? null
+            : 'Erro ao carregar detalhes. Verifique sua conexão.';
       });
     }
   }

@@ -24,6 +24,7 @@ class _EscalasPageState extends State<EscalasPage>
   List<EscalaModel> _escalas = [];
   bool _loading = true;
   String? _error;
+  bool _usandoCache = false;
   bool _needs2FA = false;
   bool _needsManualLogin = false;
   bool _needsPasswordMigration = false;
@@ -77,8 +78,46 @@ class _EscalasPageState extends State<EscalasPage>
       // Carrega em sequência para evitar duas falhas simultâneas quando
       // o backend responde HTML (ambiente indisponível para JSON).
       _logUi('tryLoad start');
-      final proxima = await _service.getProximaEscala();
-      final escalas = await _service.getMinhasEscalas();
+      // A "próxima escala" é informativa: se o backend falhar nela (ex.: 500),
+      // não bloqueamos o módulo — ainda carregamos a lista para dar ciência.
+      EscalaModel? proxima;
+      try {
+        proxima = await _service.getProximaEscala();
+      } on EscalaServiceException catch (e) {
+        if (e.code == 'UNAUTHORIZED' || e.code == 'NOT_AUTHENTICATED') {
+          rethrow; // erro de autenticação deve seguir o fluxo de relogin
+        }
+        _logUi('getProximaEscala falhou code=${e.code} — '
+            'derivando próxima a partir da lista');
+        proxima = null;
+      }
+      List<EscalaModel> escalas;
+      try {
+        escalas = await _service.getMinhasEscalas();
+      } on EscalaServiceException catch (e) {
+        if (e.code == 'UNAUTHORIZED' || e.code == 'NOT_AUTHENTICATED') {
+          rethrow; // erro de autenticação deve seguir o fluxo de relogin
+        }
+        // Backend indisponível (ex.: 500): usa o último cache local válido
+        // para não deixar o militar sem ver suas escalas.
+        final cache = await _service.getMinhasEscalasCache();
+        if (cache.isEmpty) rethrow; // sem cache → propaga o erro normalmente
+        _logUi('getMinhasEscalas falhou code=${e.code} — '
+            'usando cache local (${cache.length} escalas)');
+        proxima ??= _derivarProxima(cache);
+        if (!mounted) return;
+        setState(() {
+          _proxima = proxima;
+          _escalas = cache;
+          _loading = false;
+          _error = null;
+          _usandoCache = true;
+        });
+        return;
+      }
+      // Fallback: se o endpoint /escala/proxima falhou, derivamos a próxima
+      // escala da lista (a futura mais próxima da data de hoje).
+      proxima ??= _derivarProxima(escalas);
       _logUi(
           'tryLoad success proxima=${proxima != null} escalas=${escalas.length}');
       if (!mounted) return;
@@ -86,6 +125,8 @@ class _EscalasPageState extends State<EscalasPage>
         _proxima = proxima;
         _escalas = escalas;
         _loading = false;
+        _error = null;
+        _usandoCache = false;
       });
     }
 
@@ -156,7 +197,7 @@ class _EscalasPageState extends State<EscalasPage>
         if (!mounted) return;
         setState(() {
           _loading = false;
-          _error = e.message;
+          _error = _mensagemErroAmigavel(e);
         });
       }
     } catch (e) {
@@ -166,6 +207,23 @@ class _EscalasPageState extends State<EscalasPage>
         _loading = false;
         _error = 'Erro inesperado. Verifique sua conexão.';
       });
+    }
+  }
+
+  /// Traduz erros técnicos do backend em mensagens claras para o militar.
+  String _mensagemErroAmigavel(EscalaServiceException e) {
+    switch (e.code) {
+      case 'INTERNAL_ERROR':
+      case 'SERVER_ERROR':
+        return 'O servidor de escalas está temporariamente indisponível. '
+            'Tente novamente em alguns instantes.';
+      case 'TIMEOUT':
+      case 'NETWORK_ERROR':
+        return 'Não foi possível conectar. Verifique sua internet e tente novamente.';
+      default:
+        return e.message.isNotEmpty
+            ? e.message
+            : 'Não foi possível carregar as escalas. Tente novamente.';
     }
   }
 
@@ -479,6 +537,16 @@ class _EscalasPageState extends State<EscalasPage>
       backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
+      actions: showTabs
+          ? [
+              IconButton(
+                tooltip: 'Vagas SVI',
+                icon: const Icon(Icons.more_time_rounded, color: Colors.white),
+                onPressed: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.SVI_ESCALAS),
+              ),
+            ]
+          : null,
       flexibleSpace: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -527,6 +595,38 @@ class _EscalasPageState extends State<EscalasPage>
         _buildProximaTab(theme, isDark),
         _buildHistoricoTab(theme, isDark),
       ],
+    );
+  }
+
+  /// Aviso exibido quando os dados estão vindo do cache local (servidor fora
+  /// do ar). Mantém o militar informado de que pode haver desatualização.
+  Widget _buildCacheBanner(bool isDark) {
+    if (!_usandoCache) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.withOpacity(0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.cloud_off_rounded, size: 16, color: Colors.orange),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Servidor indisponível. Exibindo dados salvos — podem estar desatualizados.',
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? Colors.orange.shade200 : Colors.orange.shade900,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -671,36 +771,58 @@ class _EscalasPageState extends State<EscalasPage>
         physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics()),
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-        child: _proxima == null
-            ? _EmptyProxima(isDark: isDark)
-            : Column(
-                children: [
-                  _ProximaEscalaCard(
-                    escala: _proxima!,
-                    isDark: isDark,
-                    theme: theme,
-                    onCiencia: () => _darCiencia(_proxima!),
-                    onImpossibilidade: () =>
-                        _declararImpossibilidade(_proxima!),
-                    onDetalhe: () => _abrirDetalhe(_proxima!),
-                  ),
-                  if (_proxima!.composicao.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    _GuarnicaoCard(
-                        composicao: _proxima!.composicao,
+        child: Column(
+          children: [
+            _buildCacheBanner(isDark),
+            _proxima == null
+                ? _EmptyProxima(isDark: isDark)
+                : Column(
+                    children: [
+                      _ProximaEscalaCard(
+                        escala: _proxima!,
                         isDark: isDark,
-                        theme: theme),
-                  ],
-                ],
-              ),
+                        theme: theme,
+                        onCiencia: () => _darCiencia(_proxima!),
+                        onImpossibilidade: () =>
+                            _declararImpossibilidade(_proxima!),
+                        onDetalhe: () => _abrirDetalhe(_proxima!),
+                      ),
+                      if (_proxima!.composicao.isNotEmpty) ...[
+                        const SizedBox(height: 20),
+                        _GuarnicaoCard(
+                            composicao: _proxima!.composicao,
+                            isDark: isDark,
+                            theme: theme),
+                      ],
+                    ],
+                  ),
+          ],
+        ),
       ),
     );
   }
 
   // ── Tab: Histórico ──────────────────────────────────────────────────────────
   Widget _buildHistoricoTab(ThemeData theme, bool isDark) {
-    if (_escalas.isEmpty) {
-      return const _EmptyHistorico();
+    // Evita duplicar a escala que já está sendo exibida na aba "Próxima".
+    final historico = _proxima == null
+        ? _escalas
+        : _escalas.where((e) => e.escalaId != _proxima!.escalaId).toList();
+    if (historico.isEmpty) {
+      return _usandoCache
+          ? RefreshIndicator(
+              onRefresh: () => _load(forceRelogin: false),
+              color: AppColors.blue,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics()),
+                children: [
+                  _buildCacheBanner(isDark),
+                  const _EmptyHistorico(),
+                ],
+              ),
+            )
+          : const _EmptyHistorico();
     }
     return RefreshIndicator(
       onRefresh: () => _load(forceRelogin: false),
@@ -709,9 +831,10 @@ class _EscalasPageState extends State<EscalasPage>
         physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics()),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        itemCount: _escalas.length,
+        itemCount: historico.length + 1,
         itemBuilder: (ctx, i) {
-          final escala = _escalas[i];
+          if (i == 0) return _buildCacheBanner(isDark);
+          final escala = historico[i - 1];
           return _EscalaListCard(
             escala: escala,
             isDark: isDark,
@@ -923,8 +1046,29 @@ class _EscalasPageState extends State<EscalasPage>
   void _abrirDetalhe(EscalaModel escala) {
     Navigator.of(context).pushNamed(
       AppRoutes.ESCALA_DETALHE,
-      arguments: {'escalaId': escala.escalaId, 'service': _service},
+      arguments: {
+        'escalaId': escala.escalaId,
+        'service': _service,
+        'escala': escala,
+      },
     );
+  }
+
+  /// Deriva a "próxima escala" a partir da lista de escalas do militar:
+  /// a futura (hoje ou adiante) com a data mais próxima. Usado como fallback
+  /// quando o endpoint /escala/proxima falha no backend.
+  EscalaModel? _derivarProxima(List<EscalaModel> escalas) {
+    final futuras = escalas.where((e) => e.isFuture).toList()
+      ..sort((a, b) {
+        final da = DateTime.tryParse(a.dataEscalaIso);
+        final db = DateTime.tryParse(b.dataEscalaIso);
+        if (da == null && db == null) return 0;
+        if (da == null) return 1;
+        if (db == null) return -1;
+        return da.compareTo(db);
+      });
+    if (futuras.isEmpty) return null;
+    return futuras.first;
   }
 }
 
@@ -1174,9 +1318,13 @@ class _ProximaEscalaCard extends StatelessWidget {
       children: [
         Icon(icon, size: 13, color: Colors.white70),
         const SizedBox(width: 5),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white, fontSize: 13),
+        Flexible(
+          child: Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
+          ),
         ),
       ],
     );

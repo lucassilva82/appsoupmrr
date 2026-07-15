@@ -482,6 +482,14 @@ class _PageContrachequeState extends State<PageContracheque> {
     return file;
   }
 
+  // Origem do popover exigida pelo iOS/iPad (UIActivityViewController).
+  // No Android o parâmetro é ignorado, então é seguro sempre enviar.
+  Rect? _sharePositionOrigin() {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return null;
+    return box.localToGlobal(Offset.zero) & box.size;
+  }
+
   // ── Compartilhar PDF ──────────────────────────────────────────────────
   Future<void> _sharePdf(Auth auth) async {
     if (_sharingPdf || _sharingImage) return;
@@ -492,14 +500,16 @@ class _PageContrachequeState extends State<PageContracheque> {
         [XFile(file.path)],
         subject:
             'Contracheque ${widget.mesSelecionado.mesExtenso}/${widget.mesSelecionado.ano}',
+        sharePositionOrigin: _sharePositionOrigin(),
       );
     } catch (e) {
+      debugPrint('Erro ao compartilhar PDF: $e');
       if (!mounted) return;
       QuickAlert.show(
         context: context,
         type: QuickAlertType.error,
         title: 'Erro',
-        text: 'Não foi possível gerar o PDF.',
+        text: 'Não foi possível gerar o PDF.\n$e',
         confirmBtnText: 'OK',
       );
     } finally {
@@ -525,14 +535,16 @@ class _PageContrachequeState extends State<PageContracheque> {
         [XFile(imgFile.path)],
         subject:
             'Contracheque ${widget.mesSelecionado.mesExtenso}/${widget.mesSelecionado.ano}',
+        sharePositionOrigin: _sharePositionOrigin(),
       );
     } catch (e) {
+      debugPrint('Erro ao compartilhar imagem: $e');
       if (!mounted) return;
       QuickAlert.show(
         context: context,
         type: QuickAlertType.error,
         title: 'Erro',
-        text: 'Não foi possível gerar a imagem.',
+        text: 'Não foi possível gerar a imagem.\n$e',
         confirmBtnText: 'OK',
       );
     } finally {

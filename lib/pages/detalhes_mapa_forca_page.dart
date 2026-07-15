@@ -30,7 +30,7 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
   final TextEditingController _searchCtrl = TextEditingController();
   String _ip = '...';
   final String _dateTimeStr =
-      DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+      DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now());
 
   @override
   void initState() {

@@ -93,7 +93,7 @@ class _ConfiguraPlantaoState extends State<ConfiguraPlantao> {
                               width: width * 0.18,
                               child: widget.dataFoiSelecionada == true
                                   ? Text(
-                                      '${widget.dateSelected!.day}/${widget.dateSelected!.month}/${widget.dateSelected!.year}')
+                                      '${widget.dateSelected!.day.toString().padLeft(2, '0')}/${widget.dateSelected!.month.toString().padLeft(2, '0')}/${widget.dateSelected!.year}')
                                   : ElevatedButton(
                                       onPressed: () async {
                                         _selecionaData();

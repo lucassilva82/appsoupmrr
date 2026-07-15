@@ -2,7 +2,7 @@ name: projetonovo
 description: A new Flutter project.
 publish_to: 'none'
 
-version: 1.0.39
+version: 2.0.1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

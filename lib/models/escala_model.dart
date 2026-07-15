@@ -1,5 +1,13 @@
 // ── Modelos do módulo Escalas de Serviço ─────────────────────────────────────
 
+/// Conversão defensiva para int (backend pode enviar int, num ou string).
+int _asInt(dynamic v, [int fallback = 0]) {
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v.trim()) ?? fallback;
+  return fallback;
+}
+
 enum EscalaStatusVisual {
   aguardandoCiencia, // 🟡 futura, sem ciência
   ciente, // 🟢 futura, com ciência
@@ -51,7 +59,7 @@ class EscalaImpossibilidadeTipo {
 
   factory EscalaImpossibilidadeTipo.fromJson(Map<String, dynamic> j) =>
       EscalaImpossibilidadeTipo(
-        id: j['id'] as int,
+        id: _asInt(j['id']),
         codigo: j['codigo']?.toString() ?? '',
         descricao: j['descricao']?.toString() ?? '',
         requerAnexo: j['requer_anexo'] == true,
@@ -118,7 +126,7 @@ class EscalaModel {
     final policial = j['policial'] as Map<String, dynamic>?;
 
     return EscalaModel(
-      escalaId: j['escala_id'] as int,
+      escalaId: _asInt(j['escala_id']),
       escalaStatus: j['escala_status']?.toString() ?? '',
       dataEscala: j['data_escala']?.toString() ?? '',
       dataEscalaIso: j['data_escala_iso']?.toString() ?? '',

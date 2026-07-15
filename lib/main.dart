@@ -9,13 +9,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:projetonovo/models/notification_model.dart';
 import 'package:projetonovo/pages/certidoes_page.dart';
 import 'package:projetonovo/pages/legislacoes_page.dart';
 import 'package:projetonovo/pages/militar_detalhe_full_page.dart';
 import 'package:projetonovo/pages/planodeferias.dart';
 import 'package:projetonovo/pages/pop_page.dart';
-import 'package:projetonovo/services/notification_service.dart';
 import 'package:projetonovo/utils/notification_provider.dart';
 import 'package:projetonovo/utils/theme_provider.dart';
 import 'package:projetonovo/utils/app_theme.dart';
@@ -55,6 +53,8 @@ import 'package:projetonovo/pages/plano_de_ferias.dart';
 import 'package:projetonovo/pages/plantao_page.dart';
 import 'package:projetonovo/pages/escala_page.dart';
 import 'package:projetonovo/pages/escala_detalhe_page.dart';
+import 'package:projetonovo/pages/svi_escalas_page.dart';
+import 'package:projetonovo/pages/svi_meus_voluntarios_page.dart';
 import 'package:projetonovo/pages/main_shell.dart';
 import 'package:projetonovo/utils/app_routes.dart';
 
@@ -65,6 +65,41 @@ import 'package:projetonovo/data/store.dart'; // Certifique-se de que Store est�
 // Instância global de notificações locais
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
+
+/// Exibe um banner local (usado quando o app está em foreground). Funciona no
+/// iOS em primeiro plano e também no simulador, onde o push remoto do FCM não
+/// é entregue. O histórico permanece no Firestore (fonte de verdade).
+Future<void> mostrarBannerNotificacao(
+  String title,
+  String body, {
+  String? route,
+}) async {
+  try {
+    await flutterLocalNotificationsPlugin.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title,
+      body,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'default_channel',
+          'Notificações',
+          importance: Importance.max,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      payload: route,
+    );
+    print('[DEBUG] Banner local exibido (foreground): $title');
+  } catch (e) {
+    print('[DEBUG] Erro ao exibir banner local: $e');
+  }
+}
 
 // Handler FCM em background
 @pragma('vm:entry-point')
@@ -78,22 +113,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print('[DEBUG] Notification: ${message.notification?.toMap()}');
   print('[DEBUG] ========================================');
 
-  try {
-    final notification = message.notification;
-    final n = NotificationModel(
-      title: notification?.title ?? message.data['title'] ?? 'Notificação',
-      body: notification?.body ?? message.data['body'] ?? 'Nova mensagem',
-      timestamp: DateTime.now(),
-      clicked: false,
-      route: message.data['route'],
-    );
-
-    print('[DEBUG] BG: Salvando: ${n.toMap()}');
-    await NotificationService().addNotification(n);
-    print('[DEBUG] BG: ✅ SALVO COM SUCESSO!');
-  } catch (e) {
-    print('[DEBUG] BG: ❌ ERRO: $e');
-  }
+  // O histórico da lista interna é gravado no Firestore pela Cloud Function
+  // (militares/{matricula}/notificacoes). O banner do sistema é exibido
+  // automaticamente pelo SO a partir do payload de notificação. Nada a salvar
+  // aqui — o app sincroniza o stream do Firestore ao abrir.
 }
 
 // Bloqueio nativo (Android) + iOS ≤ 16
@@ -139,36 +162,34 @@ Future<void> main() async {
   await flutterLocalNotificationsPlugin.initialize(
     const InitializationSettings(android: initAndroid, iOS: initIOS),
     onDidReceiveNotificationResponse: (resp) {
-      print('[DEBUG] Notificação clicada – payload: ${resp.payload}');
+      print('[DEBUG] Notificação local clicada – payload: ${resp.payload}');
+      navegarPorNotificacao(resp.payload);
     },
   );
 
   print('[DEBUG] 5) Registrando background handler FCM');
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  // CONFIGURAÇÕES DE FOREGROUND - CORRIGIDO
+  // Em foreground NÃO deixamos o FCM apresentar o banner nativo, pois o banner
+  // é exibido pelo stream do Firestore (funciona no device E no simulador).
+  // Isso evita banner duplicado no iPhone real. Em background/terminado o SO
+  // continua exibindo a notificação normalmente (estas opções não se aplicam).
   await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-    alert: true, // MUDE PARA TRUE
-    badge: true,
-    sound: true, // MUDE PARA TRUE
+    alert: false,
+    badge: false,
+    sound: false,
   );
 
   // 6) Permissões iOS
   if (Platform.isIOS) {
-    print('[DEBUG] Solicitando permissão de notificação iOS');
+    print('[FCM] Solicitando permissão de notificação iOS');
     NotificationSettings settings =
         await FirebaseMessaging.instance.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
-    print('[DEBUG] Permissão iOS: ${settings.authorizationStatus}');
-  }
-
-  if (Platform.isIOS) {
-    print('[DEBUG] Tentando obter APNs Token...');
-    String? apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-    print('[DEBUG] APNs Token: $apnsToken');
+    print('[FCM] Permissão iOS: ${settings.authorizationStatus}');
   }
 
   print('[DEBUG] Registrando listener onTokenRefresh');
@@ -182,26 +203,46 @@ Future<void> main() async {
             .collection('militares')
             .doc(matricula.toString())
             .set({'fcmToken': token}, SetOptions(merge: true));
-        print('[DEBUG] FCM Token renovado salvo no Firestore para $matricula');
+        print(
+            '[FCM] ✅ Token renovado salvo → militares/$matricula → fcmToken OK');
       }
     } catch (e) {
-      print('[DEBUG] Erro ao salvar FCM token renovado: $e');
+      print('[FCM] ❌ ERRO ao salvar token renovado: $e');
     }
   });
 
-  print('[DEBUG] Tentando obter FCM Token inicial');
+  // Obtém o FCM token. No iOS device físico o getToken() funciona direto.
+  // No simulador, getToken() lança apns-token-not-set, mas o AppDelegate
+  // captura o token nativamente e grava em UserDefaults (native_fcm_token).
+  print('[FCM] ── Obtendo token inicial ──');
   String? fcmToken;
   try {
     fcmToken = await FirebaseMessaging.instance.getToken();
-    print('[DEBUG] FCM Token inicial: $fcmToken');
+  } catch (e) {
+    print('[FCM] getToken() falhou no startup ($e)');
+  }
+  if (fcmToken == null) {
+    // Fallback nativo (simulador): aguarda o AppDelegate gravar o token.
+    for (int i = 0; i < 6 && (fcmToken == null || fcmToken.isEmpty); i++) {
+      fcmToken = await Store.getString('native_fcm_token');
+      if (fcmToken.isEmpty) {
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+    }
+  }
+  if (fcmToken != null && fcmToken.isNotEmpty) {
+    print('[FCM] ✅ Token inicial: ${fcmToken.substring(0, 40)}...');
+  } else {
+    print(
+        '[FCM] ⚠️ Token não obtido no startup — onTokenRefresh/login salvarão depois.');
+  }
 
-    // ===== ADICIONE ESTAS LINHAS AQUI ⬇️ =====
+  try {
     await FirebaseMessaging.instance.subscribeToTopic('todos_militares');
     await FirebaseMessaging.instance.subscribeToTopic('pmrr_usuarios');
-    print('[DEBUG] ✅ Subscrito aos tópicos: todos_militares, pmrr_usuarios');
-    // ===== ATÉ AQUI ⬆️ =====
+    print('[FCM] ✅ Inscrito nos tópicos: todos_militares, pmrr_usuarios');
   } catch (e) {
-    print('[DEBUG] Erro ao obter FCM Token inicial: $e');
+    print('[FCM] ⚠️ Inscrição em tópicos adiada (APNs não pronto): $e');
   }
 
   print('[DEBUG] Inicializando datas e rodando app');
@@ -240,6 +281,141 @@ class BlurOverlay extends StatelessWidget {
 
 // Coloque essa variável global (pode ser definida fora da classe MyApp)
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+/// Chave global do ScaffoldMessenger — permite exibir toasts (SnackBars)
+/// coloridos a partir de callbacks de push, sem depender de um BuildContext.
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
+
+/// Exibe um toast (SnackBar) colorido no topo do app.
+void mostrarToastEvento(String mensagem, Color cor, {IconData? icone}) {
+  final messenger = scaffoldMessengerKey.currentState;
+  if (messenger == null) return;
+  messenger
+    ..clearSnackBars()
+    ..showSnackBar(
+      SnackBar(
+        backgroundColor: cor,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        content: Row(
+          children: [
+            if (icone != null) ...[
+              Icon(icone, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: Text(
+                mensagem,
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+}
+
+/// Trata os valores do campo `tipo_evento` do payload de push (adição
+/// retrocompatível: o restante do payload não mudou).
+///
+/// [interacao] = true quando o usuário TOCOU na notificação (app aberto pelo
+/// toque / trazido do background). false quando a mensagem apenas chegou com o
+/// app em foreground.
+void tratarTipoEvento(Map<String, dynamic> data, {required bool interacao}) {
+  final tipo = (data['tipo_evento'] ?? '').toString().trim();
+  if (tipo.isEmpty) return;
+
+  const verde = Color(0xFF059669);
+  const laranja = Color(0xFFEA580C);
+  const vermelho = Color(0xFFDC2626);
+  const cinza = Color(0xFF475569);
+
+  switch (tipo) {
+    case 'cancelada':
+      // Alerta vermelho; a escala já sai da lista de próximas ao recarregar.
+      mostrarToastEvento('Uma escala foi cancelada.', vermelho,
+          icone: Icons.event_busy_rounded);
+      if (interacao) navegarPorNotificacao('/escalas');
+      break;
+
+    case 'removido':
+      // Alerta laranja; removido da lista.
+      mostrarToastEvento('Você foi removido de uma escala.', laranja,
+          icone: Icons.person_remove_rounded);
+      if (interacao) navegarPorNotificacao('/escalas');
+      break;
+
+    case 'escalado':
+      // Badge verde; abrir escala ao tocar.
+      mostrarToastEvento('Você foi escalado para um serviço.', verde,
+          icone: Icons.assignment_turned_in_rounded);
+      if (interacao) navegarPorNotificacao('/escalas');
+      break;
+
+    case 'svi_inscrito':
+      // Confirmação; navegar para "Meus Voluntários".
+      mostrarToastEvento('Inscrição no SVI confirmada.', verde,
+          icone: Icons.more_time_rounded);
+      if (interacao) navegarPorNotificacao('/svi/meus-voluntarios');
+      break;
+
+    case 'svi_adesao_reativada':
+      mostrarToastEvento('Adesão SVI reativada.', verde,
+          icone: Icons.check_circle_rounded);
+      break;
+
+    case 'svi_adesao_cancelada':
+      mostrarToastEvento('Adesão SVI cancelada.', cinza,
+          icone: Icons.info_rounded);
+      break;
+
+    default:
+      // Valor desconhecido — ignora silenciosamente (retrocompatível).
+      break;
+  }
+}
+
+/// Rotas seguras para deep-link via notificação (sem argumentos obrigatórios).
+/// Mantenha sincronizada com a lista entregue ao desenvolvedor web.
+const Set<String> kRotasNotificacaoPermitidas = {
+  '/home-page',
+  '/plantao',
+  '/escalas',
+  '/svi/escalas',
+  '/svi/meus-voluntarios',
+  '/notifications-page',
+  '/contracheque-page',
+  '/plano-de-ferias-page',
+  '/certidoes-page',
+  '/declaracoes-page',
+  '/legislacoes-page',
+  '/pop-page',
+  '/mapa-da-forca-page',
+  '/ajuda-page',
+  '/configuracoes',
+  '/page-militar',
+};
+
+/// Navega para a rota indicada por uma notificação, de forma segura.
+/// Ignora rotas vazias, desconhecidas ou que exijam argumentos.
+void navegarPorNotificacao(String? rota) {
+  if (rota == null || rota.trim().isEmpty) return;
+  final r = rota.trim();
+  if (!kRotasNotificacaoPermitidas.contains(r)) {
+    print('[NOTIF] Rota "$r" não permitida/desconhecida — navegação ignorada.');
+    return;
+  }
+  final nav = navigatorKey.currentState;
+  if (nav == null) {
+    print('[NOTIF] Navigator indisponível — navegação adiada.');
+    return;
+  }
+  print('[NOTIF] Navegando para "$r" via notificação.');
+  nav.pushNamed(r);
+}
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -281,13 +457,36 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   void _setupFirebaseListeners() {
+    // Banner em foreground é disparado pelo stream do Firestore (fonte de
+    // verdade), e não pelo FCM. Assim funciona no iPhone real E no simulador
+    // (onde o push remoto não chega). Só exibe quando o app está em foreground
+    // para não duplicar com o banner nativo do SO em background.
+    try {
+      final notifProvider =
+          Provider.of<NotificationProvider>(context, listen: false);
+      notifProvider.onNewNotificationForeground = (notif) {
+        final estado = WidgetsBinding.instance.lifecycleState;
+        if (estado == null || estado == AppLifecycleState.resumed) {
+          mostrarBannerNotificacao(
+            notif.title,
+            notif.body,
+            route: notif.route,
+          );
+        }
+      };
+    } catch (e) {
+      print('[DEBUG] Erro ao registrar callback de banner foreground: $e');
+    }
+
     FirebaseMessaging.instance
         .getInitialMessage()
         .then((RemoteMessage? message) {
       if (message != null) {
         print('[DEBUG] ===== getInitialMessage =====');
-        print('[DEBUG] App foi aberto via notificação: ${message.data}');
-        _processNotification(message);
+        print('[DEBUG] App aberto via notificação: ${message.data}');
+        // App estava terminado e foi aberto pelo toque na notificação.
+        tratarTipoEvento(message.data, interacao: true);
+        navegarPorNotificacao(message.data['route']?.toString());
       }
     });
 
@@ -297,14 +496,28 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       print('[DEBUG] Data: ${message.data}');
       print('[DEBUG] Notification: ${message.notification?.toMap()}');
 
-      await _processNotification(message);
+      // Apenas garante que o provider esteja conectado ao stream. O banner em
+      // foreground é exibido pelo callback do stream do Firestore, evitando
+      // banners duplicados no device.
+      if (mounted) {
+        try {
+          await Provider.of<NotificationProvider>(context, listen: false)
+              .bindUser();
+        } catch (e) {
+          print('[DEBUG] Erro ao conectar provider no onMessage: $e');
+        }
+      }
+      // Toast colorido em foreground conforme o tipo_evento do payload.
+      tratarTipoEvento(message.data, interacao: false);
       print('[DEBUG] ===== FOREGROUND MESSAGE PROCESSADO =====');
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       print('[DEBUG] ===== onMessageOpenedApp INICIADO =====');
-      print('[DEBUG] App foi aberto através de notificação: ${message.data}');
-      _processNotification(message);
+      print('[DEBUG] App aberto pelo toque na notificação: ${message.data}');
+      // App em background e foi trazido ao foreground pelo toque.
+      tratarTipoEvento(message.data, interacao: true);
+      navegarPorNotificacao(message.data['route']?.toString());
     });
   }
 
@@ -330,76 +543,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   //     print('[DEBUG] TESTE: Erro ao adicionar notificação de teste: $e');
   //   }
   // }
-
-  Future<void> _processNotification(RemoteMessage message) async {
-    print('[DEBUG] _processNotification iniciado');
-
-    RemoteNotification? notification = message.notification;
-
-    // NO iOS, SEMPRE exiba notificação local quando em foreground
-    // if (notification != null || Platform.isIOS) {
-    //   final title =
-    //       notification?.title ?? message.data['title'] ?? 'Notificação';
-    //   final body =
-    //       notification?.body ?? message.data['body'] ?? 'Nova mensagem';
-
-    //   print('[DEBUG] Exibindo notificação local: $title');
-
-    //   await flutterLocalNotificationsPlugin.show(
-    //     DateTime.now().millisecondsSinceEpoch ~/ 1000,
-    //     title,
-    //     body,
-    //     NotificationDetails(
-    //       android: AndroidNotificationDetails(
-    //         'default_channel',
-    //         'Notificações',
-    //         importance: Importance.max,
-    //         priority: Priority.high,
-    //         icon: '@mipmap/ic_launcher',
-    //       ),
-    //       iOS: const DarwinNotificationDetails(
-    //         presentAlert: true,
-    //         presentBadge: true,
-    //         presentSound: true,
-    //       ),
-    //     ),
-    //     payload: message.data.toString(),
-    //   );
-    //   print('[DEBUG] Notificação local exibida com sucesso');
-    // }
-
-    // Criar notificação para salvar
-    final n = NotificationModel(
-      title: notification?.title ?? message.data['title'] ?? '',
-      body: notification?.body ?? message.data['body'] ?? '',
-      timestamp: DateTime.now(),
-      clicked: false,
-      route: message.data['route'],
-    );
-    print('[DEBUG] Criada notificação local: ${n.toMap()}');
-
-    // Salvar via Provider se o contexto estiver disponível
-    if (mounted) {
-      print('[DEBUG] Widget está mounted, tentando acessar Provider');
-      try {
-        final notificationProvider =
-            Provider.of<NotificationProvider>(context, listen: false);
-        await notificationProvider.addNotification(n);
-        print('[DEBUG] addNotification() chamado no Provider com sucesso');
-      } catch (e) {
-        print('[DEBUG] ERRO ao chamar addNotification: $e');
-      }
-    } else {
-      print(
-          '[DEBUG] Contexto não disponível, salvando diretamente via Service');
-      try {
-        await NotificationService().addNotification(n);
-        print('[DEBUG] Notificação salva diretamente via Service');
-      } catch (e) {
-        print('[DEBUG] ERRO ao salvar via Service: $e');
-      }
-    }
-  }
 
   @override
   void dispose() {
@@ -431,9 +574,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           .getInitialMessage()
           .then((RemoteMessage? message) {
         if (message != null) {
-          print(
-              '[DEBUG] Processando notificação perdida do background via clique');
-          _processNotification(message);
+          print('[DEBUG] Notificação clicada (resume) — navegando por rota');
+          navegarPorNotificacao(message.data['route']?.toString());
         }
       });
 
@@ -551,6 +693,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         final theme = AppTheme.build(isDark: isDark, isSuperUser: isSuperUser);
         return MaterialApp(
           navigatorKey: navigatorKey,
+          scaffoldMessengerKey: scaffoldMessengerKey,
           debugShowCheckedModeBanner: false,
           title: 'SouPMRR',
           theme: theme,
@@ -573,6 +716,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             AppRoutes.PLANTAO: (_) => PlantaoPage(),
             AppRoutes.ESCALAS: (_) => const EscalasPage(),
             AppRoutes.ESCALA_DETALHE: (_) => const EscalaDetalhePage(),
+            AppRoutes.SVI_ESCALAS: (_) => const SviEscalasPage(),
+            AppRoutes.SVI_MEUS_VOLUNTARIOS: (_) =>
+                const SviMeusVoluntariosPage(),
             AppRoutes.NOTIFICATIONS_PAGE: (_) => NotificationsPage(),
             AppRoutes.AJUDA_PAGE: (_) => AjudaPage(),
             AppRoutes.CONTRACHEQUE_PAGE: (_) => Contracheque(),

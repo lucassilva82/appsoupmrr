@@ -38,6 +38,7 @@ class EscalaService {
   static const _apiBaseUrlFromEnv =
       String.fromEnvironment('API_BASE_URL', defaultValue: '');
   static const _storageKey = 'escalaJwt';
+  static const _kCacheMinhasEscalas = 'escalaMinhasCache';
 
   String get _base {
     final envBase = _normalizeBase(_apiBaseUrlFromEnv);
@@ -903,9 +904,32 @@ class EscalaService {
     } else if (data is List<dynamic>) {
       list = data;
     }
-    return list
+    final escalas = list
         .map((e) => EscalaModel.fromJson(e as Map<String, dynamic>))
         .toList();
+    // Cache local: guarda a última lista válida para uso offline / quando o
+    // backend ficar indisponível (HTTP 500).
+    try {
+      await Store.saveString(_kCacheMinhasEscalas, jsonEncode(list));
+    } catch (_) {}
+    return escalas;
+  }
+
+  /// Lê a última lista de escalas cacheada localmente. Retorna lista vazia se
+  /// não houver cache ou se ele estiver corrompido.
+  Future<List<EscalaModel>> getMinhasEscalasCache() async {
+    try {
+      final raw = await Store.getString(_kCacheMinhasEscalas);
+      if (raw.isEmpty) return const [];
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map<String, dynamic>>()
+          .map(EscalaModel.fromJson)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
   }
 
   Future<EscalaModel> getEscalaDetalhe(int id) async {
@@ -965,6 +989,92 @@ class EscalaService {
   Future<SviTermoModel> getSviTermo() async {
     final data = await _get('/svi/termo');
     return SviTermoModel.fromJson(data as Map<String, dynamic>);
+  }
+
+  // ── Auto-escalação SVI (vagas para voluntários) ─────────────────────────────
+
+  /// GET /svi/escalas-disponiveis — escalas SVI publicadas com vagas
+  /// compatíveis com o posto/graduação do militar autenticado.
+  Future<SviEscalasDisponiveisResult> getSviEscalasDisponiveis() async {
+    final data = await _get('/svi/escalas-disponiveis');
+    if (data is Map<String, dynamic>) {
+      return SviEscalasDisponiveisResult.fromJson(data);
+    }
+    // Alguns backends podem retornar diretamente a lista de escalas.
+    if (data is List<dynamic>) {
+      return SviEscalasDisponiveisResult(
+        temAdesao: true,
+        escalas: data
+            .whereType<Map<String, dynamic>>()
+            .map(SviEscalaDisponivelModel.fromJson)
+            .toList(),
+      );
+    }
+    return const SviEscalasDisponiveisResult(temAdesao: false, escalas: []);
+  }
+
+  /// GET /svi/escalas/{id}/slots — slots detalhados de uma escala SVI, com
+  /// `guarnicao_id` + `funcao_id`, campo `disponivel` e restrições por slot.
+  Future<SviEscalaSlotsResult> getSviEscalaSlots(int escalaId) async {
+    final data = await _get('/svi/escalas/$escalaId/slots');
+    if (data is Map<String, dynamic>) {
+      return SviEscalaSlotsResult.fromJson(data);
+    }
+    if (data is List<dynamic>) {
+      return SviEscalaSlotsResult(
+        escalaId: escalaId,
+        aberta: true,
+        temAdesao: true,
+        slots: data
+            .whereType<Map<String, dynamic>>()
+            .map(SviSlotModel.fromJson)
+            .toList(),
+      );
+    }
+    return SviEscalaSlotsResult(
+      escalaId: escalaId,
+      aberta: true,
+      temAdesao: true,
+      slots: const [],
+    );
+  }
+
+  /// POST /svi/auto-escalar — candidatar-se a uma vaga SVI.
+  ///
+  /// Toda a validação (13 regras) é server-side. Em caso de erro, o backend
+  /// devolve uma mensagem em português que é propagada via
+  /// [EscalaServiceException] (o `code` traz o motivo, ex.: `TETO_SVI`).
+  /// Retorna a mensagem de sucesso da API.
+  Future<String> autoEscalarSvi({
+    required int escalaId,
+    required int guarnicaoId,
+    required int funcaoId,
+  }) async {
+    final data = await _post('/svi/auto-escalar', {
+      'escala_id': escalaId,
+      'guarnicao_id': guarnicaoId,
+      'funcao_id': funcaoId,
+    });
+    if (data is Map<String, dynamic>) {
+      return data['mensagem']?.toString() ?? 'Candidatura registrada.';
+    }
+    return 'Candidatura registrada.';
+  }
+
+  /// GET /svi/meus-voluntarios — histórico dos serviços em que o militar
+  /// se candidatou (mais recente primeiro).
+  Future<List<SviVoluntarioModel>> getSviMeusVoluntarios() async {
+    final data = await _get('/svi/meus-voluntarios');
+    List<dynamic> list = const [];
+    if (data is Map<String, dynamic>) {
+      list = data['escalas'] as List<dynamic>? ?? const [];
+    } else if (data is List<dynamic>) {
+      list = data;
+    }
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(SviVoluntarioModel.fromJson)
+        .toList();
   }
 
   // ── Endpoint de Perfil Consolidado ──────────────────────────────────────

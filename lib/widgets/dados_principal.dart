@@ -1,6 +1,20 @@
 import 'package:flutter/material.dart';
 import '../models/militar.dart';
 
+/// Formata datas do banco (YYYY-MM-DD) para o padrão BR DD/MM/AAAA.
+String _fmtDataBr(String? s) {
+  if (s == null || s.trim().isEmpty) return '';
+  final v = s.trim();
+  try {
+    final d = DateTime.parse(v);
+    return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+  } catch (_) {
+    final m = RegExp(r'^(\d{4})[-/](\d{2})[-/](\d{2})').firstMatch(v);
+    if (m != null) return '${m.group(3)}/${m.group(2)}/${m.group(1)}';
+    return v;
+  }
+}
+
 class DadosPrincipal extends StatelessWidget {
   final Militar militar;
   const DadosPrincipal({Key? key, required this.militar}) : super(key: key);
@@ -21,7 +35,7 @@ class DadosPrincipal extends StatelessWidget {
         _row(
             theme, 'Nome Completo', militar.nomeCompleto, Icons.person_outline),
         _row(theme, 'Lotação', militar.subUnidade, Icons.apartment_outlined),
-        _row(theme, 'Incorporação', militar.dataIncorporacao,
+        _row(theme, 'Incorporação', _fmtDataBr(militar.dataIncorporacao),
             Icons.calendar_today_outlined),
         _row(theme, 'Matrícula SEGAD', militar.matRhNova,
             Icons.fingerprint_outlined),

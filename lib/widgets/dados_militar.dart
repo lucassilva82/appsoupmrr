@@ -11,6 +11,20 @@ import 'dados_contato.dart';
 import 'dados_endereco.dart';
 import 'dados_principal.dart';
 
+/// Formata datas do banco (YYYY-MM-DD) para o padrão BR DD/MM/AAAA.
+String _fmtDataBr(String? s) {
+  if (s == null || s.trim().isEmpty) return '';
+  final v = s.trim();
+  try {
+    final d = DateTime.parse(v);
+    return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+  } catch (_) {
+    final m = RegExp(r'^(\d{4})[-/](\d{2})[-/](\d{2})').firstMatch(v);
+    if (m != null) return '${m.group(3)}/${m.group(2)}/${m.group(1)}';
+    return v;
+  }
+}
+
 class DadosMilitar extends StatefulWidget {
   final Militar militar;
 
@@ -160,7 +174,7 @@ class _DadosMilitarState extends State<DadosMilitar> {
                   context: context,
                   icon: Icons.calendar_today_outlined,
                   label: 'Incorporação',
-                  value: widget.militar.dataIncorporacao,
+                  value: _fmtDataBr(widget.militar.dataIncorporacao),
                   isDark: isDark),
             ],
           ),

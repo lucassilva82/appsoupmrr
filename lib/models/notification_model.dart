@@ -7,6 +7,7 @@ class NotificationModel {
   final DateTime timestamp;
   bool clicked;
   String? route; // <-- Adicionado campo route
+  final bool isGlobal; // true = aviso da coleção global "avisos_gerais"
 
   NotificationModel({
     String? id,
@@ -15,6 +16,7 @@ class NotificationModel {
     required this.timestamp,
     this.clicked = false,
     this.route,
+    this.isGlobal = false,
   }) : id = id ?? const Uuid().v4();
 
   factory NotificationModel.fromMap(Map<String, dynamic> map) {
@@ -25,6 +27,7 @@ class NotificationModel {
       timestamp: DateTime.parse(map['timestamp']),
       clicked: map['clicked'] == 'true',
       route: map['route'], // recupera o route se existir
+      isGlobal: map['isGlobal'] == 'true' || map['isGlobal'] == true,
     );
   }
 
@@ -36,6 +39,7 @@ class NotificationModel {
       'timestamp': timestamp.toIso8601String(),
       'clicked': clicked.toString(),
       'route': route, // salva o route
+      'isGlobal': isGlobal.toString(),
     };
   }
 }

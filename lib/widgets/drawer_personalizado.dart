@@ -154,11 +154,6 @@ class _DrawerPersonalizadoState extends State<DrawerPersonalizado> {
                       Navigator.pushNamed(context, AppRoutes.PAGE_MILITAR),
                 ),
                 _buildTile(
-                  icon: Icons.car_crash,
-                  label: 'Escalas',
-                  onTap: () => Navigator.pushNamed(context, AppRoutes.ESCALAS),
-                ),
-                _buildTile(
                   icon: Icons.beach_access,
                   label: 'Plano de Férias',
                   onTap: () => Navigator.pushNamed(

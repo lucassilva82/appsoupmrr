@@ -50,6 +50,29 @@ exports.notificarEscala = onRequest({ invoker: "public", cors: true }, async (re
     }
   });
 
+  // 1.1 Persiste a notificação no histórico de CADA militar (fonte de verdade
+  //     para a lista interna do app — funciona mesmo com o app fechado).
+  const agora = admin.firestore.FieldValue.serverTimestamp();
+  await Promise.all(
+    ids.map((id) =>
+      admin
+        .firestore()
+        .collection("militares")
+        .doc(String(id))
+        .collection("notificacoes")
+        .add({
+          title: titulo,
+          body: mensagem,
+          route: rota ?? "",
+          read: false,
+          timestamp: agora,
+        })
+        .catch((e) => {
+          console.error(`Falha ao gravar histórico para ${id}:`, e);
+        })
+    )
+  );
+
   if (tokens.length === 0) {
     return res.status(200).json({
       enviados: 0,
@@ -110,5 +133,78 @@ exports.notificarEscala = onRequest({ invoker: "public", cors: true }, async (re
     enviados: totalEnviados,
     falhas: totalFalhas,
     semToken: semToken,
+  });
+});
+
+/**
+ * notificarTodos
+ *
+ * Envia uma notificação para TODOS os militares.
+ *
+ * POST body:
+ *   {
+ *     "titulo":   "Aviso geral",
+ *     "mensagem": "Mensagem para todos.",
+ *     "rota":     "/escalas"   // opcional – deep-link ao tocar
+ *   }
+ *
+ * Faz DUAS coisas (para ficar consistente com o app):
+ *   1) Grava UM único documento na coleção global "avisos_gerais". O app lê
+ *      essa coleção (além da individual) e controla lido/removido por usuário
+ *      em militares/{matricula}/avisos_status/{avisoId}.
+ *   2) Envia um push para o tópico "todos_militares" → banner do sistema quando
+ *      o app está em background/fechado (1 chamada, sem depender de tokens).
+ */
+exports.notificarTodos = onRequest(
+  { invoker: "public", cors: true, secrets: ["NOTIFICAR_TODOS_TOKEN"] },
+  async (req, res) => {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método não permitido" });
+  }
+
+  // Proteção: exige o token secreto no header x-admin-token.
+  const tokenEsperado = process.env.NOTIFICAR_TODOS_TOKEN;
+  const tokenRecebido = req.get("x-admin-token");
+  if (!tokenEsperado || tokenRecebido !== tokenEsperado) {
+    return res.status(403).json({ error: "Proibido: token inválido." });
+  }
+
+  const { titulo, mensagem, rota } = req.body;
+  if (!titulo || !mensagem) {
+    return res.status(400).json({ error: "Campos 'titulo' e 'mensagem' são obrigatórios." });
+  }
+
+  const db = admin.firestore();
+
+  // 1. Grava um único aviso na coleção global.
+  const avisoRef = await db.collection("avisos_gerais").add({
+    title: titulo,
+    body: mensagem,
+    route: rota ?? "",
+    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  // 2. Envia UM push para o tópico (banner do sistema em background/fechado).
+  let enviadoTopico = false;
+  try {
+    await admin.messaging().send({
+      topic: "todos_militares",
+      notification: { title: titulo, body: mensagem },
+      data: {
+        route: rota ?? "",
+        titulo: titulo,
+        mensagem: mensagem,
+      },
+      android: { priority: "high" },
+      apns: { payload: { aps: { sound: "default" } } },
+    });
+    enviadoTopico = true;
+  } catch (e) {
+    console.error("Falha ao enviar para o tópico todos_militares:", e);
+  }
+
+  return res.status(200).json({
+    avisoId: avisoRef.id,
+    topico: enviadoTopico ? "todos_militares" : "falhou",
   });
 });

@@ -46,7 +46,7 @@ class _DeclaracoesPageState extends State<DeclaracoesPage> {
     final bgBottom = isDark ? AppColors.darkBg : AppColors.lightBg;
 
     return Scaffold(
-      appBar: CustomAppBar(title: 'Declarações 2.0'),
+      appBar: CustomAppBar(title: 'Declarações'),
       body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(

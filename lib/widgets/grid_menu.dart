@@ -19,6 +19,7 @@ class HorizontalMenu extends StatelessWidget {
     Choice(
         title: 'Ficha Individual', icon: Icons.account_circle_rounded, id: 1),
     Choice(title: 'Escalas', icon: Icons.assignment_rounded, id: 2),
+    Choice(title: 'SVI', icon: Icons.more_time_rounded, id: 11),
     Choice(title: 'Plano de Férias', icon: Icons.beach_access_rounded, id: 9),
     Choice(title: 'Declarações', icon: Icons.attach_money_rounded, id: 3),
     Choice(title: 'Contracheques', icon: Icons.request_quote_rounded, id: 4),
@@ -87,13 +88,86 @@ class _GridMenuItem extends StatelessWidget {
     required this.isSuperUser,
   }) : super(key: key);
 
+  // Recursos ainda em desenvolvimento — indisponíveis para o usuário final.
+  static const Set<int> _emDesenvolvimento = {2, 11}; // Escalas e SVI
+
+  bool get _isEmDesenvolvimento => _emDesenvolvimento.contains(choice.id);
+
   Future<void> _onTap(BuildContext context) async {
+    if (_isEmDesenvolvimento) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final amber = const Color(0xFFC77800); // âmbar suave
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            elevation: 2,
+            duration: const Duration(seconds: 3),
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            backgroundColor:
+                isDark ? const Color(0xFF2A2620) : const Color(0xFFFFF6E9),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: amber.withOpacity(0.25)),
+            ),
+            content: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: amber.withOpacity(0.14),
+                    shape: BoxShape.circle,
+                  ),
+                  child:
+                      Icon(Icons.hourglass_top_rounded, color: amber, size: 18),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Em desenvolvimento',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13.5,
+                          color: isDark
+                              ? const Color(0xFFF3E6CE)
+                              : const Color(0xFF5A4416),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Este recurso estará disponível em breve.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.2,
+                          color: isDark
+                              ? const Color(0xFFB9AD97)
+                              : const Color(0xFF8A7350),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      return;
+    }
     switch (choice.id) {
       case 1:
         Navigator.of(context).pushNamed(AppRoutes.PAGE_MILITAR);
         break;
       case 2:
         Navigator.of(context).pushNamed(AppRoutes.ESCALAS);
+        break;
+      case 11:
+        Navigator.of(context).pushNamed(AppRoutes.SVI_ESCALAS);
         break;
       case 9:
         Navigator.of(context).pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE);
@@ -175,29 +249,32 @@ class _GridMenuItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Stack(
           children: [
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(choice.icon, size: 32, color: iconColor),
-                  const SizedBox(height: 6),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    child: Text(
-                      choice.title,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 11,
-                        color: isLogout
-                            ? Colors.redAccent
-                            : theme.colorScheme.onSurface,
+            Opacity(
+              opacity: _isEmDesenvolvimento ? 0.45 : 1.0,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(choice.icon, size: 32, color: iconColor),
+                    const SizedBox(height: 6),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Text(
+                        choice.title,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
+                          color: isLogout
+                              ? Colors.redAccent
+                              : theme.colorScheme.onSurface,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             if (isPrivileged)
@@ -206,6 +283,57 @@ class _GridMenuItem extends StatelessWidget {
                 right: 6,
                 child: Icon(Icons.star_rounded,
                     size: 12, color: AppColors.gold.withOpacity(0.7)),
+              ),
+            if (_isEmDesenvolvimento)
+              Positioned(
+                top: 6,
+                left: 6,
+                right: 6,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 2.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFC77800)
+                          .withOpacity(isDark ? 0.22 : 0.14),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color(0xFFC77800).withOpacity(0.30),
+                        width: 0.6,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 4.5,
+                          height: 4.5,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFC77800),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            'Em breve',
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: isDark
+                                  ? const Color(0xFFE9C68A)
+                                  : const Color(0xFF9A5E00),
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
           ],
         ),

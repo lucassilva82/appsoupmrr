@@ -25,10 +25,9 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
-    // Carrega notificações ao entrar
+    // Conecta o histórico de notificações do militar logado (stream Firestore).
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<NotificationProvider>(context, listen: false)
-          .loadNotifications();
+      Provider.of<NotificationProvider>(context, listen: false).bindUser();
     });
   }
 
