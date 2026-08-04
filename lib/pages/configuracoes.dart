@@ -294,138 +294,269 @@ class _UserHeader extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: Row(
-        children: [
-          // ── Avatar com badge de admin ─────────────────────────────────
-          Stack(
-            clipBehavior: Clip.none,
+      child: LayoutBuilder(builder: (ctx, hbConstraints) {
+        // Em telas estreitas, empilha avatar acima das informações para evitar overflow.
+        if (hbConstraints.maxWidth < 420) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.colorScheme.primary.withOpacity(0.25),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+              Center(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: theme.colorScheme.primary.withOpacity(0.25),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: avatarImage != null
+                            ? Image(
+                                image: avatarImage,
+                                width: 72,
+                                height: 72,
+                                fit: BoxFit.cover,
+                                alignment: Alignment.topCenter,
+                              )
+                            : Container(
+                                width: 72,
+                                height: 72,
+                                color: theme.colorScheme.primary.withOpacity(0.15),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  initials,
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                              ),
+                      ),
                     ),
+                    if (isSuperUser)
+                      Positioned(
+                        bottom: 0,
+                        right: -2,
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: AppColors.gold,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: theme.colorScheme.surface,
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.gold.withOpacity(0.5),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.shield_rounded,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
-                child: ClipOval(
-                  child: avatarImage != null
-                      ? Image(
-                          image: avatarImage,
-                          width: 72,
-                          height: 72,
-                          fit: BoxFit.cover,
-                          alignment: Alignment.topCenter,
-                        )
-                      : Container(
-                          width: 72,
-                          height: 72,
-                          color: theme.colorScheme.primary.withOpacity(0.15),
-                          alignment: Alignment.center,
-                          child: Text(
-                            initials,
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                        ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                auth.nomeMilitar ?? 'Militar',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Mat. ${auth.matricula ?? '-'}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(0.55),
                 ),
               ),
-              if (isSuperUser)
-                Positioned(
-                  bottom: 0,
-                  right: -2,
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: AppColors.gold,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: theme.colorScheme.surface,
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.gold.withOpacity(0.5),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.shield_rounded,
-                      size: 12,
-                      color: Colors.white,
+              if (isSuperUser) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.gold.withOpacity(0.35),
+                      width: 1,
                     ),
                   ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 16),
-          // ── Informações do usuário ────────────────────────────────────
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  auth.nomeMilitar ?? 'Militar',
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Mat. ${auth.matricula ?? '-'}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.55),
-                  ),
-                ),
-                if (isSuperUser) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.gold.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: AppColors.gold.withOpacity(0.35),
-                        width: 1,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(
+                        Icons.shield_rounded,
+                        size: 10,
+                        color: AppColors.gold,
                       ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(
-                          Icons.shield_rounded,
-                          size: 10,
+                      SizedBox(width: 5),
+                      Text(
+                        'Administrador',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.gold,
+                          letterSpacing: 0.5,
                         ),
-                        SizedBox(width: 5),
-                        Text(
-                          'Administrador',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.gold,
-                            letterSpacing: 0.5,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          );
+        }
+
+        // Layout padrão para largura suficiente: avatar + infos em linha.
+        return Row(
+          children: [
+            // ── Avatar com badge de admin ─────────────────────────
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withOpacity(0.25),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: avatarImage != null
+                        ? Image(
+                            image: avatarImage,
+                            width: 72,
+                            height: 72,
+                            fit: BoxFit.cover,
+                            alignment: Alignment.topCenter,
+                          )
+                        : Container(
+                            width: 72,
+                            height: 72,
+                            color: theme.colorScheme.primary.withOpacity(0.15),
+                            alignment: Alignment.center,
+                            child: Text(
+                              initials,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
                           ),
+                  ),
+                ),
+                if (isSuperUser)
+                  Positioned(
+                    bottom: 0,
+                    right: -2,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: AppColors.gold,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: theme.colorScheme.surface,
+                          width: 2,
                         ),
-                      ],
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.gold.withOpacity(0.5),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.shield_rounded,
+                        size: 12,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                ],
               ],
             ),
-          ),
-        ],
-      ),
+            const SizedBox(width: 16),
+            // ── Informações do usuário ─────────────────────────
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    auth.nomeMilitar ?? 'Militar',
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Mat. ${auth.matricula ?? '-'}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.55),
+                    ),
+                  ),
+                  if (isSuperUser) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.gold.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.gold.withOpacity(0.35),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(
+                            Icons.shield_rounded,
+                            size: 10,
+                            color: AppColors.gold,
+                          ),
+                          SizedBox(width: 5),
+                          Text(
+                            'Administrador',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.gold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        );
+      }),
     );
   }
 }
