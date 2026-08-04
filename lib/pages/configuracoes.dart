@@ -49,138 +49,138 @@ class SettingsBody extends StatelessWidget {
               // ── Seção: Segurança ──────────────────────────────────────────────
               _SectionTitle(label: 'Segurança'),
               _SettingsCard(
-                children: [
-                  SwitchListTile(
-                    value: auth.useBiometrics,
-                    onChanged: (val) => auth.setBiometrics(val),
-                    secondary: Icon(
-                      Icons.fingerprint_rounded,
-                      color: theme.colorScheme.primary,
-                    ),
-                    title: const Text('Biometria'),
-                    subtitle:
-                        const Text('Login com impressão digital / Face ID'),
+                return Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceVariant.withOpacity(0.04),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.04)),
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // ── Seção: Notificações ───────────────────────────────────────────
-              _SectionTitle(label: 'Notificações'),
-              Card(
-                margin: EdgeInsets.zero,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: auth.notificationsEnabled
-                      ? BorderSide.none
-                      : const BorderSide(color: Colors.redAccent, width: 1.5),
-                ),
-                color: auth.notificationsEnabled
-                    ? null
-                    : Colors.redAccent.withOpacity(0.07),
-                child: SwitchListTile(
-                  value: auth.notificationsEnabled,
-                  onChanged: (val) async {
-                    if (!val) {
-                      // Exige confirmação para desativar
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          icon: const Icon(Icons.notifications_off_rounded,
-                              color: Colors.redAccent, size: 36),
-                          title: const Text('Desativar notificações?'),
-                          content: const Text(
-                            'Sem notificações você não receberá avisos sobre:\n\n'
-                            '• Escalas de serviço\n'
-                            '• Contracheques disponíveis\n'
-                            '• Comunicados oficiais\n'
-                            '• Alertas importantes da PMRR\n\n'
-                            'Tem certeza que deseja continuar?',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(ctx).pop(false),
-                              child: const Text('Cancelar'),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => Navigator.of(ctx).pop(true),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.redAccent,
+                  child: LayoutBuilder(builder: (ctx, hbConstraints) {
+                    // Widget que monta o avatar (com fallback)
+                    Widget avatarWidget = Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: theme.colorScheme.primary.withOpacity(0.06),
+                      ),
+                      child: ClipOval(
+                        child: avatarImage != null
+                            ? (remoteUrl != null && remoteUrl.isNotEmpty
+                                ? Image.network(
+                                    remoteUrl.replaceAll('pmrr.net', 'pmrr.online'),
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (c, e, s) => Center(
+                                      child: Text(
+                                        initials,
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Image(image: avatarImage, width: 80, height: 80, fit: BoxFit.cover))
+                            : Center(
+                                child: Text(
+                                  initials,
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
                               ),
-                              child: const Text('Desativar',
-                                  style: TextStyle(color: Colors.white)),
+                      ),
+                    );
+
+                    // Layout vertical para telas pequenas
+                    if (hbConstraints.maxWidth < 420) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          avatarWidget,
+                          const SizedBox(height: 12),
+                          Text(
+                            auth.nomeMilitar ?? 'Militar',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Mat. ${auth.matricula ?? '-'}',
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                          ),
+                          if (isSuperUser) ...[
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: AppColors.gold.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(Icons.shield_rounded, size: 12, color: AppColors.gold),
+                                  SizedBox(width: 6),
+                                  Text('Administrador', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w700, fontSize: 12)),
+                                ],
+                              ),
                             ),
                           ],
-                        ),
+                        ],
                       );
-                      if (confirm != true) return;
                     }
-                    auth.setNotificationsEnabled(val);
-                  },
-                  activeColor: theme.colorScheme.primary,
-                  inactiveThumbColor: Colors.redAccent,
-                  inactiveTrackColor: Colors.redAccent.withOpacity(0.3),
-                  secondary: Icon(
-                    auth.notificationsEnabled
-                        ? Icons.notifications_rounded
-                        : Icons.notifications_off_rounded,
-                    color: auth.notificationsEnabled
-                        ? theme.colorScheme.primary
-                        : Colors.redAccent,
-                  ),
-                  title: Text(
-                    'Avisos',
-                    style: TextStyle(
-                      color:
-                          auth.notificationsEnabled ? null : Colors.redAccent,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  subtitle: Text(
-                    auth.notificationsEnabled
-                        ? 'Receba alertas de escala, comunicados e avisos'
-                        : '⚠ Notificações desativadas — você pode perder avisos importantes',
-                    style: TextStyle(
-                      color: auth.notificationsEnabled
-                          ? null
-                          : Colors.redAccent.withOpacity(0.85),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
 
-              // ── Seção: Sobre ──────────────────────────────────────────────────
-              _SectionTitle(label: 'Sobre'),
-              _SettingsCard(
-                children: [
-                  ListTile(
-                    leading: Icon(Icons.info_outline_rounded,
-                        color: theme.colorScheme.primary),
-                    title: const Text('SouPMRR'),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    // Layout horizontal (padrão)
+                    return Row(
                       children: [
-                        const Text('Versão 2.0 • Polícia Militar de Roraima'),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Desenvolvido pelo DTI — Departamento de Tecnologia da Informação',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color:
-                                theme.colorScheme.onSurface.withOpacity(0.55),
+                        avatarWidget,
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                auth.nomeMilitar ?? 'Militar',
+                                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Mat. ${auth.matricula ?? '-'}',
+                                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.65)),
+                              ),
+                            ],
                           ),
                         ),
+                        if (isSuperUser)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: AppColors.gold.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.shield_rounded, size: 12, color: AppColors.gold),
+                                SizedBox(width: 8),
+                                Text('Administrador', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w700, fontSize: 12)),
+                              ],
+                            ),
+                          ),
                       ],
-                    ),
-                  ),
-                  const Divider(height: 1, indent: 56),
-                  ListTile(
-                    leading: Icon(Icons.support_agent_rounded,
-                        color: theme.colorScheme.primary),
-                    title: const Text('Suporte Técnico'),
-                    subtitle: const Text('DTI/PMRR'),
-                    trailing: const Icon(Icons.chevron_right_rounded),
+                    );
+                  }),
+                );
                     onTap: () =>
                         Navigator.of(context).pushNamed(AppRoutes.AJUDA_PAGE),
                   ),
