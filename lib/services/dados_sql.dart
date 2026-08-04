@@ -78,7 +78,11 @@ class DadosSql {
         nivel: dadosMilitar[0]['nivel'].toString(),
         idPosto: dadosMilitar[0]['id_posto'].toString(),
         nomeCompleto: dadosMilitar[0]['nomecompleto'].toString(),
-        imageUrl: existeFoto ? dadosMilitar[0]['imagemurl'].toString() : 'null',
+        imageUrl: existeFoto
+            ? dadosMilitar[0]['imagemurl']
+                .toString()
+                .replaceAll('pmrr.net', 'pmrr.online')
+            : 'null',
         cpf: dadosMilitar[0]['cpf'].toString(),
         subUnidade: dadosMilitar[0]['subu_descricao'].toString(),
         endereco: Endereco(
