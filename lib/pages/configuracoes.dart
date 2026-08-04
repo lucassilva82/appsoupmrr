@@ -23,9 +23,12 @@ class SettingsBody extends StatelessWidget {
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: LayoutBuilder(builder: (ctx, constraints) {
+        return ConstrainedBox(
+          constraints: BoxConstraints(minWidth: constraints.maxWidth),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // ── Header do usuário ─────────────────────────────────────────────
           _UserHeader(auth: auth, theme: theme),
           const SizedBox(height: 24),
