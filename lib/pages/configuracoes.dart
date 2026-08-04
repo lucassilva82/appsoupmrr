@@ -317,17 +317,43 @@ class _UserHeader extends StatelessWidget {
                       ),
                       child: ClipOval(
                         child: avatarImage != null
-                            ? Image(
-                                image: avatarImage,
-                                width: 72,
-                                height: 72,
-                                fit: BoxFit.cover,
-                                alignment: Alignment.topCenter,
-                              )
+                            ? (remoteUrl != null && remoteUrl.isNotEmpty
+                                ? Image.network(
+                                    remoteUrl.replaceAll(
+                                        'pmrr.net', 'pmrr.online'),
+                                    width: 72,
+                                    height: 72,
+                                    fit: BoxFit.cover,
+                                    alignment: Alignment.topCenter,
+                                    errorBuilder: (ctx, error, stack) =>
+                                        Container(
+                                      width: 72,
+                                      height: 72,
+                                      color: theme.colorScheme.primary
+                                          .withOpacity(0.15),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        initials,
+                                        style: TextStyle(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Image(
+                                    image: avatarImage,
+                                    width: 72,
+                                    height: 72,
+                                    fit: BoxFit.cover,
+                                    alignment: Alignment.topCenter,
+                                  ))
                             : Container(
                                 width: 72,
                                 height: 72,
-                                color: theme.colorScheme.primary.withOpacity(0.15),
+                                color:
+                                    theme.colorScheme.primary.withOpacity(0.15),
                                 alignment: Alignment.center,
                                 child: Text(
                                   initials,
@@ -389,7 +415,8 @@ class _UserHeader extends StatelessWidget {
               if (isSuperUser) ...[
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.gold.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),
@@ -520,7 +547,8 @@ class _UserHeader extends StatelessWidget {
                   if (isSuperUser) ...[
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppColors.gold.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(20),
