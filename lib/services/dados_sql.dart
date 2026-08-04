@@ -11,7 +11,7 @@ import '../models/telefone.dart';
 
 class DadosSql {
   //URL DO BANCO SQL TROCAR URL AQUI E NA API PARA CONECTAR NO BANCO DE PRODUCAO
-  final _Url = 'https://pmrr.net/flutter/sigrh';
+  final _Url = 'https://pmrr.online/flutter/sigrh';
   // final _Url = 'http://192.168.190.250/flutter/sigrh';
 
   /// Busca dados de login a partir de `matricula`.
@@ -62,7 +62,7 @@ class DadosSql {
       final map = _safeJsonDecode(response);
       final dadosMilitar = map['result'];
       bool existeFoto = dadosMilitar[0]['imagemurl'].toString() ==
-              'https://rh.pmrr.net/_lib/file/img//wc2/pix_db/'
+              'https://rh.pmrr.online/_lib/file/img//wc2/pix_db/'
           ? false
           : true;
       Militar militarTemp = Militar(

@@ -29,12 +29,12 @@ class EscalaLoginResult {
 
 // ── Serviço principal ─────────────────────────────────────────────────────────
 class EscalaService {
-  static const _baseUrlProd = 'https://intranet.pmrr.net/api/v1';
+  static const _baseUrlProd = 'https://intranet.pmrr.online/api/v1';
   static const _baseUrlDev = 'https://intranet.gitpmrr.com/api/v1';
   static const _baseUrlDevPrefixed =
       'https://intranet.gitpmrr.com/intranet/api/v1';
   static const _phpHostDev = 'https://intranet.gitpmrr.com';
-  static const _phpHostProd = 'https://intranet.pmrr.net';
+  static const _phpHostProd = 'https://intranet.pmrr.online';
   static const _apiBaseUrlFromEnv =
       String.fromEnvironment('API_BASE_URL', defaultValue: '');
   static const _storageKey = 'escalaJwt';

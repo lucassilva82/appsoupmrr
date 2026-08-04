@@ -67,7 +67,7 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
   Future<void> _fetchParentescos() async {
     final auth = Provider.of<Auth>(context, listen: false);
     final url =
-        'https://pmrr.net/flutter/sigrh/buscaparentescos.php?cpf=${auth.cpf}&ano=${widget.ano}';
+        'https://pmrr.online/flutter/sigrh/buscaparentescos.php?cpf=${auth.cpf}&ano=${widget.ano}';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -141,7 +141,7 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
     }
 
     final uri =
-        Uri.https('pmrr.net', '/flutter/sigrh/insereparentesco.php', params);
+        Uri.https('pmrr.online', '/flutter/sigrh/insereparentesco.php', params);
 
     try {
       final response = await http.get(uri);
@@ -202,7 +202,7 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
     _showBusyDialog('Excluindo...');
 
     try {
-      final url = 'https://pmrr.net/flutter/sigrh/excluiparentesco.php?id=$id';
+      final url = 'https://pmrr.online/flutter/sigrh/excluiparentesco.php?id=$id';
       final response = await http.get(Uri.parse(url));
       _dismissDialogIfOpen();
 

@@ -75,7 +75,7 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
   Future<void> _checkPdfExists() async {
     final auth = Provider.of<Auth>(context, listen: false);
     final url =
-        'https://pmrr.net/flutter/sigrh/buscapdfirpf.php?cpf=${auth.cpf}&ano=${widget.ano}';
+        'https://pmrr.online/flutter/sigrh/buscapdfirpf.php?cpf=${auth.cpf}&ano=${widget.ano}';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -175,7 +175,7 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
       return;
     }
 
-    const url = 'https://pmrr.net/flutter/sigrh/enviapdfirpf.php';
+    const url = 'https://pmrr.online/flutter/sigrh/enviapdfirpf.php';
     _showBusyDialog('Enviando PDF...');
 
     try {

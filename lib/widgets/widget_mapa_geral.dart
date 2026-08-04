@@ -48,12 +48,12 @@ class _WidgetMapaGeralState extends State<WidgetMapaGeral> {
     Uri uri;
     if (_sel.length == _siglas.length) {
       uri = Uri.parse(
-          'https://pmrr.net/flutter/sigrh/mapadaforca/listarsituacao.php');
+          'https://pmrr.online/flutter/sigrh/mapadaforca/listarsituacao.php');
     } else {
       final qs =
           _sel.map((s) => 'posto[]=${Uri.encodeQueryComponent(s)}').join('&');
       uri = Uri.parse(
-          'https://pmrr.net/flutter/sigrh/mapadaforca/listarsituacao.php?$qs');
+          'https://pmrr.online/flutter/sigrh/mapadaforca/listarsituacao.php?$qs');
     }
     final r = await http.get(uri);
     final d = jsonDecode(r.body) as Map<String, dynamic>;

@@ -43,7 +43,7 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
 
   Future<List<Map<String, dynamic>>> _fetch() async {
     final uri = Uri.parse(
-      'https://pmrr.net/flutter/sigrh/mapadaforca/listamapa_forca_full.php',
+      'https://pmrr.online/flutter/sigrh/mapadaforca/listamapa_forca_full.php',
     );
     final r = await http.get(uri);
     final d = jsonDecode(r.body) as Map<String, dynamic>;

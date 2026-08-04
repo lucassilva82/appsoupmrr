@@ -49,12 +49,12 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
     Uri uri;
     if (_sel.length == _siglas.length) {
       uri = Uri.parse(
-          'https://pmrr.net/flutter/sigrh/mapadaforca/listacomandos.php');
+          'https://pmrr.online/flutter/sigrh/mapadaforca/listacomandos.php');
     } else {
       final qs =
           _sel.map((s) => 'posto[]=${Uri.encodeQueryComponent(s)}').join('&');
       uri = Uri.parse(
-          'https://pmrr.net/flutter/sigrh/mapadaforca/listacomandos.php?$qs');
+          'https://pmrr.online/flutter/sigrh/mapadaforca/listacomandos.php?$qs');
     }
 
     final resp = await http.get(uri);

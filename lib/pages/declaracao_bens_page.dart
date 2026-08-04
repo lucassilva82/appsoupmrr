@@ -122,7 +122,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   Future<void> _fetchBens() async {
     final auth = Provider.of<Auth>(context, listen: false);
     final url =
-        'https://pmrr.net/flutter/sigrh/buscabem.php?cpf=${auth.cpf}&ano=${widget.ano}';
+        'https://pmrr.online/flutter/sigrh/buscabem.php?cpf=${auth.cpf}&ano=${widget.ano}';
     try {
       final resp = await http.get(Uri.parse(url));
       if (resp.statusCode == 200) {
@@ -173,7 +173,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
     final tipo = tipoBem == 'Imóvel' ? 1 : 2;
 
     final url =
-        'https://pmrr.net/flutter/sigrh/inserebem.php?cpf=${auth.cpf}&ano=${widget.ano}&descricao=${Uri.encodeComponent(descricao)}&valor=$valor&tipo=$tipo';
+        'https://pmrr.online/flutter/sigrh/inserebem.php?cpf=${auth.cpf}&ano=${widget.ano}&descricao=${Uri.encodeComponent(descricao)}&valor=$valor&tipo=$tipo';
 
     _showLoading();
     try {
@@ -196,7 +196,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
 
   Future<void> _enviarDeclaracaoNaoPossui(Auth auth) async {
     final url =
-        'https://pmrr.net/flutter/sigrh/inserebem.php?cpf=${auth.cpf}&ano=${widget.ano}&tipo=3';
+        'https://pmrr.online/flutter/sigrh/inserebem.php?cpf=${auth.cpf}&ano=${widget.ano}&tipo=3';
 
     _showLoading();
     try {
@@ -226,7 +226,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
 
     if (naoPossuiRegistro == null) return;
     final id = naoPossuiRegistro!['id'];
-    final url = 'https://pmrr.net/flutter/sigrh/excluibem.php?id_bem=$id';
+    final url = 'https://pmrr.online/flutter/sigrh/excluibem.php?id_bem=$id';
     _showLoading();
     try {
       final resp = await http.get(Uri.parse(url));
@@ -259,7 +259,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
     if (!confirm) return;
 
     final id = bensEnviados[index]['id'];
-    final url = 'https://pmrr.net/flutter/sigrh/excluibem.php?id_bem=$id';
+    final url = 'https://pmrr.online/flutter/sigrh/excluibem.php?id_bem=$id';
     _showLoading();
     try {
       final resp = await http.get(Uri.parse(url));

@@ -53,7 +53,7 @@ class _DeclaracaoAcumuloCargosPageState
   Future<void> _fetchCargos() async {
     final auth = Provider.of<Auth>(context, listen: false);
     final url =
-        'https://pmrr.net/flutter/sigrh/buscaacumulocargos.php?cpf=${auth.cpf}&ano=${widget.ano}';
+        'https://pmrr.online/flutter/sigrh/buscaacumulocargos.php?cpf=${auth.cpf}&ano=${widget.ano}';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -118,7 +118,7 @@ class _DeclaracaoAcumuloCargosPageState
     };
 
     final uri =
-        Uri.https('pmrr.net', '/flutter/sigrh/insereacumulocargos.php', params);
+        Uri.https('pmrr.online', '/flutter/sigrh/insereacumulocargos.php', params);
 
     try {
       final response = await http.get(uri);
@@ -181,7 +181,7 @@ class _DeclaracaoAcumuloCargosPageState
 
     try {
       final url =
-          'https://pmrr.net/flutter/sigrh/excluiacumulocargos.php?id=$id';
+          'https://pmrr.online/flutter/sigrh/excluiacumulocargos.php?id=$id';
       final response = await http.get(Uri.parse(url));
       _dismissDialogIfOpen();
 

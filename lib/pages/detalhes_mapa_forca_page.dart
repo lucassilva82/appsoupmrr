@@ -49,7 +49,7 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
   /* ---------------- API ---------------- */
   Future<List<MilitarDetalheModel>> _fetch() async {
     final buffer = StringBuffer(
-        'https://pmrr.net/flutter/sigrh/mapadaforca/listarsituacaodetalhes.php');
+        'https://pmrr.online/flutter/sigrh/mapadaforca/listarsituacaodetalhes.php');
 
     if (widget.dadosBusca.idSituacao.isNotEmpty) {
       buffer.write('?id_situacao=${widget.dadosBusca.idSituacao}');
@@ -185,9 +185,9 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
     if (v.startsWith('https://')) return v;
     if (v.startsWith('http://')) return 'https://${v.substring(7)}';
     if (v.startsWith('//')) return 'https:$v';
-    if (v.startsWith('/')) return 'https://rh.pmrr.net$v';
+    if (v.startsWith('/')) return 'https://rh.pmrr.online$v';
     if (v.contains('.') && v.contains('/')) return 'https://$v';
-    return 'https://rh.pmrr.net/$v';
+    return 'https://rh.pmrr.online/$v';
   }
 
   /* ----------------- Card ----------------- */

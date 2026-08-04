@@ -18,7 +18,7 @@ class CardTempoServico extends StatelessWidget {
   Future<int> _buscarDiasAgregados(String matricula) async {
     if (diasAgregadosTeste != null) return diasAgregadosTeste!;
     final uri = Uri.parse(
-      'https://pmrr.net/flutter/sigrh/listar_policial_iper.php?matricula=$matricula',
+      'https://pmrr.online/flutter/sigrh/listar_policial_iper.php?matricula=$matricula',
     );
     try {
       final resp = await http.get(uri).timeout(const Duration(seconds: 10));

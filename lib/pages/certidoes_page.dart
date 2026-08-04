@@ -67,7 +67,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
       }
 
       final uri = Uri.parse(
-          'https://pmrr.net/flutter/sigrh/certidoes/buscacertidoes.php?matricula=$matricula');
+          'https://pmrr.online/flutter/sigrh/certidoes/buscacertidoes.php?matricula=$matricula');
       final resp = await http.get(uri).timeout(const Duration(seconds: 12));
 
       if (resp.statusCode != 200) {
@@ -225,7 +225,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
 
               // Verifica se já existe certidão ativa do mesmo tipo
               final uriCheck = Uri.parse(
-                  'https://pmrr.net/flutter/sigrh/certidoes/buscacertidoes.php?matricula=$matricula');
+                  'https://pmrr.online/flutter/sigrh/certidoes/buscacertidoes.php?matricula=$matricula');
               final respCheck =
                   await http.get(uriCheck).timeout(const Duration(seconds: 12));
 
@@ -300,7 +300,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
               final justificativaEncoded =
                   Uri.encodeQueryComponent(justificativa);
               final uriInsert = Uri.parse(
-                  'https://pmrr.net/flutter/sigrh/certidoes/insertcertidao.php?fk_poli_mili_matricula=$matricula&fk_tice_cod=${selectedType}&soce_justificativa=$justificativaEncoded');
+                  'https://pmrr.online/flutter/sigrh/certidoes/insertcertidao.php?fk_poli_mili_matricula=$matricula&fk_tice_cod=${selectedType}&soce_justificativa=$justificativaEncoded');
 
               final client = http.Client();
               try {

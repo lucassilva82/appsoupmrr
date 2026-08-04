@@ -58,7 +58,7 @@ class _DetalhesMapaForcaComandoPageState
     final idCmd =
         widget.dadosBusca.idSituacao; // id_comando (ajuste se necessário)
     final buf = StringBuffer(
-        'https://pmrr.net/flutter/sigrh/mapadaforca/listacomando_detalhes.php?id_comando=$idCmd');
+        'https://pmrr.online/flutter/sigrh/mapadaforca/listacomando_detalhes.php?id_comando=$idCmd');
 
     final siglas = widget.dadosBusca.postoGraduacao;
     if (siglas.isNotEmpty &&
@@ -270,9 +270,9 @@ class _DetalhesMapaForcaComandoPageState
     if (v.startsWith('https://')) return v;
     if (v.startsWith('http://')) return 'https://${v.substring(7)}';
     if (v.startsWith('//')) return 'https:$v';
-    if (v.startsWith('/')) return 'https://rh.pmrr.net$v';
+    if (v.startsWith('/')) return 'https://rh.pmrr.online$v';
     if (v.contains('.') && v.contains('/')) return 'https://$v';
-    return 'https://rh.pmrr.net/$v';
+    return 'https://rh.pmrr.online/$v';
   }
 
   /* ---------------- HEADER DE FILTROS ---------------- */
@@ -903,9 +903,9 @@ class _SituacaoTile extends StatelessWidget {
       if (v.startsWith('https://')) return v;
       if (v.startsWith('http://')) return 'https://${v.substring(7)}';
       if (v.startsWith('//')) return 'https:$v';
-      if (v.startsWith('/')) return 'https://rh.pmrr.net$v';
+      if (v.startsWith('/')) return 'https://rh.pmrr.online$v';
       if (v.contains('.') && v.contains('/')) return 'https://$v';
-      return 'https://rh.pmrr.net/$v';
+      return 'https://rh.pmrr.online/$v';
     }
 
     final resolvedUrl = resolveUrl(m.imagemUrl);

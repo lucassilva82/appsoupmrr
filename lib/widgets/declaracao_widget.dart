@@ -17,7 +17,7 @@ class DeclaracaoWidget extends StatefulWidget {
 }
 
 class _DeclaracaoWidgetState extends State<DeclaracaoWidget> {
-  static const _base = 'https://pmrr.net/flutter/sigrh';
+  static const _base = 'https://pmrr.online/flutter/sigrh';
 
   bool _isLoading = true;
   String? _errorMessage;

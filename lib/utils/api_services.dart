@@ -6,7 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
 class ApiServices {
-  static const String baseUrl = 'https://pmrr.net/flutter/sigrh';
+  static const String baseUrl = 'https://pmrr.online/flutter/sigrh';
   // API de Legislações (externa)
   static const String legislacoesBaseUrl =
       'https://pm.rr.gov.br/api/legislacoes.php';

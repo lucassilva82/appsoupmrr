@@ -29,7 +29,7 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
     if (matricula == null || matricula.isEmpty) return null;
     try {
       final uri = Uri.parse(
-          'https://pmrr.net/flutter/sigrh/buscaplanodeferias.php?matricula=$matricula');
+          'https://pmrr.online/flutter/sigrh/buscaplanodeferias.php?matricula=$matricula');
       final resp = await http.get(uri).timeout(const Duration(seconds: 8));
       if (resp.statusCode != 200) return null;
       final Map<String, dynamic> body = jsonDecode(resp.body);

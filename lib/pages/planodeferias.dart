@@ -61,7 +61,7 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
 
     try {
       final uri = Uri.parse(
-          'https://pmrr.net/flutter/sigrh/buscaplanodeferias.php?matricula=$matricula');
+          'https://pmrr.online/flutter/sigrh/buscaplanodeferias.php?matricula=$matricula');
       final resp = await http.get(uri).timeout(const Duration(seconds: 10));
       if (resp.statusCode != 200) {
         setState(() {

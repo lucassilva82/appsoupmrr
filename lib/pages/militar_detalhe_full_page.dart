@@ -83,21 +83,21 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
       return 'https://${value.substring(7)}';
     }
     if (value.startsWith('//')) return 'https:$value';
-    if (value.startsWith('/')) return 'https://rh.pmrr.net$value';
+    if (value.startsWith('/')) return 'https://rh.pmrr.online$value';
 
-    // URL sem scheme mas com domínio (ex: rh.pmrr.net/pix_db/...)
+    // URL sem scheme mas com domínio (ex: rh.pmrr.online/pix_db/...)
     if (value.contains('.') && value.contains('/')) {
       return 'https://$value';
     }
 
     // Caminho relativo sem host.
-    return 'https://rh.pmrr.net/$value';
+    return 'https://rh.pmrr.online/$value';
   }
 
   /* ---------- API 1: dados pessoais ---------- */
   Future<MilitarDetalheFull?> _fetchPessoal() async {
     final uri = Uri.parse(
-        'https://pmrr.net/flutter/sigrh/buscapormatricula.php?matricula=${widget.matricula}');
+        'https://pmrr.online/flutter/sigrh/buscapormatricula.php?matricula=${widget.matricula}');
     final r = await http.get(uri, headers: {'Accept': 'application/json'});
     if (r.statusCode != 200) throw Exception('HTTP ${r.statusCode}');
     final Map<String, dynamic> d = jsonDecode(r.body);
