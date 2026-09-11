@@ -51,4 +51,3 @@ app.*.map.json
 
 # Dados sensíveis / arquivos de trabalho pessoal (não versionar)
 /1 - Simulação Inatividade Militares.xlsx
-functions/matriculas_autorizadas.js
