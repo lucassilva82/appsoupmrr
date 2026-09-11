@@ -3,6 +3,103 @@ const admin = require("firebase-admin");
 
 admin.initializeApp();
 
+// Lista de matrículas autorizadas a receber notificações INDIVIDUAIS.
+// Edite o arquivo matriculas_autorizadas.js e faça deploy para atualizar.
+const AUTORIZADOS = require("./matriculas_autorizadas");
+
+/**
+ * Lê a configuração de autorização de notificações a partir do arquivo
+ * matriculas_autorizadas.js  { restrito: bool, autorizados: string[] }.
+ *  - restrito = false (ou lista vazia): TODOS recebem (sem restrição).
+ *  - restrito = true: SOMENTE as matrículas em 'autorizados' recebem.
+ * Aplica-se APENAS às notificações individuais (notificarEscala).
+ */
+function carregarConfigNotificacoes() {
+  const restrito = AUTORIZADOS?.restrito === true;
+  const autorizados = new Set((AUTORIZADOS?.autorizados || []).map(String));
+  return { restrito, autorizados };
+}
+
+/**
+ * Envia notificação para uma lista de matrículas: busca os tokens FCM, grava
+ * o histórico individual (coleção militares/{id}/notificacoes) e dispara o
+ * push. Reutilizado por notificarEscala e por notificarTodos (modo restrito).
+ */
+async function enviarParaMatriculas(ids, { titulo, mensagem, rota }) {
+  const db = admin.firestore();
+  const idsStr = ids.map(String);
+
+  // 1. Busca todos os tokens em paralelo
+  const docs = await Promise.all(
+    idsStr.map((id) => db.collection("militares").doc(id).get())
+  );
+
+  const tokens = [];
+  const semToken = [];
+  docs.forEach((doc, i) => {
+    const token = doc.exists ? doc.data()?.fcmToken : null;
+    if (token) {
+      tokens.push(token);
+    } else {
+      semToken.push(idsStr[i]);
+    }
+  });
+
+  // 2. Persiste o histórico individual de cada militar (fonte de verdade da
+  //    lista interna do app — funciona mesmo com o app fechado).
+  const agora = admin.firestore.FieldValue.serverTimestamp();
+  await Promise.all(
+    idsStr.map((id) =>
+      db
+        .collection("militares")
+        .doc(id)
+        .collection("notificacoes")
+        .add({
+          title: titulo,
+          body: mensagem,
+          route: rota ?? "",
+          read: false,
+          timestamp: agora,
+        })
+        .catch((e) => {
+          console.error(`Falha ao gravar histórico para ${id}:`, e);
+        })
+    )
+  );
+
+  // 3. Envia em lotes de até 500 (limite do FCM por chamada)
+  const payload = {
+    notification: { title: titulo, body: mensagem },
+    data: { route: rota ?? "", titulo, mensagem },
+    android: { priority: "high" },
+    apns: { payload: { aps: { sound: "default" } } },
+  };
+
+  const BATCH = 500;
+  let enviados = 0;
+  let falhas = 0;
+  for (let i = 0; i < tokens.length; i += BATCH) {
+    const lote = tokens.slice(i, i + BATCH);
+    if (lote.length === 1) {
+      try {
+        await admin.messaging().send({ ...payload, token: lote[0] });
+        enviados++;
+      } catch (e) {
+        falhas++;
+      }
+    } else {
+      const result = await admin.messaging().sendEachForMulticast({
+        ...payload,
+        tokens: lote,
+      });
+      enviados += result.successCount;
+      falhas += result.failureCount;
+    }
+  }
+
+  return { enviados, falhas, semToken };
+}
+
 /**
  * notificarEscala
  *
@@ -31,108 +128,40 @@ exports.notificarEscala = onRequest({ invoker: "public", cors: true }, async (re
     return res.status(400).json({ error: "Campos 'titulo' e 'mensagem' são obrigatórios." });
   }
 
-  // 1. Busca todos os tokens em paralelo no Firestore
-  const docs = await Promise.all(
-    ids.map((id) =>
-      admin.firestore().collection("militares").doc(String(id)).get()
-    )
-  );
+  // 0. Aplica a lista de autorizados (whitelist) quando o modo restrito
+  //    estiver ligado. Somente matrículas autorizadas recebem a notificação
+  //    e têm o histórico gravado.
+  const cfg = carregarConfigNotificacoes();
+  let idsAlvo = ids.map(String);
+  let bloqueados = [];
+  if (cfg.restrito) {
+    bloqueados = idsAlvo.filter((id) => !cfg.autorizados.has(id));
+    idsAlvo = idsAlvo.filter((id) => cfg.autorizados.has(id));
+  }
 
-  const tokens = [];
-  const semToken = [];
-
-  docs.forEach((doc, i) => {
-    const token = doc.exists ? doc.data()?.fcmToken : null;
-    if (token) {
-      tokens.push(token);
-    } else {
-      semToken.push(ids[i]);
-    }
-  });
-
-  // 1.1 Persiste a notificação no histórico de CADA militar (fonte de verdade
-  //     para a lista interna do app — funciona mesmo com o app fechado).
-  const agora = admin.firestore.FieldValue.serverTimestamp();
-  await Promise.all(
-    ids.map((id) =>
-      admin
-        .firestore()
-        .collection("militares")
-        .doc(String(id))
-        .collection("notificacoes")
-        .add({
-          title: titulo,
-          body: mensagem,
-          route: rota ?? "",
-          read: false,
-          timestamp: agora,
-        })
-        .catch((e) => {
-          console.error(`Falha ao gravar histórico para ${id}:`, e);
-        })
-    )
-  );
-
-  if (tokens.length === 0) {
+  if (idsAlvo.length === 0) {
     return res.status(200).json({
       enviados: 0,
-      semToken: semToken,
-      mensagem: "Nenhum token encontrado para os IDs informados.",
+      falhas: 0,
+      semToken: [],
+      bloqueados,
+      restrito: cfg.restrito,
+      mensagem: "Nenhuma matrícula autorizada a receber notificações.",
     });
   }
 
-  // 2. Monta o payload base
-  const notificationPayload = {
-    notification: {
-      title: titulo,
-      body: mensagem,
-    },
-    data: {
-      route: rota ?? "",
-      titulo: titulo,
-      mensagem: mensagem,
-    },
-    android: {
-      priority: "high",
-    },
-    apns: {
-      payload: {
-        aps: { sound: "default" },
-      },
-    },
-  };
-
-  // 3. Envia em lotes de até 500 (limite do FCM por chamada)
-  const BATCH = 500;
-  let totalEnviados = 0;
-  let totalFalhas = 0;
-
-  for (let i = 0; i < tokens.length; i += BATCH) {
-    const lote = tokens.slice(i, i + BATCH);
-
-    if (lote.length === 1) {
-      // Envio individual
-      try {
-        await admin.messaging().send({ ...notificationPayload, token: lote[0] });
-        totalEnviados++;
-      } catch (e) {
-        totalFalhas++;
-      }
-    } else {
-      // Envio em multicast
-      const result = await admin.messaging().sendEachForMulticast({
-        ...notificationPayload,
-        tokens: lote,
-      });
-      totalEnviados += result.successCount;
-      totalFalhas += result.failureCount;
-    }
-  }
+  const resultado = await enviarParaMatriculas(idsAlvo, {
+    titulo,
+    mensagem,
+    rota,
+  });
 
   return res.status(200).json({
-    enviados: totalEnviados,
-    falhas: totalFalhas,
-    semToken: semToken,
+    enviados: resultado.enviados,
+    falhas: resultado.falhas,
+    semToken: resultado.semToken,
+    bloqueados,
+    restrito: cfg.restrito,
   });
 });
 

@@ -38,6 +38,8 @@ class AppRoutes {
   static const PLANO_DE_FERIAS_PAGE =
       "/plano-de-ferias-page"; // Rota para a página de plano de férias
   static const POP_PAGE = "/pop-page"; // Rota para a página de plano de férias
+  static const CALCULO_INATIVIDADE_PAGE =
+      "/calculo-inatividade-page"; // Simulador de inatividade (reserva remunerada)
   static const CONTRACHEQUE_GRAFICO_PAGE =
       "/contracheque-grafico-page"; // Evolução salarial
 }

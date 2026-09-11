@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "pm.rr.soupmrr"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -48,9 +48,9 @@ android {
     defaultConfig {
         applicationId = "pm.rr.soupmrr"
         minSdk = 21
-        targetSdk = 35
-        versionCode = 41
-        versionName = "2.0.1"
+        targetSdk = 36
+        versionCode = 45
+        versionName = "2.0.6"
     }
 }
 

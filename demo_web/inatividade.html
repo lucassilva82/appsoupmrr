@@ -1,0 +1,1167 @@
+<title>Inatividade PMRR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --ground:#EDF1F7; --surface:#FFFFFF; --surface-2:#F6F9FC; --sunk:#E7EDF5;
+  --line:#D2DBE8; --line-soft:#E3EAF3;
+  --ink:#0C1A2C; --ink-2:#3E5270; --ink-3:#6B7F9C;
+  --navy:#003A75; --navy-deep:#002B5C; --brass:#8A6410; --on-navy:#FFFFFF;
+  --ok:#1A6B3B; --ok-bg:#E3F0E8; --ok-line:#B9D8C6;
+  --warn:#8F5C08; --warn-bg:#FAEFDA; --warn-line:#E5CE9F;
+  --crit:#9B2020; --crit-bg:#F9E6E6; --crit-line:#E2B9B9;
+  --shadow:0 1px 2px rgba(12,26,44,.06),0 8px 24px -12px rgba(12,26,44,.18);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#09111E; --surface:#0F1A2B; --surface-2:#142238; --sunk:#0B1524;
+    --line:#22344E; --line-soft:#1A2A40;
+    --ink:#E6EDF8; --ink-2:#A4B6CF; --ink-3:#7387A5;
+    --navy:#74AEEC; --navy-deep:#9CC8F5; --brass:#DCAC43; --on-navy:#06101D;
+    --ok:#5FC98A; --ok-bg:#102E1E; --ok-line:#1F4C33;
+    --warn:#E2AE51; --warn-bg:#2C2211; --warn-line:#4A3A18;
+    --crit:#EC7B77; --crit-bg:#301515; --crit-line:#4E2525;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#09111E; --surface:#0F1A2B; --surface-2:#142238; --sunk:#0B1524;
+  --line:#22344E; --line-soft:#1A2A40;
+  --ink:#E6EDF8; --ink-2:#A4B6CF; --ink-3:#7387A5;
+  --navy:#74AEEC; --navy-deep:#9CC8F5; --brass:#DCAC43; --on-navy:#06101D;
+  --ok:#5FC98A; --ok-bg:#102E1E; --ok-line:#1F4C33;
+  --warn:#E2AE51; --warn-bg:#2C2211; --warn-line:#4A3A18;
+  --crit:#EC7B77; --crit-bg:#301515; --crit-line:#4E2525;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"Source Sans 3",system-ui,-apple-system,Segoe UI,sans-serif;
+  font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.disp{font-family:Archivo,"Source Sans 3",system-ui,sans-serif;text-wrap:balance}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+.mdet{font-size:10.5px;color:var(--ink-3);margin-top:2px;font-family:"IBM Plex Mono",monospace;letter-spacing:-.2px}
+
+.wrap{max-width:1200px;margin:0 auto;padding:0 22px 64px}
+
+/* ── Cabeçalho ─────────────────────────────────────────────── */
+header{
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,var(--surface),var(--surface-2));
+  margin-bottom:30px;
+}
+.head-in{max-width:1200px;margin:0 auto;padding:26px 22px 24px;display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.crest{
+  width:44px;height:44px;flex:none;border-radius:9px;display:grid;place-items:center;
+  background:var(--navy);color:var(--on-navy);font-family:Archivo;font-weight:800;font-size:15px;letter-spacing:.5px;
+}
+.head-txt{flex:1;min-width:260px}
+h1{margin:0;font-size:25px;font-weight:800;letter-spacing:-.35px;line-height:1.15}
+.sub{margin:5px 0 0;color:var(--ink-2);font-size:14.5px;max-width:62ch}
+.lawline{
+  margin-top:12px;display:flex;flex-wrap:wrap;gap:7px;
+}
+.lawtag{
+  font-size:11px;letter-spacing:.4px;text-transform:uppercase;font-weight:600;
+  color:var(--ink-3);background:var(--sunk);border:1px solid var(--line-soft);
+  padding:3px 9px;border-radius:20px;
+}
+
+/* ── Grade principal ───────────────────────────────────────── */
+.grid{display:grid;grid-template-columns:378px minmax(0,1fr);gap:26px;align-items:start}
+@media (max-width:1000px){.grid{grid-template-columns:1fr}}
+
+.panel{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  box-shadow:var(--shadow);
+}
+aside.panel{padding:20px;position:sticky;top:20px}
+@media (max-width:1000px){aside.panel{position:static}}
+
+.panel-h{
+  font-size:12px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;
+  color:var(--ink-3);margin:0 0 14px;display:flex;align-items:center;gap:8px;
+}
+.panel-h::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+
+/* ── Formulário ────────────────────────────────────────────── */
+.field{margin-bottom:15px}
+.field:last-child{margin-bottom:0}
+label,.lbl{
+  display:block;font-size:12.5px;font-weight:600;color:var(--ink-2);
+  margin-bottom:5px;letter-spacing:.15px;
+}
+.hint{font-size:11.5px;color:var(--ink-3);margin-top:5px;line-height:1.4}
+input[type=date],input[type=number],select{
+  width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;
+  background:var(--surface-2);color:var(--ink);font:inherit;font-size:14px;
+}
+input[type=number]{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{
+  outline:2px solid var(--navy);outline-offset:2px
+}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.trio .u{position:relative}
+.trio .u span{
+  position:absolute;right:9px;top:50%;transform:translateY(-50%);
+  font-size:10px;color:var(--ink-3);pointer-events:none;font-weight:600;
+}
+.trio input{padding-right:34px}
+
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg label{
+  flex:1;margin:0;text-align:center;padding:8px 4px;font-size:13.5px;cursor:pointer;
+  background:var(--surface-2);color:var(--ink-2);transition:background .15s,color .15s;
+}
+.seg label:first-child{border-right:1px solid var(--line)}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg input:checked+label{background:var(--navy);color:var(--on-navy);font-weight:600}
+
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.presets button{
+  font:inherit;font-size:11.5px;font-weight:600;padding:5px 10px;cursor:pointer;
+  background:var(--sunk);color:var(--ink-2);border:1px solid var(--line-soft);border-radius:20px;
+}
+.presets button:hover{background:var(--surface-2);color:var(--navy);border-color:var(--navy)}
+
+
+
+/* ── Botão calcular ────────────────────────────────────────── */
+.calcbtn{
+  width:100%;margin-top:18px;padding:14px 16px;cursor:pointer;
+  font:inherit;font-family:Archivo,sans-serif;font-size:15px;font-weight:700;letter-spacing:.2px;
+  color:var(--on-navy);background:var(--navy);border:none;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  transition:filter .15s,transform .06s;
+}
+.calcbtn:hover{filter:brightness(1.12)}
+.calcbtn:active{transform:translateY(1px)}
+.calchint{font-size:11.5px;color:var(--ink-3);text-align:center;margin:7px 0 0}
+
+/* ── Apuração ──────────────────────────────────────────────── */
+.run{padding:30px 24px}
+.run-h{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+.run-ring{
+  width:34px;height:34px;flex:none;border-radius:50%;
+  border:3px solid var(--line);border-top-color:var(--navy);
+  animation:spin .85s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.run-t{font-family:Archivo;font-size:17px;font-weight:700;margin:0;line-height:1.2}
+.run-s{font-size:12.5px;color:var(--ink-3);margin:1px 0 0;font-variant-numeric:tabular-nums}
+.run-bar{height:4px;border-radius:2px;background:var(--sunk);overflow:hidden;margin-bottom:22px}
+.run-bar i{display:block;height:100%;background:var(--navy);border-radius:2px;transition:width .4s cubic-bezier(.4,0,.2,1)}
+
+.step{
+  display:flex;gap:13px;align-items:flex-start;padding:13px 14px;margin-bottom:9px;
+  border-radius:11px;border:1px solid transparent;
+  opacity:.38;transition:opacity .32s,background .32s,border-color .32s;
+}
+.step.on{opacity:1;background:var(--sunk);border-color:var(--line)}
+.step.done{opacity:1}
+.step-i{
+  width:21px;height:21px;flex:none;display:grid;place-items:center;
+  font-size:15px;line-height:1;color:var(--ink-3);
+}
+.step.on .step-i{color:var(--navy)}
+.step.done .step-i{color:var(--ok)}
+.step.on .step-i::before{
+  content:"";width:15px;height:15px;border-radius:50%;
+  border:2px solid var(--line);border-top-color:var(--navy);
+  animation:spin .8s linear infinite;
+}
+.step-k{font-size:14px;font-weight:600;line-height:1.3}
+.step.on .step-k{font-weight:700;color:var(--navy)}
+.step-d{font-size:11.5px;color:var(--ink-3);line-height:1.35;margin-top:2px}
+@media (prefers-reduced-motion:reduce){
+  .run-ring,.step.on .step-i::before{animation:none}
+}
+
+/* ── Linha do tempo ────────────────────────────────────────── */
+.tl-wrap{overflow-x:auto;padding-bottom:4px}
+.tl{position:relative;min-width:520px;margin:26px 0 8px;height:96px}
+.tl-track{
+  position:absolute;left:0;right:0;top:34px;height:6px;border-radius:3px;
+  background:var(--sunk);border:1px solid var(--line-soft);
+}
+.tl-fill{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--navy)}
+.tl-mark{position:absolute;top:0;transform:translateX(-50%);text-align:center;width:112px}
+.tl-dot{
+  width:11px;height:11px;border-radius:50%;margin:31px auto 0;
+  border:2.5px solid var(--surface);box-shadow:0 0 0 1.5px currentColor;background:currentColor;
+}
+.tl-lab{font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-top:7px;line-height:1.3}
+.tl-val{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.tl-mark.up .tl-dot{margin-top:31px}
+.tl-mark.up .tl-lab,.tl-mark.up .tl-val{position:absolute;left:0;right:0}
+.tl-mark.up .tl-lab{top:-2px}
+.tl-mark.up .tl-val{top:12px}
+.tl-mark.up .tl-dot{margin-top:31px}
+.tl-ends{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3);margin-top:2px}
+.c-navy{color:var(--navy)} .c-ok{color:var(--ok)} .c-warn{color:var(--warn)} .c-crit{color:var(--crit)}
+
+/* ── Reforma ───────────────────────────────────────────────── */
+.rfm{display:grid;gap:11px}
+.rfm-row{
+  display:flex;gap:12px;align-items:flex-start;padding:13px 15px;
+  border-radius:11px;border:1px solid var(--line-soft);background:var(--surface-2);
+}
+.rfm-row.hit{background:var(--ok-bg);border-color:var(--ok-line)}
+.rfm-row.prop{background:var(--warn-bg);border-color:var(--warn-line)}
+.rfm-k{font-size:12px;font-weight:700;letter-spacing:.3px;margin-bottom:2px}
+.rfm-v{font-size:12.5px;color:var(--ink-2);line-height:1.45}
+.rfm-tag{
+  flex:none;font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;
+  padding:3px 7px;border-radius:5px;background:var(--sunk);color:var(--ink-3);
+  border:1px solid var(--line-soft);white-space:nowrap;
+}
+
+/* ── Lista de hipóteses ────────────────────────────────────── */
+.oflist{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:7px}
+.oflist li{display:flex;gap:10px;font-size:13px;line-height:1.45;align-items:baseline}
+.oflist .inc{
+  flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;
+  color:var(--brass);min-width:22px;
+}
+.gate{
+  margin-top:13px;padding:11px 13px;border-radius:9px;font-size:12.5px;line-height:1.45;
+  border:1px solid;
+}
+.gate.ok{background:var(--ok-bg);border-color:var(--ok-line);color:var(--ok)}
+.gate.no{background:var(--warn-bg);border-color:var(--warn-line);color:var(--warn)}
+
+/* ── Impressão ─────────────────────────────────────────────── */
+@media print{
+  body{background:#fff;color:#000;font-size:11pt}
+  header{background:none;border-bottom:1.5px solid #000}
+  aside.panel{position:static;break-inside:avoid}
+  .grid{grid-template-columns:1fr;gap:16px}
+  .card,.panel{box-shadow:none;border:1px solid #999;break-inside:avoid}
+  .presets,.tl-wrap{display:none}
+  details{open:true}
+  .memo{display:block !important}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important}
+}
+
+/* ── Resultados ────────────────────────────────────────────── */
+.stack{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+.card-h{display:flex;align-items:baseline;gap:10px;margin-bottom:3px;flex-wrap:wrap}
+.card-t{font-size:16px;font-weight:700;margin:0;letter-spacing:-.15px}
+.card-l{font-size:11.5px;color:var(--ink-3);margin:0 0 15px;letter-spacing:.1px}
+
+.pill{
+  font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  padding:3px 9px;border-radius:20px;border:1px solid;white-space:nowrap;
+}
+.p-ok{color:var(--ok);background:var(--ok-bg);border-color:var(--ok-line)}
+.p-warn{color:var(--warn);background:var(--warn-bg);border-color:var(--warn-line)}
+.p-crit{color:var(--crit);background:var(--crit-bg);border-color:var(--crit-line)}
+.p-navy{color:var(--navy);background:var(--sunk);border-color:var(--line)}
+
+/* faixa de regime */
+.regime{display:flex;gap:14px;align-items:center;padding:15px 18px;border-radius:14px;border:1px solid}
+.regime .rk{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.85}
+.regime .rn{font-family:Archivo;font-size:18px;font-weight:700;line-height:1.2;margin:1px 0 2px}
+.regime .rf{font-size:11.5px;opacity:.85}
+.r-ok{background:var(--ok-bg);border-color:var(--ok-line);color:var(--ok)}
+.r-warn{background:var(--warn-bg);border-color:var(--warn-line);color:var(--warn)}
+.r-navy{background:var(--sunk);border-color:var(--line);color:var(--navy)}
+
+/* veredito */
+.verdict .big{
+  font-family:Archivo;font-weight:800;font-size:clamp(38px,7vw,58px);line-height:1;
+  letter-spacing:-1.5px;color:var(--navy-deep);text-transform:uppercase;margin:6px 0 4px;
+}
+.verdict .big.done{color:var(--ok);font-size:clamp(24px,4.2vw,34px);letter-spacing:-.6px}
+.verdict .when{color:var(--ink-2);font-size:14px}
+.bottleneck{
+  margin-top:14px;padding:10px 13px;background:var(--sunk);border-radius:9px;
+  border-left:3px solid var(--navy);font-size:12.5px;color:var(--ink-2);
+}
+.bottleneck b{color:var(--ink);font-weight:600}
+
+/* medidor de requisito */
+.meter{height:7px;border-radius:20px;background:var(--sunk);overflow:hidden;margin:12px 0 11px}
+.meter i{display:block;height:100%;border-radius:20px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.mrow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.mrow div{min-width:0}
+.mk{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-3);font-weight:600}
+.mv{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:13.5px;font-weight:600;margin-top:1px}
+
+/* dois pedágios */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+@media (max-width:640px){.two{grid-template-columns:1fr}}
+.toll{padding:15px 16px;background:var(--surface-2)}
+.toll+.toll{border-left:1px solid var(--line)}
+@media (max-width:640px){.toll+.toll{border-left:0;border-top:1px solid var(--line)}}
+.toll-n{
+  font-family:Archivo;font-size:11px;font-weight:800;letter-spacing:1px;
+  color:var(--warn);text-transform:uppercase;
+}
+.toll-t{font-size:13.5px;font-weight:700;margin:3px 0 11px;line-height:1.3}
+.kv{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:3.5px 0}
+.kv dt{color:var(--ink-3);min-width:0}
+.kv dd{margin:0;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.kv.tot{border-top:1px dashed var(--line);margin-top:7px;padding-top:8px}
+.kv.tot dd{color:var(--warn)}
+dl{margin:0}
+
+.quota{display:flex;align-items:baseline;gap:8px;margin:4px 0 8px}
+.quota .n{font-family:Archivo;font-size:34px;font-weight:800;color:var(--navy-deep);line-height:1}
+.quota .d{font-size:15px;color:var(--ink-3)}
+.quota .pc{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:19px;font-weight:600;color:var(--navy-deep)}
+
+.note{padding:11px 13px;border-radius:9px;font-size:12.5px;line-height:1.45}
+.n-warn{background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--ink)}
+.n-crit{background:var(--crit-bg);border:1px solid var(--crit-line);color:var(--ink)}
+.n-flat{background:var(--sunk);color:var(--ink-2)}
+
+ul.avisos{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+ul.avisos li{display:flex;gap:9px;font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+ul.avisos li::before{content:"";flex:none;width:5px;height:5px;border-radius:50%;background:var(--warn);margin-top:7px}
+
+details{border-top:1px solid var(--line-soft);margin-top:2px}
+summary{cursor:pointer;padding:13px 0 2px;font-size:13px;font-weight:600;color:var(--navy);list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";font-size:11px}
+details[open] summary::before{content:"▾ "}
+.memo{padding:10px 0 2px}
+.memo .kv{border-bottom:1px solid var(--line-soft);padding:6px 0}
+.memo .kv:last-child{border-bottom:0}
+.memo h4{margin:14px 0 3px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--ink-3);font-weight:700}
+.memo h4:first-child{margin-top:0}
+
+footer{margin-top:30px;padding:16px 18px;border-radius:12px;background:var(--sunk);border:1px solid var(--line-soft)}
+footer p{margin:0;font-size:12px;color:var(--ink-3);line-height:1.5}
+footer p+p{margin-top:7px}
+.empty{padding:56px 24px;text-align:center;color:var(--ink-3)}
+.empty .e1{font-family:Archivo;font-size:17px;font-weight:600;color:var(--ink-2)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<header>
+  <div class="head-in">
+    <div class="crest">RR</div>
+    <div class="head-txt">
+      <h1>Cálculo de Inatividade</h1>
+      <p class="sub">Simulador da reserva remunerada dos militares estaduais de Roraima. Preencha os dados e veja quando a integralidade é atingida, quanto falta de cada pedágio e o que já está cumprido.</p>
+      <div class="lawline">
+        <span class="lawtag">DL 667/1969 · art. 24-A a 24-G</span>
+        <span class="lawtag">LC/RR 305/2022</span>
+        <span class="lawtag">LC/RR 308/2022</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="grid">
+
+  <aside class="panel">
+    <h2 class="panel-h">Seus dados</h2>
+
+    <div class="field">
+      <label for="inc">Data de incorporação / praça</label>
+      <input type="date" id="inc">
+    </div>
+
+    <div class="field">
+      <label for="nasc">Data de nascimento</label>
+      <input type="date" id="nasc">
+      <p class="hint">Define a idade-limite para reserva de ofício.</p>
+    </div>
+
+    <div class="field">
+      <span class="lbl">Sexo</span>
+      <div class="seg">
+        <input type="radio" name="sexo" id="sm" value="masculino" checked><label for="sm">Masculino</label>
+        <input type="radio" name="sexo" id="sf" value="feminino"><label for="sf">Feminino</label>
+      </div>
+      <p class="hint">Em RR o mínimo do ente é 30 anos (homem) e 25 (mulher); o de Corporação, 20 e 15.</p>
+    </div>
+
+    <div class="field">
+      <label for="posto">Posto / graduação</label>
+      <select id="posto"><option value="">— selecionar —</option></select>
+    </div>
+
+    <div class="field">
+      <span class="lbl">Tempo militar em outra organização</span>
+      <div class="trio">
+        <div class="u"><input type="number" id="sm_a" min="0" max="60" placeholder="0"><span>anos</span></div>
+        <div class="u"><input type="number" id="sm_m" min="0" max="11" placeholder="0"><span>mes</span></div>
+        <div class="u"><input type="number" id="sm_d" min="0" max="29" placeholder="0"><span>dias</span></div>
+      </div>
+      <p class="hint">Forças Armadas, outra PM ou CBM. Soma no tempo de serviço militar e conta como atividade militar — LC/RR 305/2022, art. 2º, V.</p>
+    </div>
+
+    <div class="field">
+      <span class="lbl">Tempo averbado civil</span>
+      <div class="trio">
+        <div class="u"><input type="number" id="av_a" min="0" max="60" placeholder="0"><span>anos</span></div>
+        <div class="u"><input type="number" id="av_m" min="0" max="11" placeholder="0"><span>mes</span></div>
+        <div class="u"><input type="number" id="av_d" min="0" max="29" placeholder="0"><span>dias</span></div>
+      </div>
+      <p class="hint">RGPS, outro RPPS ou iniciativa privada. Soma só na contribuição — LC/RR 194/2012, art. 144, I.</p>
+    </div>
+
+    <div class="field">
+      <span class="lbl">Tempo cedido a função civil</span>
+      <div class="trio">
+        <div class="u"><input type="number" id="fc_a" min="0" max="60" placeholder="0"><span>anos</span></div>
+        <div class="u"><input type="number" id="fc_m" min="0" max="11" placeholder="0"><span>mes</span></div>
+        <div class="u"><input type="number" id="fc_d" min="0" max="29" placeholder="0"><span>dias</span></div>
+      </div>
+      <p class="hint">Períodos cedido a órgão civil ou em função de natureza civil. Conta como tempo de serviço, mas sai da atividade militar — LC/RR 305/2022, art. 2º, IV. Deixe zerado se nunca foi cedido.</p>
+    </div>
+
+    <div class="field">
+      <label for="incap">Incapacidade definitiva</label>
+      <select id="incap">
+        <option value="">— não se aplica —</option>
+        <option value="servico">Ferimento, acidente ou doença com nexo com o serviço</option>
+        <option value="grave">Doença grave do rol legal (art. 26, IV)</option>
+        <option value="semNexo">Acidente ou doença sem relação com o serviço</option>
+      </select>
+      <p class="hint">Reforma por invalidez independe de tempo de serviço. Deixe em branco se não for o caso.</p>
+    </div>
+
+    <div class="field">
+      <span class="lbl">Afastamentos não computados</span>
+      <div class="trio">
+        <div class="u"><input type="number" id="af_a" min="0" max="30" placeholder="0"><span>anos</span></div>
+        <div class="u"><input type="number" id="af_m" min="0" max="11" placeholder="0"><span>mes</span></div>
+        <div class="u"><input type="number" id="af_d" min="0" max="29" placeholder="0"><span>dias</span></div>
+      </div>
+      <p class="hint">LTIP, agregações e períodos que não contam como tempo de serviço.</p>
+    </div>
+
+    <button type="button" class="calcbtn" id="btn">
+      <span id="btnlab">Calcular</span>
+    </button>
+    <p class="calchint" id="btnhint">Confira os dados acima antes de calcular.</p>
+
+    <div class="field" style="margin-top:18px">
+      <span class="lbl">Casos de teste</span>
+      <div class="presets" id="presets"></div>
+    </div>
+  </aside>
+
+  <main class="stack" id="out">
+    <div class="card empty">
+      <p class="e1">Informe a data de incorporação</p>
+      <p>Preencha os dados ao lado e toque em <b>Calcular</b>.</p>
+    </div>
+  </main>
+
+</div>
+
+<footer>
+  <p><b>Estimativa de caráter informativo.</b> Calculada apenas a partir dos dados digitados nesta página, que não são enviados a lugar nenhum. Não substitui a certidão de tempo de serviço nem a análise oficial do IPER/SPSMRR, únicos documentos válidos para instruir o requerimento.</p>
+  <p>Contagem em dias corridos convertidos a 365 dias/ano e 30 dias/mês, mesmo critério do SIGRH. A projeção assume serviço contínuo e ininterrupto a partir de hoje. Data-base da transição: 31/12/2021, na forma dos arts. 120 e 121 da LC/RR 305/2022.</p>
+</footer>
+</div>
+
+<script>
+"use strict";
+
+/* ═══ Motor de cálculo ═════════════════════════════════════════════════
+   Espelha lib/models/inatividade_model.dart do aplicativo.
+   Base legal: DL 667/1969 (red. Lei 13.954/2019) e LC/RR 305/2022.        */
+
+var ANO = 365, MES = 30, DIA = 86400000;
+var CORTE      = Date.UTC(2021, 11, 31);  // art. 120/121 LC/RR 305/2022
+var ING_LIMITE = Date.UTC(2019, 11, 15);  // art. 23, §§1º e 2º
+var PEDAGIO = 0.17, TOL = 1;
+var PERM_SERV = 35, PERM_ATIV = 30;
+var TRANS_ATIV_BASE = 25, ACR_MESES_ANO = 4, ACR_TETO_ANOS = 5;
+var QUOTAS = 35;
+
+var minEnteAnos = function(s){ return s === "masculino" ? 30 : 25; };
+var minCorpAnos = function(s){ return s === "masculino" ? 20 : 15; };
+var anosDias    = function(a){ return Math.round(a * ANO); };
+
+/* [id, rótulo, idade p/ RESERVA de ofício (art. 24, I), idade p/ REFORMA
+   (art. 25, I)]. O art. 24, I não enumera 2º/3º sargento nem soldado de 2ª
+   classe — lacuna real do texto, por isso `null`. Já o art. 25, I cobre
+   todos: 72 anos para oficiais superiores e 68 para os demais.            */
+var POSTOS = [
+  ["coronel","Coronel",67,72],["tenenteCoronel","Tenente-Coronel",65,72],
+  ["major","Major",64,72],["capitao","Capitão",63,68],
+  ["primeiroTenente","1º Tenente",63,68],["segundoTenente","2º Tenente",63,68],
+  ["aspirante","Aspirante a Oficial",63,68],["subtenente","Subtenente",63,68],
+  ["primeiroSargento","1º Sargento",57,68],["segundoSargento","2º Sargento",null,68],
+  ["terceiroSargento","3º Sargento",null,68],["cabo","Cabo",54,68],
+  ["soldado1","Soldado de 1ª Classe",50,68],["soldado2","Soldado de 2ª Classe",null,68]
+];
+
+/* Hipóteses de incapacidade definitiva — art. 26 da LC/RR 305/2022.
+   Os incisos I a IV geram proventos INTEGRAIS (art. 25, §5º, e art. 24-A, II
+   do DL 667/1969); o inciso V, sem nexo com o serviço, gera proporcionais
+   (art. 25, §3º).                                                          */
+var INCAPACIDADE = {
+  servico: { integral:true,  rotulo:"Ferimento, acidente ou doença com nexo com o serviço",
+             fund:"LC/RR 305/2022, art. 26, I a III, c/c art. 25, §5º e DL 667/1969, art. 24-A, II" },
+  grave:   { integral:true,  rotulo:"Doença grave do rol legal",
+             fund:"LC/RR 305/2022, art. 26, IV, c/c art. 25, §5º" },
+  semNexo: { integral:false, rotulo:"Acidente ou doença sem relação com o serviço",
+             fund:"LC/RR 305/2022, art. 26, V, c/c art. 25, §3º" }
+};
+
+/* Rol do art. 26, IV — doenças que dão reforma com proventos integrais. */
+var DOENCAS_ROL = ["alienação mental","neoplasia maligna","cegueira total",
+  "hanseníase refratária","paralisia irreversível e incapacitante",
+  "cardiopatia grave","mal de Parkinson","pênfigo","espondiloartrose",
+  "nefropatia grave","SIDA","contaminação por radiação","esclerose múltipla",
+  "fibrose cística","hepatopatia grave","mal de Alzheimer"];
+
+/* Reserva de ofício pelas demais hipóteses — art. 24, II a VI. Todas exigem
+   20 anos de contribuição e geram proventos proporcionais (art. 24, §2º).  */
+var OFICIO_OUTRAS = [
+  ["II","Mais de 2 anos, contínuos ou não, em licença para tratar de interesse particular"],
+  ["III","Mais de 2 anos contínuos em licença para tratamento de saúde de pessoa da família"],
+  ["IV","Mais de 2 anos agregado por posse em cargo público civil temporário"],
+  ["V","Promoção por tempo de contribuição e serviço militar"],
+  ["VI","Diplomação em cargo eletivo"]
+];
+
+function requisito(nome, fund, exigido, atual, detalhe){
+  var falta = Math.max(0, exigido - atual);
+  return {
+    nome:nome, fundamento:fund, exigido:exigido, atual:atual, falta:falta,
+    detalhe: detalhe || null,
+    cumprido: atual >= exigido,
+    perc: exigido <= 0 ? 1 : Math.min(1, Math.max(0, atual / exigido)),
+    data: function(base){ return base + falta * DIA; }
+  };
+}
+
+function calcular(e){
+  var avisos = [];
+  var servicoEm = function(ts){
+    // A planilha do IPER/DIMIL conta `Data Base − Data de Inclusão + 1`:
+    // o dia da inclusão já é dia de serviço.
+    var b = Math.floor((ts - e.incorporacao) / DIA) + 1;
+    return b <= 0 ? 0 : Math.max(0, b - e.afastamentos);
+  };
+
+  // Serviço na Corporação (PMRR/CBMRR), isolado: é o que os arts. 23, §1º,
+  // 120, II e 121 da LC/RR 305/2022 exigem.
+  var servicoHoje = servicoEm(e.hoje);
+
+  // Tempo de serviço militar do art. 2º, V: soma o prestado a outras OM.
+  var tsMilitarHoje = servicoHoje + e.militarAnterior;
+
+  // Contribuição do art. 2º, VI: acrescenta a averbação civil.
+  var contribHoje = tsMilitarHoje + e.averbadosCivis;
+
+  // Atividade de natureza militar: todo o tempo de serviço militar, menos o
+  // período cedido a função civil. O serviço prestado a outra organização
+  // militar é, por definição, atividade militar — por isso entra somando.
+  var ativHoje = Math.max(0, tsMilitarHoje - e.funcaoCivil);
+
+  if (e.averbadosCivis > 0)
+    avisos.push("A averbação civil (RGPS, RPPS ou iniciativa privada) soma no seu tempo de contribuição, mas não conta como atividade de natureza militar.");
+  if (e.funcaoCivil > tsMilitarHoje)
+    avisos.push("O tempo em função civil informado é maior que o seu tempo de serviço militar. Verifique os valores.");
+
+  // Só o serviço na Corporação conta para os arts. 120, II e 121 e para a
+  // base do 2º pedágio — tempo militar de fora não entra aqui.
+  var servicoCorte = servicoEm(CORTE);
+  var contribCorte = servicoCorte + e.militarAnterior + e.averbadosCivis;
+  var minEnte = anosDias(minEnteAnos(e.sexo));
+  var minCorp = anosDias(minCorpAnos(e.sexo));
+
+  var ingressouAntes = e.incorporacao <= ING_LIMITE;
+  // O mínimo de 20/15 anos é medido sobre o tempo de serviço militar: o
+  // prestado a outras Forças conta igual ao da Corporação. Só o tempo civil
+  // fica de fora, entrando apenas na contribuição.
+  var servicoMilitarCorte = servicoCorte + e.militarAnterior;
+  var cumpriu120 = contribCorte >= minEnte - TOL && servicoMilitarCorte >= minCorp - TOL;
+
+  var regime = !ingressouAntes ? "permanente" : (cumpriu120 ? "adquirido" : "transicao");
+
+  var faltanteContrib = 0, pedagioDias = 0;
+  var faltanteServico = 0, anosFaltantes = 0, acrescimoMeses = 0;
+  var reqTempo, reqAtiv;
+
+  if (regime === "adquirido"){
+    reqTempo = requisito("Tempo de contribuição","LC/RR 305/2022, art. 120, I",minEnte,contribHoje);
+    reqAtiv  = requisito("Tempo de serviço militar","LC/RR 305/2022, art. 120, II",minCorp,tsMilitarHoje);
+    avisos.push("Você implementou os requisitos da integralidade até 31/12/2021. O direito adquirido pode ser exercido a qualquer tempo (DL 667/1969, art. 24-F), com os critérios de cálculo vigentes na data em que os requisitos foram atendidos.");
+
+  } else if (regime === "transicao"){
+    /* 1º pedágio — art. 24-G, I: tempo faltante de contribuição + 17%. */
+    // Faltante aferido na Data Base (célula E10 da planilha do IPER).
+    faltanteContrib = Math.max(0, minEnte - contribHoje);
+    pedagioDias = Math.floor(faltanteContrib * PEDAGIO); // TRUNC, como o IPER
+
+    /* 2º pedágio — art. 24-G, parágrafo único: 4 meses por ano faltante de
+       tempo de serviço militar (20a homem / 15a mulher), truncado para baixo,
+       somado aos 25 anos e limitado a 5 anos. A base soma o averbado militar
+       e é aferida na Data Base — célula M10 da planilha (`C14 + C20`).      */
+    faltanteServico = Math.max(0, minCorp - tsMilitarHoje);
+    anosFaltantes = Math.floor(faltanteServico / ANO);
+    var teto = ACR_TETO_ANOS * 12;
+    acrescimoMeses = Math.min(teto, anosFaltantes * ACR_MESES_ANO);
+
+    reqTempo = requisito("Tempo total (mínimo do ente + pedágio de 17%)","DL 667/1969, art. 24-G, I",minEnte + pedagioDias,contribHoje,
+      curto(minEnte) + " + " + curto(pedagioDias) + " de pedágio");
+    reqAtiv  = requisito("Atividade de natureza militar","DL 667/1969, art. 24-G, parágrafo único",anosDias(TRANS_ATIV_BASE) + Math.floor(acrescimoMeses/12)*ANO + (acrescimoMeses%12)*MES,ativHoje,
+      acrescimoMeses > 0 ? curto(anosDias(TRANS_ATIV_BASE)) + " + " + acrescimoMeses + "m de acréscimo" : null);
+
+    if (acrescimoMeses >= teto)
+      avisos.push("O acréscimo de atividade militar atingiu o teto legal de 5 anos (DL 667/1969, art. 24-G, parágrafo único).");
+    else if (acrescimoMeses === 0)
+      avisos.push("Você já conta os " + minCorpAnos(e.sexo) + " anos de tempo de serviço militar, portanto o 2º pedágio não se aplica: a exigência de atividade de natureza militar permanece em 25 anos. O 1º pedágio continua valendo.");
+
+  } else {
+    reqTempo = requisito("Tempo de serviço",'DL 667/1969, art. 24-A, I, "a"',anosDias(PERM_SERV),contribHoje);
+    reqAtiv  = requisito("Atividade de natureza militar",'DL 667/1969, art. 24-A, I, "a"',anosDias(PERM_ATIV),ativHoje);
+  }
+
+  /* Proporcional */
+  var reqProp = regime === "permanente"
+    ? requisito("Serviço de natureza militar","LC/RR 305/2022, art. 23, §2º",anosDias(30),ativHoje)
+    // Também aqui vale o tempo de serviço militar, e não só o da Corporação:
+    // o que qualifica é a natureza militar do tempo.
+    : requisito("Tempo de serviço militar","LC/RR 305/2022, art. 23, §1º c/c art. 121",minCorp,tsMilitarHoje);
+  // No direito adquirido vale a regra antiga da LC/RR 258/2017 (aba
+  // "Simulação Proventos R. Antiga" da planilha): denominador de 30 anos para
+  // homem e 25 para mulher. Nos demais regimes, os 35 anos do art. 24-A.
+  var denomProp = regime === "adquirido" ? minEnte : anosDias(QUOTAS);
+  var percProp = Math.min(1, contribHoje / denomProp);
+
+  /* Idade-limite — art. 24, I */
+  var idadeLimite = null, dataOficio = null;
+  if (e.posto){
+    for (var i=0;i<POSTOS.length;i++) if (POSTOS[i][0] === e.posto) idadeLimite = POSTOS[i][2];
+    if (idadeLimite !== null && e.nascimento !== null){
+      var n = new Date(e.nascimento);
+      dataOficio = Date.UTC(n.getUTCFullYear() + idadeLimite, n.getUTCMonth(), n.getUTCDate());
+    }
+    if (idadeLimite === null){
+      var lbl = "";
+      for (var j=0;j<POSTOS.length;j++) if (POSTOS[j][0] === e.posto) lbl = POSTOS[j][1];
+      avisos.push("A idade-limite para " + lbl + " não está prevista expressamente no art. 24, I da LC/RR 305/2022 — o dispositivo enumera apenas coronel, tenente-coronel, major, capitães e subalternos, subtenente, 1º sargento, cabo e soldado de 1ª classe.");
+    }
+  }
+
+  /* Reforma por idade — art. 25, I. Proventos integrais do posto em que
+     estava na reserva (art. 25, §2º). Todo posto tem essa idade, inclusive
+     os que ficaram de fora da idade-limite de reserva.                     */
+  var idadeReforma = null, dataReformaIdade = null;
+  for (var q = 0; q < POSTOS.length; q++)
+    if (POSTOS[q][0] === e.posto) idadeReforma = POSTOS[q][3];
+  if (idadeReforma !== null && e.nascimento !== null){
+    var nr = new Date(e.nascimento);
+    dataReformaIdade = Date.UTC(nr.getUTCFullYear() + idadeReforma,
+                                nr.getUTCMonth(), nr.getUTCDate());
+  }
+
+  /* Reforma por incapacidade definitiva — independe de tempo de serviço. */
+  var reformaHip = e.incapacidade ? INCAPACIDADE[e.incapacidade] || null : null;
+
+  /* Demais hipóteses de reserva de ofício — art. 24, II a VI: exigem 20 anos
+     de contribuição. Sem eles, o militar é licenciado ou exonerado
+     (LC/RR 194/2012, art. 115-B, parágrafo único).                         */
+  var oficioOutras = { minDias: anosDias(20), atual: contribHoje,
+                       liberado: contribHoje >= anosDias(20) };
+
+  var integral = reqTempo.cumprido && reqAtiv.cumprido;
+
+  // Datas ancoradas na data de inclusão, como as células C35 e G35 da
+  // planilha (`B10 + exigido − averbados`): o resultado não pode depender
+  // do dia em que a simulação é rodada.
+  var dA = e.incorporacao
+         + (reqTempo.exigido - e.militarAnterior - e.averbadosCivis + e.afastamentos) * DIA;
+  var dB = e.incorporacao
+         + (reqAtiv.exigido - e.militarAnterior + e.afastamentos + e.funcaoCivil) * DIA;
+  var dataIntegral = Math.max(dA, dB);
+
+  return {
+    regime:regime, entrada:e, avisos:avisos,
+    servicoHoje:servicoHoje, contribHoje:contribHoje, ativHoje:ativHoje,
+    servicoCorte:servicoCorte, contribCorte:contribCorte,
+    minEnte:minEnte, minCorp:minCorp,
+    faltanteContrib:faltanteContrib, pedagioDias:pedagioDias,
+    tsMilitarHoje:tsMilitarHoje,
+    faltanteServico:faltanteServico, anosFaltantes:anosFaltantes,
+    acrescimoMeses:acrescimoMeses,
+    reqTempo:reqTempo, reqAtiv:reqAtiv, reqProp:reqProp,
+    elegivelProp:reqProp.cumprido, percProp:percProp,
+    denomAnos: Math.round(denomProp/ANO),
+    idadeLimite:idadeLimite, dataOficio:dataOficio,
+    idadeReforma:idadeReforma, dataReformaIdade:dataReformaIdade,
+    reforma:reformaHip, oficioOutras:oficioOutras,
+    integral:integral, dataIntegral:dataIntegral,
+    faltamDias:Math.max(0, Math.round((dataIntegral - e.hoje)/DIA)),
+    limitante: integral ? null : (dA >= dB ? reqTempo.nome : reqAtiv.nome),
+    idadeAntes: (dataOficio !== null && !integral && dataOficio < dataIntegral)
+  };
+}
+
+/* ═══ Formatação ═══════════════════════════════════════════════════════ */
+var MS = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+
+function parte(dias){
+  var anos = Math.floor(dias / ANO), resto = dias % ANO;
+  /* 12×30 = 360 não fecha um ano de 365, então trava em 11 meses. */
+  var meses = Math.min(11, Math.floor(resto / MES));
+  return [anos, meses, resto - meses * MES];
+}
+function extenso(dias){
+  if (dias <= 0) return "0 dias";
+  var p = parte(dias), out = [];
+  if (p[0]) out.push(p[0] + (p[0] > 1 ? " anos" : " ano"));
+  if (p[1]) out.push(p[1] + (p[1] > 1 ? " meses" : " mês"));
+  if (p[2] || !out.length) out.push(p[2] + (p[2] > 1 ? " dias" : " dia"));
+  if (out.length > 1){ var u = out.pop(); return out.join(", ") + " e " + u; }
+  return out[0];
+}
+function curto(dias){
+  if (dias <= 0) return "0d";
+  var p = parte(dias), o = [];
+  if (p[0]) o.push(p[0] + "a");
+  if (p[1]) o.push(p[1] + "m");
+  if (p[2] || !o.length) o.push(p[2] + "d");
+  return o.join(" ");
+}
+function fData(ts){
+  var d = new Date(ts);
+  return ("0" + d.getUTCDate()).slice(-2) + "/" + MS[d.getUTCMonth()] + "/" + d.getUTCFullYear();
+}
+function fMesAno(ts){ var d = new Date(ts); return MS[d.getUTCMonth()] + "/" + d.getUTCFullYear(); }
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+
+/* ═══ Interface ════════════════════════════════════════════════════════ */
+var $ = function(id){ return document.getElementById(id); };
+
+(function(){
+  var sel = $("posto");
+  for (var i=0;i<POSTOS.length;i++){
+    var o = document.createElement("option");
+    o.value = POSTOS[i][0]; o.textContent = POSTOS[i][1];
+    sel.appendChild(o);
+  }
+})();
+
+function trio(a,m,d){
+  var A = parseInt($(a).value,10) || 0, M = parseInt($(m).value,10) || 0, D = parseInt($(d).value,10) || 0;
+  if ($(a).value === "" && $(m).value === "" && $(d).value === "") return null;
+  return A*ANO + M*MES + D;
+}
+function hojeUTC(){
+  var n = new Date();
+  return Date.UTC(n.getFullYear(), n.getMonth(), n.getDate());
+}
+function lerData(id){
+  var v = $(id).value;
+  if (!v) return null;
+  var p = v.split("-");
+  return Date.UTC(+p[0], +p[1]-1, +p[2]);
+}
+
+function metro(r){
+  var cor = r.cumprido ? "var(--ok)" : "var(--navy)";
+  return '<div class="card">'
+    + '<div class="card-h"><h3 class="card-t">' + esc(r.nome) + '</h3>'
+    + '<span class="pill ' + (r.cumprido ? "p-ok" : "p-navy") + '">'
+    + (r.cumprido ? "cumprido" : (r.perc*100).toFixed(1) + "%") + '</span></div>'
+    + '<p class="card-l">' + esc(r.fundamento) + '</p>'
+    + '<div class="meter"><i style="width:' + (r.perc*100).toFixed(2) + '%;background:' + cor + '"></i></div>'
+    + '<div class="mrow">'
+    +   '<div><div class="mk">Exigido</div><div class="mv">' + curto(r.exigido) + '</div>'
+    +     (r.detalhe ? '<div class="mdet">' + esc(r.detalhe) + '</div>' : '') + '</div>'
+    +   '<div><div class="mk">Você tem</div><div class="mv">' + curto(r.atual) + '</div></div>'
+    +   '<div><div class="mk">Falta</div><div class="mv" style="color:' + (r.cumprido ? "var(--ok)" : "var(--navy-deep)") + '">'
+    +     (r.cumprido ? "—" : curto(r.falta)) + '</div></div>'
+    + '</div></div>';
+}
+
+function kv(k,v,cls){ return '<div class="kv' + (cls ? " " + cls : "") + '"><dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd></div>'; }
+
+
+/* ═══ Linha do tempo ═══════════════════════════════════════════════════
+   Posiciona os marcos reais entre a data de praça e o evento mais
+   distante. Cada marco carrega informação: nada é decorativo.          */
+function linhaTempo(r){
+  var ini = r.entrada.incorporacao;
+  var pts = [{t:r.entrada.hoje, lab:"Hoje", cls:"c-navy", val:fData(r.entrada.hoje)}];
+  if (!r.integral)
+    pts.push({t:r.dataIntegral, lab:"Integralidade", cls:"c-ok", val:fMesAno(r.dataIntegral)});
+  if (r.dataOficio !== null)
+    pts.push({t:r.dataOficio, lab:"Reserva de ofício", cls:"c-warn", val:fMesAno(r.dataOficio)});
+  if (r.dataReformaIdade !== null)
+    pts.push({t:r.dataReformaIdade, lab:"Reforma por idade", cls:"c-crit", val:fMesAno(r.dataReformaIdade)});
+
+  var fim = ini;
+  for (var i=0;i<pts.length;i++) if (pts[i].t > fim) fim = pts[i].t;
+  var span = Math.max(1, fim - ini);
+  var pos = function(t){ return Math.min(100, Math.max(0, (t - ini) / span * 100)); };
+
+  var h = '<div class="tl-wrap"><div class="tl">'
+        + '<div class="tl-track"><div class="tl-fill" style="width:' + pos(r.entrada.hoje).toFixed(2) + '%"></div></div>';
+  pts.sort(function(a,b){ return a.t - b.t; });
+  for (var j=0;j<pts.length;j++){
+    var p = pts[j];
+    h += '<div class="tl-mark ' + p.cls + '" style="left:' + pos(p.t).toFixed(2) + '%">'
+       + '<div class="tl-dot"></div>'
+       + '<div class="tl-lab">' + esc(p.lab) + '</div>'
+       + '<div class="tl-val">' + esc(p.val) + '</div></div>';
+  }
+  h += '</div></div><div class="tl-ends"><span>Praça em ' + esc(fData(ini)) + '</span>'
+     + '<span>' + esc(fData(fim)) + '</span></div>';
+  return h;
+}
+
+/* ═══ Reforma ══════════════════════════════════════════════════════════ */
+function cardReforma(r){
+  var h = '<div class="card"><div class="card-h"><h3 class="card-t">Reforma</h3>'
+        + '<span class="pill p-navy">sempre de ofício</span></div>'
+        + '<p class="card-l">LC/RR 305/2022, arts. 25 e 26</p><div class="rfm">';
+
+  if (r.reforma){
+    h += '<div class="rfm-row ' + (r.reforma.integral ? "hit" : "prop") + '">'
+       + '<div><div class="rfm-k">' + esc(r.reforma.rotulo) + '</div>'
+       + '<div class="rfm-v">Proventos <b>' + (r.reforma.integral ? "integrais" : "proporcionais ao tempo de contribuição")
+       + '</b>, com base no último subsídio do posto ou graduação. '
+       + (r.reforma.integral
+          ? "Não depende de tempo de serviço: a reforma se dá de imediato, sem pedágio."
+          : "Calculados pela fração do art. 25, §7º, e nunca inferiores ao salário-mínimo (§9º).")
+       + '<br><span class="tl-val">' + esc(r.reforma.fund) + '</span></div></div></div>';
+  }
+
+  if (r.dataReformaIdade !== null){
+    var passou = r.dataReformaIdade <= r.entrada.hoje;
+    h += '<div class="rfm-row"><span class="rfm-tag">' + r.idadeReforma + ' anos</span>'
+       + '<div><div class="rfm-k">Reforma por idade</div><div class="rfm-v">'
+       + (passou ? "Idade atingida em " : "Prevista para ") + '<b>' + esc(fData(r.dataReformaIdade)) + '</b>. '
+       + 'Proventos integrais do posto ou graduação em que estava na reserva (art. 25, §2º).</div></div></div>';
+  } else if (r.entrada.posto === null){
+    h += '<div class="rfm-row"><div class="rfm-v">Informe posto e data de nascimento para ver a idade de reforma.</div></div>';
+  }
+
+  if (!r.reforma){
+    h += '<div class="rfm-row"><div><div class="rfm-k">Reforma por incapacidade definitiva</div>'
+       + '<div class="rfm-v">Ferimento, acidente em serviço ou doença com nexo — e as doenças graves do rol do art. 26, IV — '
+       + 'dão reforma com <b>proventos integrais, sem exigência de tempo</b>. '
+       + 'Sem nexo com o serviço, os proventos são proporcionais. '
+       + 'Selecione a hipótese no formulário para simular.</div></div></div>';
+  }
+  return h + '</div></div>';
+}
+
+/* ═══ Demais hipóteses de reserva de ofício ════════════════════════════ */
+function cardOficio(r){
+  var g = r.oficioOutras;
+  var h = '<div class="card"><div class="card-h"><h3 class="card-t">Outras hipóteses de reserva de ofício</h3></div>'
+        + '<p class="card-l">LC/RR 305/2022, art. 24, II a VI — proventos proporcionais (§2º)</p>'
+        + '<ul class="oflist">';
+  for (var i=0;i<OFICIO_OUTRAS.length;i++)
+    h += '<li><span class="inc">' + OFICIO_OUTRAS[i][0] + '</span><span>' + esc(OFICIO_OUTRAS[i][1]) + '</span></li>';
+  h += '</ul><div class="gate ' + (g.liberado ? "ok" : "no") + '">'
+     + (g.liberado
+        ? "Você já conta os 20 anos de contribuição que essas hipóteses exigem."
+        : "Todas exigem 20 anos de contribuição — faltam " + esc(extenso(g.minDias - g.atual))
+          + ". Sem esse tempo, o enquadramento leva a licenciamento ou exoneração, não à reserva (LC/RR 194/2012, art. 115-B, parágrafo único).")
+     + '</div></div>';
+  return h;
+}
+
+function render(){
+  var inc = lerData("inc");
+  var out = $("out");
+  if (inc === null){
+    out.innerHTML = '<div class="card empty"><p class="e1">Informe a data de incorporação</p>'
+      + '<p>O cálculo aparece aqui e se atualiza a cada campo preenchido.</p></div>';
+    return;
+  }
+
+  var sexo = document.querySelector('input[name=sexo]:checked').value;
+  var r = calcular({
+    incorporacao: inc,
+    nascimento: lerData("nasc"),
+    sexo: sexo,
+    posto: $("posto").value || null,
+    militarAnterior: trio("sm_a","sm_m","sm_d") || 0,
+    averbadosCivis: trio("av_a","av_m","av_d") || 0,
+    funcaoCivil: trio("fc_a","fc_m","fc_d") || 0,
+    afastamentos: trio("af_a","af_m","af_d") || 0,
+    incapacidade: $("incap").value || null,
+    // Data Base sempre o dia de hoje, como a célula E10 da planilha do IPER,
+    // que o operador preenche com a data em que simula.
+    hoje: hojeUTC()
+  });
+
+  var REG = {
+    adquirido: ["Direito adquirido","LC/RR 305/2022, art. 120 c/c DL 667/1969, art. 24-F","r-ok"],
+    transicao: ["Regra de transição","DL 667/1969, art. 24-G, I e parágrafo único","r-warn"],
+    permanente:["Regra permanente",'DL 667/1969, art. 24-A, I, "a"',"r-navy"]
+  }[r.regime];
+
+  var h = "";
+
+  /* regime */
+  h += '<div class="regime ' + REG[2] + '"><div>'
+     + '<div class="rk">Regime aplicável</div>'
+     + '<div class="rn">' + esc(REG[0]) + '</div>'
+     + '<div class="rf">' + esc(REG[1]) + '</div>'
+     + '</div></div>';
+
+  /* veredito */
+  h += '<div class="card verdict">'
+     + '<div class="card-h"><h3 class="card-t">'
+     + (r.integral ? "Você já pode requerer" : "Previsão de integralidade") + '</h3></div>';
+  if (r.integral){
+    h += '<div class="big done">Reserva remunerada com proventos integrais</div>'
+       + '<p class="when">Todos os requisitos do seu regime estão cumpridos nesta data.</p>';
+  } else {
+    h += '<div class="big">' + esc(fMesAno(r.dataIntegral)) + '</div>'
+       + '<p class="when">em ' + esc(fData(r.dataIntegral)) + ' — faltam ' + esc(extenso(r.faltamDias)) + '</p>'
+       + '<div class="bottleneck">Requisito que define a data: <b>' + esc(r.limitante) + '</b></div>';
+  }
+  if (r.idadeAntes){
+    h += '<div class="note n-crit" style="margin-top:13px"><b>Atenção:</b> a idade-limite do seu posto ('
+       + esc(fMesAno(r.dataOficio)) + ') chega antes da integralidade. Nesse cenário a transferência será de ofício, '
+       + 'com proventos proporcionais — LC/RR 305/2022, art. 24, §2º.</div>';
+  }
+  h += linhaTempo(r);
+  h += '</div>';
+
+  /* dois pedágios */
+  if (r.regime === "transicao"){
+    h += '<div class="card">'
+       + '<div class="card-h"><h3 class="card-t">Os dois pedágios</h3>'
+       + '<span class="pill p-warn">independentes</span></div>'
+       + '<p class="card-l">DL 667/1969, art. 24-G — ambos aferidos na Data Base</p>'
+       + '<div class="two">'
+
+       + '<div class="toll"><div class="toll-n">1º pedágio</div>'
+       + '<div class="toll-t">17% sobre o tempo total</div><dl>'
+       + kv("Mínimo de contribuição", minEnteAnos(r.entrada.sexo) + " anos")
+       + kv("Sua contribuição na Data Base", curto(r.contribHoje))
+       + kv("Faltante", curto(r.faltanteContrib))
+       + kv("Pedágio (17%)", curto(r.pedagioDias), "tot")
+       + '</dl></div>'
+
+       + '<div class="toll"><div class="toll-n">2º pedágio</div>'
+       + '<div class="toll-t">4 meses por ano de atividade militar</div><dl>'
+       + kv("Mínimo na Corporação", minCorpAnos(r.entrada.sexo) + " anos")
+       + kv("Seu serviço militar na Data Base", curto(r.tsMilitarHoje))
+       + kv("Faltante", curto(r.faltanteServico))
+       + kv("Anos faltantes (truncados)", String(r.anosFaltantes))
+       + kv("Acréscimo", r.acrescimoMeses + " meses", "tot")
+       + '</dl></div>'
+
+       + '</div>'
+       + '<div class="note ' + (r.acrescimoMeses === 0 ? "n-flat" : "n-warn") + '" style="margin-top:13px">'
+       + (r.acrescimoMeses === 0
+          ? "Você já contava os " + minCorpAnos(r.entrada.sexo) + " anos de efetivo serviço em 31/12/2021, então o 2º pedágio não se aplica: a exigência de atividade militar fica em 25 anos. O 1º pedágio continua valendo."
+          : "Os dois pedágios são independentes e precisam ser cumpridos juntos: cada um tem sua própria base de cálculo, e a integralidade só vem quando o último deles fechar.")
+       + '</div></div>';
+  }
+
+  h += metro(r.reqTempo) + metro(r.reqAtiv);
+
+  /* proporcional */
+  var quotas = Math.floor(r.percProp * r.denomAnos);
+  h += '<div class="card">'
+     + '<div class="card-h"><h3 class="card-t">Proventos proporcionais</h3>'
+     + '<span class="pill ' + (r.elegivelProp ? "p-navy" : "p-warn") + '">'
+     + (r.elegivelProp ? "elegível hoje" : "ainda não") + '</span></div>'
+     + '<p class="card-l">' + esc(r.reqProp.fundamento) + '</p>';
+  if (r.elegivelProp){
+    h += '<div class="quota"><span class="n">' + quotas + '</span><span class="d">/35 avos</span>'
+       + '<span class="pc">' + (r.percProp*100).toFixed(1) + '%</span></div>'
+       + '<p class="card-l" style="margin:0">Se requerer a reserva hoje, os proventos seriam calculados em tantas quotas '
+       + 'quantos forem os anos de serviço — DL 667/1969, art. 24-A, I, "b".</p>';
+  } else {
+    h += '<p style="margin:0;font-size:13.5px">Você ainda não atingiu o mínimo de <b>' + esc(extenso(r.reqProp.exigido))
+       + '</b> exigido para requerer proventos proporcionais. Faltam <b>' + esc(extenso(r.reqProp.falta)) + '</b>.</p>';
+  }
+  h += '</div>';
+
+  /* idade-limite */
+  var corpo;
+  if (!r.entrada.posto) corpo = "Informe seu posto ou graduação para ver a idade-limite.";
+  else if (r.idadeLimite === null) corpo = "Não há idade-limite prevista expressamente para esta graduação no art. 24, I.";
+  else if (r.dataOficio === null) corpo = "Idade-limite de " + r.idadeLimite + " anos. Informe a data de nascimento para ver a data prevista.";
+  else {
+    var falta = Math.round((r.dataOficio - r.entrada.hoje)/DIA);
+    corpo = falta > 0
+      ? "Idade-limite de " + r.idadeLimite + " anos, atingida em " + fData(r.dataOficio) + " — em " + extenso(falta) + "."
+      : "Idade-limite de " + r.idadeLimite + " anos já atingida em " + fData(r.dataOficio) + ".";
+  }
+  h += cardReforma(r);
+  h += cardOficio(r);
+
+  h += '<div class="card"><div class="card-h"><h3 class="card-t">Reserva de ofício por idade-limite</h3></div>'
+     + '<p class="card-l">LC/RR 305/2022, art. 24, I</p>'
+     + '<p style="margin:0;font-size:13.5px">' + esc(corpo) + '</p></div>';
+
+  /* avisos */
+  if (r.avisos.length){
+    h += '<div class="card"><div class="card-h"><h3 class="card-t">Observações</h3></div><ul class="avisos">';
+    for (var i=0;i<r.avisos.length;i++) h += '<li>' + esc(r.avisos[i]) + '</li>';
+    h += '</ul></div>';
+  }
+
+  /* memorial */
+  h += '<div class="card" style="padding-top:6px"><details><summary>Memorial de cálculo</summary><div class="memo">'
+     + '<h4>Datas</h4>'
+     + kv("Incorporação", fData(r.entrada.incorporacao))
+     + kv("Cálculo em", fData(r.entrada.hoje))
+     + kv("Data-base da transição", "31/dez/2021")
+     + '<h4>Composição do tempo</h4>'
+     + kv("Serviço na Corporação (PMRR/CBMRR)", extenso(r.servicoHoje))
+     + (r.entrada.militarAnterior > 0 ? kv("Militar em outra OM", "+ " + extenso(r.entrada.militarAnterior)) : "")
+     + kv("Tempo de serviço militar", extenso(r.tsMilitarHoje))
+     + (r.entrada.averbadosCivis > 0 ? kv("Averbado civil", "+ " + extenso(r.entrada.averbadosCivis)) : "")
+     + kv("Contribuição total", extenso(r.contribHoje))
+     + (r.entrada.funcaoCivil > 0 ? kv("Cedido a função civil", "− " + extenso(r.entrada.funcaoCivil)) : "")
+     + kv("Atividade de natureza militar", extenso(r.ativHoje))
+     + (r.entrada.afastamentos > 0 ? kv("Afastamentos descontados", "− " + extenso(r.entrada.afastamentos)) : "")
+     + '<h4>Aferição em 31/12/2021 (direito adquirido)</h4>'
+     + kv("Serviço na Corporação", extenso(r.servicoCorte))
+     + kv("Contribuição", extenso(r.contribCorte));
+  if (r.regime === "transicao"){
+    h += kv("Faltante de contribuição", extenso(r.faltanteContrib))
+       + kv("1º pedágio (17%)", extenso(r.pedagioDias))
+       + kv("Faltante de serviço", extenso(r.faltanteServico))
+       + kv("Anos faltantes (truncados)", r.anosFaltantes + " anos")
+       + kv("2º pedágio (4 meses/ano)", r.acrescimoMeses + " meses");
+  }
+  h += '<h4>Exigências do regime</h4>'
+     + kv(r.reqTempo.nome, extenso(r.reqTempo.exigido))
+     + kv(r.reqAtiv.nome, extenso(r.reqAtiv.exigido))
+     + '<h4>Resultado</h4>'
+     + kv("Integralidade em", r.integral ? "cumprida" : fData(r.dataIntegral))
+     + '</div></details></div>';
+
+  out.innerHTML = h;
+}
+
+/* casos de teste — exercitam cada ramo do cálculo */
+
+/* ═══ Apuração encadeada ═══════════════════════════════════════════════
+   O cálculo é instantâneo; a cadência existe para o militar acompanhar o
+   que está sendo apurado. Cada etapa corresponde a um trecho real da
+   conta, na ordem em que o motor a executa.                            */
+var ETAPAS = [
+  ["Conferindo seus dados","Data de praça, sexo, posto e afastamentos informados",650],
+  ["Somando o tempo averbado","Serviço na Corporação, tempo militar de outra OM e averbação civil",850],
+  ["Consultando a legislação","DL 667/1969, arts. 24-A a 24-G, e LC/RR 305/2022",800],
+  ["Enquadrando no regime","Direito adquirido, regra de transição ou regra permanente",700],
+  ["Aplicando os dois pedágios","Os 17% do inciso I e os 4 meses por ano do parágrafo único",800],
+  ["Projetando as datas","Integralidade, reserva de ofício e reforma",700]
+];
+
+var fase = "form", timer = null;
+
+function telaEtapas(i){
+  var h = '<div class="card run"><div class="run-h"><div class="run-ring"></div><div>'
+        + '<p class="run-t">Apurando sua inatividade</p>'
+        + '<p class="run-s">Etapa ' + (i+1) + ' de ' + ETAPAS.length + '</p></div></div>'
+        + '<div class="run-bar"><i style="width:' + ((i+1)/ETAPAS.length*100).toFixed(1) + '%"></i></div>';
+  for (var k = 0; k < ETAPAS.length; k++){
+    var cls = k < i ? "step done" : (k === i ? "step on" : "step");
+    var ic  = k < i ? "✓" : (k === i ? "" : "•");
+    h += '<div class="' + cls + '"><div class="step-i">' + ic + '</div><div>'
+       + '<div class="step-k">' + esc(ETAPAS[k][0]) + '</div>'
+       + '<div class="step-d">' + esc(ETAPAS[k][1]) + '</div></div></div>';
+  }
+  $("out").innerHTML = h + '</div>';
+}
+
+function calcularAgora(){
+  if (lerData("inc") === null){
+    $("btnhint").textContent = "Informe a data de incorporação para calcular.";
+    $("inc").focus();
+    return;
+  }
+  if (timer) clearTimeout(timer);
+  fase = "run";
+  atualizaBotao();
+
+  var i = 0;
+  (function proxima(){
+    if (i >= ETAPAS.length){
+      fase = "pronto";
+      atualizaBotao();
+      render();
+      $("out").scrollIntoView({behavior:"smooth", block:"start"});
+      return;
+    }
+    telaEtapas(i);
+    var d = ETAPAS[i][2];
+    i++;
+    timer = setTimeout(proxima, d);
+  })();
+}
+
+function atualizaBotao(){
+  var b = $("btn"), lab = $("btnlab"), hint = $("btnhint");
+  b.disabled = fase === "run";
+  b.style.opacity = fase === "run" ? ".6" : "";
+  b.style.cursor  = fase === "run" ? "wait" : "pointer";
+  lab.textContent = fase === "run" ? "Apurando…"
+                  : fase === "pronto" ? "Calcular de novo" : "Calcular";
+  hint.textContent = fase === "pronto"
+    ? "Alterar qualquer campo limpa o resultado."
+    : "Confira os dados acima antes de calcular.";
+}
+
+/* Um dado alterado invalida o resultado: melhor voltar ao formulário do que
+   deixar número velho ao lado de campo novo. */
+function invalidar(){
+  if (fase === "run") return;
+  if (fase === "pronto"){
+    fase = "form";
+    atualizaBotao();
+    $("out").innerHTML = '<div class="card empty"><p class="e1">Dados alterados</p>'
+      + '<p>Toque em <b>Calcular de novo</b> para atualizar o resultado.</p></div>';
+  }
+}
+
+var PRESETS = [
+  ["Transição típica",   {inc:"2005-03-01", nasc:"1984-05-10", sexo:"masculino", posto:"primeiroSargento"}],
+  ["2º pedágio zerado",  {inc:"2000-06-01", nasc:"1979-02-14", sexo:"masculino", posto:"subtenente"}],
+  ["Direito adquirido",  {inc:"1991-01-01", nasc:"1970-08-22", sexo:"masculino", posto:"major"}],
+  ["Mulher, averbação",  {inc:"2010-06-15", nasc:"1988-09-03", sexo:"feminino",  posto:"capitao", av:[5,0,0]}],
+  ["Regra permanente",   {inc:"2021-04-01", nasc:"1999-07-12", sexo:"masculino", posto:"soldado1"}],
+  ["Teto de 5 anos",     {inc:"2019-12-01", nasc:"1997-03-08", sexo:"masculino", posto:"terceiroSargento"}]
+];
+
+(function(){
+  var box = $("presets");
+  PRESETS.forEach(function(p){
+    var b = document.createElement("button");
+    b.type = "button"; b.textContent = p[0];
+    b.addEventListener("click", function(){
+      var c = p[1];
+      $("inc").value = c.inc; $("nasc").value = c.nasc || "";
+      $(c.sexo === "feminino" ? "sf" : "sm").checked = true;
+      $("posto").value = c.posto || "";
+      ["av_a","av_m","av_d","sm_a","sm_m","sm_d","fc_a","fc_m","fc_d","af_a","af_m","af_d"].forEach(function(k){ $(k).value = ""; });
+      if (c.av){ $("av_a").value = c.av[0]; $("av_m").value = c.av[1]; $("av_d").value = c.av[2]; }
+      calcularAgora();
+    });
+    box.appendChild(b);
+  });
+})();
+
+$("btn").addEventListener("click", calcularAgora);
+document.addEventListener("input", invalidar);
+document.addEventListener("change", invalidar);
+atualizaBotao();
+</script>

@@ -38,11 +38,15 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
   int _current = 0;
   Timer? _timer;
   List<Map<String, dynamic>> _dicas = [];
-  bool _seeded = false;
 
   static final _col = FirebaseFirestore.instance.collection('dicas_app');
 
-  // Dicas padrão — inseridas automaticamente se a coleção estiver vazia.
+  /// Guardada para ser cancelada no dispose: sem isso, cada vez que a home
+  /// era remontada sobrava um listener ativo no Firestore.
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _sub;
+
+  // Dicas padrão — usadas apenas como fallback de exibição local quando a
+  // coleção do Firestore está vazia (nunca gravadas de volta no banco).
   static const _defaults = [
     {
       'texto':
@@ -134,28 +138,22 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
   }
 
   Future<void> _initDicas() async {
-    // Seed automático: só insere se a coleção estiver vazia
-    if (!_seeded) {
-      _seeded = true;
-      try {
-        final snap = await _col.limit(1).get();
-        if (snap.docs.isEmpty) {
-          final batch = FirebaseFirestore.instance.batch();
-          for (final d in _defaults) {
-            batch.set(_col.doc(), d);
-          }
-          await batch.commit();
-        }
-      } catch (_) {}
-    }
-
-    // Escuta em tempo real — filtra e ordena no cliente
-    _col.orderBy('ordem').snapshots().listen((s) {
+    // Escuta em tempo real — filtra e ordena no cliente.
+    // OBS: o seed automático de documentos foi removido daqui — cada
+    // cliente que abrisse o app com a coleção vazia tentava semeá-la,
+    // e como a checagem "está vazia?" + escrita não é atômica, várias
+    // instâncias do app rodando ao mesmo tempo duplicavam as dicas
+    // padrão (ex.: 6 execuções concorrentes geraram 6 cópias de cada
+    // dica). Se a coleção estiver vazia, usamos `_defaults` apenas para
+    // exibição local, sem gravar nada no Firestore.
+    _sub = _col.orderBy('ordem').snapshots().listen((s) {
       if (!mounted) return;
-      final lista = s.docs
-          .where((d) => d.data()['ativo'] == true)
-          .map((d) => d.data())
-          .toList();
+      final lista = s.docs.isEmpty
+          ? _defaults
+          : s.docs
+              .where((d) => d.data()['ativo'] == true)
+              .map((d) => d.data())
+              .toList();
       setState(() => _dicas = lista);
       _startTimer();
     });
@@ -177,6 +175,7 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
 
   @override
   void dispose() {
+    _sub?.cancel();
     _timer?.cancel();
     _pageCtrl.dispose();
     super.dispose();
@@ -262,10 +261,19 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   child: Row(
                     children: [
-                      // Ícone
-                      Text(
-                        d['icone'] ?? '💡',
-                        style: const TextStyle(fontSize: 26),
+                      // Ícone (largura fixa — protege o layout caso o campo
+                      // 'icone' venha do Firestore com um valor malformado
+                      // e mais longo que um emoji único).
+                      SizedBox(
+                        width: 30,
+                        child: Text(
+                          d['icone'] ?? '💡',
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.clip,
+                          style: const TextStyle(fontSize: 26),
+                        ),
                       ),
                       const SizedBox(width: 12),
                       // Texto + label
@@ -326,22 +334,27 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
           const SizedBox(height: 6),
 
           // ── Dots indicadores ─────────────────────────────────────────────
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(dicasFiltradas.length, (i) {
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 280),
-                margin: const EdgeInsets.symmetric(horizontal: 2),
-                width: i == _current ? 18.0 : 5.0,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: i == _current
-                      ? AppColors.blue
-                      : AppColors.blue.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              );
-            }),
+          // Envolvido em scroll horizontal: com muitas dicas cadastradas no
+          // Firestore, a linha de pontos pode ficar mais larga que a tela.
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(dicasFiltradas.length, (i) {
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 280),
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  width: i == _current ? 18.0 : 5.0,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: i == _current
+                        ? AppColors.blue
+                        : AppColors.blue.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                );
+              }),
+            ),
           ),
         ],
       ),

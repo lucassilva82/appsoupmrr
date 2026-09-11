@@ -122,6 +122,65 @@ class _PageContrachequeState extends State<PageContracheque> {
     final mesAno =
         '${widget.mesSelecionado.mesExtenso.toUpperCase()} / ${widget.mesSelecionado.ano}';
 
+    // ── Compactação dinâmica ─────────────────────────────────────────
+    // Ajusta fontes/espaçamentos conforme a quantidade de rubricas para
+    // garantir que TUDO (rubricas + resumo) caiba em UMA única página A4.
+    final int _nRubricas = contracheque.proventos.length;
+    final bool _t1 = _nRubricas > 14; // compacto
+    final bool _t2 = _nRubricas > 22; // ultra
+    final bool _t3 = _nRubricas > 30; // micro
+    final bool _t4 = _nRubricas > 40; // nano
+
+    final double rowVPad = _t4
+        ? 0.8
+        : _t3
+            ? 1.0
+            : _t2
+                ? 1.5
+                : _t1
+                    ? 3.0
+                    : 5.0;
+    final double rowFont = _t4
+        ? 5.5
+        : _t3
+            ? 6.0
+            : _t2
+                ? 7.0
+                : _t1
+                    ? 8.5
+                    : 9.5;
+    final double badgeSize = _t4
+        ? 8
+        : _t3
+            ? 10
+            : _t2
+                ? 12
+                : _t1
+                    ? 15
+                    : 18;
+    final double badgeFont = _t4
+        ? 5.0
+        : _t3
+            ? 5.5
+            : _t2
+                ? 6.5
+                : _t1
+                    ? 7.5
+                    : 9.0;
+    final double headRowVPad = _t1 ? 4 : 7;
+    final double gapAntesResumo = _t1 ? 6 : 12;
+    final double summaryVPad = _t3
+        ? 9
+        : _t2
+            ? 11
+            : 15;
+    final double summaryValueFont = _t2
+        ? 11
+        : _t1
+            ? 12
+            : 13;
+    final double summaryDivH = _t1 ? 28 : 36;
+
     // ── Helper: célula de informação ─────────────────────────────────
     pw.Widget infoCell(String label, String value) => pw.Padding(
           padding: const pw.EdgeInsets.fromLTRB(12, 9, 12, 9),
@@ -156,7 +215,7 @@ class _PageContrachequeState extends State<PageContracheque> {
               pw.SizedBox(height: 5),
               pw.Text(value,
                   style: pw.TextStyle(
-                      fontSize: 13,
+                      fontSize: summaryValueFont,
                       color: color,
                       fontWeight: pw.FontWeight.bold)),
             ],
@@ -174,11 +233,11 @@ class _PageContrachequeState extends State<PageContracheque> {
           // Barra do topo
           pw.Container(
             color: cHeader,
-            padding: const pw.EdgeInsets.fromLTRB(30, 20, 30, 20),
+            padding: const pw.EdgeInsets.fromLTRB(30, 14, 30, 14),
             child: pw.Row(children: [
               pw.SizedBox(
-                width: 64,
-                height: 64,
+                width: 50,
+                height: 50,
                 child:
                     pw.Image(pw.MemoryImage(logoBytes), fit: pw.BoxFit.contain),
               ),
@@ -189,11 +248,11 @@ class _PageContrachequeState extends State<PageContracheque> {
                     children: [
                       pw.Text('CONTRACHEQUE',
                           style: pw.TextStyle(
-                              fontSize: 22,
+                              fontSize: 20,
                               fontWeight: pw.FontWeight.bold,
                               color: PdfColors.white,
                               letterSpacing: 2.5)),
-                      pw.SizedBox(height: 5),
+                      pw.SizedBox(height: 4),
                       pw.Text(mesAno,
                           style: pw.TextStyle(
                               fontSize: 11,
@@ -222,7 +281,7 @@ class _PageContrachequeState extends State<PageContracheque> {
           if (ctx.pageNumber == 1) ...[
             pw.Container(
               color: cBg,
-              padding: const pw.EdgeInsets.fromLTRB(30, 16, 30, 0),
+              padding: const pw.EdgeInsets.fromLTRB(30, 12, 30, 0),
               child: pw.Column(children: [
                 // Card com grade interna
                 pw.Container(
@@ -294,7 +353,7 @@ class _PageContrachequeState extends State<PageContracheque> {
                     ),
                   ]),
                 ),
-                pw.SizedBox(height: 16),
+                pw.SizedBox(height: 10),
               ]),
             ),
             // (cabeçalho de colunas movido para dentro do pw.Table)
@@ -342,8 +401,8 @@ class _PageContrachequeState extends State<PageContracheque> {
                 decoration: pw.BoxDecoration(color: cSlate),
                 children: [
                   pw.Padding(
-                    padding: const pw.EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 8),
+                    padding: pw.EdgeInsets.symmetric(
+                        horizontal: 10, vertical: headRowVPad),
                     child: pw.Text('TIPO',
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
@@ -353,7 +412,8 @@ class _PageContrachequeState extends State<PageContracheque> {
                             letterSpacing: 0.6)),
                   ),
                   pw.Padding(
-                    padding: const pw.EdgeInsets.fromLTRB(8, 8, 8, 8),
+                    padding:
+                        pw.EdgeInsets.fromLTRB(8, headRowVPad, 8, headRowVPad),
                     child: pw.Text('DESCRIÇÃO DA RUBRICA',
                         style: pw.TextStyle(
                             fontSize: 8.5,
@@ -362,7 +422,8 @@ class _PageContrachequeState extends State<PageContracheque> {
                             letterSpacing: 0.8)),
                   ),
                   pw.Padding(
-                    padding: const pw.EdgeInsets.fromLTRB(8, 8, 8, 8),
+                    padding:
+                        pw.EdgeInsets.fromLTRB(8, headRowVPad, 8, headRowVPad),
                     child: pw.Text('VALOR',
                         textAlign: pw.TextAlign.right,
                         style: pw.TextStyle(
@@ -388,22 +449,22 @@ class _PageContrachequeState extends State<PageContracheque> {
                   children: [
                     // Coluna badge
                     pw.Padding(
-                      padding: const pw.EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 9),
+                      padding: pw.EdgeInsets.symmetric(
+                          horizontal: 10, vertical: rowVPad),
                       child: pw.Center(
                         child: pw.Container(
-                          width: 22,
-                          height: 22,
+                          width: badgeSize,
+                          height: badgeSize,
                           decoration: pw.BoxDecoration(
                             color: badgeBg,
-                            borderRadius: const pw.BorderRadius.all(
-                                pw.Radius.circular(11)),
+                            borderRadius: pw.BorderRadius.all(
+                                pw.Radius.circular(badgeSize / 2)),
                           ),
                           child: pw.Center(
                             child: pw.Text(item.tipoRubrica,
                                 style: pw.TextStyle(
                                     color: PdfColors.white,
-                                    fontSize: 9,
+                                    fontSize: badgeFont,
                                     fontWeight: pw.FontWeight.bold)),
                           ),
                         ),
@@ -411,19 +472,19 @@ class _PageContrachequeState extends State<PageContracheque> {
                     ),
                     // Coluna descrição
                     pw.Padding(
-                      padding: const pw.EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 9),
+                      padding: pw.EdgeInsets.symmetric(
+                          horizontal: 8, vertical: rowVPad),
                       child: pw.Text(item.descricaoRubrica,
-                          style: pw.TextStyle(fontSize: 10, color: cText)),
+                          style: pw.TextStyle(fontSize: rowFont, color: cText)),
                     ),
                     // Coluna valor
                     pw.Padding(
-                      padding: const pw.EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 9),
+                      padding: pw.EdgeInsets.symmetric(
+                          horizontal: 8, vertical: rowVPad),
                       child: pw.Text('R\$\u2009$valor',
                           textAlign: pw.TextAlign.right,
                           style: pw.TextStyle(
-                              fontSize: 10,
+                              fontSize: rowFont,
                               color: valColor,
                               fontWeight: pw.FontWeight.bold)),
                     ),
@@ -434,7 +495,7 @@ class _PageContrachequeState extends State<PageContracheque> {
           ),
         ),
 
-        pw.SizedBox(height: 16),
+        pw.SizedBox(height: gapAntesResumo),
 
         // Barra de resumo
         pw.Padding(
@@ -445,20 +506,20 @@ class _PageContrachequeState extends State<PageContracheque> {
               borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
             ),
             padding:
-                const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                pw.EdgeInsets.symmetric(horizontal: 24, vertical: summaryVPad),
             child: pw.Row(children: [
               summaryCol(
                 'PROVENTOS',
                 'R\$\u2009${CurrencyFormatter.format(proventos, _realSettings)}',
                 cGreenLt,
               ),
-              pw.Container(width: 1, height: 38, color: cSep),
+              pw.Container(width: 1, height: summaryDivH, color: cSep),
               summaryCol(
                 'DESCONTOS',
                 'R\$\u2009${CurrencyFormatter.format(descontos, _realSettings)}',
                 cRedLt,
               ),
-              pw.Container(width: 1, height: 38, color: cSep),
+              pw.Container(width: 1, height: summaryDivH, color: cSep),
               summaryCol(
                 'LÍQUIDO A RECEBER',
                 'R\$\u2009${CurrencyFormatter.format(totalLiquido, _realSettings)}',
@@ -468,7 +529,7 @@ class _PageContrachequeState extends State<PageContracheque> {
           ),
         ),
 
-        pw.SizedBox(height: 12),
+        pw.SizedBox(height: gapAntesResumo),
         pw.Padding(
           padding: const pw.EdgeInsets.symmetric(horizontal: 30),
           child: pw.Container(height: 2, color: cGold),

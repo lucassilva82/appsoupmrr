@@ -25,183 +25,193 @@ class SettingsBody extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       child: LayoutBuilder(builder: (ctx, constraints) {
         return ConstrainedBox(
-          constraints: BoxConstraints(minWidth: constraints.maxWidth),
+          constraints: BoxConstraints(
+            minWidth: constraints.maxWidth,
+            maxWidth: constraints.maxWidth,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-          // ── Header do usuário ─────────────────────────────────────────────
-          _UserHeader(auth: auth, theme: theme),
-          const SizedBox(height: 24),
+              // ── Header do usuário ─────────────────────────────────────────────
+              _UserHeader(auth: auth, theme: theme),
+              const SizedBox(height: 24),
 
-          // ── Seção: Aparência ──────────────────────────────────────────────
-          _SectionTitle(label: 'Aparência'),
-          _SettingsCard(
-            children: [
-              _ThemeModeSelector(themeProvider: themeProvider, theme: theme),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // ── Seção: Segurança ──────────────────────────────────────────────
-          _SectionTitle(label: 'Segurança'),
-          _SettingsCard(
-            children: [
-              SwitchListTile(
-                value: auth.useBiometrics,
-                onChanged: (val) => auth.setBiometrics(val),
-                secondary: Icon(
-                  Icons.fingerprint_rounded,
-                  color: theme.colorScheme.primary,
-                ),
-                title: const Text('Biometria'),
-                subtitle: const Text('Login com impressão digital / Face ID'),
+              // ── Seção: Aparência ──────────────────────────────────────────────
+              _SectionTitle(label: 'Aparência'),
+              _SettingsCard(
+                children: [
+                  _ThemeModeSelector(
+                      themeProvider: themeProvider, theme: theme),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-          // ── Seção: Notificações ───────────────────────────────────────────
-          _SectionTitle(label: 'Notificações'),
-          Card(
-            margin: EdgeInsets.zero,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: auth.notificationsEnabled
-                  ? BorderSide.none
-                  : const BorderSide(color: Colors.redAccent, width: 1.5),
-            ),
-            color: auth.notificationsEnabled
-                ? null
-                : Colors.redAccent.withOpacity(0.07),
-            child: SwitchListTile(
-              value: auth.notificationsEnabled,
-              onChanged: (val) async {
-                if (!val) {
-                  // Exige confirmação para desativar
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      icon: const Icon(Icons.notifications_off_rounded,
-                          color: Colors.redAccent, size: 36),
-                      title: const Text('Desativar notificações?'),
-                      content: const Text(
-                        'Sem notificações você não receberá avisos sobre:\n\n'
-                        '• Escalas de serviço\n'
-                        '• Contracheques disponíveis\n'
-                        '• Comunicados oficiais\n'
-                        '• Alertas importantes da PMRR\n\n'
-                        'Tem certeza que deseja continuar?',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(false),
-                          child: const Text('Cancelar'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () => Navigator.of(ctx).pop(true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent,
+              // ── Seção: Segurança ──────────────────────────────────────────────
+              _SectionTitle(label: 'Segurança'),
+              _SettingsCard(
+                children: [
+                  SwitchListTile(
+                    value: auth.useBiometrics,
+                    onChanged: (val) => auth.setBiometrics(val),
+                    secondary: Icon(
+                      Icons.fingerprint_rounded,
+                      color: theme.colorScheme.primary,
+                    ),
+                    title: const Text('Biometria'),
+                    subtitle:
+                        const Text('Login com impressão digital / Face ID'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // ── Seção: Notificações ───────────────────────────────────────────
+              _SectionTitle(label: 'Notificações'),
+              Card(
+                margin: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: auth.notificationsEnabled
+                      ? BorderSide.none
+                      : const BorderSide(color: Colors.redAccent, width: 1.5),
+                ),
+                color: auth.notificationsEnabled
+                    ? null
+                    : Colors.redAccent.withOpacity(0.07),
+                child: SwitchListTile(
+                  value: auth.notificationsEnabled,
+                  onChanged: (val) async {
+                    if (!val) {
+                      // Exige confirmação para desativar
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          icon: const Icon(Icons.notifications_off_rounded,
+                              color: Colors.redAccent, size: 36),
+                          title: const Text('Desativar notificações?'),
+                          content: const Text(
+                            'Sem notificações você não receberá avisos sobre:\n\n'
+                            '• Escalas de serviço\n'
+                            '• Contracheques disponíveis\n'
+                            '• Comunicados oficiais\n'
+                            '• Alertas importantes da PMRR\n\n'
+                            'Tem certeza que deseja continuar?',
                           ),
-                          child: const Text('Desativar',
-                              style: TextStyle(color: Colors.white)),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(false),
+                              child: const Text('Cancelar'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.of(ctx).pop(true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.redAccent,
+                              ),
+                              child: const Text('Desativar',
+                                  style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm != true) return;
+                    }
+                    auth.setNotificationsEnabled(val);
+                  },
+                  activeColor: theme.colorScheme.primary,
+                  inactiveThumbColor: Colors.redAccent,
+                  inactiveTrackColor: Colors.redAccent.withOpacity(0.3),
+                  secondary: Icon(
+                    auth.notificationsEnabled
+                        ? Icons.notifications_rounded
+                        : Icons.notifications_off_rounded,
+                    color: auth.notificationsEnabled
+                        ? theme.colorScheme.primary
+                        : Colors.redAccent,
+                  ),
+                  title: Text(
+                    'Avisos',
+                    style: TextStyle(
+                      color:
+                          auth.notificationsEnabled ? null : Colors.redAccent,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    auth.notificationsEnabled
+                        ? 'Receba alertas de escala, comunicados e avisos'
+                        : '⚠ Notificações desativadas — você pode perder avisos importantes',
+                    style: TextStyle(
+                      color: auth.notificationsEnabled
+                          ? null
+                          : Colors.redAccent.withOpacity(0.85),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // ── Seção: Sobre ──────────────────────────────────────────────────
+              _SectionTitle(label: 'Sobre'),
+              _SettingsCard(
+                children: [
+                  ListTile(
+                    leading: Icon(Icons.info_outline_rounded,
+                        color: theme.colorScheme.primary),
+                    title: const Text('SouPMRR'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Versão 2.0 • Polícia Militar de Roraima'),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Desenvolvido pelo DTI — Departamento de Tecnologia da Informação',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color:
+                                theme.colorScheme.onSurface.withOpacity(0.55),
+                          ),
                         ),
                       ],
                     ),
-                  );
-                  if (confirm != true) return;
-                }
-                auth.setNotificationsEnabled(val);
-              },
-              activeColor: theme.colorScheme.primary,
-              inactiveThumbColor: Colors.redAccent,
-              inactiveTrackColor: Colors.redAccent.withOpacity(0.3),
-              secondary: Icon(
-                auth.notificationsEnabled
-                    ? Icons.notifications_rounded
-                    : Icons.notifications_off_rounded,
-                color: auth.notificationsEnabled
-                    ? theme.colorScheme.primary
-                    : Colors.redAccent,
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  ListTile(
+                    leading: Icon(Icons.support_agent_rounded,
+                        color: theme.colorScheme.primary),
+                    title: const Text('Suporte Técnico'),
+                    subtitle: const Text('DTI/PMRR'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.AJUDA_PAGE),
+                  ),
+                ],
               ),
-              title: Text(
-                'Avisos',
-                style: TextStyle(
-                  color: auth.notificationsEnabled ? null : Colors.redAccent,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              subtitle: Text(
-                auth.notificationsEnabled
-                    ? 'Receba alertas de escala, comunicados e avisos'
-                    : '⚠ Notificações desativadas — você pode perder avisos importantes',
-                style: TextStyle(
-                  color: auth.notificationsEnabled
-                      ? null
-                      : Colors.redAccent.withOpacity(0.85),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
-          // ── Seção: Sobre ──────────────────────────────────────────────────
-          _SectionTitle(label: 'Sobre'),
-          _SettingsCard(
-            children: [
-              ListTile(
-                leading: Icon(Icons.info_outline_rounded,
-                    color: theme.colorScheme.primary),
-                title: const Text('SouPMRR'),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Versão 2.0 • Polícia Militar de Roraima'),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Desenvolvido pelo DTI — Departamento de Tecnologia da Informação',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: theme.colorScheme.onSurface.withOpacity(0.55),
-                      ),
-                    ),
-                  ],
+              // ── Botão Sair ────────────────────────────────────────────────────
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _confirmLogout(context, auth),
+                  icon:
+                      const Icon(Icons.logout_rounded, color: Colors.redAccent),
+                  label: const Text(
+                    'Sair da conta',
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.redAccent),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
               ),
-              const Divider(height: 1, indent: 56),
-              ListTile(
-                leading: Icon(Icons.support_agent_rounded,
-                    color: theme.colorScheme.primary),
-                title: const Text('Suporte Técnico'),
-                subtitle: const Text('DTI/PMRR'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.AJUDA_PAGE),
-              ),
+              const SizedBox(height: 32),
             ],
           ),
-          const SizedBox(height: 24),
-
-          // ── Botão Sair ────────────────────────────────────────────────────
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => _confirmLogout(context, auth),
-              icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-              label: const Text(
-                'Sair da conta',
-                style: TextStyle(color: Colors.redAccent),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.redAccent),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
-        ],
-      ),
+        );
+      }),
     );
   }
 
@@ -309,6 +319,20 @@ class _UserHeader extends StatelessWidget {
                           height: 72,
                           fit: BoxFit.cover,
                           alignment: Alignment.topCenter,
+                          errorBuilder: (ctx, error, stack) => Container(
+                            width: 72,
+                            height: 72,
+                            color: theme.colorScheme.primary.withOpacity(0.15),
+                            alignment: Alignment.center,
+                            child: Text(
+                              initials,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
                         )
                       : Container(
                           width: 72,
@@ -398,13 +422,16 @@ class _UserHeader extends StatelessWidget {
                           color: AppColors.gold,
                         ),
                         SizedBox(width: 5),
-                        Text(
-                          'Administrador',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.gold,
-                            letterSpacing: 0.5,
+                        Flexible(
+                          child: Text(
+                            'Administrador',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.gold,
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
                       ],

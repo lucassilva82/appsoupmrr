@@ -361,7 +361,7 @@ class Auth with ChangeNotifier {
     nomeCompleto = userData['nomeCompleto'];
     dataIncorporacao = userData['dataIncorporacao'];
     nomeMilitar = userData['nome'];
-    image = userData['image'];
+    image = userData['image']?.replaceAll('pmrr.net', 'pmrr.online');
     localImagePath = userData['localImagePath'];
     useBiometrics = userData['useBiometrics'] == 'true';
     biometricModalShown = userData['biometricModalShown'] == 'true';

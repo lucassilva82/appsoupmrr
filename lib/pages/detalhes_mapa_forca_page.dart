@@ -179,7 +179,7 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
   }
 
   String? _resolveImgUrl(String? raw) {
-    final v = (raw ?? '').trim();
+    final v = (raw ?? '').trim().replaceAll('pmrr.net', 'pmrr.online');
     if (v.isEmpty || v.toLowerCase() == 'null') return null;
     if (v.endsWith('/pix_db/') || v.endsWith('/pix_db')) return null;
     if (v.startsWith('https://')) return v;

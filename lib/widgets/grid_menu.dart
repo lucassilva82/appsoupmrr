@@ -25,6 +25,10 @@ class HorizontalMenu extends StatelessWidget {
     Choice(title: 'Contracheques', icon: Icons.request_quote_rounded, id: 4),
     Choice(title: 'Mapa da Força', icon: Icons.groups_2_rounded, id: 5),
     Choice(title: 'Certidões', icon: Icons.edit_document, id: 6),
+    Choice(
+        title: 'Cálculo Inatividade',
+        icon: Icons.hourglass_bottom_rounded,
+        id: 12),
     Choice(title: 'Legislações', icon: Icons.library_books_rounded, id: 8),
     Choice(title: 'POPS', icon: Icons.gavel_rounded, id: 10),
     Choice(title: 'Sair', icon: Icons.logout_rounded, id: 7),
@@ -183,6 +187,9 @@ class _GridMenuItem extends StatelessWidget {
         break;
       case 6:
         Navigator.of(context).pushNamed(AppRoutes.CERTIDOES_PAGE);
+        break;
+      case 12:
+        Navigator.of(context).pushNamed(AppRoutes.CALCULO_INATIVIDADE_PAGE);
         break;
       case 8:
         Navigator.of(context).pushNamed(AppRoutes.LEGISLACOES_PAGE);

@@ -71,7 +71,7 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
   }
 
   String? _resolveImageUrl(String? raw) {
-    final value = (raw ?? '').trim();
+    final value = (raw ?? '').trim().replaceAll('pmrr.net', 'pmrr.online');
     if (value.isEmpty || value.toLowerCase() == 'null') return null;
 
     // Placeholder legado do backend sem arquivo real.

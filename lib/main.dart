@@ -7,8 +7,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:projetonovo/pages/calculo_inatividade_page.dart';
 import 'package:projetonovo/pages/certidoes_page.dart';
 import 'package:projetonovo/pages/legislacoes_page.dart';
 import 'package:projetonovo/pages/militar_detalhe_full_page.dart';
@@ -696,6 +698,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           scaffoldMessengerKey: scaffoldMessengerKey,
           debugShowCheckedModeBanner: false,
           title: 'SouPMRR',
+          // Sem estes delegates, qualquer showDatePicker com locale pt_BR
+          // lança exceção por falta de MaterialLocalizations.
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('pt', 'BR')],
+          locale: const Locale('pt', 'BR'),
           theme: theme,
           darkTheme: AppTheme.build(isDark: true, isSuperUser: isSuperUser),
           themeMode: themeProvider.themeMode,
@@ -774,6 +785,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             AppRoutes.LEGISLACOES_PAGE: (_) => LegislacoesPage(),
             AppRoutes.PLANO_DE_FERIAS_PAGE: (_) => PlanoDeFeriasPage(),
             AppRoutes.POP_PAGE: (_) => PopPage(),
+            AppRoutes.CALCULO_INATIVIDADE_PAGE: (_) =>
+                const CalculoInatividadePage(),
           },
         );
       },
