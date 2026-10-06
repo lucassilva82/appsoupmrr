@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "Dart-Code.flutter",
+    "Dart-Code.dart-code",
+    "anthropic.claude-code",
+    "usernamehw.errorlens",
+    "eamodio.gitlens",
+    "toba.vsfire",
+    "redhat.vscode-yaml"
+  ]
+}

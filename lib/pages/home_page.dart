@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:projetonovo/widgets/HomeContrachequeCard.dart';
 import 'package:projetonovo/widgets/HomePlanoFeriasCard.dart';
+import 'package:projetonovo/widgets/anuncio_institucional.dart';
 import 'package:projetonovo/widgets/card_tempo_servico.dart';
 import 'package:projetonovo/widgets/carouselSlider.dart';
 import 'package:projetonovo/widgets/grid_menu.dart';
@@ -28,6 +29,9 @@ class _HomeBodyState extends State<HomeBody>
   void initState() {
     super.initState();
     _requestPermissions();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) AnuncioInstitucional.mostrarSeAtivo(context);
+    });
   }
 
   Future<void> _requestPermissions() async {

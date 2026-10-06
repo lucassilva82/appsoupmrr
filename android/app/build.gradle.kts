@@ -29,8 +29,8 @@ android {
                 val keystore = Properties()
                 keystore.load(keystoreProperties.inputStream())
 
-                storeFile = if (keystore["storeFile"] != null) 
-                    file(keystore["storeFile"] as String) 
+                storeFile = if (keystore["storeFile"] != null)
+                    file(keystore["storeFile"] as String)
                 else null
                 storePassword = keystore["storePassword"] as String?
                 keyAlias = keystore["keyAlias"] as String?
@@ -49,8 +49,8 @@ android {
         applicationId = "pm.rr.soupmrr"
         minSdk = 21
         targetSdk = 36
-        versionCode = 46
-        versionName = "2.0.6"
+        versionCode = 47
+        versionName = "2.0.7"
     }
 }
 

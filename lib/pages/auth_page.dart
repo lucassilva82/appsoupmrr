@@ -1,8 +1,6 @@
-import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../models/auth_model.dart';
 import '../widgets/auth_form.dart';
@@ -16,30 +14,6 @@ class AuthPage extends StatefulWidget {
 }
 
 class _AuthPageState extends State<AuthPage> {
-  final Uri _whatsUrl = Uri.parse(
-    'whatsapp://send?phone=5595981003190'
-    '&text=${Uri.encodeComponent("Olá, preciso de ajuda com o SouPMRR!")}',
-  );
-  final Uri _playStoreUrl = Uri.parse(
-    'https://play.google.com/store/apps/details?id=com.whatsapp',
-  );
-  final Uri _appStoreUrl = Uri.parse(
-    'https://apps.apple.com/app/whatsapp-messenger/id310633997',
-  );
-
-  Future<void> _openWhatsApp() async {
-    final Uri loja = Platform.isIOS ? _appStoreUrl : _playStoreUrl;
-    try {
-      if (await canLaunchUrl(_whatsUrl)) {
-        await launchUrl(_whatsUrl, mode: LaunchMode.externalApplication);
-      } else {
-        await launchUrl(loja, mode: LaunchMode.externalApplication);
-      }
-    } catch (_) {
-      await launchUrl(loja, mode: LaunchMode.externalApplication);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<Auth>(context);
@@ -88,7 +62,7 @@ class _AuthPageState extends State<AuthPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Spacer(flex: 4),
+                      const Spacer(flex: 3),
 
                       // Texto institucional — abaixo do SouPMRR da imagem
                       Text(
@@ -127,48 +101,7 @@ class _AuthPageState extends State<AuthPage> {
                         ),
                       ),
 
-                      const Spacer(flex: 1),
-
-                      // ── Suporte WhatsApp ───────────────────────────────
-                      GestureDetector(
-                        onTap: _openWhatsApp,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 20),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF25D366).withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(
-                              color: const Color(0xFF25D366).withOpacity(0.4),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Image.asset(
-                                'assets/imagens/whatsapp.png',
-                                width: 20,
-                                height: 20,
-                                errorBuilder: (_, __, ___) => const Icon(
-                                  Icons.support_agent,
-                                  color: Color(0xFF25D366),
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Suporte SouPMRR',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                      const Spacer(flex: 2),
 
                       const SizedBox(height: 10),
                       Text(

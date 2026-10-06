@@ -1,12 +1,12 @@
 name: projetonovo
 description: A new Flutter project.
-publish_to: 'none'
+publish_to: "none"
 
-version: 2.0.6
+version: 2.0.7
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
-  
+  sdk: ">=3.0.0 <4.0.0"
+
 dependencies:
   flutter:
     sdk: flutter
@@ -34,7 +34,7 @@ dependencies:
   path: ^1.9.0
   quickalert: ^1.1.0
   simple_animations: ^5.0.2
-  
+
   supercharged: ^2.1.1
   lottie: ^3.1.2
   table_calendar: ^3.1.1
@@ -44,7 +44,7 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   timezone: ^0.10.0
   screen_protector: ^1.4.2+1
-  screenshot_recording_detector: ^1.9.0 
+  screenshot_recording_detector: ^1.9.0
   flutter_typeahead: ^5.2.0
   money_formatter: ^0.0.6
   currency_formatter: ^2.2.1
@@ -52,12 +52,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   extenso: ^1.0.1
   file_picker: ^8.1.7
-  fl_chart: ^0.66.1 
+  fl_chart: ^0.66.1
   cached_network_image: ^3.4.1
   local_auth: ^2.3.0
 
-  
-  
   # firebase_analytics: ^11.3.6
 
 dev_dependencies:
