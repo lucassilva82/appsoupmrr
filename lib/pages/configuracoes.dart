@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/auth_model.dart';
+import '../utils/api_services.dart';
 import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 import '../utils/theme_provider.dart';
@@ -458,19 +459,49 @@ class _UserHeader extends StatelessWidget {
 // ── Status de verificação do e-mail ──────────────────────────────────────────
 // Verificado  → mostra o endereço e permite trocá-lo.
 // Pendente    → destaca em laranja e leva à tela de verificação.
-class _EmailStatusTile extends StatelessWidget {
+class _EmailStatusTile extends StatefulWidget {
   final Auth auth;
   final ThemeData theme;
 
   const _EmailStatusTile({Key? key, required this.auth, required this.theme})
       : super(key: key);
 
+  @override
+  State<_EmailStatusTile> createState() => _EmailStatusTileState();
+}
+
+class _EmailStatusTileState extends State<_EmailStatusTile> {
   /// O banco grava este valor em `activation_code` quando o militar confirma
   /// o e-mail pelo link.
   static const _codigoVerificado = 'pmrr190!@';
 
   @override
+  void initState() {
+    super.initState();
+    _sincronizarStatus();
+  }
+
+  /// Confere no servidor a situação real do e-mail: o militar pode ter
+  /// confirmado o link em outro aparelho desde o último login.
+  Future<void> _sincronizarStatus() async {
+    final matricula = widget.auth.matricula ?? '';
+    if (matricula.isEmpty) return;
+
+    final status = await ApiServices.checkEmailStatus(matricula);
+    if (!mounted || status['code'] != 1) return;
+
+    final verificadoServidor = status['verificado'] == true;
+    final verificadoLocal = widget.auth.activationCode == _codigoVerificado;
+
+    if (verificadoServidor != verificadoLocal) {
+      await widget.auth.atualizarStatusEmail(verificado: verificadoServidor);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final auth = widget.auth;
+    final theme = widget.theme;
     final verificado = auth.activationCode == _codigoVerificado;
     final email = (auth.emailUser ?? '').trim();
     const laranja = Color(0xFFE65100);

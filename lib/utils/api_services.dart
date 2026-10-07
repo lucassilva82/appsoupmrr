@@ -62,6 +62,27 @@ class ApiServices {
     }
   }
 
+  /// Consulta a situação do e-mail no endpoint `status_email.php`.
+  /// Retorna {"code":1,"verificado":bool,"aguardando":bool,"email":"m****o@x"}.
+  /// Diferente do consulta_user.php, não devolve dado sensível.
+  static Future<Map<String, dynamic>> checkEmailStatus(String matricula) async {
+    final String url = '$baseUrl/status_email.php'
+        '?matricula=${Uri.encodeQueryComponent(matricula)}';
+
+    try {
+      final response =
+          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 12));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return {"code": 0, "message": "Erro HTTP: ${response.statusCode}"};
+    } catch (e) {
+      debugPrint('[DEBUG] checkEmailStatus: $e');
+      return {"code": 0, "message": "Erro de conexão: $e"};
+    }
+  }
+
   /// Novo método para verificar se existe um token válido
   static Future<Map<String, dynamic>> checkIfTokenExists(
       String matricula) async {

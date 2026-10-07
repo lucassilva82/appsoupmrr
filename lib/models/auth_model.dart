@@ -196,6 +196,19 @@ class Auth with ChangeNotifier {
     }
   }
 
+  /// Atualiza localmente a situação do e-mail (consultada em
+  /// `status_email.php`) e avisa a interface. Usado para a tela de
+  /// verificação reagir assim que o militar clica no link.
+  Future<void> atualizarStatusEmail({
+    required bool verificado,
+    String? email,
+  }) async {
+    activationCode = verificado ? 'pmrr190!@' : '';
+    if (email != null && email.isNotEmpty) emailUser = email;
+    notifyListeners();
+    await saveUserData();
+  }
+
   Future<void> saveUserData() async => Store.saveMap('userData', {
         'cpf': cpf,
         'nomeCompleto': nomeCompleto,

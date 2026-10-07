@@ -45,6 +45,12 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
   int _segundosParaReenviar = 0;
   Timer? _timerReenvio;
 
+  /// Enquanto a tela espera a confirmação, consulta `status_email.php`
+  /// a cada 4s: assim que o militar clica no link (no celular ou em
+  /// outro aparelho), a tela muda sozinha para "e-mail confirmado".
+  Timer? _timerStatus;
+  bool _confirmado = false;
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +63,7 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
 
   @override
   void dispose() {
+    _timerStatus?.cancel();
     _timerReenvio?.cancel();
     _emailCtrl.dispose();
     _emailConfirmCtrl.dispose();
@@ -104,6 +111,24 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
     return original.isEmpty ? 'Não foi possível concluir o envio.' : original;
   }
 
+  /// Observa a confirmação do link enquanto a tela estiver aberta.
+  void _acompanharConfirmacao(String matricula) {
+    _timerStatus?.cancel();
+    _timerStatus = Timer.periodic(const Duration(seconds: 4), (t) async {
+      if (!mounted) return t.cancel();
+
+      final status = await ApiServices.checkEmailStatus(matricula);
+      if (!mounted) return t.cancel();
+
+      if (status['code'] == 1 && status['verificado'] == true) {
+        t.cancel();
+        await Provider.of<Auth>(context, listen: false)
+            .atualizarStatusEmail(verificado: true, email: _emailEnviado);
+        if (mounted) setState(() => _confirmado = true);
+      }
+    });
+  }
+
   void _iniciarContagemReenvio() {
     _timerReenvio?.cancel();
     setState(() => _segundosParaReenviar = 60);
@@ -143,9 +168,9 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
       if (!mounted) return;
 
       if (result['code'] == 1) {
-        auth.emailUser = email;
         setState(() => _emailEnviado = email);
         _iniciarContagemReenvio();
+        _acompanharConfirmacao(matricula);
       } else {
         setState(() => _erro = _mensagemDeErro(result));
       }
@@ -178,7 +203,9 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-        child: _emailEnviado == null ? _formulario() : _enviado(),
+        child: _confirmado
+            ? _confirmadoView()
+            : (_emailEnviado == null ? _formulario() : _enviado()),
       ),
     );
   }
@@ -297,6 +324,52 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
     );
   }
 
+  // ── Estado 3: confirmado ──────────────────────────────────────────────────
+  // Entra sozinho assim que o militar clica no link, sem fechar e abrir o app.
+
+  Widget _confirmadoView() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 20),
+        _CabecalhoIcone(
+          icone: Icons.verified_rounded,
+          titulo: 'E-mail confirmado!',
+          descricao: 'Seu endereço foi verificado com sucesso. Agora ele pode '
+              'ser usado para recuperar sua senha.',
+          cor: const Color(0xFF2E7D32),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          _mascarar(_emailEnviado ?? ''),
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF2E7D32),
+              ),
+        ),
+        const SizedBox(height: 28),
+        SizedBox(
+          height: 50,
+          child: ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2E7D32),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            child: const Text(
+              'Voltar ao app',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   // ── Estado 2: e-mail enviado ──────────────────────────────────────────────
 
   Widget _enviado() {
@@ -321,6 +394,26 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.primary,
           ),
+        ),
+        const SizedBox(height: 16),
+
+        // Indicador de que a tela está observando a confirmação.
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Aguardando sua confirmação...',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.65),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 20),
 
