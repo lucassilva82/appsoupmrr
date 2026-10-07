@@ -62,6 +62,69 @@ class ApiServices {
     }
   }
 
+  // ================================
+  // Recuperação de senha por e-mail
+  // ================================
+
+  /// acao: 'solicitar' | 'validar' | 'redefinir'
+  static Future<Map<String, dynamic>> recuperarSenha({
+    required String acao,
+    required String email,
+    String? codigo,
+    String? senhaNovaMd5,
+  }) async {
+    return _post('recuperar_senha.php', {
+      'acao': acao,
+      'email': email,
+      if (codigo != null) 'codigo': codigo,
+      if (senhaNovaMd5 != null) 'senha_nova': senhaNovaMd5,
+    });
+  }
+
+  // ================================
+  // Primeiro acesso (sem e-mail)
+  // ================================
+
+  /// acao: 'iniciar' | 'responder' | 'definir_senha'
+  static Future<Map<String, dynamic>> primeiroAcesso({
+    required String acao,
+    String? cpf,
+    String? sessao,
+    Map<String, String>? respostas,
+    String? senhaNovaMd5,
+  }) async {
+    return _post('primeiro_acesso.php', {
+      'acao': acao,
+      if (cpf != null) 'cpf': cpf,
+      if (sessao != null) 'sessao': sessao,
+      if (respostas != null) ...respostas,
+      if (senhaNovaMd5 != null) 'senha_nova': senhaNovaMd5,
+    });
+  }
+
+  /// POST comum aos endpoints de acesso, com tratamento de erro padronizado.
+  static Future<Map<String, dynamic>> _post(
+    String arquivo,
+    Map<String, String> corpo,
+  ) async {
+    try {
+      final response = await http
+          .post(Uri.parse('$baseUrl/$arquivo'), body: corpo)
+          .timeout(const Duration(seconds: 25));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return {"code": 0, "message": "Erro HTTP: ${response.statusCode}"};
+    } catch (e) {
+      debugPrint('[DEBUG] $arquivo: $e');
+      return {
+        "code": 0,
+        "message": "Sem conexão com o servidor. Verifique sua internet."
+      };
+    }
+  }
+
   /// Troca a senha do militar (a mesma do SIGRH e do SouPMRR).
   /// As senhas vão em MD5 — formato gravado no banco — e por POST,
   /// para não ficarem registradas no log de acesso do servidor.
