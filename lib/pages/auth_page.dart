@@ -64,9 +64,36 @@ class _AuthPageState extends State<AuthPage> {
               left: 0,
               right: 0,
               bottom: 0,
-              child: Image.asset(
-                'assets/imagens/rodape_marcas.png',
-                fit: BoxFit.fitWidth,
+              child: Container(
+                // Base azul: cobre o trecho do fundo que ficava cortado e
+                // dá um encontro limpo com a foto.
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0x00001233),
+                      Color(0xCC00183D),
+                      Color(0xFF001E4A),
+                    ],
+                    stops: [0.0, 0.45, 1.0],
+                  ),
+                ),
+                padding: const EdgeInsets.only(top: 26),
+                child: ShaderMask(
+                  // A faixa aparece em degradê, sem emenda com a imagem.
+                  shaderCallback: (rect) => const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Colors.white, Colors.white],
+                    stops: [0.0, 0.55, 1.0],
+                  ).createShader(rect),
+                  blendMode: BlendMode.dstIn,
+                  child: Image.asset(
+                    'assets/imagens/rodape_marcas.png',
+                    fit: BoxFit.fitWidth,
+                  ),
+                ),
               ),
             ),
 
