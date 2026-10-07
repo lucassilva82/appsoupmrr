@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:projetonovo/pages/primeiro_acesso_page.dart';
+import 'package:projetonovo/pages/recuperar_senha_page.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -348,6 +350,43 @@ class _AuthFormState extends State<AuthForm> {
           ),
           const SizedBox(height: 14),
 
+
+          const SizedBox(height: 18),
+
+          // ── Rodapé do cartão: acessos alternativos ───────────────────────
+          Divider(color: Colors.white.withOpacity(0.12), height: 1),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: _AcessoLink(
+                  icone: Icons.lock_reset_rounded,
+                  texto: 'Esqueci a senha',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const RecuperarSenhaPage(),
+                    ),
+                  ),
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 18,
+                color: Colors.white.withOpacity(0.12),
+              ),
+              Expanded(
+                child: _AcessoLink(
+                  icone: Icons.person_add_alt_1_rounded,
+                  texto: 'Primeiro acesso',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const PrimeiroAcessoPage(),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -384,6 +423,48 @@ class _AuthFormState extends State<AuthForm> {
         borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
       ),
       errorStyle: const TextStyle(color: Colors.orangeAccent, fontSize: 11),
+    );
+  }
+}
+
+// ── Acesso alternativo: ícone + texto, discreto, no rodapé do cartão ────────
+class _AcessoLink extends StatelessWidget {
+  final IconData icone;
+  final String texto;
+  final VoidCallback onTap;
+
+  const _AcessoLink({
+    required this.icone,
+    required this.texto,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icone, size: 15, color: Colors.white.withOpacity(0.55)),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                texto,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.62),
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
