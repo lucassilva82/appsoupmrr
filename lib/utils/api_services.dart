@@ -85,13 +85,14 @@ class ApiServices {
   // Primeiro acesso (sem e-mail)
   // ================================
 
-  /// acao: 'iniciar' | 'responder' | 'definir_senha'
+  /// acao: 'iniciar' | 'trocar_pergunta' | 'responder' | 'definir_senha'
   static Future<Map<String, dynamic>> primeiroAcesso({
     required String acao,
     String? cpf,
     String? sessao,
     Map<String, String>? respostas,
     String? senhaNovaMd5,
+    List<String>? usadas,
   }) async {
     return _post('primeiro_acesso.php', {
       'acao': acao,
@@ -99,6 +100,7 @@ class ApiServices {
       if (sessao != null) 'sessao': sessao,
       if (respostas != null) ...respostas,
       if (senhaNovaMd5 != null) 'senha_nova': senhaNovaMd5,
+      if (usadas != null) 'usadas': usadas.join(','),
     });
   }
 

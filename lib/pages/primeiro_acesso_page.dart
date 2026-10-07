@@ -38,6 +38,9 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
 
   String _sessao = '';
   String _matricula = '';
+  String _senhaCadastrada = '';
+  bool _emailEnviado = false;
+  final List<String> _usadas = [];
   List<Map<String, dynamic>> _perguntas = [];
   final Map<String, String> _respostas = {};
   int _indice = 0;
@@ -87,6 +90,9 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
       (r) => setState(() {
         _sessao = r['sessao'].toString();
         _perguntas = List<Map<String, dynamic>>.from(r['perguntas'] as List);
+        _usadas
+          ..clear()
+          ..addAll(_perguntas.map((p) => p['id'].toString()));
         _respostas.clear();
         _indice = 0;
         _passo = _Passo.perguntas;
@@ -113,6 +119,25 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
     );
   }
 
+  /// "Não sei": troca a pergunta atual por outra, sem perder a sessão.
+  void _naoSei() {
+    _executar(
+      () => ApiServices.primeiroAcesso(
+        acao: 'trocar_pergunta',
+        sessao: _sessao,
+        usadas: _usadas,
+      ),
+      (r) {
+        final nova = Map<String, dynamic>.from(r['pergunta'] as Map);
+        setState(() {
+          _respostas.remove(_perguntas[_indice]['id'].toString());
+          _perguntas[_indice] = nova;
+          _usadas.add(nova['id'].toString());
+        });
+      },
+    );
+  }
+
   void _definirSenha() {
     final senha = _senhaCtrl.text.trim();
     if (!senhaValida(senha)) {
@@ -131,6 +156,8 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
       ),
       (r) => setState(() {
         _matricula = (r['matricula'] ?? '').toString();
+        _senhaCadastrada = senha;
+        _emailEnviado = r['email_enviado'] == true;
         _passo = _Passo.concluido;
       }),
     );
@@ -348,6 +375,31 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
           style:
               theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
+        if (pergunta['ajuda'] != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.lightBlue.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.lightBlue.withOpacity(0.30)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.help_outline_rounded,
+                    size: 16, color: AppColors.lightBlue),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    pergunta['ajuda'].toString(),
+                    style: theme.textTheme.bodySmall?.copyWith(height: 1.4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 20),
 
         for (final opcao in opcoes) ...[
@@ -364,6 +416,17 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
             padding: EdgeInsets.only(top: 8),
             child: Center(child: CircularProgressIndicator.adaptive()),
           ),
+
+        const SizedBox(height: 4),
+        TextButton.icon(
+          onPressed: _carregando ? null : _naoSei,
+          icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+          label: const Text('Não sei responder, trocar pergunta'),
+          style: TextButton.styleFrom(
+            foregroundColor: theme.colorScheme.onSurface.withOpacity(0.65),
+            textStyle: const TextStyle(fontSize: 13),
+          ),
+        ),
 
         _erroBox(comRecomecar: true),
       ],
@@ -494,36 +557,52 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
             height: 1.4,
           ),
         ),
-        if (_matricula.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            decoration: BoxDecoration(
-              color: verde.withOpacity(0.10),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: verde.withOpacity(0.35)),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  'SUA MATRÍCULA',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    letterSpacing: 1,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _matricula,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: verde,
-                  ),
-                ),
-              ],
-            ),
+        const SizedBox(height: 20),
+
+        // Dados de acesso, para o militar anotar antes de sair da tela.
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: verde.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: verde.withOpacity(0.35)),
           ),
-        ],
+          child: Column(
+            children: [
+              Text(
+                'SEUS DADOS DE ACESSO',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  letterSpacing: 1,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(height: 14),
+              _LinhaDado(
+                rotulo: 'Matrícula PMRR',
+                valor: _matricula,
+                legenda: 'antigo cadastro PM',
+              ),
+              const SizedBox(height: 12),
+              Divider(color: verde.withOpacity(0.25), height: 1),
+              const SizedBox(height: 12),
+              _LinhaDado(rotulo: 'Senha', valor: _senhaCadastrada),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        AvisoCaixa(
+          cor: _emailEnviado ? AppColors.lightBlue : AppColors.gold,
+          icone: _emailEnviado
+              ? Icons.mark_email_read_outlined
+              : Icons.info_outline_rounded,
+          texto: _emailEnviado
+              ? 'Enviamos sua matrícula para o e-mail cadastrado. Por '
+                  'segurança, a senha não vai por e-mail: anote-a agora.'
+              : 'Anote esses dados: não há e-mail cadastrado para enviá-los.',
+        ),
+
         const SizedBox(height: 28),
         SizedBox(
           height: 50,
@@ -620,6 +699,54 @@ class _CpfFormatter extends TextInputFormatter {
     return TextEditingValue(
       text: texto,
       selection: TextSelection.collapsed(offset: texto.length),
+    );
+  }
+}
+
+// ── Linha de dado na tela final ─────────────────────────────────────────────
+
+class _LinhaDado extends StatelessWidget {
+  final String rotulo;
+  final String valor;
+  final String? legenda;
+
+  const _LinhaDado({
+    required this.rotulo,
+    required this.valor,
+    this.legenda,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        Text(
+          rotulo.toUpperCase(),
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontSize: 10.5,
+            letterSpacing: 0.8,
+            color: theme.colorScheme.onSurface.withOpacity(0.55),
+          ),
+        ),
+        const SizedBox(height: 4),
+        SelectableText(
+          valor,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF2E7D32),
+          ),
+        ),
+        if (legenda != null)
+          Text(
+            legenda!,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontSize: 10.5,
+              color: theme.colorScheme.onSurface.withOpacity(0.45),
+            ),
+          ),
+      ],
     );
   }
 }
