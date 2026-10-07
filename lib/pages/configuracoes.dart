@@ -9,6 +9,7 @@ import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 import '../utils/theme_provider.dart';
 import '../widgets/custom_appbar.dart';
+import 'alterar_senha_page.dart';
 import 'confirm_email.dart';
 
 // ── SettingsBody ──────────────────────────────────────────────────────────────
@@ -41,7 +42,21 @@ class SettingsBody extends StatelessWidget {
               // ── Seção: Conta ──────────────────────────────────────────────────
               _SectionTitle(label: 'Conta'),
               _SettingsCard(
-                children: [_EmailStatusTile(auth: auth, theme: theme)],
+                children: [
+                  _EmailStatusTile(auth: auth, theme: theme),
+                  const Divider(height: 1, indent: 56),
+                  ListTile(
+                    leading: Icon(Icons.lock_reset_rounded,
+                        color: theme.colorScheme.primary),
+                    title: const Text('Alterar senha'),
+                    subtitle: const Text('Vale para o SouPMRR e o SIGRH'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (_) => const AlterarSenhaPage()),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
 

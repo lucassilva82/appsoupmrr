@@ -62,6 +62,34 @@ class ApiServices {
     }
   }
 
+  /// Troca a senha do militar (a mesma do SIGRH e do SouPMRR).
+  /// As senhas vão em MD5 — formato gravado no banco — e por POST,
+  /// para não ficarem registradas no log de acesso do servidor.
+  static Future<Map<String, dynamic>> alterarSenha({
+    required String matricula,
+    required String senhaAtualMd5,
+    required String senhaNovaMd5,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/alterar_senha.php'),
+        body: {
+          'matricula': matricula,
+          'senha_atual': senhaAtualMd5,
+          'senha_nova': senhaNovaMd5,
+        },
+      ).timeout(const Duration(seconds: 25));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return {"code": 0, "message": "Erro HTTP: ${response.statusCode}"};
+    } catch (e) {
+      debugPrint('[DEBUG] alterarSenha: $e');
+      return {"code": 0, "message": "Erro de conexão: $e"};
+    }
+  }
+
   /// Consulta a situação do e-mail no endpoint `status_email.php`.
   /// Retorna {"code":1,"verificado":bool,"aguardando":bool,"email":"m****o@x"}.
   /// Diferente do consulta_user.php, não devolve dado sensível.
