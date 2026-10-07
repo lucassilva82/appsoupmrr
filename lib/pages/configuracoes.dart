@@ -9,6 +9,7 @@ import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 import '../utils/theme_provider.dart';
 import '../widgets/custom_appbar.dart';
+import '../widgets/dialogo_confirmacao.dart';
 import 'alterar_senha_page.dart';
 import 'confirm_email.dart';
 
@@ -240,24 +241,16 @@ class SettingsBody extends StatelessWidget {
   }
 
   Future<void> _confirmLogout(BuildContext context, Auth auth) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Sair da conta'),
-        content: const Text('Deseja encerrar a sessão?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text('Sair', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+    final confirm = await dialogoConfirmacao(
+      context,
+      titulo: 'Sair da conta',
+      mensagem: 'Você precisará informar matrícula e senha para entrar '
+          'novamente.',
+      textoConfirmar: 'Sair',
+      icone: Icons.logout_rounded,
+      cor: const Color(0xFFC62828),
     );
-    if (confirm == true) {
+    if (confirm) {
       // Limpa a pilha de rotas até a raiz para que o modal biométrico
       // apareça sobre o fundo da tela de login, não sobre esta página.
       if (context.mounted) {
