@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:projetonovo/pages/confirm_email.dart';
-import 'package:projetonovo/utils/api_services.dart';
 import 'package:provider/provider.dart';
-import 'package:quickalert/models/quickalert_type.dart';
-import 'package:quickalert/widgets/quickalert_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/auth_model.dart';
@@ -139,67 +135,32 @@ class _AuthFormState extends State<AuthForm> {
     _formKey.currentState?.save();
 
     try {
-      // 1) Se já existe um token válido, exibe QuickAlert e para
-      final tokenResult =
-          await ApiServices.checkIfTokenExists(_authData['matricula']!);
-      if (tokenResult['code'] == 1) {
-        // Token já existe e não expirou: pede pro usuário verificar e-mail
-        await QuickAlert.show(
-          context: context,
-          type: QuickAlertType.info,
-          title: 'Verifique seu e-mail',
-          text: 'Acesse o link enviado ao seu e-mail para ativar sua conta!',
-          confirmBtnText: 'OK',
-          onConfirmBtnTap: () {
-            Navigator.of(context).pop(); // Fecha o QuickAlert
-          },
-        );
-        return; // Interrompe aqui
-      }
+      // O e-mail não verificado NÃO bloqueia mais o acesso: muitos militares
+      // ficavam presos na tela de confirmação sem conseguir entrar. A pendência
+      // passou a aparecer em Configurações → Conta, de onde a verificação pode
+      // ser feita a qualquer momento.
+      await auth.loginSemNotificar(
+          _authData['matricula']!, _authData['password']!);
 
-      // 2) Se não há token válido, apenas checamos credenciais
-      //    mas NÃO setamos 'autorizado = true'.
-      await auth.checkCredentialsWithoutLogin(
-        _authData['matricula']!,
-        _authData['password']!,
-      );
-
-      // Agora temos em 'auth.activationCode' o valor do banco,
-      // mas 'autorizado' continua false.
-
-      if (auth.activationCode != 'pmrr190!@') {
-        // 3) Se activationCode != 'pmrr190!@', manda pra ConfirmEmail
-        auth.useBiometrics = false;
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const ConfirmEmailScreen()),
-        );
-        // NÃO faz login. Assim, no hot restart, o app não te vê como logado
-        return;
+      // Grava (ou não) as credenciais
+      final prefs = await SharedPreferences.getInstance();
+      if (_lembrarAcesso) {
+        await prefs.setString('matricula', _authData['matricula']!);
+        await prefs.setString('password', _authData['password']!);
+        await prefs.setBool('lembrarAcesso', true);
       } else {
-        // 4) Se activationCode == 'pmrr190!@', aí sim faz login de fato
-        await auth.loginSemNotificar(
-            _authData['matricula']!, _authData['password']!);
-
-        // 5) Grava (ou não) as credenciais
-        final prefs = await SharedPreferences.getInstance();
-        if (_lembrarAcesso) {
-          await prefs.setString('matricula', _authData['matricula']!);
-          await prefs.setString('password', _authData['password']!);
-          await prefs.setBool('lembrarAcesso', true);
-        } else {
-          await prefs.remove('matricula');
-          await prefs.remove('password');
-          await prefs.setBool('lembrarAcesso', false);
-        }
-
-        // Pergunta biometria
-        if (!auth.useBiometrics) {
-          await _askEnableBiometrics();
-        }
-
-        // Finaliza -> vai Home
-        auth.finalizarLogin();
+        await prefs.remove('matricula');
+        await prefs.remove('password');
+        await prefs.setBool('lembrarAcesso', false);
       }
+
+      // Pergunta biometria
+      if (!auth.useBiometrics) {
+        await _askEnableBiometrics();
+      }
+
+      // Finaliza -> vai Home
+      auth.finalizarLogin();
     } on AuthException catch (error) {
       _showErrorDialog(error.toString());
     } catch (error) {

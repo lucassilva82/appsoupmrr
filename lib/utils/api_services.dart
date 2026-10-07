@@ -18,9 +18,13 @@ class ApiServices {
     required String matricula,
     required String email,
   }) async {
-    // Monta a URL com parâmetros GET
-    final String url =
-        '$baseUrl/api_update_email.php?matricula=$matricula&email=$email';
+    // Monta a URL com parâmetros GET.
+    // Os valores são codificados: sem isso, um e-mail com '+'
+    // (ex.: nome+pm@gmail.com) chega ao servidor com espaço no lugar do '+'
+    // e é recusado como inválido.
+    final String url = '$baseUrl/api_update_email.php'
+        '?matricula=${Uri.encodeQueryComponent(matricula)}'
+        '&email=${Uri.encodeQueryComponent(email)}';
 
     // Log de debug no Flutter
     debugPrint('[DEBUG] GET -> $url');

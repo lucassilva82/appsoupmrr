@@ -8,6 +8,7 @@ import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 import '../utils/theme_provider.dart';
 import '../widgets/custom_appbar.dart';
+import 'confirm_email.dart';
 
 // ── SettingsBody ──────────────────────────────────────────────────────────────
 // Conteúdo da aba "Config." dentro do MainShell.
@@ -35,6 +36,13 @@ class SettingsBody extends StatelessWidget {
               // ── Header do usuário ─────────────────────────────────────────────
               _UserHeader(auth: auth, theme: theme),
               const SizedBox(height: 24),
+
+              // ── Seção: Conta ──────────────────────────────────────────────────
+              _SectionTitle(label: 'Conta'),
+              _SettingsCard(
+                children: [_EmailStatusTile(auth: auth, theme: theme)],
+              ),
+              const SizedBox(height: 16),
 
               // ── Seção: Aparência ──────────────────────────────────────────────
               _SectionTitle(label: 'Aparência'),
@@ -442,6 +450,70 @@ class _UserHeader extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Status de verificação do e-mail ──────────────────────────────────────────
+// Verificado  → mostra o endereço e permite trocá-lo.
+// Pendente    → destaca em laranja e leva à tela de verificação.
+class _EmailStatusTile extends StatelessWidget {
+  final Auth auth;
+  final ThemeData theme;
+
+  const _EmailStatusTile({Key? key, required this.auth, required this.theme})
+      : super(key: key);
+
+  /// O banco grava este valor em `activation_code` quando o militar confirma
+  /// o e-mail pelo link.
+  static const _codigoVerificado = 'pmrr190!@';
+
+  @override
+  Widget build(BuildContext context) {
+    final verificado = auth.activationCode == _codigoVerificado;
+    final email = (auth.emailUser ?? '').trim();
+    const laranja = Color(0xFFE65100);
+
+    return ListTile(
+      leading: Icon(
+        verificado
+            ? Icons.mark_email_read_rounded
+            : Icons.mark_email_unread_rounded,
+        color: verificado ? const Color(0xFF2E7D32) : laranja,
+      ),
+      title: Text(verificado ? 'E-mail verificado' : 'E-mail não verificado'),
+      subtitle: Text(
+        verificado
+            ? (email.isEmpty ? 'Toque para alterar seu e-mail' : email)
+            : 'Necessário para recuperar a senha. Toque para verificar.',
+        style: TextStyle(
+          color: verificado
+              ? theme.colorScheme.onSurface.withOpacity(0.65)
+              : laranja,
+          fontWeight: verificado ? FontWeight.normal : FontWeight.w600,
+        ),
+      ),
+      trailing: verificado
+          ? const Icon(Icons.chevron_right_rounded)
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: laranja.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'PENDENTE',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: laranja,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const ConfirmEmailScreen()),
       ),
     );
   }

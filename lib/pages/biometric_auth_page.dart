@@ -5,7 +5,6 @@ import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
 
 import '../models/auth_model.dart';
-import '../pages/confirm_email.dart';
 import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 
@@ -251,13 +250,9 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
           await auth.loginSemNotificar(auth.matricula!, auth.password!);
           auth.finalizarLogin();
           if (mounted) Navigator.of(context).pop();
-          if (auth.activationCode == null || auth.activationCode!.isEmpty) {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ConfirmEmailScreen()),
-            );
-          } else {
-            Navigator.of(context).pushReplacementNamed(AppRoutes.HOME_PAGE);
-          }
+          // E-mail não verificado não interrompe mais o acesso: a pendência
+          // aparece em Configurações → Conta.
+          Navigator.of(context).pushReplacementNamed(AppRoutes.HOME_PAGE);
         }
       } else {
         if (mounted)
