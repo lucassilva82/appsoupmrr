@@ -69,33 +69,27 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
     super.dispose();
   }
 
-  // ── Força da senha ────────────────────────────────────────────────────────
+  // ── Regras de senha ───────────────────────────────────────────────────────
+  // As mesmas exigidas pelo SIGRH, já que a senha é a mesma nos dois sistemas.
 
-  int _forca(String senha) {
-    var pontos = 0;
-    if (senha.length >= 6) pontos++;
-    if (senha.length >= 10) pontos++;
-    if (RegExp(r'[A-Z]').hasMatch(senha) && RegExp(r'[a-z]').hasMatch(senha)) {
-      pontos++;
-    }
-    if (RegExp(r'[0-9]').hasMatch(senha)) pontos++;
-    if (RegExp(r'[^A-Za-z0-9]').hasMatch(senha)) pontos++;
-    return pontos.clamp(0, 4);
-  }
+  static const _regras = <({String texto, String chave})>[
+    (texto: 'Mínimo 8 caracteres', chave: 'tamanho'),
+    (texto: 'Uma letra maiúscula', chave: 'maiuscula'),
+    (texto: 'Uma letra minúscula', chave: 'minuscula'),
+    (texto: 'Um número', chave: 'numero'),
+    (texto: 'Um caractere especial', chave: 'especial'),
+  ];
 
-  ({String texto, Color cor}) _rotuloForca(int forca) {
-    switch (forca) {
-      case 0:
-      case 1:
-        return (texto: 'Senha fraca', cor: const Color(0xFFC62828));
-      case 2:
-        return (texto: 'Senha razoável', cor: const Color(0xFFE65100));
-      case 3:
-        return (texto: 'Senha boa', cor: const Color(0xFF2E7D32));
-      default:
-        return (texto: 'Senha forte', cor: const Color(0xFF1B5E20));
-    }
-  }
+  Map<String, bool> _avaliar(String senha) => {
+        'tamanho': senha.length >= 8,
+        'maiuscula': RegExp(r'[A-Z]').hasMatch(senha),
+        'minuscula': RegExp(r'[a-z]').hasMatch(senha),
+        'numero': RegExp(r'[0-9]').hasMatch(senha),
+        'especial': RegExp(r'[^A-Za-z0-9]').hasMatch(senha),
+      };
+
+  bool _senhaValida(String senha) =>
+      _avaliar(senha).values.every((cumprida) => cumprida);
 
   // ── Envio ─────────────────────────────────────────────────────────────────
 
@@ -189,8 +183,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
   Widget _formulario() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final forca = _forca(_novaCtrl.text);
-    final rotulo = _rotuloForca(forca);
+    final situacao = _avaliar(_novaCtrl.text);
 
     return AnimatedBuilder(
       key: const ValueKey('form'),
@@ -274,8 +267,8 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
               validator: (v) {
                 final valor = (v ?? '').trim();
                 if (valor.isEmpty) return 'Informe a nova senha';
-                if (valor.length < 6) {
-                  return 'A nova senha precisa ter ao menos 6 caracteres';
+                if (!_senhaValida(valor)) {
+                  return 'A senha não atende aos requisitos abaixo';
                 }
                 if (valor == _atualCtrl.text.trim()) {
                   return 'A nova senha deve ser diferente da atual';
@@ -284,40 +277,9 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
               },
             ),
 
-            // Barra de força — anima conforme o militar digita.
-            if (_novaCtrl.text.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(99),
-                      child: TweenAnimationBuilder<double>(
-                        duration: const Duration(milliseconds: 350),
-                        curve: Curves.easeOut,
-                        tween: Tween(begin: 0, end: forca / 4),
-                        builder: (_, valor, __) => LinearProgressIndicator(
-                          value: valor,
-                          minHeight: 6,
-                          backgroundColor: isDark
-                              ? AppColors.darkBorder
-                              : const Color(0xFFE8EEF6),
-                          valueColor: AlwaysStoppedAnimation(rotulo.cor),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    rotulo.texto,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: rotulo.cor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            // Requisitos do SIGRH, marcados em tempo real.
+            const SizedBox(height: 12),
+            _ListaRequisitos(regras: _regras, situacao: situacao),
             const SizedBox(height: 14),
 
             TextFormField(
@@ -505,6 +467,91 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.6),
+      ),
+    );
+  }
+}
+
+// ── Lista de requisitos da senha ────────────────────────────────────────────
+// Cada item fica cinza enquanto não foi digitado nada, vermelho quando não
+// cumpre e verde quando cumpre — como no SIGRH.
+
+class _ListaRequisitos extends StatelessWidget {
+  final List<({String texto, String chave})> regras;
+  final Map<String, bool> situacao;
+
+  const _ListaRequisitos({required this.regras, required this.situacao});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final vazio = situacao.values.every((cumprida) => !cumprida);
+
+    const verde = Color(0xFF2E7D32);
+    const vermelho = Color(0xFFC62828);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : const Color(0xFFE8EEF6),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'A senha deve conter:',
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface.withOpacity(0.70),
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (final regra in regras) ...[
+            Builder(builder: (_) {
+              final ok = situacao[regra.chave] ?? false;
+              final cor = vazio
+                  ? theme.colorScheme.onSurface.withOpacity(0.45)
+                  : (ok ? verde : vermelho);
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  children: [
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      transitionBuilder: (child, anim) =>
+                          ScaleTransition(scale: anim, child: child),
+                      child: Icon(
+                        ok
+                            ? Icons.check_circle_rounded
+                            : Icons.radio_button_unchecked_rounded,
+                        key: ValueKey(ok),
+                        size: 16,
+                        color: cor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 250),
+                        style: theme.textTheme.bodySmall!.copyWith(
+                          color: cor,
+                          fontWeight:
+                              ok ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                        child: Text(regra.texto),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ],
       ),
     );
   }
