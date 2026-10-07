@@ -120,7 +120,12 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
       final status = await ApiServices.checkEmailStatus(matricula);
       if (!mounted) return t.cancel();
 
-      if (status['code'] == 1 && status['verificado'] == true) {
+      // Só considera confirmado quando o link pendente deixa de existir
+      // (`aguardando` falso): quem já era verificado antes continuaria
+      // com `verificado` true e a tela mudaria sem o militar clicar.
+      if (status['code'] == 1 &&
+          status['verificado'] == true &&
+          status['aguardando'] == false) {
         t.cancel();
         await Provider.of<Auth>(context, listen: false)
             .atualizarStatusEmail(verificado: true, email: _emailEnviado);
