@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../models/auth_model.dart';
 import '../widgets/auth_form.dart';
+import 'primeiro_acesso_page.dart';
+import 'recuperar_senha_page.dart';
 import '../utils/app_routes.dart';
 
 class AuthPage extends StatefulWidget {
@@ -40,13 +42,16 @@ class _AuthPageState extends State<AuthPage> {
             Positioned.fill(
               child: Container(
                 decoration: const BoxDecoration(
+                  // Escurece o meio da tela, onde fica o formulário, e alivia
+                  // na base para os brasões do rodapé ficarem legíveis.
                   gradient: LinearGradient(
                     colors: [
-                      Color(0x44000D1A), // topo — imagem bem visível
-                      Color(0xAA001233), // meio
-                      Color(0xEE001233), // base — legibilidade do form
+                      Color(0x33000D1A), // topo — imagem bem visível
+                      Color(0x99001233), // meio — contraste do formulário
+                      Color(0xB3001233),
+                      Color(0x4D001233), // base — brasões aparecem
                     ],
-                    stops: [0.0, 0.50, 1.0],
+                    stops: [0.0, 0.42, 0.72, 1.0],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
@@ -81,24 +86,58 @@ class _AuthPageState extends State<AuthPage> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(18),
                           child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.10),
-                                borderRadius: BorderRadius.circular(24),
+                                color: const Color(0xFF001233)
+                                    .withOpacity(0.55),
+                                borderRadius: BorderRadius.circular(18),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.20),
+                                  color: Colors.white.withOpacity(0.14),
                                   width: 1,
                                 ),
                               ),
                               padding:
-                                  const EdgeInsets.fromLTRB(24, 28, 24, 28),
+                                  const EdgeInsets.fromLTRB(20, 22, 20, 22),
                               child: AuthForm(),
                             ),
                           ),
                         ),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      // ── Acessos alternativos ──────────────────────────
+                      // Fora do cartão e discretos: são saídas de exceção.
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _AcessoLink(
+                            texto: 'Esqueci a senha',
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const RecuperarSenhaPage(),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 11,
+                            margin:
+                                const EdgeInsets.symmetric(horizontal: 14),
+                            color: Colors.white24,
+                          ),
+                          _AcessoLink(
+                            texto: 'Primeiro acesso',
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const PrimeiroAcessoPage(),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
 
                       const Spacer(flex: 2),
@@ -119,6 +158,33 @@ class _AuthPageState extends State<AuthPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Link discreto de acesso alternativo ─────────────────────────────────────
+class _AcessoLink extends StatelessWidget {
+  final String texto;
+  final VoidCallback onTap;
+
+  const _AcessoLink({required this.texto, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        child: Text(
+          texto,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.55),
+            fontSize: 11.5,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );

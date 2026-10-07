@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:projetonovo/pages/primeiro_acesso_page.dart';
-import 'package:projetonovo/pages/recuperar_senha_page.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -227,27 +225,50 @@ class _AuthFormState extends State<AuthForm> {
           const SizedBox(height: 10),
 
           // ── Lembrar Dados ────────────────────────────────────────────────
-          Row(
-            children: [
-              Transform.scale(
-                scale: 0.85,
-                alignment: Alignment.centerLeft,
-                child: Switch(
-                  value: _lembrarAcesso,
-                  onChanged: (v) => setState(() => _lembrarAcesso = v),
-                  activeColor: const Color(0xFF42A5F5),
-                  inactiveTrackColor: Colors.white24,
-                  inactiveThumbColor: Colors.white38,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          // Caixa de seleção discreta: é uma preferência secundária, não
+          // precisa competir com o botão de entrar.
+          Align(
+            alignment: Alignment.centerLeft,
+            child: InkWell(
+              onTap: () => setState(() => _lembrarAcesso = !_lembrarAcesso),
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 16,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: _lembrarAcesso
+                            ? const Color(0xFF42A5F5)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: _lembrarAcesso
+                              ? const Color(0xFF42A5F5)
+                              : Colors.white38,
+                          width: 1.4,
+                        ),
+                      ),
+                      child: _lembrarAcesso
+                          ? const Icon(Icons.check,
+                              size: 12, color: Colors.white)
+                          : null,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Lembrar meus dados',
+                      style: TextStyle(fontSize: 11.5, color: Colors.white60),
+                    ),
+                  ],
                 ),
               ),
-              const Text(
-                'Lembrar dados de acesso',
-                style: TextStyle(fontSize: 12, color: Colors.white70),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
 
           // ── Botão ENTRAR — o botão absorve o estado de loading ───────
           DecoratedBox(
@@ -327,38 +348,6 @@ class _AuthFormState extends State<AuthForm> {
           ),
           const SizedBox(height: 14),
 
-          // ── Recuperar senha / Primeiro acesso ────────────────────────────
-          // Agora resolvido dentro do app, sem mandar o militar para o SIGRH.
-          Row(
-            children: [
-              Expanded(
-                child: _AcessoBotao(
-                  icone: Icons.lock_reset_rounded,
-                  titulo: 'Esqueci a senha',
-                  legenda: 'Recuperar por e-mail',
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const RecuperarSenhaPage(),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _AcessoBotao(
-                  icone: Icons.person_add_alt_1_rounded,
-                  titulo: 'Primeiro acesso',
-                  legenda: 'Criar minha senha',
-                  destaque: true,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const PrimeiroAcessoPage(),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -395,73 +384,6 @@ class _AuthFormState extends State<AuthForm> {
         borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
       ),
       errorStyle: const TextStyle(color: Colors.orangeAccent, fontSize: 11),
-    );
-  }
-}
-
-// ── Botão de acesso alternativo (recuperar senha / primeiro acesso) ──────────
-// Cartão translúcido no mesmo estilo do formulário de login.
-class _AcessoBotao extends StatelessWidget {
-  final IconData icone;
-  final String titulo;
-  final String legenda;
-  final bool destaque;
-  final VoidCallback onTap;
-
-  const _AcessoBotao({
-    required this.icone,
-    required this.titulo,
-    required this.legenda,
-    required this.onTap,
-    this.destaque = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final corBorda = destaque
-        ? const Color(0xFF42A5F5).withOpacity(0.55)
-        : Colors.white.withOpacity(0.18);
-
-    return Material(
-      color: Colors.white.withOpacity(destaque ? 0.12 : 0.07),
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: corBorda),
-          ),
-          child: Column(
-            children: [
-              Icon(icone,
-                  size: 22,
-                  color: destaque ? const Color(0xFF90CAF9) : Colors.white70),
-              const SizedBox(height: 6),
-              Text(
-                titulo,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                legenda,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.55),
-                  fontSize: 10.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
