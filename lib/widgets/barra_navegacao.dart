@@ -96,6 +96,10 @@ class BarraNavegacao extends StatelessWidget {
                 onHorizontalDragUpdate: (d) =>
                     selecionarPorPosicao(d.localPosition.dx),
                 child: Stack(
+                // Sem isto o Stack joga a linha de itens para o topo (padrão
+                // topStart) enquanto a pílula fica centralizada — era por isso
+                // que o ícone ativo encostava na borda de cima da pílula.
+                alignment: Alignment.center,
                 children: [
                   // Pílula que desliza até o item ativo.
                   AnimatedPositioned(
