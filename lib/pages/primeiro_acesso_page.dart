@@ -38,6 +38,8 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
 
   String _sessao = '';
   String _matricula = '';
+  String _segadNova = '';
+  String _segadAntiga = '';
   String _senhaCadastrada = '';
   bool _emailEnviado = false;
   final List<String> _usadas = [];
@@ -201,6 +203,9 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
       ),
       (r) => setState(() {
         _matricula = (r['matricula'] ?? '').toString();
+        final m = (r['matriculas'] as Map?) ?? {};
+        _segadNova = (m['segad_nova'] ?? '').toString();
+        _segadAntiga = (m['segad_antiga'] ?? '').toString();
         _senhaCadastrada = senha;
         _emailEnviado = r['email_enviado'] == true;
         _passo = _Passo.concluido;
@@ -798,8 +803,23 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
               _LinhaDado(
                 rotulo: 'Matrícula PMRR',
                 valor: _matricula,
-                legenda: 'antigo cadastro PM',
+                legenda: 'use esta para entrar no app',
+                destaque: true,
               ),
+              if (_segadNova.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Divider(color: verde.withOpacity(0.25), height: 1),
+                const SizedBox(height: 12),
+                _LinhaDado(
+                    rotulo: 'Matrícula SEGAD (nova)', valor: _segadNova),
+              ],
+              if (_segadAntiga.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Divider(color: verde.withOpacity(0.25), height: 1),
+                const SizedBox(height: 12),
+                _LinhaDado(
+                    rotulo: 'Matrícula SEGAD (antiga)', valor: _segadAntiga),
+              ],
               const SizedBox(height: 12),
               Divider(color: verde.withOpacity(0.25), height: 1),
               const SizedBox(height: 12),
@@ -926,11 +946,13 @@ class _LinhaDado extends StatelessWidget {
   final String rotulo;
   final String valor;
   final String? legenda;
+  final bool destaque;
 
   const _LinhaDado({
     required this.rotulo,
     required this.valor,
     this.legenda,
+    this.destaque = false,
   });
 
   @override
@@ -950,7 +972,10 @@ class _LinhaDado extends StatelessWidget {
         SelectableText(
           valor,
           textAlign: TextAlign.center,
-          style: theme.textTheme.headlineSmall?.copyWith(
+          style: (destaque
+                  ? theme.textTheme.headlineSmall
+                  : theme.textTheme.titleMedium)
+              ?.copyWith(
             fontWeight: FontWeight.bold,
             color: const Color(0xFF2E7D32),
           ),

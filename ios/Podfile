@@ -48,7 +48,7 @@ post_install do |installer|
 
     # 🔥 Adicione essa configuração para evitar erro de duplicação de Swift
     target.build_configurations.each do |config|
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
     end
   end
 end
