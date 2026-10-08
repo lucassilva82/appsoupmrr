@@ -25,13 +25,13 @@ causa mais comum de erro de build.
 
 | Ferramenta | Versão |
 |---|---|
-| Flutter | **3.29.1** (channel `stable`) |
-| Dart | **3.7.0** (vem junto com o Flutter) |
-| Xcode | **26.5** (build 17F42) |
-| CocoaPods | **1.16.2** |
-| Ruby | **3.3.5** (arm64, via Homebrew) |
+| Flutter | **3.47.6** (channel `stable`) |
+| Dart | **3.13.5** (vem junto com o Flutter) |
+| Xcode | **27.0** |
+| CocoaPods | **1.17.0** |
+| Ruby | **4.0.6** (arm64, via Homebrew) |
 | Java / JDK | **OpenJDK 17.0.13** (Homebrew) |
-| Gradle (wrapper) | **8.10.2** |
+| Gradle (wrapper) | **8.14.3** |
 | Android Gradle Plugin | **8.7.0** |
 | Node.js | **20.x** para as Cloud Functions (ver ressalva na seção 7) |
 | Android NDK | **27.0.12077973** |
@@ -52,6 +52,7 @@ causa mais comum de erro de build.
 ### Configuração iOS
 
 - Plataforma mínima do Podfile: **iOS 15.0**
+- O `post_install` também força **15.0** nos pods: o Xcode 27 recusa 13.0
 - Workspace: `ios/Runner.xcworkspace` (**nunca** abrir o `.xcodeproj` direto)
 
 ---
@@ -191,10 +192,21 @@ própria) e não impede o build.
 for muito mais novo (23+), o deploy pode reclamar. Use `nvm use 20` dentro de
 `functions/` se der problema.
 
-**Deployment target iOS inconsistente**
-O `Podfile` define `platform :ios, '15.0'`, mas o `post_install` força
-`IPHONEOS_DEPLOYMENT_TARGET = '13.0'` nos pods. Está funcionando assim hoje;
-se algum pod novo exigir 15.0+, alinhe os dois valores.
+**Swift Package Manager**
+O Flutter 3.47 ativa o SPM por padrão e as versões atuais do Firebase
+conflitam nesse modo (`firebase_core` e `firebase_messaging` pedem versões
+diferentes do `flutterfire`). O projeto roda com ele desligado:
+
+```bash
+flutter config --no-enable-swift-package-manager
+```
+
+Quando atualizarmos os pacotes do Firebase, vale testar religando.
+
+**dependency_overrides**
+O `pubspec.yaml` trava algumas versões em `dependency_overrides`. A trava do
+`meta` precisou ser removida na atualização para o Flutter 3.47 — ela
+impedia o próprio framework de compilar.
 
 **Espaço em disco**
 Build de iOS + caches do CocoaPods/Xcode consomem muitos GB. Mantenha pelo
