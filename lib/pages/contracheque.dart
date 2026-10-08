@@ -8,7 +8,6 @@ import '../models/meses_contracheque_model.dart';
 import '../services/dados_sql.dart';
 import '../utils/app_routes.dart';
 import '../view/second_screen.dart';
-import '../widgets/barra_vidro.dart';
 
 class Contracheque extends StatefulWidget {
   Contracheque({Key? key}) : super(key: key);
@@ -109,62 +108,67 @@ class _ContrachequeState extends State<Contracheque> {
     );
   }
 
-  // ── Seletor de anos no estilo do restante do app ────────────────────
+  // ── Seletor de anos ───────────────────────────────────────────────────
+  // Sem faixa de fundo: as pílulas ficam direto sobre o fundo da tela, como
+  // os demais seletores do app. A selecionada é tingida com a primária, não
+  // pintada de azul sólido.
   Widget _buildYearBar(bool isDark) {
-    // Mesmo fundo da app bar: a faixa é a continuação dela, não outra
-    // superfície com tom próprio.
-    return Stack(
-      children: [
-        const Positioned.fill(child: FundoBarraVidro()),
-        Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      child: SizedBox(
-        height: 32,
-        child: ListView(
+    return Builder(builder: (context) {
+      final theme = Theme.of(context);
+      final primaria = theme.colorScheme.primary;
+
+      return SizedBox(
+        height: 54,
+        child: ListView.separated(
           scrollDirection: Axis.horizontal,
-          children: listaAnos.map((ano) {
-            final anoStr = ano.toString();
+          padding: const EdgeInsets.fromLTRB(16, 11, 16, 11),
+          itemCount: listaAnos.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, i) {
+            final anoStr = listaAnos[i].toString();
             final isSelected = anoStr == widget._anoSelecionado;
+
             return GestureDetector(
               onTap: () => setState(() => widget._anoSelecionado = anoStr),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                margin: const EdgeInsets.only(right: 8),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 18),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.blue
-                      : (isDark
-                          ? const Color(0xFF21262D)
-                          : Colors.grey.shade100),
-                  borderRadius: BorderRadius.circular(20),
+                      ? primaria.withValues(alpha: isDark ? 0.26 : 0.16)
+                      : theme.colorScheme.onSurface
+                          .withValues(alpha: isDark ? 0.05 : 0.035),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isSelected
-                        ? AppColors.blue
-                        : (isDark
-                            ? const Color(0xFF30363D)
-                            : Colors.grey.shade300),
+                        ? primaria.withValues(alpha: 0.55)
+                        : theme.colorScheme.onSurface
+                            .withValues(alpha: 0.12),
+                    width: isSelected ? 1.2 : 1,
                   ),
                 ),
-                child: Text(
-                  anoStr,
+                child: AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 200),
                   style: TextStyle(
                     color: isSelected
-                        ? Colors.white
-                        : (isDark ? Colors.white70 : Colors.black87),
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        ? primaria
+                        : theme.colorScheme.onSurface
+                            .withValues(alpha: 0.62),
+                    fontWeight:
+                        isSelected ? FontWeight.w700 : FontWeight.w500,
                     fontSize: 13,
+                    letterSpacing: 0.2,
                   ),
+                  child: Text(anoStr),
                 ),
               ),
             );
-          }).toList(),
+          },
         ),
-      ),
-        ),
-      ],
-    );
+      );
+    });
   }
 
   // ── Lista agrupada por mês ────────────────────────────────────────────

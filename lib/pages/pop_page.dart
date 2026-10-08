@@ -314,10 +314,6 @@ class _PopPageState extends State<PopPage> {
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 11),
-                    filled: true,
-                    fillColor: isDark
-                        ? theme.colorScheme.surface.withValues(alpha: 0.72)
-                        : Colors.white,
                     prefixIcon: const Icon(Icons.search, size: 18),
                   ),
                   onChanged: (value) {
@@ -350,10 +346,6 @@ class _PopPageState extends State<PopPage> {
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 11),
-                    filled: true,
-                    fillColor: isDark
-                        ? theme.colorScheme.surface.withValues(alpha: 0.72)
-                        : Colors.white,
                   ),
                   dropdownColor: isDark
                       ? theme.colorScheme.surface

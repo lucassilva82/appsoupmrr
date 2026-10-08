@@ -490,7 +490,6 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        border: const OutlineInputBorder(),
         filled: true,
         fillColor: isDark
             ? theme.colorScheme.surface.withValues(alpha: 0.7)

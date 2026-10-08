@@ -363,24 +363,7 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
               letterSpacing: 14,
               color: theme.colorScheme.onSurface.withOpacity(0.18),
             ),
-            filled: true,
-            fillColor: theme.brightness == Brightness.dark
-                ? AppColors.darkCard
-                : Colors.white,
             contentPadding: const EdgeInsets.symmetric(vertical: 18),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(
-                color: theme.brightness == Brightness.dark
-                    ? AppColors.darkBorder
-                    : const Color(0xFFE8EEF6),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  BorderSide(color: theme.colorScheme.primary, width: 1.6),
-            ),
           ),
         ),
         _erroBox(),

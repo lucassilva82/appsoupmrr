@@ -150,36 +150,21 @@ class AvisoCaixa extends StatelessWidget {
   }
 }
 
-/// Campo de senha com o visual usado nas telas de acesso.
+/// Decoração dos campos das telas de acesso.
+///
+/// Borda, preenchimento, foco e erro vêm do `inputDecorationTheme` — aqui só
+/// entram rótulo e ícones, para o visual não divergir do resto do app.
 InputDecoration decoracaoCampo({
   required BuildContext context,
   required String label,
   required IconData icon,
   Widget? suffixIcon,
+  String? helper,
 }) {
-  final theme = Theme.of(context);
-  final isDark = theme.brightness == Brightness.dark;
   return InputDecoration(
     labelText: label,
-    prefixIcon: Icon(icon, size: 20, color: theme.colorScheme.primary),
+    helperText: helper,
+    prefixIcon: Icon(icon, size: AppIconSize.sm),
     suffixIcon: suffixIcon,
-    filled: true,
-    fillColor: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: BorderSide(
-        color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
-      ),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: BorderSide(
-        color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
-      ),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.6),
-    ),
   );
 }

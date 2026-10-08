@@ -49,6 +49,7 @@ class AppTheme {
     required bool isSuperUser,
   }) {
     final primary = _primary(isDark, isSuperUser);
+    final corErro = isDark ? Colors.redAccent : Colors.red;
     final secondary = _secondary(isDark, isSuperUser);
     final onPrimary = isDark && isSuperUser ? Colors.black : Colors.white;
     final bgColor = isDark ? AppColors.darkBg : AppColors.lightBg;
@@ -178,34 +179,93 @@ class AppTheme {
       ),
 
       // ── InputDecoration ─────────────────────────────────────────────────────
+      // ── Campos de formulário ───────────────────────────────────────────────
+      // Mesmo acabamento das superfícies do app: preenchimento translúcido,
+      // borda fininha e anel de foco na cor primária. Um só lugar define
+      // todos os campos — telas não devem redefinir borda nem fundo.
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? AppColors.darkCard : const Color(0xFFF5F7FA),
+        fillColor: isDark
+            ? Colors.white.withOpacity(0.055)
+            : Colors.white.withOpacity(0.70),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: isDark
+                ? Colors.white.withOpacity(0.12)
+                : Colors.white.withOpacity(0.85),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(
-            color: isDark ? AppColors.darkBorder : const Color(0xFFE5E7EB),
-            width: 1,
+            color: isDark
+                ? Colors.white.withOpacity(0.12)
+                : Colors.black.withOpacity(0.08),
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: secondary, width: 2),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: primary, width: 1.6),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: isDark
+                ? Colors.white.withOpacity(0.06)
+                : Colors.black.withOpacity(0.05),
+          ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: corErro, width: 1.2),
         ),
-        labelStyle:
-            TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
-        hintStyle:
-            TextStyle(color: isDark ? Colors.grey[600] : Colors.grey[400]),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: corErro, width: 1.6),
+        ),
+
+        // O rótulo sobe e some dentro da borda; a cor muda no foco para o
+        // usuário ver onde está sem depender só do anel.
+        floatingLabelBehavior: FloatingLabelBehavior.auto,
+        floatingLabelStyle: TextStyle(
+          color: primary,
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
+        labelStyle: TextStyle(
+          color: onSurface.withOpacity(0.60),
+          fontSize: 14,
+        ),
+        hintStyle: TextStyle(
+          color: onSurface.withOpacity(0.38),
+          fontSize: 14,
+        ),
+        helperStyle: TextStyle(
+          color: onSurface.withOpacity(0.55),
+          fontSize: 11.5,
+        ),
+        // Erro junto do campo, legível — não um fiapo de 10px.
+        errorStyle: TextStyle(
+          color: corErro,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          height: 1.3,
+        ),
+        errorMaxLines: 2,
+        prefixIconColor: WidgetStateColor.resolveWith(
+          (estados) => estados.contains(WidgetState.focused)
+              ? primary
+              : onSurface.withOpacity(0.45),
+        ),
+        suffixIconColor: WidgetStateColor.resolveWith(
+          (estados) => estados.contains(WidgetState.focused)
+              ? primary
+              : onSurface.withOpacity(0.45),
+        ),
+        // 16/15 deixa a altura do campo acima dos 48dp de alvo de toque.
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       ),
 
       // ── Divider ─────────────────────────────────────────────────────────────

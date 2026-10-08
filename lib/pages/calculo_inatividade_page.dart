@@ -451,7 +451,6 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
 
   // ── Card de dados (editável) ───────────────────────────────────────────
   Widget _cardDados(ThemeData theme) {
-    final isDark = theme.brightness == Brightness.dark;
     return _Card(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
@@ -520,10 +519,8 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
             isExpanded: true,
             decoration: InputDecoration(
               labelText: 'Posto / graduação atual',
-              border: const OutlineInputBorder(),
               isDense: true,
               filled: true,
-              fillColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.02),
             ),
             items: PostoGraduacao.values
                 .map((p) => DropdownMenuItem(value: p, child: Text(p.label)))
@@ -600,11 +597,7 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
               helperText: 'Reforma por invalidez independe de tempo de '
                   'serviço. Deixe vazio se não for o caso.',
               helperMaxLines: 3,
-              border: const OutlineInputBorder(),
               isDense: true,
-              filled: true,
-              fillColor:
-                  isDark ? Colors.white10 : Colors.black.withOpacity(0.02),
             ),
             items: [
               const DropdownMenuItem(value: null, child: Text('— não se aplica —')),
@@ -1154,7 +1147,6 @@ class _MiniNumeroState extends State<_MiniNumero> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     return TextField(
       controller: _c,
       keyboardType: TextInputType.number,
@@ -1170,9 +1162,7 @@ class _MiniNumeroState extends State<_MiniNumero> {
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-        border: const OutlineInputBorder(),
         filled: true,
-        fillColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.02),
       ),
       onChanged: (s) {
         final n = int.tryParse(s) ?? 0;

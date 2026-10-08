@@ -474,24 +474,7 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon, size: 20, color: theme.colorScheme.primary),
-      filled: true,
-      fillColor: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(
-          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
-        ),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(
-          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
-        ),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.6),
-      ),
+      // borda, preenchimento, foco e erro vêm do inputDecorationTheme
     );
   }
 }

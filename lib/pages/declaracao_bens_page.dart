@@ -795,7 +795,6 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
         controller: ctrl,
         decoration: InputDecoration(
           labelText: label,
-          border: const OutlineInputBorder(),
           isDense: true,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
