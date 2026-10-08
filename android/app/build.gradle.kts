@@ -47,7 +47,7 @@ android {
 
     defaultConfig {
         applicationId = "pm.rr.soupmrr"
-        minSdk = 21
+        minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = 47
         versionName = "2.0.7"
