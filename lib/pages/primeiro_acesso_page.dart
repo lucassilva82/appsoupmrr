@@ -8,6 +8,7 @@ import '../utils/api_services.dart';
 import '../utils/app_theme.dart';
 import '../widgets/custom_appbar.dart';
 import '../widgets/requisitos_senha.dart';
+import '../widgets/vidro.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PrimeiroAcessoPage
@@ -876,23 +877,12 @@ class _OpcaoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
-    return Material(
-      color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: habilitado ? onTap : null,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
-            ),
-          ),
-          child: Row(
+    return CartaoVidro(
+      raio: 14,
+      onTap: habilitado ? onTap : null,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Row(
             children: [
               Expanded(
                 child: Text(
@@ -908,8 +898,6 @@ class _OpcaoCard extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 }

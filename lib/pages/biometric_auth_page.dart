@@ -322,10 +322,14 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : const Color(0xFFF0F4F8),
+        color: isDark
+            ? Colors.white.withOpacity(0.08)
+            : Colors.white.withOpacity(0.66),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: isDark ? AppColors.darkBorder : const Color(0xFFE5E7EB),
+          color: isDark
+              ? Colors.white.withOpacity(0.14)
+              : Colors.white.withOpacity(0.80),
           width: 1,
         ),
       ),
@@ -405,13 +409,17 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     // Tokens de cores respeitando o tema do app
-    final bgColor = isDark ? AppColors.darkSurface : Colors.white;
     final textPrimary =
         isDark ? const Color(0xFFE6EDF3) : const Color(0xFF1A1A2E);
     final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[600]!;
-    final handleColor = isDark ? AppColors.darkBorder : const Color(0xFFDDE3EA);
-    final dividerColor =
-        isDark ? AppColors.darkBorder : const Color(0xFFE5E7EB);
+    final handleColor = isDark
+        ? Colors.white.withOpacity(0.28)
+        : Colors.black.withOpacity(0.18);
+    final dividerColor = isDark
+        ? Colors.white.withOpacity(0.10)
+        : Colors.black.withOpacity(0.08);
+
+    const raioTopo = BorderRadius.vertical(top: Radius.circular(28));
 
     return FractionallySizedBox(
       heightFactor: 0.88,
@@ -419,18 +427,33 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
         opacity: _fadeAnim,
         child: SlideTransition(
           position: _slideAnim,
-          child: Container(
+          // Vidro, como as demais superfícies do app: a folha desfoca a capa
+          // de login em vez de tapar com um bloco sólido.
+          child: ClipRRect(
+            borderRadius: raioTopo,
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+              child: Container(
             decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(30)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.22),
-                  blurRadius: 40,
-                  offset: const Offset(0, -8),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: isDark
+                    ? [
+                        Colors.white.withOpacity(0.14),
+                        Colors.white.withOpacity(0.05),
+                      ]
+                    : [
+                        Colors.white.withOpacity(0.90),
+                        Colors.white.withOpacity(0.74),
+                      ],
+              ),
+              borderRadius: raioTopo,
+              border: Border(
+                top: BorderSide(
+                  color: Colors.white.withOpacity(isDark ? 0.18 : 0.70),
                 ),
-              ],
+              ),
             ),
             child: Column(
               children: [
@@ -644,6 +667,8 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
                   ),
                 ),
               ],
+            ),
+              ),
             ),
           ),
         ),

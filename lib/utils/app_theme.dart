@@ -110,6 +110,36 @@ class AppTheme {
       // Superfície translúcida: o fundo do app (com manchas suaves) aparece
       // por trás, dando o acabamento de vidro em todas as telas sem mexer
       // em cada uma. A borda é o que separa o card do fundo.
+      // ── Diálogos e bottom sheets ───────────────────────────────────────────
+      // Dezoito AlertDialogs espalhados pelo app herdam daqui; sem isso cada
+      // um aparece como um bloco opaco sobre superfícies de vidro.
+      dialogTheme: DialogThemeData(
+        backgroundColor: isDark
+            ? card.withOpacity(0.86)
+            : Colors.white.withOpacity(0.90),
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: isDark
+                ? Colors.white.withOpacity(0.12)
+                : Colors.white.withOpacity(0.80),
+          ),
+        ),
+      ),
+
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: isDark
+            ? card.withOpacity(0.86)
+            : Colors.white.withOpacity(0.90),
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+      ),
+
       // cardColor (API antiga) acompanha o cardTheme: dez telas pintam
       // superfícies com theme.cardColor e ficavam opacas no meio do vidro.
       cardColor:

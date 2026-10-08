@@ -8,6 +8,7 @@ import '../models/auth_model.dart';
 import '../utils/api_services.dart';
 import '../utils/app_theme.dart';
 import '../widgets/custom_appbar.dart';
+import '../widgets/vidro.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ConfirmEmailScreen
@@ -599,17 +600,10 @@ class _Passos extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
+    return CartaoVidro(
+      raio: 14,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
-        ),
-      ),
       child: Column(
         children: [
           for (final item in _itens) ...[

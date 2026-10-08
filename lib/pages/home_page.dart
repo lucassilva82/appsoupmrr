@@ -92,13 +92,44 @@ class _HomeBodyState extends State<HomeBody>
           const SizedBox(height: 20),
 
           // ── Rodapé DTI ───────────────────────────────────────────────────
+          // A arte é um bloco navy fechado e virava um retângulo no fim da
+          // tela. Aqui ela perde opacidade e as quatro bordas somem em
+          // degradê, então encosta no fundo sem desenhar uma caixa.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.asset(
-                'assets/imagens/dti.jpeg',
-                fit: BoxFit.fitWidth,
+            child: Opacity(
+              opacity: 0.55,
+              child: ShaderMask(
+                blendMode: BlendMode.dstIn,
+                shaderCallback: (rect) => const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.white,
+                    Colors.white,
+                    Colors.transparent,
+                  ],
+                  stops: [0.0, 0.30, 0.70, 1.0],
+                ).createShader(rect),
+                child: ShaderMask(
+                  blendMode: BlendMode.dstIn,
+                  shaderCallback: (rect) => const LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      Colors.transparent,
+                      Colors.white,
+                      Colors.white,
+                      Colors.transparent,
+                    ],
+                    stops: [0.0, 0.18, 0.82, 1.0],
+                  ).createShader(rect),
+                  child: Image.asset(
+                    'assets/imagens/dti.jpeg',
+                    fit: BoxFit.fitWidth,
+                  ),
+                ),
               ),
             ),
           ),
