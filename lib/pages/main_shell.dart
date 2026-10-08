@@ -109,7 +109,7 @@ class _MainShellState extends State<MainShell> {
             rotulo: 'Início',
           ),
           const ItemNavegacao(
-            icone: Icons.person_outline_rounded,
+            icone: Icons.person_outline,
             iconeAtivo: Icons.person_rounded,
             rotulo: 'Perfil',
           ),

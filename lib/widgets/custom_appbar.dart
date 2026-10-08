@@ -29,7 +29,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.star_rounded, color: AppColors.gold, size: 12),
+          const Icon(Icons.star_rounded,
+              color: AppColors.gold, size: AppIconSize.xxs),
           const SizedBox(width: 4),
           Text(
             label,

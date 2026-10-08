@@ -193,17 +193,26 @@ class _Item extends StatelessWidget {
             children: [
               Stack(
                 clipBehavior: Clip.none,
+                alignment: Alignment.center,
                 children: [
-                  // O ícone cresce de leve ao ficar ativo, sem mexer no
-                  // tamanho da caixa — evita o conteúdo "pular".
-                  AnimatedScale(
-                    duration: const Duration(milliseconds: 240),
-                    curve: Curves.easeOut,
-                    scale: ativo ? 1.08 : 1.0,
-                    child: Icon(
-                      ativo ? item.iconeAtivo : item.icone,
-                      size: 22,
-                      color: cor,
+                  // Caixa fixa de AppIconSize.md: todos os ícones ocupam
+                  // exatamente o mesmo espaço, ativos ou não. Sem isso o item
+                  // ativo fica com outra altura e a linha de ícones desalinha.
+                  SizedBox(
+                    width: AppIconSize.md,
+                    height: AppIconSize.md,
+                    child: Center(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        transitionBuilder: (child, anim) =>
+                            FadeTransition(opacity: anim, child: child),
+                        child: Icon(
+                          ativo ? item.iconeAtivo : item.icone,
+                          key: ValueKey(ativo),
+                          size: AppIconSize.md,
+                          color: cor,
+                        ),
+                      ),
                     ),
                   ),
                   if (item.contador > 0)
@@ -235,7 +244,7 @@ class _Item extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 3),
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 240),
                 style: TextStyle(

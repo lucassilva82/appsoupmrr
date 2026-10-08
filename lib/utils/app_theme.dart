@@ -26,6 +26,20 @@ class AppColors {
   static const darkBorder = Color(0xFF30363D);
 }
 
+// ─── Tamanhos de ícone ───────────────────────────────────────────────────────
+// Tokens únicos para todo o app. A regra é usar um destes valores e nunca um
+// número solto: tamanhos arbitrários quebram o ritmo visual entre as telas.
+class AppIconSize {
+  AppIconSize._();
+
+  static const xxs = 12.0; // selos e chips, ao lado de texto pequeno
+  static const xs = 16.0; // dentro de texto, listas densas
+  static const sm = 20.0; // campos, chips, linhas de lista
+  static const md = 24.0; // padrão — barra inferior, app bar, ações
+  static const lg = 28.0; // botões do menu principal
+  static const xl = 32.0; // ilustrações e destaques
+}
+
 // ─── Fábricas de tema ─────────────────────────────────────────────────────────
 class AppTheme {
   AppTheme._();

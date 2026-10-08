@@ -126,7 +126,8 @@ class _GridMenuItem extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child:
-                      Icon(Icons.hourglass_top_rounded, color: amber, size: 18),
+                      Icon(Icons.hourglass_top_rounded,
+                          color: amber, size: AppIconSize.sm),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -269,8 +270,8 @@ class _GridMenuItem extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(choice.icon, size: 32, color: iconColor),
-                    const SizedBox(height: 6),
+                    Icon(choice.icon, size: AppIconSize.lg, color: iconColor),
+                    const SizedBox(height: 8),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                       child: Text(
@@ -296,7 +297,7 @@ class _GridMenuItem extends StatelessWidget {
                 top: 6,
                 right: 6,
                 child: Icon(Icons.star_rounded,
-                    size: 12, color: AppColors.gold.withOpacity(0.7)),
+                    size: AppIconSize.xxs, color: AppColors.gold.withOpacity(0.7)),
               ),
             if (_isEmDesenvolvimento)
               Positioned(
