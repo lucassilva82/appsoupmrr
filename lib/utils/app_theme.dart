@@ -110,6 +110,11 @@ class AppTheme {
       // Superfície translúcida: o fundo do app (com manchas suaves) aparece
       // por trás, dando o acabamento de vidro em todas as telas sem mexer
       // em cada uma. A borda é o que separa o card do fundo.
+      // cardColor (API antiga) acompanha o cardTheme: dez telas pintam
+      // superfícies com theme.cardColor e ficavam opacas no meio do vidro.
+      cardColor:
+          isDark ? card.withOpacity(0.72) : Colors.white.withOpacity(0.78),
+
       cardTheme: CardThemeData(
         color: isDark
             ? card.withOpacity(0.72)

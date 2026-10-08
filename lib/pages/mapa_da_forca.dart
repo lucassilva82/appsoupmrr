@@ -113,24 +113,28 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
             child: Container(
               height: 36,
               decoration: BoxDecoration(
-                color: isDark
-                    ? theme.colorScheme.surface
-                    : const Color(0xFFF2F6FF),
+                color: theme.colorScheme.onSurface
+                    .withValues(alpha: isDark ? 0.06 : 0.04),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: isDark
-                      ? const Color(0xFF30363D)
-                      : const Color(0xFFDDE6F5),
+                  color:
+                      theme.colorScheme.onSurface.withValues(alpha: 0.15),
                 ),
               ),
               child: TabBar(
                 controller: _tabController,
+                // Pílula tingida, no padrão dos chips e da barra inferior.
                 indicator: BoxDecoration(
-                  color: primaryBlue,
+                  color: theme.colorScheme.primary
+                      .withValues(alpha: isDark ? 0.26 : 0.16),
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color:
+                        theme.colorScheme.primary.withValues(alpha: 0.45),
+                  ),
                 ),
                 indicatorSize: TabBarIndicatorSize.tab,
-                labelColor: Colors.white,
+                labelColor: theme.colorScheme.primary,
                 unselectedLabelColor:
                     theme.colorScheme.onSurface.withValues(alpha: 0.55),
                 labelStyle:
