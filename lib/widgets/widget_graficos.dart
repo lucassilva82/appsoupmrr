@@ -428,7 +428,7 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : Colors.white,
+        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(

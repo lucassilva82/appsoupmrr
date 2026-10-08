@@ -1078,10 +1078,10 @@ class _Card extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : Colors.white,
+        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
+            color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80)),
       ),
       child: child,
     );

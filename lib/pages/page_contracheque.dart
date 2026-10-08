@@ -710,10 +710,10 @@ class _PageContrachequeState extends State<PageContracheque> {
       margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C2128) : Colors.white,
+        color: isDark ? const Color(0xFF1C2128).withOpacity(0.72) : Colors.white.withOpacity(0.78),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? const Color(0xFF30363D) : const Color(0xFFE0E7F0),
+          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
         ),
         boxShadow: isDark
             ? []
@@ -1019,7 +1019,7 @@ class _PageContrachequeState extends State<PageContracheque> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1C2128) : Colors.white,
+          color: isDark ? const Color(0xFF1C2128).withOpacity(0.72) : Colors.white.withOpacity(0.78),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),

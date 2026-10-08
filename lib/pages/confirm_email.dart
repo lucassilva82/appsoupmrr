@@ -474,17 +474,17 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
       labelText: label,
       prefixIcon: Icon(icon, size: 20, color: theme.colorScheme.primary),
       filled: true,
-      fillColor: isDark ? AppColors.darkCard : Colors.white,
+      fillColor: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(
-          color: isDark ? AppColors.darkBorder : const Color(0xFFE8EEF6),
+          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
         ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(
-          color: isDark ? AppColors.darkBorder : const Color(0xFFE8EEF6),
+          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
         ),
       ),
       focusedBorder: OutlineInputBorder(
@@ -604,10 +604,10 @@ class _Passos extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : Colors.white,
+        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDark ? AppColors.darkBorder : const Color(0xFFE8EEF6),
+          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
         ),
       ),
       child: Column(

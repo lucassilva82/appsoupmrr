@@ -246,7 +246,7 @@ class _DadosMilitarState extends State<DadosMilitar> {
           color: isDark ? theme.colorScheme.surface : const Color(0xFFF5F8FF),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isDark ? const Color(0xFF30363D) : const Color(0xFFE0E7F0),
+            color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
             width: 1,
           ),
         ),

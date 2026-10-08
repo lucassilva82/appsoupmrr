@@ -81,10 +81,10 @@ class _Cartao extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 360),
             padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.darkCard : Colors.white,
+              color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isDark ? AppColors.darkBorder : const Color(0xFFE8EEF6),
+                color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
               ),
               boxShadow: [
                 BoxShadow(

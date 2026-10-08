@@ -355,10 +355,10 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : Colors.white,
+        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0),
+          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
         ),
         boxShadow: isDark
             ? []
@@ -537,7 +537,7 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
                                 : AppColors.blue.withValues(alpha: 0.75),
                             strokeWidth: sel ? 2.5 : 1.5,
                             strokeColor:
-                                isDark ? AppColors.darkCard : Colors.white,
+                                isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
                           );
                         },
                       ),
@@ -611,10 +611,10 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
       double totalLiquido) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : Colors.white,
+        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0),
+          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
         ),
         boxShadow: isDark
             ? []
@@ -897,10 +897,10 @@ class _SummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : Colors.white,
+        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0),
+          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
         ),
         boxShadow: isDark
             ? []

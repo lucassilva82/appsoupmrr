@@ -172,7 +172,7 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
                 _loadData();
               },
               selectedColor: AppColors.blue,
-              backgroundColor: isDark ? AppColors.darkCard : Colors.white,
+              backgroundColor: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
               labelStyle: TextStyle(
                 color: isSelected
                     ? Colors.white
@@ -519,7 +519,7 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
       elevation: isDark ? 0 : 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.antiAlias,
-      color: isDark ? AppColors.darkCard : Colors.white,
+      color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

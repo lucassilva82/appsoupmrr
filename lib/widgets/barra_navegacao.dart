@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../utils/app_theme.dart';
 
@@ -71,29 +72,47 @@ class BarraNavegacao extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 62,
+          height: 66,
           child: LayoutBuilder(
             builder: (context, constraints) {
               final larguraItem = constraints.maxWidth / itens.length;
 
-              return Stack(
+              // Arrastar o dedo pela barra move a seleção, como no iOS.
+              int indicePorPosicao(double x) =>
+                  (x ~/ larguraItem).clamp(0, itens.length - 1);
+
+              void selecionarPorPosicao(double x) {
+                final novo = indicePorPosicao(x);
+                if (novo != indiceAtual) {
+                  HapticFeedback.selectionClick();
+                  aoSelecionar(novo);
+                }
+              }
+
+              return GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onHorizontalDragStart: (d) =>
+                    selecionarPorPosicao(d.localPosition.dx),
+                onHorizontalDragUpdate: (d) =>
+                    selecionarPorPosicao(d.localPosition.dx),
+                child: Stack(
                 children: [
                   // Pílula que desliza até o item ativo.
                   AnimatedPositioned(
                     duration: const Duration(milliseconds: 320),
                     curve: Curves.easeOutCubic,
                     left: larguraItem * indiceAtual,
-                    top: 6,
-                    bottom: 6,
+                    top: 10,
+                    bottom: 8,
                     width: larguraItem,
                     child: Center(
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 260),
-                        width: larguraItem - 22,
+                        width: larguraItem - 20,
                         decoration: BoxDecoration(
                           color: theme.colorScheme.primary
                               .withOpacity(isDark ? 0.22 : 0.12),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(18),
                           border: Border.all(
                             color: theme.colorScheme.primary
                                 .withOpacity(isDark ? 0.35 : 0.22),
@@ -117,6 +136,7 @@ class BarraNavegacao extends StatelessWidget {
                     ],
                   ),
                 ],
+                ),
               );
             },
           ),

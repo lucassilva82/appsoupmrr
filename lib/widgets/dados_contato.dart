@@ -274,7 +274,7 @@ class _DadosContatoState extends State<DadosContato> {
             insetPadding: const EdgeInsets.symmetric(horizontal: 24),
             child: Container(
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1C2128) : Colors.white,
+                color: isDark ? const Color(0xFF1C2128).withOpacity(0.72) : Colors.white.withOpacity(0.78),
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
@@ -477,7 +477,7 @@ class _DadosContatoState extends State<DadosContato> {
           insetPadding: const EdgeInsets.symmetric(horizontal: 24),
           child: Container(
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1C2128) : Colors.white,
+              color: isDark ? const Color(0xFF1C2128).withOpacity(0.72) : Colors.white.withOpacity(0.78),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
@@ -665,7 +665,7 @@ class _LoadingDialog extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 32),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1C2128) : Colors.white,
+            color: isDark ? const Color(0xFF1C2128).withOpacity(0.72) : Colors.white.withOpacity(0.78),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(

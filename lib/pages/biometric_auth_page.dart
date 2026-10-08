@@ -307,7 +307,7 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
         child: Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isDark ? AppColors.darkCard : Colors.white,
+            color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
           ),
           padding: const EdgeInsets.all(2),
           child: ClipOval(child: SizedBox.expand(child: inner)),

@@ -879,7 +879,7 @@ class _OpcaoCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Material(
-      color: isDark ? AppColors.darkCard : Colors.white,
+      color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: habilitado ? onTap : null,
@@ -889,7 +889,7 @@ class _OpcaoCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isDark ? AppColors.darkBorder : const Color(0xFFE8EEF6),
+              color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
             ),
           ),
           child: Row(
