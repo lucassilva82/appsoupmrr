@@ -1007,27 +1007,13 @@ class _PageContrachequeState extends State<PageContracheque> {
 
   // ── Barra inferior de compartilhamento ────────────────────────────────
   Widget _buildShareBar(Auth auth, bool isDark) {
+    // Sem superfície própria: os botões ficam direto sobre o fundo da tela.
     return SafeArea(
-      child: CartaoVidro(
-        raio: 0,
-        desfoque: 22,
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Aviso
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Text(
-                '* Dados apenas para visualização. Não válido como documento oficial.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: isDark ? Colors.white38 : Colors.black38,
-                ),
-              ),
-            ),
-            // Botões de compartilhar
             Row(
               children: [
                 Expanded(

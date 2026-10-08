@@ -42,9 +42,10 @@ class WidgetCarouselSlider extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              // Altura responsiva: ~65% da largura disponível, clampada entre 200 e 280
+              // Altura responsiva. O rodapé agora se ajusta ao texto, então o
+              // card não precisa mais da folga que sobrava embaixo.
               final cardHeight =
-                  (constraints.maxWidth * 0.65).clamp(200.0, 280.0);
+                  (constraints.maxWidth * 0.52).clamp(180.0, 235.0);
               return SizedBox(
                 height: cardHeight,
                 child: Row(
@@ -175,12 +176,12 @@ class _ComandanteCardState extends State<_ComandanteCard>
                     ),
             ),
 
-            // ── Rodapé do card (altura fixa para alinhar os dois cards) ───────
-            SizedBox(
-              height: 78,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
-                child: Column(
+            // ── Rodapé do card ───────────────────────────────────────────────
+            // Sem altura fixa: ela era 78 e o texto ocupava ~59, deixando uma
+            // faixa vazia embaixo. A foto é quem absorve a diferença.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 7, 10, 9),
+              child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -208,20 +209,17 @@ class _ComandanteCardState extends State<_ComandanteCard>
                           ?.copyWith(fontWeight: FontWeight.bold, height: 1.2),
                     ),
                     if (subtitle.isNotEmpty)
-                      Flexible(
-                        child: Text(
-                          subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontSize: 10,
-                          ),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 10,
                         ),
                       ),
                   ],
                 ),
-              ),
             ),
           ],
         ),
