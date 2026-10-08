@@ -104,10 +104,13 @@ class CartaoVidro extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // CartaoDestaque
 //
-// O cartão de abertura das telas (o "hero"): mantém o degradê institucional,
-// mas translúcido e com desfoque, para não ser um bloco sólido no meio de
-// superfícies de vidro. O conteúdo continua em branco — mesmo a 80% os tons
-// navy/azul ficam escuros o bastante nos dois modos.
+// O cartão de abertura das telas (o "hero"). É vidro tingido com a cor
+// primária do tema, não um bloco com o degradê institucional: dentro de uma
+// tela inteira de vidro, um retângulo sólido chama mais atenção do que o
+// conteúdo dele.
+//
+// O conteúdo usa as cores do tema (onSurface / primary), nunca branco fixo —
+// o fundo é claro no modo claro.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class CartaoDestaque extends StatelessWidget {
@@ -128,23 +131,25 @@ class CartaoDestaque extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-
-    final cores = [
-      AppColors.navy.withOpacity(isDark ? 0.82 : 0.92),
-      AppColors.blue.withOpacity(isDark ? 0.62 : 0.80),
-    ];
+    final primaria = theme.colorScheme.primary;
 
     final conteudo = Container(
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: cores,
+          colors: [
+            primaria.withOpacity(isDark ? 0.24 : 0.16),
+            primaria.withOpacity(isDark ? 0.10 : 0.07),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(raio),
-        border: Border.all(color: Colors.white.withOpacity(0.16), width: 0.8),
+        border: Border.all(
+          color: primaria.withOpacity(isDark ? 0.32 : 0.26),
+          width: 0.8,
+        ),
       ),
       child: child,
     );
@@ -152,7 +157,7 @@ class CartaoDestaque extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(raio),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: onTap == null
             ? conteudo
             : Material(

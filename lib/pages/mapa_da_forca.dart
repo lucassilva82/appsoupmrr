@@ -172,6 +172,7 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
   }
 
   Widget _bannerEfetivo(BuildContext context, bool isDark) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: CartaoDestaque(
@@ -182,28 +183,28 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
+              color: theme.colorScheme.primary.withValues(alpha: 0.16),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.shield_outlined,
-                color: Colors.white, size: 19),
+            child: Icon(Icons.shield_outlined,
+                color: theme.colorScheme.primary, size: 19),
           ),
           const SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Efetivo Total Previsto',
                 style: TextStyle(
-                  color: Colors.white70,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const Text(
+              Text(
                 '3.500 Militares',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: theme.colorScheme.onSurface,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.3,

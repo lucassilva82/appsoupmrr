@@ -82,13 +82,14 @@ class _DeclaracoesPageState extends State<DeclaracoesPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.verified_user_rounded, color: Colors.white, size: 20),
-              SizedBox(width: 8),
+            children: [
+              Icon(Icons.verified_user_rounded,
+                  color: theme.colorScheme.primary, size: 20),
+              const SizedBox(width: 8),
               Text(
                 'Painel Anual de Declarações',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.w700,
                   fontSize: 16,
                 ),
@@ -96,10 +97,10 @@ class _DeclaracoesPageState extends State<DeclaracoesPage> {
             ],
           ),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'Acompanhe o status, envie pendências e mantenha tudo em dia em um só lugar.',
             style: TextStyle(
-              color: Color(0xFFE3F2FD),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
               fontSize: 13,
               height: 1.35,
             ),
@@ -109,9 +110,9 @@ class _DeclaracoesPageState extends State<DeclaracoesPage> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _heroTag('Ano base: $base'),
-              _heroTag('Ano calendário: $calendario'),
-              _heroTag('Atualização em tempo real'),
+              _heroTag(theme, 'Ano base: $base'),
+              _heroTag(theme, 'Ano calendário: $calendario'),
+              _heroTag(theme, 'Atualização em tempo real'),
             ],
           ),
         ],
@@ -119,18 +120,19 @@ class _DeclaracoesPageState extends State<DeclaracoesPage> {
     );
   }
 
-  Widget _heroTag(String label) {
+  Widget _heroTag(ThemeData theme, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.16),
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.30)),
+        border: Border.all(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.16)),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.80),
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),

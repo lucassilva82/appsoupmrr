@@ -514,6 +514,10 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
             (fracIntRaw.toString() == '1' ||
                 fracIntRaw.toString().toLowerCase() == 'true'));
 
+    final tema = Theme.of(context);
+    final primaria = tema.colorScheme.primary;
+    final aoFundo = tema.colorScheme.onSurface;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
       elevation: isDark ? 0 : 2,
@@ -527,13 +531,12 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
           Container(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.blue.withOpacity(isDark ? 0.60 : 0.80),
-                  AppColors.navy.withOpacity(isDark ? 0.82 : 0.92),
-                ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
+              // Tingimento leve no lugar do degradê sólido: é o cabeçalho de
+              // um cartão, não precisa do peso de um bloco de marca.
+              color: primaria.withOpacity(isDark ? 0.16 : 0.10),
+              border: Border(
+                bottom: BorderSide(
+                    color: primaria.withOpacity(isDark ? 0.26 : 0.18)),
               ),
             ),
             child: Row(
@@ -543,11 +546,11 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
+                    color: primaria.withValues(alpha: 0.16),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.beach_access_rounded,
-                      color: Colors.white, size: 22),
+                  child: Icon(Icons.beach_access_rounded,
+                      color: primaria, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -556,14 +559,14 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
                     children: [
                       if (posto.isNotEmpty)
                         Text(posto,
-                            style: const TextStyle(
-                                color: Colors.white60,
+                            style: TextStyle(
+                                color: aoFundo.withValues(alpha: 0.60),
                                 fontSize: 11,
                                 letterSpacing: 0.3)),
                       Text(
                         nome.isNotEmpty ? nome : 'Plano de Férias',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: aoFundo,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           height: 1.3,
@@ -573,8 +576,9 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
                       ),
                       if (subInfo.isNotEmpty)
                         Text(subInfo,
-                            style: const TextStyle(
-                                color: Colors.white54, fontSize: 11)),
+                            style: TextStyle(
+                                color: aoFundo.withValues(alpha: 0.55),
+                                fontSize: 11)),
                     ],
                   ),
                 ),
