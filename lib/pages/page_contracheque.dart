@@ -808,7 +808,10 @@ class _PageContrachequeState extends State<PageContracheque> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             children: [
+              // 30 + 8 acompanha o selo P/D das linhas, para o rótulo da
+              // coluna cair exatamente sobre o conteúdo dela.
               SizedBox(width: 30, child: Text('TIPO', style: estilo)),
+              const SizedBox(width: 8),
               Expanded(child: Text('DESCRIÇÃO', style: estilo)),
               Text('VALOR', style: estilo),
             ],
@@ -1079,6 +1082,14 @@ class _PageContrachequeState extends State<PageContracheque> {
                         style: TextStyle(fontSize: 12)),
                     style: FilledButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
+                      // No escuro a primária é clara: texto branco em cima
+                      // dela fica em ~2:1. A cor do rótulo segue a luminância
+                      // do fundo para manter a leitura.
+                      foregroundColor: ThemeData.estimateBrightnessForColor(
+                                  Theme.of(context).colorScheme.primary) ==
+                              Brightness.dark
+                          ? Colors.white
+                          : Colors.black87,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),

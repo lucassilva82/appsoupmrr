@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/auth_model.dart';
 import '../utils/app_theme.dart';
 import '../widgets/declaracao_widget.dart';
+import '../widgets/vidro.dart';
 
 class DeclaracoesPage extends StatefulWidget {
   const DeclaracoesPage({Key? key}) : super(key: key);
@@ -47,15 +48,7 @@ class _DeclaracoesPageState extends State<DeclaracoesPage> {
 
     return Scaffold(
       appBar: CustomAppBar(title: 'Declarações'),
-      body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [bgTop, bgBottom],
-          ),
-        ),
-        child: SafeArea(
+      body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
             child: Column(
@@ -76,7 +69,6 @@ class _DeclaracoesPageState extends State<DeclaracoesPage> {
             ),
           ),
         ),
-      ),
     );
   }
 
@@ -84,24 +76,8 @@ class _DeclaracoesPageState extends State<DeclaracoesPage> {
     final base = int.tryParse(_anoSelecionado) ?? (DateTime.now().year - 1);
     final calendario = base + 1;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.navy, AppColors.blue],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.16),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+    return CartaoDestaque(
+      raio: 22,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

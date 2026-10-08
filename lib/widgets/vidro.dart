@@ -101,6 +101,69 @@ class CartaoVidro extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CartaoDestaque
+//
+// O cartão de abertura das telas (o "hero"): mantém o degradê institucional,
+// mas translúcido e com desfoque, para não ser um bloco sólido no meio de
+// superfícies de vidro. O conteúdo continua em branco — mesmo a 80% os tons
+// navy/azul ficam escuros o bastante nos dois modos.
+// ─────────────────────────────────────────────────────────────────────────────
+
+class CartaoDestaque extends StatelessWidget {
+  final Widget child;
+  final double raio;
+  final EdgeInsetsGeometry padding;
+  final VoidCallback? onTap;
+
+  const CartaoDestaque({
+    Key? key,
+    required this.child,
+    this.raio = 20,
+    this.padding = const EdgeInsets.all(16),
+    this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final cores = [
+      AppColors.navy.withOpacity(isDark ? 0.82 : 0.92),
+      AppColors.blue.withOpacity(isDark ? 0.62 : 0.80),
+    ];
+
+    final conteudo = Container(
+      width: double.infinity,
+      padding: padding,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: cores,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(raio),
+        border: Border.all(color: Colors.white.withOpacity(0.16), width: 0.8),
+      ),
+      child: child,
+    );
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(raio),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: onTap == null
+            ? conteudo
+            : Material(
+                color: Colors.transparent,
+                child: InkWell(onTap: onTap, child: conteudo),
+              ),
+      ),
+    );
+  }
+}
+
 /// Fundo com manchas de cor suaves, para o vidro ter o que desfocar.
 /// Sem isso o efeito some: vidro sobre fundo liso vira só um retângulo preto.
 /// As manchas ficam presas à viewport (não rolam com o conteúdo), que é o

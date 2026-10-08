@@ -7,6 +7,7 @@ import 'package:projetonovo/widgets/custom_appbar.dart';
 import '../widgets/widget_graficos.dart';
 import '../widgets/widget_mapa_geral.dart';
 import '../widgets/widget_grandes_comandos.dart';
+import '../widgets/vidro.dart';
 
 class MapadaforcaPage extends StatefulWidget {
   const MapadaforcaPage({super.key});
@@ -167,26 +168,12 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
   }
 
   Widget _bannerEfetivo(BuildContext context, bool isDark) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1976D2), Color(0xFF002154)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.blue.withValues(alpha: isDark ? 0.20 : 0.28),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: CartaoDestaque(
+        raio: 14,
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+        child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
@@ -221,6 +208,7 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
             ],
           ),
         ],
+        ),
       ),
     );
   }

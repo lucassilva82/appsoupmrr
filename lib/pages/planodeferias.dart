@@ -526,9 +526,12 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
           // ── Header gradient ──────────────────────────────────────
           Container(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [AppColors.blue, AppColors.navy],
+                colors: [
+                  AppColors.blue.withOpacity(isDark ? 0.60 : 0.80),
+                  AppColors.navy.withOpacity(isDark ? 0.82 : 0.92),
+                ],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),

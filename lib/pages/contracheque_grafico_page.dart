@@ -267,9 +267,12 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
                 ),
               ),
               background: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.navy, AppColors.blue],
+                    colors: [
+                      AppColors.navy.withOpacity(isDark ? 0.82 : 0.92),
+                      AppColors.blue.withOpacity(isDark ? 0.62 : 0.80),
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
