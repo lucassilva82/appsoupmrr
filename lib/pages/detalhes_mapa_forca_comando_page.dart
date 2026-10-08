@@ -29,16 +29,23 @@ class _DetalhesMapaForcaComandoPageState
   late Future<Map<String, Map<String, List<MilitarDetalheModel>>>> _future;
   final TextEditingController _searchCtrl = TextEditingController();
 
-  // ---------- Paleta (mesma do CustomAppBar) ----------
-  static const MaterialColor _swatch = Colors.lightBlue;
-  static final Color _primaryStart = _swatch.shade400;
-  static final Color _primaryMid = _swatch.shade200;
-  static final Color _primaryEnd = _swatch.shade700;
-  static final Gradient _grad = LinearGradient(
-    colors: [_primaryStart, _primaryEnd],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  // ---------- Paleta ----------
+  // Antes era azul sólido com texto branco por cima. Agora as superfícies são
+  // tingidas e translúcidas, e quem escreve é a cor do tema — o mesmo padrão
+  // das demais telas (ver DESIGN.md).
+  Color get _primaria => Theme.of(context).colorScheme.primary;
+  bool get _escuro => Theme.of(context).brightness == Brightness.dark;
+
+  Color get _fundoNivel1 => _primaria.withValues(alpha: _escuro ? 0.18 : 0.12);
+  Color get _fundoNivel2 => _primaria.withValues(alpha: _escuro ? 0.10 : 0.07);
+  Gradient get _grad => LinearGradient(
+        colors: [
+          _primaria.withValues(alpha: _escuro ? 0.22 : 0.14),
+          _primaria.withValues(alpha: _escuro ? 0.10 : 0.07),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
 
   @override
   void initState() {
@@ -177,11 +184,10 @@ class _DetalhesMapaForcaComandoPageState
   /* ---------------- CARTÃO DE MILITAR ---------------- */
   Widget _militarCard(MilitarDetalheModel m) => Card(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 3,
+        elevation: 0,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          splashColor: _primaryStart.withOpacity(.20),
+          splashColor: _primaria.withValues(alpha: 0.12),
           onTap: () => Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => MilitarDetalheFullPage(
                   matricula: m.matricula,
@@ -219,9 +225,16 @@ class _DetalhesMapaForcaComandoPageState
                   errorWidget: (_, __, ___) => Container(
                     width: 70,
                     height: 70,
-                    color: Colors.grey.shade300,
-                    child:
-                        const Icon(Icons.person, color: Colors.white, size: 38),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.08),
+                    child: Icon(Icons.person,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.35),
+                        size: 38),
                   ),
                 ),
               ),
@@ -294,24 +307,27 @@ class _DetalhesMapaForcaComandoPageState
         ),
         child: Row(
           children: [
-            const Icon(Icons.account_balance_rounded,
-                color: Colors.white, size: 18),
+            Icon(Icons.account_balance_rounded, color: _primaria, size: 18),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(comando,
-                      style: const TextStyle(
-                          color: Colors.white,
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.bold,
                           fontSize: 13)),
                   const SizedBox(height: 2),
                   Text('Filtro: $postosStr',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: Colors.white70, fontSize: 10.5)),
+                      style: TextStyle(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.62),
+                          fontSize: 10.5)),
                 ],
               ),
             ),
@@ -334,7 +350,7 @@ class _DetalhesMapaForcaComandoPageState
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 4, 12, 2),
             child: SizedBox(
-              height: 38,
+              height: 48,
               child: TextField(
                 controller: _searchCtrl,
                 style: const TextStyle(fontSize: 13),
@@ -342,24 +358,8 @@ class _DetalhesMapaForcaComandoPageState
                   contentPadding:
                       const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                   hintText: 'Pesquisar por nome...',
-                  hintStyle:
-                      TextStyle(fontSize: 13, color: Colors.grey.shade500),
-                  prefixIcon:
-                      Icon(Icons.search, size: 18, color: Colors.grey.shade500),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                    borderSide: BorderSide(color: Color(0xFF1976D2)),
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surface,
+                  hintStyle: const TextStyle(fontSize: 13),
+                  prefixIcon: const Icon(Icons.search, size: 18),
                 ),
               ),
             ),
@@ -394,8 +394,8 @@ class _DetalhesMapaForcaComandoPageState
                 final topSituacaoTile = _SituacaoTile(
                   key: const ValueKey('situacao_comando_todo'),
                   militares: allMilitares,
-                  start: _primaryStart,
-                  mid: _primaryMid,
+                  start: _fundoNivel1,
+                  mid: _fundoNivel2,
                 );
 
                 return ListView(
@@ -415,8 +415,8 @@ class _DetalhesMapaForcaComandoPageState
                       final unidadeSituacaoTile = _SituacaoTile(
                         key: ValueKey('situacao_unidade_${unid.key}'),
                         militares: unidadeMilitares,
-                        start: _primaryStart,
-                        mid: _primaryMid,
+                        start: _fundoNivel1,
+                        mid: _fundoNivel2,
                       );
 
                       // construir lista de subunidades (cada uma é um _GradientTile)
@@ -446,8 +446,8 @@ class _DetalhesMapaForcaComandoPageState
                         final situacaoTile = _SituacaoTile(
                           key: ValueKey('situacao_${unid.key}_${sub.key}'),
                           militares: sub.value,
-                          start: _primaryStart,
-                          mid: _primaryMid,
+                          start: _fundoNivel1,
+                          mid: _fundoNivel2,
                         );
 
                         return _GradientTile(
@@ -455,8 +455,8 @@ class _DetalhesMapaForcaComandoPageState
                           total: totalSub,
                           leadingIcon: Icons.account_tree_outlined,
                           isSubLevel: true,
-                          primaryStart: _primaryStart,
-                          primaryMid: _primaryMid,
+                          primaryStart: _fundoNivel1,
+                          primaryMid: _fundoNivel2,
                           grad: _grad,
                           referenceTotal: totalUnid,
                           childTiles: [
@@ -477,8 +477,8 @@ class _DetalhesMapaForcaComandoPageState
                         total: totalUnid,
                         leadingIcon: Icons.domain,
                         isSubLevel: false,
-                        primaryStart: _primaryStart,
-                        primaryMid: _primaryMid,
+                        primaryStart: _fundoNivel1,
+                        primaryMid: _fundoNivel2,
                         grad: _grad,
                         referenceTotal: allMilitares.length,
                         childTiles: unitChilds,
@@ -521,21 +521,32 @@ class _GradientTile extends StatelessWidget {
     required this.childTiles,
   });
 
-  Widget _badge() => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          gradient: grad,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text('$total',
-            style: const TextStyle(color: Colors.white, fontSize: 11)),
-      );
+  Widget _badge(BuildContext context) {
+    final cor = Theme.of(context).colorScheme.primary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cor.withValues(alpha: 0.35)),
+      ),
+      child: Text('$total',
+          style: TextStyle(
+              color: cor, fontSize: 11, fontWeight: FontWeight.w700)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bgCollapsed =
-        isSubLevel ? primaryStart.withOpacity(.25) : primaryStart;
-    final bgExpanded = isSubLevel ? primaryStart.withOpacity(.15) : primaryMid;
+    final tema = Theme.of(context);
+    final aoFundo = tema.colorScheme.onSurface;
+    final primaria = tema.colorScheme.primary;
+    // primaryStart/primaryMid já chegam translúcidos. Aberto, o fundo some:
+    // como os tiles são aninhados, pintar cada nível empilhava translucidez
+    // até virar um bloco azul chapado. Fechado é tingido, aberto é o fundo
+    // da tela com os filhos por cima.
+    final bgCollapsed = isSubLevel ? primaryMid : primaryStart;
+    const bgExpanded = Colors.transparent;
     final rawPct = referenceTotal == null || referenceTotal == 0
         ? 0.0
         : total / referenceTotal!;
@@ -549,19 +560,21 @@ class _GradientTile extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: ExpansionTile(
+          shape: const Border(),
+          collapsedShape: const Border(),
           tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           collapsedBackgroundColor: bgCollapsed,
           backgroundColor: bgExpanded,
           leading: Icon(leadingIcon,
-              color: Colors.white, size: isSubLevel ? 18 : 22),
-          iconColor: Colors.white,
-          collapsedIconColor: Colors.white,
+              color: primaria, size: isSubLevel ? 18 : 22),
+          iconColor: aoFundo.withValues(alpha: 0.65),
+          collapsedIconColor: aoFundo.withValues(alpha: 0.65),
           title: Row(
             children: [
               Expanded(
                 child: Text(title,
                     style: TextStyle(
-                        color: Colors.white,
+                        color: aoFundo,
                         fontSize: isSubLevel ? 13 : 14,
                         fontWeight:
                             isSubLevel ? FontWeight.w500 : FontWeight.bold)),
@@ -570,7 +583,7 @@ class _GradientTile extends StatelessWidget {
                 Text(
                   pctText,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.92),
+                    color: aoFundo.withValues(alpha: 0.70),
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -583,22 +596,26 @@ class _GradientTile extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(99),
                       border: Border.all(
-                          color: Colors.white.withOpacity(0.45), width: .8),
+                          color: primaria.withValues(alpha: 0.35), width: .8),
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(99),
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          Container(color: Colors.white.withOpacity(0.16)),
+                          Container(
+                              color: aoFundo.withValues(alpha: 0.08)),
                           Align(
                             alignment: Alignment.centerLeft,
                             child: FractionallySizedBox(
                               widthFactor: visualPct,
                               child: Container(
-                                decoration: const BoxDecoration(
+                                decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [Color(0xFFBEE8FF), Colors.white],
+                                    colors: [
+                                      primaria.withValues(alpha: 0.75),
+                                      primaria,
+                                    ],
                                   ),
                                 ),
                               ),
@@ -611,7 +628,7 @@ class _GradientTile extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
               ],
-              _badge()
+              _badge(context)
             ],
           ),
           childrenPadding: EdgeInsets.only(bottom: isSubLevel ? 2 : 4, top: 2),
@@ -634,6 +651,7 @@ class _PostoHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tema = Theme.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -641,11 +659,15 @@ class _PostoHeader extends StatelessWidget {
           gradient: grad, borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
-          const Icon(Icons.military_tech, color: Colors.white, size: 16),
+          Icon(Icons.military_tech,
+              color: tema.colorScheme.primary, size: 16),
           const SizedBox(width: 6),
           Expanded(
               child: Text('$sigla : $qtd militares',
-                  style: const TextStyle(color: Colors.white, fontSize: 12)))
+                  style: TextStyle(
+                      color: tema.colorScheme.onSurface,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)))
         ],
       ),
     );
@@ -671,7 +693,10 @@ class _SituacaoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF1C2536) : Colors.white;
+    final primaria = theme.colorScheme.primary;
+    final cardBg = isDark
+        ? Colors.white.withValues(alpha: 0.055)
+        : Colors.white.withValues(alpha: 0.72);
     final onCard = theme.colorScheme.onSurface;
     final subtleBorder = isDark
         ? Colors.white.withOpacity(0.08)
@@ -687,8 +712,11 @@ class _SituacaoTile extends StatelessWidget {
     }
 
     final situacoes = porSituacao.keys.toList()..sort();
-    const LinearGradient pillGrad =
-        LinearGradient(colors: [Color(0xFF1976D2), Color(0xFF002154)]);
+    // Selo tingido com a primária; o número usa a própria primária.
+    final LinearGradient pillGrad = LinearGradient(colors: [
+      primaria.withValues(alpha: isDark ? 0.22 : 0.16),
+      primaria.withValues(alpha: isDark ? 0.14 : 0.10),
+    ]);
 
     final double rootTitleSize = 13.0 * scale;
     final double rootBadgeSize = 10.0 * scale;
@@ -705,17 +733,13 @@ class _SituacaoTile extends StatelessWidget {
           color: cardBg,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: subtleBorder, width: 0.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.15 : 0.04),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            )
-          ],
+
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(14),
           child: ExpansionTile(
+            shape: const Border(),
+            collapsedShape: const Border(),
             key: PageStorageKey('situacao_root_${militares.hashCode}'),
             tilePadding: EdgeInsets.symmetric(
                 horizontal: 10.0 * scale, vertical: 4.0 * scale),
@@ -742,7 +766,9 @@ class _SituacaoTile extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20.0 * scale)),
                   child: Text('${militares.length}',
                       style: TextStyle(
-                          color: Colors.white, fontSize: rootBadgeSize)),
+                          color: primaria,
+                          fontSize: rootBadgeSize,
+                          fontWeight: FontWeight.w700)),
                 )
               ],
             ),
@@ -763,14 +789,16 @@ class _SituacaoTile extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     color: isDark
-                        ? Colors.white.withOpacity(0.04)
-                        : Colors.grey.shade50,
+                        ? Colors.white.withValues(alpha: 0.04)
+                        : Colors.white.withValues(alpha: 0.55),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: subtleBorder, width: 0.5),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: ExpansionTile(
+                      shape: const Border(),
+                      collapsedShape: const Border(),
                       key: PageStorageKey(
                           'situacao_item_${militares.hashCode}_$sit'),
                       initiallyExpanded: false,
@@ -856,8 +884,9 @@ class _SituacaoTile extends StatelessWidget {
                                     BorderRadius.circular(20.0 * scale)),
                             child: Text('${lista.length}',
                                 style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: itemBadgeSize)),
+                                    color: primaria,
+                                    fontSize: itemBadgeSize,
+                                    fontWeight: FontWeight.w700)),
                           )
                         ],
                       ),
@@ -997,7 +1026,8 @@ class _SituacaoTile extends StatelessWidget {
                   gradient: pillGrad,
                   borderRadius: BorderRadius.circular(12.0 * scale)),
               child: Icon(Icons.arrow_forward_ios,
-                  size: 10.0 * scale, color: Colors.white),
+                  size: 10.0 * scale,
+                  color: Theme.of(context).colorScheme.primary),
             )
           ],
         ),

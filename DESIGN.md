@@ -260,6 +260,15 @@ Contracheque, Declarações, Certidões, Legislações, POPs, Plano de Férias,
 Cálculo de Inatividade, Mapa da Força, Recuperar senha, Primeiro acesso,
 Confirmar e-mail, Alterar senha, modal de biometria.
 
-**Pendente:** `detalhes_mapa_forca_comando_page.dart`. A tela inteira é feita
-de superfícies coloridas com 14 textos em branco; baixar a opacidade sem trocar
-as cores do texto quebraria o contraste no modo claro.
+Detalhe de comando (`detalhes_mapa_forca_comando_page.dart`) também: era a
+última tela feita de superfícies azuis sólidas com texto branco.
+
+### Uma armadilha que apareceu ali
+
+`withValues(alpha:)` **substitui** o alfa, não multiplica. Em tiles aninhados,
+`cor.withValues(alpha: 0.7)` sobre uma cor que já vinha a 0.20 devolveu 0.70 e
+o bloco voltou a ficar opaco. E `ExpansionTile` aberto pinta o fundo do tile
+inteiro, filhos incluídos — com três níveis aninhados a translucidez se
+empilha até virar cor chapada. A saída: fechado é tingido, aberto é
+transparente (`shape: const Border()` também tira os divisores que aparecem
+quando o fundo some).

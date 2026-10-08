@@ -92,23 +92,22 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
         label: Text(sig),
         selected: selected,
         onSelected: (v) => _toggleChip(sig, v),
-        selectedColor: AppColors.blue,
-        checkmarkColor: Colors.white,
-        backgroundColor:
-            isDark ? theme.colorScheme.surface : const Color(0xFFF2F6FF),
+        // Mesmo tratamento do Mapa Geral: selecionado é tingimento + borda.
+        selectedColor: theme.colorScheme.primary
+            .withValues(alpha: isDark ? 0.26 : 0.16),
+        backgroundColor: theme.colorScheme.onSurface
+            .withValues(alpha: isDark ? 0.06 : 0.04),
         side: BorderSide(
           color: selected
-              ? AppColors.blue
-              : isDark
-                  ? const Color(0xFF30363D)
-                  : const Color(0xFFDDE6F5),
+              ? theme.colorScheme.primary.withValues(alpha: 0.55)
+              : theme.colorScheme.onSurface.withValues(alpha: 0.15),
         ),
         showCheckmark: false,
         labelStyle: TextStyle(
           fontSize: 10,
           fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           color: selected
-              ? Colors.white
+              ? theme.colorScheme.primary
               : theme.colorScheme.onSurface.withValues(alpha: 0.7),
         ),
         visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
@@ -132,17 +131,16 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
                       const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                   decoration: BoxDecoration(
                     color: allSel
-                        ? AppColors.blue
-                        : isDark
-                            ? theme.colorScheme.surface
-                            : const Color(0xFFF2F6FF),
+                        ? theme.colorScheme.primary
+                            .withValues(alpha: isDark ? 0.26 : 0.16)
+                        : theme.colorScheme.onSurface
+                            .withValues(alpha: isDark ? 0.06 : 0.04),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: allSel
-                          ? AppColors.blue
-                          : isDark
-                              ? const Color(0xFF30363D)
-                              : const Color(0xFFDDE6F5),
+                          ? theme.colorScheme.primary.withValues(alpha: 0.55)
+                          : theme.colorScheme.onSurface
+                              .withValues(alpha: 0.15),
                     ),
                   ),
                   child: Row(
@@ -154,7 +152,7 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
                             : Icons.select_all_rounded,
                         size: 14,
                         color: allSel
-                            ? Colors.white
+                            ? theme.colorScheme.primary
                             : theme.colorScheme.onSurface
                                 .withValues(alpha: 0.6),
                       ),
@@ -165,7 +163,7 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                           color: allSel
-                              ? Colors.white
+                              ? theme.colorScheme.primary
                               : theme.colorScheme.onSurface
                                   .withValues(alpha: 0.6),
                         ),
@@ -418,16 +416,15 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 10),
-                      color: isDark
-                          ? AppColors.navy.withValues(alpha: 0.7)
-                          : AppColors.blue,
-                      child: const Row(
+                      color: theme.colorScheme.primary
+                          .withValues(alpha: isDark ? 0.16 : 0.10),
+                      child: Row(
                         children: [
                           Expanded(
                             child: Text(
                               'Grandes Comandos',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: theme.colorScheme.primary,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.3,
@@ -437,7 +434,8 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
                           Text(
                             'Efetivo',
                             style: TextStyle(
-                              color: Colors.white70,
+                              color: theme.colorScheme.primary
+                                  .withValues(alpha: 0.80),
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
@@ -466,25 +464,21 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 11),
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? AppColors.navy.withValues(alpha: 0.78)
-                              : AppColors.blue,
+                          color: theme.colorScheme.primary
+                              .withValues(alpha: isDark ? 0.20 : 0.12),
                           borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 6,
-                              offset: const Offset(0, -2),
-                            ),
-                          ],
+                          border: Border.all(
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.35),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            const Expanded(
+                            Expanded(
                               child: Text(
                                 'TOTAL',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: theme.colorScheme.onSurface,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: 0.5,
@@ -495,13 +489,14 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
+                                color: theme.colorScheme.primary
+                                    .withValues(alpha: 0.22),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
                                 total.toString(),
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: theme.colorScheme.onSurface,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,
                                 ),
