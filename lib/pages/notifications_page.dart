@@ -276,7 +276,7 @@ class _ActionHeader extends StatelessWidget {
               size: 18,
               color: unread > 0
                   ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurface.withOpacity(0.5),
+                  : theme.colorScheme.onSurface.withOpacity(0.70),
             ),
           ),
           const SizedBox(width: 10),
@@ -292,7 +292,7 @@ class _ActionHeader extends StatelessWidget {
                 Text(
                   '$total no total',
                   style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                      color: theme.colorScheme.onSurface.withOpacity(0.70)),
                 ),
               ],
             ),
@@ -366,7 +366,7 @@ class _GroupHeader extends StatelessWidget {
         style: theme.textTheme.labelSmall?.copyWith(
           fontWeight: FontWeight.w800,
           letterSpacing: 0.8,
-          color: theme.colorScheme.onSurface.withOpacity(0.45),
+          color: theme.colorScheme.onSurface.withOpacity(0.70),
         ),
       ),
     );
@@ -748,7 +748,7 @@ class _EmptyState extends StatelessWidget {
             'Quando houver avisos, escalas ou novidades,\neles aparecerão aqui.',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.45),
+              color: theme.colorScheme.onSurface.withOpacity(0.70),
             ),
           ),
         ],

@@ -589,7 +589,7 @@ class _InfoRow extends StatelessWidget {
               '$label:',
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface.withOpacity(0.55),
+                color: theme.colorScheme.onSurface.withOpacity(0.70),
               ),
             ),
           ),
@@ -642,7 +642,7 @@ class _ComposicaoTile extends StatelessWidget {
                 Text(
                   '${membro.funcao}  ·  ${membro.quadroSigla}',
                   style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                      color: theme.colorScheme.onSurface.withOpacity(0.70)),
                 ),
               ],
             ),

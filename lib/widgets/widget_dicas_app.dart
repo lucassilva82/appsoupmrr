@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../models/auth_model.dart';
 import '../utils/app_theme.dart';
+import 'vidro.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WidgetDicasApp
@@ -231,23 +232,10 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
       child: Column(
         children: [
           // ── Card balão ───────────────────────────────────────────────────
-          Container(
+          CartaoVidro(
+            raio: 14,
+            child: SizedBox(
             height: 76,
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkCard : Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isDark ? AppColors.darkBorder : const Color(0xFFE8EEF6),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
             child: PageView.builder(
               controller: _pageCtrl,
               onPageChanged: (i) => setState(() => _current = i),
@@ -328,6 +316,7 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
                   ),
                 );
               },
+            ),
             ),
           ),
 

@@ -67,7 +67,7 @@ class RequisitosSenha extends StatelessWidget {
             Builder(builder: (_) {
               final ok = situacao[regra.chave] ?? false;
               final cor = vazio
-                  ? theme.colorScheme.onSurface.withOpacity(0.45)
+                  ? theme.colorScheme.onSurface.withOpacity(0.70)
                   : (ok ? verde : vermelho);
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 3),

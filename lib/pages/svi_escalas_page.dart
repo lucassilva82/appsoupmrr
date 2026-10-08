@@ -421,7 +421,7 @@ class _SviEscalaCard extends StatelessWidget {
     return Row(
       children: [
         Icon(icon,
-            size: 13, color: theme.colorScheme.onSurface.withOpacity(0.45)),
+            size: 13, color: theme.colorScheme.onSurface.withOpacity(0.70)),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
@@ -854,7 +854,7 @@ class _SviEscalaDetalheSheetState extends State<_SviEscalaDetalheSheet> {
                 child: Text(
                   'Posto/graduação: ${slot.postoPermitido}',
                   style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.45)),
+                      color: theme.colorScheme.onSurface.withOpacity(0.70)),
                 ),
               ),
             if (slot.quadroPermitido != null &&
@@ -864,7 +864,7 @@ class _SviEscalaDetalheSheetState extends State<_SviEscalaDetalheSheet> {
                 child: Text(
                   'Quadro: ${slot.quadroPermitido}',
                   style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.45)),
+                      color: theme.colorScheme.onSurface.withOpacity(0.70)),
                 ),
               ),
             const SizedBox(height: 12),
@@ -959,7 +959,7 @@ class _SviEscalaDetalheSheetState extends State<_SviEscalaDetalheSheet> {
                 Text(
                   label,
                   style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                      color: theme.colorScheme.onSurface.withOpacity(0.70)),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -1056,7 +1056,7 @@ class _SviEmptyView extends StatelessWidget {
             'graduação, elas aparecerão aqui.',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.55)),
+                color: theme.colorScheme.onSurface.withOpacity(0.70)),
           ),
         ],
       ),

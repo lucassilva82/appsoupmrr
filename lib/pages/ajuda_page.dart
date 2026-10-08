@@ -710,7 +710,7 @@ class _SectionLabel extends StatelessWidget {
         fontSize: 11,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.8,
-        color: theme.colorScheme.onSurface.withOpacity(0.45),
+        color: theme.colorScheme.onSurface.withOpacity(0.70),
       ),
     );
   }

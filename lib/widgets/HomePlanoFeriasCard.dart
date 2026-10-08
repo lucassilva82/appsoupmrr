@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'vidro.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
@@ -128,13 +129,8 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
           decoration: BoxDecoration(
               color: base, borderRadius: BorderRadius.circular(r)),
         );
-    return Card(
-      elevation: isDark ? 0 : 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-            color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
-      ),
+    return CartaoVidro(
+      raio: 16,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         child: Column(
@@ -245,16 +241,8 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
 
         // Estado vazio / erro
         if (r == null) {
-          return Card(
-            margin: EdgeInsets.zero,
-            elevation: isDark ? 0 : 1,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                  color:
-                      isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
-            ),
-            clipBehavior: Clip.antiAlias,
+          return CartaoVidro(
+            raio: 16,
             child: InkWell(
               onTap: () => Navigator.of(context)
                   .pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE),
@@ -330,15 +318,8 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
             ? nearest.difference(DateTime.now()).inDays + 1
             : null;
 
-        return Card(
-          margin: EdgeInsets.zero,
-          elevation: isDark ? 0 : 1,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-                color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
-          ),
-          clipBehavior: Clip.antiAlias,
+        return CartaoVidro(
+          raio: 16,
           child: InkWell(
             onTap: () =>
                 Navigator.of(context).pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE),

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -7,9 +8,15 @@ import '../utils/app_theme.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // CartaoVidro
 //
-// Superfície translúcida no padrão do iOS: desfoque do que está atrás,
-// degradê suave de claro para transparente e borda fininha. Serve de base
-// para os cards e botões do app sem alterar o conteúdo deles.
+// Superfície adaptativa por plataforma:
+//
+//  • iOS      — vidro: desfoque do que está atrás, degradê suave e borda
+//               fininha, como as superfícies do sistema.
+//  • Android  — Material 3: superfície tonal com leve elevação, que é o
+//               padrão da plataforma. Blur pesado ali destoa e custa caro
+//               em aparelhos mais simples.
+//
+// Em ambos o conteúdo é o mesmo; muda só o acabamento.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class CartaoVidro extends StatelessWidget {
@@ -39,6 +46,8 @@ class CartaoVidro extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cor = tingimento;
+
+    if (Platform.isAndroid) return _materialVersao(context, theme, isDark, cor);
 
     // No claro o vidro clareia; no escuro, escurece de leve. Em ambos, a
     // borda é o que dá o contorno — como nas superfícies do iOS.
@@ -133,6 +142,51 @@ class FundoSuave extends StatelessWidget {
         ),
         child,
       ],
+    );
+  }
+}
+
+extension _VersaoMaterial on CartaoVidro {
+  /// Android: superfície tonal do Material 3 em vez de vidro.
+  Widget _materialVersao(
+    BuildContext context,
+    ThemeData theme,
+    bool isDark,
+    Color? cor,
+  ) {
+    final superficie = cor != null
+        ? Color.alphaBlend(
+            cor.withOpacity(isDark ? 0.22 : 0.14),
+            theme.colorScheme.surface,
+          )
+        : (isDark
+            ? Color.alphaBlend(
+                theme.colorScheme.primary.withOpacity(0.08),
+                AppColors.darkCard,
+              )
+            : Colors.white);
+
+    return Material(
+      color: superficie,
+      elevation: isDark ? 0 : 1,
+      shadowColor: Colors.black.withOpacity(0.10),
+      borderRadius: BorderRadius.circular(raio),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(raio),
+            border: Border.all(
+              color: (cor ?? theme.colorScheme.outlineVariant)
+                  .withOpacity(cor != null ? 0.45 : (isDark ? 0.35 : 0.55)),
+              width: 0.8,
+            ),
+          ),
+          child: child,
+        ),
+      ),
     );
   }
 }

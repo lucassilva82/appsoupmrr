@@ -92,7 +92,7 @@ class _ErrorState extends StatelessWidget {
               error,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.70)),
               textAlign: TextAlign.center,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,

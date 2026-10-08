@@ -10,6 +10,7 @@ import '../utils/app_theme.dart';
 import '../utils/theme_provider.dart';
 import '../widgets/custom_appbar.dart';
 import '../widgets/dialogo_confirmacao.dart';
+import '../widgets/vidro.dart';
 import '../widgets/versao_app.dart';
 import 'alterar_senha_page.dart';
 import 'confirm_email.dart';
@@ -199,7 +200,7 @@ class SettingsBody extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11,
                             color:
-                                theme.colorScheme.onSurface.withOpacity(0.55),
+                                theme.colorScheme.onSurface.withOpacity(0.70),
                           ),
                         ),
                       ],
@@ -420,7 +421,7 @@ class _UserHeader extends StatelessWidget {
                 Text(
                   'Mat. ${auth.matricula ?? '-'}',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.55),
+                    color: theme.colorScheme.onSurface.withOpacity(0.70),
                   ),
                 ),
                 if (isSuperUser) ...[
@@ -687,14 +688,14 @@ class _ThemeModeSelector extends StatelessWidget {
               children: [
                 Icon(Icons.info_outline_rounded,
                     size: 12,
-                    color: theme.colorScheme.onSurface.withOpacity(0.45)),
+                    color: theme.colorScheme.onSurface.withOpacity(0.70)),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     'O app acompanha a configuração de aparência do seu dispositivo.',
                     style: TextStyle(
                       fontSize: 11,
-                      color: theme.colorScheme.onSurface.withOpacity(0.45),
+                      color: theme.colorScheme.onSurface.withOpacity(0.70),
                     ),
                   ),
                 ),
@@ -713,9 +714,8 @@ class _SettingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return CartaoVidro(
+      raio: 14,
       child: Column(children: children),
     );
   }

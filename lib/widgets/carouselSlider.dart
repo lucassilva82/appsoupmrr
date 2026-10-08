@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/app_theme.dart';
+import 'vidro.dart';
 
 // ── WidgetCarouselSlider ──────────────────────────────────────────────────────
 // Exibe dois cards lado a lado: Comandante (índice 0) e Sub-Comandante (índice 1)
@@ -151,13 +152,9 @@ class _ComandanteCardState extends State<_ComandanteCard>
         animation: _ctrl,
         builder: (context, child) => Transform.scale(
           scale: _scale.value,
-          child: Card(
-            elevation: _elevation.value,
-            shadowColor: theme.colorScheme.primary.withOpacity(0.35),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            clipBehavior: Clip.antiAlias,
-            child: child,
+          child: CartaoVidro(
+            raio: 16,
+            child: child ?? const SizedBox.shrink(),
           ),
         ),
         child: Column(

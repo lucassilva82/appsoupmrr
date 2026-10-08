@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'vidro.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -149,13 +150,8 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard>
           decoration: BoxDecoration(
               color: base, borderRadius: BorderRadius.circular(r)),
         );
-    return Card(
-      elevation: isDark ? 0 : 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-            color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
-      ),
+    return CartaoVidro(
+      raio: 16,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
         child: Column(
@@ -218,13 +214,8 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard>
 
   // ── Error state ───────────────────────────────────────────────────────
   Widget _buildError(bool isDark, String msg) {
-    return Card(
-      elevation: isDark ? 0 : 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-            color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
-      ),
+    return CartaoVidro(
+      raio: 16,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
         child: Row(children: [
@@ -273,15 +264,8 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard>
     String maskedOrFmt(double v) =>
         _showValues ? 'R\$\u2009${fmt.format(v)}' : '••••••';
 
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: isDark ? 0 : 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-            color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
-      ),
-      clipBehavior: Clip.antiAlias,
+    return CartaoVidro(
+      raio: 16,
       child: InkWell(
         onTap: () {
           final mes = _ultimoMes;

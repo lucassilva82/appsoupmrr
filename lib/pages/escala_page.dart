@@ -521,7 +521,7 @@ class _EscalasPageState extends State<EscalasPage>
             controller: _tabController,
             indicatorColor: AppColors.blue,
             labelColor: AppColors.blue,
-            unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.5),
+            unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.70),
             labelStyle:
                 const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             tabs: const [
@@ -1398,7 +1398,7 @@ class _GuarnicaoCard extends StatelessWidget {
                 subtitle: Text(
                   m.funcao,
                   style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.55)),
+                      color: theme.colorScheme.onSurface.withOpacity(0.70)),
                 ),
                 trailing: m.telefone != null
                     ? Icon(Icons.phone_rounded,
@@ -1553,7 +1553,7 @@ class _EscalaListCard extends StatelessWidget {
                   Text(
                     '${escala.horarioIni} – ${escala.horarioFim}  ·  ${escala.guarnicaoNome}',
                     style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.55)),
+                        color: theme.colorScheme.onSurface.withOpacity(0.70)),
                     overflow: TextOverflow.ellipsis,
                   ),
                   if (escala.vtr != null || escala.localAtuacao != null)

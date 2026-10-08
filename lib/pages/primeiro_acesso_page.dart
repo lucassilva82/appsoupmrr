@@ -417,7 +417,7 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
         Text(
           'Pergunta ${_indice + 1} de ${_perguntas.length}',
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.55),
+            color: theme.colorScheme.onSurface.withOpacity(0.70),
             letterSpacing: 0.5,
           ),
         ),
@@ -965,7 +965,7 @@ class _LinhaDado extends StatelessWidget {
           style: theme.textTheme.bodySmall?.copyWith(
             fontSize: 10.5,
             letterSpacing: 0.8,
-            color: theme.colorScheme.onSurface.withOpacity(0.55),
+            color: theme.colorScheme.onSurface.withOpacity(0.70),
           ),
         ),
         const SizedBox(height: 4),
@@ -985,7 +985,7 @@ class _LinhaDado extends StatelessWidget {
             legenda!,
             style: theme.textTheme.bodySmall?.copyWith(
               fontSize: 10.5,
-              color: theme.colorScheme.onSurface.withOpacity(0.45),
+              color: theme.colorScheme.onSurface.withOpacity(0.70),
             ),
           ),
       ],

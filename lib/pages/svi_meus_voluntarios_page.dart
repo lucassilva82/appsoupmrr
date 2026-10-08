@@ -156,7 +156,7 @@ class _SviMeusVoluntariosPageState extends State<SviMeusVoluntariosPage> {
                     'aparecerá aqui.',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.55)),
+                        color: theme.colorScheme.onSurface.withOpacity(0.70)),
                   ),
                 ],
               ),
@@ -187,7 +187,7 @@ class _SviMeusVoluntariosPageState extends State<SviMeusVoluntariosPage> {
                   grupo.titulo,
                   style: theme.textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface.withOpacity(0.55),
+                    color: theme.colorScheme.onSurface.withOpacity(0.70),
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -358,7 +358,7 @@ class _SviVoluntarioCard extends StatelessWidget {
                     '${item.horas > 0 ? '  ·  ${item.horas}h' : ''}'
                     '${item.localAssuncao.isNotEmpty ? '  ·  ${item.localAssuncao}' : ''}',
                     style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.45)),
+                        color: theme.colorScheme.onSurface.withOpacity(0.70)),
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),

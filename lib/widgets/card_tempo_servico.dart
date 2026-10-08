@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'vidro.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
@@ -126,14 +127,8 @@ class CardTempoServico extends StatelessWidget {
 
         // Skeleton só quando não há nem o tempo normal disponível
         if (isLoading && diasNormal == 0) {
-          return Card(
-            elevation: isDark ? 0 : 1,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                  color:
-                      isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
-            ),
+          return CartaoVidro(
+            raio: 16,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -205,14 +200,8 @@ class CardTempoServico extends StatelessWidget {
           }
         }
 
-        return Card(
-          margin: EdgeInsets.zero,
-          elevation: isDark ? 0 : 1,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-                color: isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0)),
-          ),
+        return CartaoVidro(
+          raio: 16,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
             child: Column(
