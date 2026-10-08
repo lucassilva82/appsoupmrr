@@ -17,7 +17,7 @@ import '../widgets/requisitos_senha.dart';
 // no estilo dos aplicativos de banco. Acertando todas, cadastra a senha.
 // ─────────────────────────────────────────────────────────────────────────────
 
-enum _Passo { cpf, perguntas, senha, concluido }
+enum _Passo { cpf, perguntas, email, codigo, senha, concluido }
 
 class PrimeiroAcessoPage extends StatefulWidget {
   const PrimeiroAcessoPage({Key? key}) : super(key: key);
@@ -41,6 +41,9 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
   String _senhaCadastrada = '';
   bool _emailEnviado = false;
   final List<String> _usadas = [];
+  final _emailCtrl = TextEditingController();
+  final _codigoCtrl = TextEditingController();
+  String _emailMascarado = '';
   List<Map<String, dynamic>> _perguntas = [];
   final Map<String, String> _respostas = {};
   int _indice = 0;
@@ -48,6 +51,8 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
   @override
   void dispose() {
     _cpfCtrl.dispose();
+    _emailCtrl.dispose();
+    _codigoCtrl.dispose();
     _senhaCtrl.dispose();
     _repetirCtrl.dispose();
     super.dispose();
@@ -114,6 +119,45 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
         acao: 'responder',
         sessao: _sessao,
         respostas: _respostas,
+      ),
+      (r) => setState(() {
+        // Sem e-mail no cadastro, o militar informa um agora e confirma por
+        // código — assim ninguém fica preso com um endereço digitado errado.
+        _passo = r['tem_email'] == true ? _Passo.senha : _Passo.email;
+      }),
+    );
+  }
+
+  void _enviarCodigoEmail() {
+    final email = _emailCtrl.text.trim().toLowerCase();
+    if (!RegExp(r'^[\w.+-]+@[\w-]+\.[\w.-]+$').hasMatch(email)) {
+      setState(() => _erro = 'Informe um e-mail válido.');
+      return;
+    }
+    _executar(
+      () => ApiServices.primeiroAcesso(
+        acao: 'enviar_codigo_email',
+        sessao: _sessao,
+        email: email,
+      ),
+      (r) => setState(() {
+        _emailMascarado = (r['email'] ?? email).toString();
+        _passo = _Passo.codigo;
+      }),
+    );
+  }
+
+  void _validarCodigoEmail() {
+    final codigo = _codigoCtrl.text.replaceAll(RegExp(r'\D'), '');
+    if (codigo.length != 6) {
+      setState(() => _erro = 'Digite os 6 dígitos do código.');
+      return;
+    }
+    _executar(
+      () => ApiServices.primeiroAcesso(
+        acao: 'validar_codigo_email',
+        sessao: _sessao,
+        codigo: codigo,
       ),
       (_) => setState(() => _passo = _Passo.senha),
     );
@@ -199,6 +243,8 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
           child: switch (_passo) {
             _Passo.cpf => _telaCpf(),
             _Passo.perguntas => _telaPerguntas(),
+            _Passo.email => _telaEmail(),
+            _Passo.codigo => _telaCodigo(),
             _Passo.senha => _telaSenha(),
             _Passo.concluido => _telaConcluido(),
           },
@@ -433,7 +479,177 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
     );
   }
 
+
+  // ── Passo 3a: cadastrar e-mail (quem não tem) ─────────────────────────────
+
+  Widget _telaEmail() {
+    return Column(
+      key: const ValueKey('email'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _cabecalho(Icons.alternate_email_rounded, 'Cadastre seu e-mail',
+            'Você ainda não tem e-mail no cadastro. Ele é necessário para '
+            'recuperar a senha caso você esqueça.',
+            cor: const Color(0xFF2E7D32)),
+        const SizedBox(height: 24),
+        TextField(
+          controller: _emailCtrl,
+          keyboardType: TextInputType.emailAddress,
+          autocorrect: false,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _enviarCodigoEmail(),
+          decoration: decoracaoCampo(
+            context: context,
+            label: 'Seu e-mail',
+            icon: Icons.alternate_email_rounded,
+          ),
+        ),
+        _erroBox(),
+        const SizedBox(height: 20),
+        _botaoPrincipal(
+          texto: 'Enviar código',
+          carregandoTexto: 'Enviando...',
+          icone: Icons.send_rounded,
+          aoTocar: _enviarCodigoEmail,
+        ),
+        const SizedBox(height: 16),
+        const AvisoCaixa(
+          cor: AppColors.gold,
+          icone: Icons.priority_high_rounded,
+          texto: 'Confira bem o endereço: enviaremos um código para confirmar '
+              'que ele é seu antes de salvar no cadastro.',
+        ),
+      ],
+    );
+  }
+
+  // ── Passo 3b: confirmar o código do e-mail ────────────────────────────────
+
+  Widget _telaCodigo() {
+    final theme = Theme.of(context);
+    return Column(
+      key: const ValueKey('codigo'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _cabecalho(Icons.sms_rounded, 'Confirme o código',
+            'Enviamos um código de 6 dígitos para:'),
+        const SizedBox(height: 8),
+        Text(
+          _emailMascarado,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(height: 24),
+        TextField(
+          controller: _codigoCtrl,
+          keyboardType: TextInputType.number,
+          textAlign: TextAlign.center,
+          maxLength: 6,
+          style: const TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 14,
+          ),
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          onChanged: (v) {
+            if (v.length == 6) _validarCodigoEmail();
+          },
+          decoration: InputDecoration(
+            counterText: '',
+            hintText: '000000',
+            hintStyle: TextStyle(
+              letterSpacing: 14,
+              color: theme.colorScheme.onSurface.withOpacity(0.18),
+            ),
+            filled: true,
+            fillColor: theme.brightness == Brightness.dark
+                ? AppColors.darkCard
+                : Colors.white,
+            contentPadding: const EdgeInsets.symmetric(vertical: 18),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                color: theme.brightness == Brightness.dark
+                    ? AppColors.darkBorder
+                    : const Color(0xFFE8EEF6),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide:
+                  BorderSide(color: theme.colorScheme.primary, width: 1.6),
+            ),
+          ),
+        ),
+        _erroBox(),
+        const SizedBox(height: 16),
+        _botaoPrincipal(
+          texto: 'Confirmar código',
+          carregandoTexto: 'Conferindo...',
+          icone: Icons.check_rounded,
+          aoTocar: _validarCodigoEmail,
+        ),
+        const SizedBox(height: 10),
+        TextButton(
+          onPressed: _carregando
+              ? null
+              : () {
+                  _codigoCtrl.clear();
+                  setState(() {
+                    _erro = null;
+                    _passo = _Passo.email;
+                  });
+                },
+          child: const Text('Corrigir o e-mail'),
+        ),
+        const AvisoCaixa(
+          cor: AppColors.gold,
+          icone: Icons.search_rounded,
+          texto: 'Não chegou? Procure na pasta de spam ou lixo eletrônico.',
+        ),
+      ],
+    );
+  }
+
+  /// Botão principal padrão das etapas.
+  Widget _botaoPrincipal({
+    required String texto,
+    required String carregandoTexto,
+    required IconData icone,
+    required VoidCallback aoTocar,
+  }) {
+    return SizedBox(
+      height: 50,
+      child: ElevatedButton.icon(
+        onPressed: _carregando ? null : aoTocar,
+        icon: _carregando
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Icon(icone, size: 18),
+        label: Text(_carregando ? carregandoTexto : texto),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Colors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          textStyle: const TextStyle(
+              fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+        ),
+      ),
+    );
+  }
+
   // ── Passo 3: senha ────────────────────────────────────────────────────────
+
 
   Widget _telaSenha() {
     return Column(
