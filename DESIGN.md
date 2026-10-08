@@ -130,6 +130,45 @@ Margem lateral de tela: **16**. Entre cards: **10**.
 
 ---
 
+## 3b. Profundidade — um tom só
+
+Quando uma tela tem listas dentro de listas, a tentação é dar uma superfície
+a cada nível. Não faça: cada nível com um cinza um pouco diferente deixa a
+tela com meia dúzia de pretos encavalados, e o usuário não consegue dizer o
+que está dentro do quê.
+
+A regra aqui:
+
+| Profundidade | Tratamento |
+|---|---|
+| Nível 1 (a entidade da tela) | Superfície tingida, raio 14 |
+| Seção dentro dela | Superfície neutra (`onSurface` a 0.055), raio 12 |
+| Nível 2 em diante | **Sem superfície** — indentação de 12 + guia de 2px à esquerda |
+
+A guia é desenhada **uma vez para o bloco inteiro de filhos**, nunca uma por
+filho — senão ela sai tracejada, com um corte na margem de cada item.
+
+### Duas armadilhas do Flutter nisso
+
+`withValues(alpha:)` **substitui** o alfa, não multiplica. Em tiles aninhados,
+`cor.withValues(alpha: 0.7)` sobre uma cor que já vinha a 0.20 devolve 0.70 e
+o bloco volta a ficar opaco.
+
+`ExpansionTile` aberto pinta o fundo do tile inteiro, filhos incluídos — com
+três níveis a translucidez se empilha até virar cor chapada. Por isso:
+fechado é tingido, aberto é transparente. E `shape: const Border()` /
+`collapsedShape: const Border()` tiram os divisores que aparecem assim que o
+fundo some.
+
+### Escala de texto
+
+Nada de multiplicar tudo por um fator. Havia um `scale = 0.82` nessa tela que
+transformava 13 em 10,66 e 11,5 em 9,43 — valores arbitrários, exatamente o
+que a regra de consistência proíbe. Use os números da escala: 10, 11, 12, 13,
+14, 16, 18.
+
+---
+
 ## 4. App bar
 
 Todas iguais: **reta embaixo** (sem canto arredondado), degradê institucional
@@ -263,12 +302,3 @@ Confirmar e-mail, Alterar senha, modal de biometria.
 Detalhe de comando (`detalhes_mapa_forca_comando_page.dart`) também: era a
 última tela feita de superfícies azuis sólidas com texto branco.
 
-### Uma armadilha que apareceu ali
-
-`withValues(alpha:)` **substitui** o alfa, não multiplica. Em tiles aninhados,
-`cor.withValues(alpha: 0.7)` sobre uma cor que já vinha a 0.20 devolveu 0.70 e
-o bloco voltou a ficar opaco. E `ExpansionTile` aberto pinta o fundo do tile
-inteiro, filhos incluídos — com três níveis aninhados a translucidez se
-empilha até virar cor chapada. A saída: fechado é tingido, aberto é
-transparente (`shape: const Border()` também tira os divisores que aparecem
-quando o fundo some).

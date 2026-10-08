@@ -36,8 +36,12 @@ class _DetalhesMapaForcaComandoPageState
   Color get _primaria => Theme.of(context).colorScheme.primary;
   bool get _escuro => Theme.of(context).brightness == Brightness.dark;
 
-  Color get _fundoNivel1 => _primaria.withValues(alpha: _escuro ? 0.18 : 0.12);
-  Color get _fundoNivel2 => _primaria.withValues(alpha: _escuro ? 0.10 : 0.07);
+  // Dois tons, não cinco. O nível 1 (unidade) é tingido; do nível 2 para
+  // baixo não há superfície nova — a hierarquia é indentação e peso de texto.
+  // Cada nível com um cinza ligeiramente diferente deixava a tela com meia
+  // dúzia de pretos encavalados.
+  Color get _fundoNivel1 => _primaria.withValues(alpha: _escuro ? 0.14 : 0.10);
+  Color get _fundoNivel2 => Colors.transparent;
   Gradient get _grad => LinearGradient(
         colors: [
           _primaria.withValues(alpha: _escuro ? 0.22 : 0.14),
@@ -554,11 +558,14 @@ class _GradientTile extends StatelessWidget {
     final visualPct = total > 0 && pct < 0.05 ? 0.05 : pct;
     final pctText = '${(pct * 100).toStringAsFixed(pct < 0.1 ? 1 : 0)}%';
 
-    return Padding(
-      padding: EdgeInsets.symmetric(
-          horizontal: isSubLevel ? 12 : 8, vertical: isSubLevel ? 2 : 4),
+    // Nível 1 é a única caixa; do nível 2 para baixo a hierarquia é
+    // indentação. A guia à esquerda é desenhada uma vez para o bloco inteiro
+    // de filhos (abaixo), não uma por filho — senão vira linha tracejada.
+    return Container(
+      margin: EdgeInsets.fromLTRB(isSubLevel ? 0 : 8, isSubLevel ? 0 : 4,
+          isSubLevel ? 0 : 8, isSubLevel ? 0 : 4),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(isSubLevel ? 0 : 14),
         child: ExpansionTile(
           shape: const Border(),
           collapsedShape: const Border(),
@@ -631,8 +638,25 @@ class _GradientTile extends StatelessWidget {
               _badge(context)
             ],
           ),
-          childrenPadding: EdgeInsets.only(bottom: isSubLevel ? 2 : 4, top: 2),
-          children: childTiles,
+          childrenPadding: EdgeInsets.zero,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(left: 18, top: 2, bottom: 6),
+              padding: const EdgeInsets.only(left: 10),
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: primaria.withValues(alpha: 0.22),
+                    width: 2,
+                  ),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: childTiles,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -701,7 +725,10 @@ class _SituacaoTile extends StatelessWidget {
     final subtleBorder = isDark
         ? Colors.white.withOpacity(0.08)
         : Colors.black.withOpacity(0.06);
-    const double scale = 0.82;
+    // O fator 0.82 multiplicava tudo e gerava tamanhos como 10,66 e 9,43 —
+    // exatamente o que a skill chama de valor arbitrário. Agora são números
+    // da escala do app.
+    const double scale = 1.0;
 
     final Map<String, List<MilitarDetalheModel>> porSituacao = {};
     for (final m in militares) {
@@ -718,22 +745,20 @@ class _SituacaoTile extends StatelessWidget {
       primaria.withValues(alpha: isDark ? 0.14 : 0.10),
     ]);
 
-    final double rootTitleSize = 13.0 * scale;
-    final double rootBadgeSize = 10.0 * scale;
-    final double itemTitleSize = 11.5 * scale;
-    final double itemBadgeSize = 9.5 * scale;
-    final double listNameSize = 11.0 * scale;
-    final double listSubSize = 10.0 * scale;
+    const double rootTitleSize = 12;
+    const double rootBadgeSize = 10;
+    const double itemTitleSize = 12;
+    const double itemBadgeSize = 10;
+    const double listNameSize = 12;
+    const double listSubSize = 10;
 
     return Padding(
-      padding:
-          EdgeInsets.symmetric(horizontal: 10.0 * scale, vertical: 5.0 * scale),
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
       child: Container(
         decoration: BoxDecoration(
           color: cardBg,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: subtleBorder, width: 0.5),
-
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(14),
@@ -783,20 +808,9 @@ class _SituacaoTile extends StatelessWidget {
               final pctText =
                   '${(pct * 100).toStringAsFixed(pct < 0.1 ? 1 : 0)}%';
 
-              return Padding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 6.0 * scale, vertical: 3.0 * scale),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.04)
-                        : Colors.white.withValues(alpha: 0.55),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: subtleBorder, width: 0.5),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: ExpansionTile(
+              return Container(
+                margin: const EdgeInsets.symmetric(vertical: 1),
+                child: ExpansionTile(
                       shape: const Border(),
                       collapsedShape: const Border(),
                       key: PageStorageKey(
@@ -890,14 +904,12 @@ class _SituacaoTile extends StatelessWidget {
                           )
                         ],
                       ),
-                      childrenPadding: EdgeInsets.only(
-                          bottom: 3.0 * scale, top: 1.0 * scale),
+                      childrenPadding:
+                          const EdgeInsets.only(bottom: 4, top: 2),
                       children: lista
                           .map((m) => _situacaoListItem(context, m, pillGrad,
                               listNameSize, listSubSize, scale, isDark, onCard))
                           .toList(),
-                    ),
-                  ),
                 ),
               );
             }).toList(),
@@ -921,9 +933,12 @@ class _SituacaoTile extends StatelessWidget {
     final subStyle = TextStyle(
         fontSize: subSize, color: onCard.withOpacity(0.55), height: 1.05);
     final borderColor = isDark
-        ? Colors.white.withOpacity(0.06)
-        : Colors.black.withOpacity(0.04);
-    final bgColor = isDark ? const Color(0xFF1C2536) : Colors.white;
+        ? Colors.white.withValues(alpha: 0.10)
+        : Colors.white.withValues(alpha: 0.80);
+    // Mesmo tom do cartão de situação: um só preto na tela toda.
+    final bgColor = isDark
+        ? Colors.white.withValues(alpha: 0.055)
+        : Colors.white.withValues(alpha: 0.72);
 
     String? resolveUrl(String? raw) {
       final v = (raw ?? '').trim().replaceAll('pmrr.net', 'pmrr.online');
@@ -947,20 +962,12 @@ class _SituacaoTile extends StatelessWidget {
                 preloadedImageUrl: resolveUrl(m.imagemUrl))));
       },
       child: Container(
-        margin: EdgeInsets.symmetric(
-            horizontal: 8.0 * scale, vertical: 5.0 * scale),
-        padding: EdgeInsets.symmetric(
-            horizontal: 9.0 * scale, vertical: 7.0 * scale),
+        margin: const EdgeInsets.fromLTRB(12, 4, 8, 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: BorderRadius.circular(10.0 * scale),
-          border: Border.all(color: borderColor, width: 0.4),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.08 : 0.02),
-                blurRadius: 3.0 * scale,
-                offset: Offset(0, 1.0 * scale))
-          ],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor, width: 0.8),
         ),
         child: Row(
           children: [
@@ -977,7 +984,7 @@ class _SituacaoTile extends StatelessWidget {
                       placeholder: (_, __) => Container(
                         width: 40.0 * scale,
                         height: 40.0 * scale,
-                        color: Colors.grey.shade200,
+                        color: Colors.white.withValues(alpha: 0.06),
                         child: const Center(
                             child: SizedBox(
                                 width: 14,
@@ -988,9 +995,9 @@ class _SituacaoTile extends StatelessWidget {
                       errorWidget: (_, __, ___) => Container(
                         width: 40.0 * scale,
                         height: 40.0 * scale,
-                        color: Colors.grey.shade200,
-                        child: const Icon(Icons.person,
-                            color: Colors.grey, size: 16),
+                        color: Colors.white.withValues(alpha: 0.06),
+                        child: Icon(Icons.person,
+                            color: onCard.withValues(alpha: 0.35), size: 16),
                       ),
                     )
                   : Container(
