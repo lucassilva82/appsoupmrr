@@ -102,13 +102,14 @@ class BarraNavegacao extends StatelessWidget {
                     duration: const Duration(milliseconds: 320),
                     curve: Curves.easeOutCubic,
                     left: larguraItem * indiceAtual,
-                    top: 10,
-                    bottom: 8,
+                    top: 6,
+                    bottom: 6,
                     width: larguraItem,
                     child: Center(
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 260),
-                        width: larguraItem - 20,
+                        width: larguraItem - 14,
+                        height: 50,
                         decoration: BoxDecoration(
                           color: theme.colorScheme.primary
                               .withOpacity(isDark ? 0.22 : 0.12),
@@ -185,7 +186,8 @@ class _Item extends StatelessWidget {
         radius: 36,
         containedInkWell: false,
         child: SizedBox(
-          height: 50, // acima do mínimo de 44pt / 48dp
+          height: 50, // acima do mínimo de 44pt / 48dp; o conteúdo
+          // interno ocupa ~40, então fica dentro da pílula
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -233,7 +235,7 @@ class _Item extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 2),
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 240),
                 style: TextStyle(

@@ -385,7 +385,7 @@ class _UserHeader extends StatelessWidget {
                       color: AppColors.gold,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: theme.colorScheme.surface,
+                        color: theme.colorScheme.surface.withOpacity(0.72),
                         width: 2,
                       ),
                       boxShadow: [

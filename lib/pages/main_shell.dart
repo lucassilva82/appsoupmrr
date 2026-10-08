@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -54,12 +55,20 @@ class _MainShellState extends State<MainShell> {
       // ── AppBar dinâmico ─────────────────────────────────────────────────────
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: Container(
+        child: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: gradColors,
+              colors: gradColors
+                  .map((c) => c.withOpacity(isDark ? 0.82 : 0.90))
+                  .toList(),
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
+            ),
+            border: Border(
+              bottom: BorderSide(color: Colors.white.withOpacity(0.12)),
             ),
           ),
           child: SafeArea(
@@ -71,6 +80,8 @@ class _MainShellState extends State<MainShell> {
               isAdmin: isAdmin,
               unread: unread,
               notifProvider: notifProvider,
+            ),
+          ),
             ),
           ),
         ),

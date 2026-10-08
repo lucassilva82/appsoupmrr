@@ -192,7 +192,9 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
             // ── Card de endereço atual ────────────────────────────────────
             Container(
               decoration: BoxDecoration(
-                color: isDark ? theme.colorScheme.surface : Colors.white,
+                color: isDark
+              ? theme.colorScheme.surface.withOpacity(0.72)
+              : Colors.white.withOpacity(0.78),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: widget.alterouDados

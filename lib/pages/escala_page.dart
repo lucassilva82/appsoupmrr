@@ -1597,7 +1597,9 @@ class _CienciaBottomSheet extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(
           24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
+        color: isDark
+              ? AppColors.darkSurface.withOpacity(0.72)
+              : Colors.white.withOpacity(0.78),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -1742,7 +1744,9 @@ class _ImpossibilidadeBottomSheetState
       child: Container(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : Colors.white,
+          color: isDark
+              ? AppColors.darkSurface.withOpacity(0.72)
+              : Colors.white.withOpacity(0.78),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(

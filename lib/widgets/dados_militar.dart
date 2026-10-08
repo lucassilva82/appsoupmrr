@@ -243,7 +243,9 @@ class _DadosMilitarState extends State<DadosMilitar> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isDark ? theme.colorScheme.surface : const Color(0xFFF5F8FF),
+          color: isDark
+              ? theme.colorScheme.surface.withOpacity(0.62)
+              : Colors.white.withOpacity(0.62),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
@@ -295,10 +297,14 @@ class _DadosMilitarState extends State<DadosMilitar> {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? theme.colorScheme.surface : Colors.white,
+          color: isDark
+              ? theme.colorScheme.surface.withOpacity(0.72)
+              : Colors.white.withOpacity(0.78),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDark ? const Color(0xFF30363D) : const Color(0xFFE8EFFA),
+            color: isDark
+                ? Colors.white.withOpacity(0.10)
+                : Colors.white.withOpacity(0.80),
             width: 1,
           ),
           boxShadow: isDark

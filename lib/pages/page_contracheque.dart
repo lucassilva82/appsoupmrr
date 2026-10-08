@@ -859,14 +859,14 @@ class _PageContrachequeState extends State<PageContracheque> {
     final accentColor =
         isProvento ? const Color(0xFF1B8A3C) : const Color(0xFFD32F2F);
 
-    // Zebra suave: alterna levemente o fundo par/ímpar
-    final baseBg = isProvento
-        ? (isDark ? const Color(0xFF182818) : const Color(0xFFF0FDF4))
-        : (isDark ? const Color(0xFF281818) : const Color(0xFFFFF5F5));
-    final altBg = isProvento
-        ? (isDark ? const Color(0xFF1C2E1C) : const Color(0xFFE8FAF0))
-        : (isDark ? const Color(0xFF2E1C1C) : const Color(0xFFFEECEC));
-    final rowColor = index.isEven ? baseBg : altBg;
+    // Linhas translúcidas, no padrão do resto do app: a cor fica como um
+    // tingimento leve, e quem comunica provento ou desconto é o selo P/D
+    // mais o sinal do valor — não só a cor de fundo.
+    final rowColor = accentColor.withValues(
+      alpha: isDark
+          ? (index.isEven ? 0.10 : 0.07)
+          : (index.isEven ? 0.07 : 0.04),
+    );
 
     return Container(
       margin: const EdgeInsets.only(top: 3),
@@ -875,9 +875,7 @@ class _PageContrachequeState extends State<PageContracheque> {
         color: rowColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.04)
-              : accentColor.withValues(alpha: 0.12),
+          color: accentColor.withValues(alpha: isDark ? 0.22 : 0.18),
         ),
       ),
       child: Row(
