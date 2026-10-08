@@ -60,7 +60,9 @@ class AppTheme {
         surface: surface,
         onSurface: onSurface,
       ),
-      scaffoldBackgroundColor: bgColor,
+      // O fundo é pintado uma vez pelo MaterialApp (ver main.dart), para
+      // que as superfícies translúcidas tenham o que deixar transparecer.
+      scaffoldBackgroundColor: Colors.transparent,
 
       // ── AppBar ──────────────────────────────────────────────────────────────
       appBarTheme: AppBarTheme(
@@ -91,15 +93,24 @@ class AppTheme {
       ),
 
       // ── Card ────────────────────────────────────────────────────────────────
+      // Superfície translúcida: o fundo do app (com manchas suaves) aparece
+      // por trás, dando o acabamento de vidro em todas as telas sem mexer
+      // em cada uma. A borda é o que separa o card do fundo.
       cardTheme: CardThemeData(
-        color: card,
-        elevation: isDark ? 0 : 2,
-        shadowColor: Colors.black.withOpacity(0.08),
+        color: isDark
+            ? card.withOpacity(0.72)
+            : Colors.white.withOpacity(0.78),
+        elevation: isDark ? 0 : 1,
+        shadowColor: Colors.black.withOpacity(0.06),
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: isDark
-              ? BorderSide(color: AppColors.darkBorder, width: 1)
-              : BorderSide.none,
+          side: BorderSide(
+            color: isDark
+                ? Colors.white.withOpacity(0.10)
+                : Colors.white.withOpacity(0.80),
+            width: 0.8,
+          ),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
       ),

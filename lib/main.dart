@@ -7,6 +7,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'widgets/vidro.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -710,9 +711,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           theme: theme,
           darkTheme: AppTheme.build(isDark: true, isSuperUser: isSuperUser),
           themeMode: themeProvider.themeMode,
+          // O fundo do app é pintado aqui, uma única vez: cor base do tema
+          // mais manchas suaves. Como as telas têm Scaffold transparente, as
+          // superfícies translúcidas deixam esse fundo transparecer.
           builder: (context, child) => Stack(
             children: [
-              child!,
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkBg : AppColors.lightBg,
+                ),
+                child: FundoSuave(child: child!),
+              ),
               if (_needBlur) const BlurOverlay(),
             ],
           ),

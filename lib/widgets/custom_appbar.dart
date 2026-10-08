@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:projetonovo/utils/app_theme.dart';
 import 'package:projetonovo/utils/notification_provider.dart';
@@ -98,12 +99,26 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
-      flexibleSpace: Container(
+      // Barra translúcida: o degradê institucional ganha transparência e o
+      // conteúdo que passa por baixo aparece desfocado, como no iOS.
+      flexibleSpace: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: gradColors,
+            colors: gradColors
+                .map((c) => c.withOpacity(isDark ? 0.82 : 0.90))
+                .toList(),
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
+          ),
+          border: Border(
+            bottom: BorderSide(
+              color: Colors.white.withOpacity(0.12),
+            ),
+          ),
+        ),
           ),
         ),
       ),

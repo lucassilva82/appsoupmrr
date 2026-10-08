@@ -9,6 +9,7 @@ import 'home_page.dart';
 import 'notifications_page.dart';
 import 'page_militar.dart';
 import 'configuracoes.dart';
+import '../widgets/barra_navegacao.dart';
 
 class MainShell extends StatefulWidget {
   final int initialIndex;
@@ -31,7 +32,8 @@ class _MainShellState extends State<MainShell> {
     });
   }
 
-  static const _labels = ['Início', 'Avisos', 'Perfil', 'Config.'];
+  // Ordem das abas: Início, Perfil, Avisos, Config.
+  static const _abaAvisos = 2;
 
   @override
   Widget build(BuildContext context) {
@@ -79,49 +81,39 @@ class _MainShellState extends State<MainShell> {
         index: _currentIndex,
         children: const [
           HomeBody(),
-          NotificationsBody(),
           PageMilitarBody(),
+          NotificationsBody(),
           SettingsBody(),
         ],
       ),
 
-      // ── Bottom Navigation Bar ────────────────────────────────────────────
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.4 : 0.08),
-              blurRadius: 24,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (i) => setState(() => _currentIndex = i),
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.home_outlined),
-              activeIcon: const Icon(Icons.home_rounded),
-              label: _labels[0],
-            ),
-            BottomNavigationBarItem(
-              icon: _badgedIcon(Icons.notifications_outlined, unread),
-              activeIcon: _badgedIcon(Icons.notifications_rounded, unread),
-              label: _labels[1],
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.person_outline_rounded),
-              activeIcon: const Icon(Icons.person_rounded),
-              label: _labels[2],
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.settings_outlined),
-              activeIcon: const Icon(Icons.settings_rounded),
-              label: _labels[3],
-            ),
-          ],
-        ),
+      // ── Barra inferior ───────────────────────────────────────────────────
+      bottomNavigationBar: BarraNavegacao(
+        indiceAtual: _currentIndex,
+        aoSelecionar: (i) => setState(() => _currentIndex = i),
+        itens: [
+          const ItemNavegacao(
+            icone: Icons.home_outlined,
+            iconeAtivo: Icons.home_rounded,
+            rotulo: 'Início',
+          ),
+          const ItemNavegacao(
+            icone: Icons.person_outline_rounded,
+            iconeAtivo: Icons.person_rounded,
+            rotulo: 'Perfil',
+          ),
+          ItemNavegacao(
+            icone: Icons.notifications_outlined,
+            iconeAtivo: Icons.notifications_rounded,
+            rotulo: 'Avisos',
+            contador: unread,
+          ),
+          const ItemNavegacao(
+            icone: Icons.settings_outlined,
+            iconeAtivo: Icons.settings_rounded,
+            rotulo: 'Config.',
+          ),
+        ],
       ),
     );
   }
@@ -148,8 +140,8 @@ class _MainShellState extends State<MainShell> {
                 : Text(
                     [
                       'Início',
-                      'Notificações',
                       'Ficha Individual',
+                      'Notificações',
                       'Configurações'
                     ][_currentIndex],
                     textAlign: TextAlign.center,
@@ -166,7 +158,7 @@ class _MainShellState extends State<MainShell> {
           if (_currentIndex == 0) ...[
             _notificationBell(unread),
           ],
-          if (_currentIndex == 1 && unread > 0)
+          if (_currentIndex == _abaAvisos && unread > 0)
             TextButton(
               onPressed: () => notifProvider.markAllAsRead(),
               child: const Text(
@@ -227,7 +219,7 @@ class _MainShellState extends State<MainShell> {
       children: [
         IconButton(
           icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-          onPressed: () => setState(() => _currentIndex = 1),
+          onPressed: () => setState(() => _currentIndex = _abaAvisos),
         ),
         if (count > 0)
           Positioned(
@@ -255,34 +247,4 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  Widget _badgedIcon(IconData icon, int count) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Icon(icon),
-        if (count > 0)
-          Positioned(
-            right: -4,
-            top: -4,
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-              constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
-              child: Text(
-                count > 9 ? '9+' : '$count',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 8,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
 }
