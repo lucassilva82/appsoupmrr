@@ -96,6 +96,7 @@ class ApiServices {
     List<String>? usadas,
     String? email,
     String? codigo,
+    String? atual,
   }) async {
     return _post('primeiro_acesso.php', {
       'acao': acao,
@@ -104,6 +105,7 @@ class ApiServices {
       if (respostas != null) ...respostas,
       if (senhaNovaMd5 != null) 'senha_nova': senhaNovaMd5,
       if (usadas != null) 'usadas': usadas.join(','),
+      if (atual != null) 'atual': atual,
       if (email != null) 'email': email,
       if (codigo != null) 'codigo': codigo,
     });

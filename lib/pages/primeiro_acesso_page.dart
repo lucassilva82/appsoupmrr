@@ -170,6 +170,7 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
         acao: 'trocar_pergunta',
         sessao: _sessao,
         usadas: _usadas,
+        atual: _perguntas[_indice]['id'].toString(),
       ),
       (r) {
         final nova = Map<String, dynamic>.from(r['pergunta'] as Map);
