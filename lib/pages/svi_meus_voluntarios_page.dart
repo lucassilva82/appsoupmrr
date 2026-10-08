@@ -69,9 +69,6 @@ class _SviMeusVoluntariosPageState extends State<SviMeusVoluntariosPage> {
         elevation: 0,
         centerTitle: true,
         flexibleSpace: const FundoBarraVidro(),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-        ),
         title: const Text(
           'Meus Voluntários',
           style: TextStyle(

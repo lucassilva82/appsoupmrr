@@ -549,10 +549,7 @@ class _EscalasPageState extends State<EscalasPage>
             ]
           : null,
       flexibleSpace: const FundoBarraVidro(),
-      shape: tabBar == null
-          ? const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)))
-          : null,
+
       title: const Text(
         'Escalas de Serviço',
         style: TextStyle(

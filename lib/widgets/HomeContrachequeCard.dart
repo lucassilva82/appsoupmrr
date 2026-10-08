@@ -45,7 +45,6 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard>
   String? ano;
   int? _mesNumero;
   bool _showValues = false;
-  bool _expandido = false;
   List<_Vinculo> _vinculos = const [];
   MesesContracheque? _ultimoMes;
 
@@ -331,11 +330,11 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard>
     String maskedOrFmt(double v) =>
         _showValues ? 'R\$ ${fmt.format(v)}' : '••••••';
 
+    // Com vários vínculos a lista já vem aberta e cada linha abre o seu
+    // contracheque; o cartão em si não tem ação para não haver dúvida sobre
+    // qual vínculo seria aberto.
     void aoTocarCartao() {
-      if (temVarios) {
-        setState(() => _expandido = !_expandido);
-        return;
-      }
+      if (temVarios) return;
       final folha = _vinculos.isNotEmpty ? _vinculos.first.folha : _ultimoMes;
       if (folha != null) {
         _abrirContracheque(folha);
@@ -434,20 +433,32 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard>
                     ),
                   ),
                   const SizedBox(width: 2),
-                  // Com vários vínculos a seta vira o controle de expandir.
-                  AnimatedRotation(
-                    duration: const Duration(milliseconds: 220),
-                    turns: temVarios && _expandido ? 0.5 : 0,
-                    child: Icon(
-                      temVarios
-                          ? Icons.expand_more_rounded
-                          : Icons.chevron_right_rounded,
-                      size: temVarios ? 20 : 16,
+                  if (temVarios)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: t.colorScheme.primary
+                            .withValues(alpha: isDark ? 0.18 : 0.10),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${_vinculos.length} vínculos',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: t.colorScheme.primary,
+                        ),
+                      ),
+                    )
+                  else
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 16,
                       color: isDark
                           ? Colors.white38
                           : Colors.black.withValues(alpha: 0.28),
                     ),
-                  ),
                 ],
               ),
 
@@ -527,48 +538,16 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard>
                 ),
               ),
 
-              // ── Resumo dos vínculos (fechado) ou a lista (aberto) ───────
-              if (temVarios)
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 240),
-                  curve: Curves.easeOutCubic,
-                  alignment: Alignment.topCenter,
-                  child: _expandido
-                      ? Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const SizedBox(height: 10),
-                            Divider(height: 1, color: divColor),
-                            const SizedBox(height: 4),
-                            for (final v in _vinculos)
-                              _linhaVinculo(v, isDark, fmt),
-                          ],
-                        )
-                      : Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.layers_rounded,
-                                  size: 11,
-                                  color: isDark
-                                      ? Colors.white38
-                                      : Colors.black38),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${_vinculos.length} vínculos · toque para ver cada um',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
-                                  color: isDark
-                                      ? Colors.white38
-                                      : Colors.black38,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                ),
+              // ── Lista dos vínculos ─────────────────────────────────────
+              // Sempre visível: o total sozinho esconderia o fato de haver
+              // mais de um vínculo.
+              if (temVarios) ...[
+                const SizedBox(height: 10),
+                Divider(height: 1, color: divColor),
+                const SizedBox(height: 4),
+                for (final v in _vinculos) _linhaVinculo(v, isDark, fmt),
+              ],
+
             ],
           ),
         ),

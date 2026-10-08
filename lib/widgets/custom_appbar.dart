@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:projetonovo/utils/app_theme.dart';
+import 'package:projetonovo/widgets/barra_vidro.dart';
 import 'package:projetonovo/utils/notification_provider.dart';
 import 'package:provider/provider.dart';
 import '../models/auth_model.dart';
@@ -90,42 +91,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<Auth>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final gradColors = AppTheme.appBarGradient(
-      isDark: isDark,
-      isSuperUser: auth.isSuperUser,
-    );
     return AppBar(
       iconTheme: const IconThemeData(color: Colors.white),
       backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
-      // Barra translúcida: o degradê institucional ganha transparência e o
-      // conteúdo que passa por baixo aparece desfocado, como no iOS.
-      flexibleSpace: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: gradColors
-                .map((c) => c.withOpacity(isDark ? 0.82 : 0.90))
-                .toList(),
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          border: Border(
-            bottom: BorderSide(
-              color: Colors.white.withOpacity(0.12),
-            ),
-          ),
-        ),
-          ),
-        ),
-      ),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-      ),
+      // Mesmo fundo da barra da tela inicial e das demais telas.
+      flexibleSpace: const FundoBarraVidro(),
       title: FittedBox(
         fit: BoxFit.scaleDown,
         child: Text(

@@ -98,9 +98,6 @@ class _SviEscalasPageState extends State<SviEscalasPage> {
         elevation: 0,
         centerTitle: true,
         flexibleSpace: const FundoBarraVidro(),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-        ),
         title: const Text(
           'Vagas SVI',
           style: TextStyle(

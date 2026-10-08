@@ -8,6 +8,7 @@ import '../models/meses_contracheque_model.dart';
 import '../services/dados_sql.dart';
 import '../utils/app_routes.dart';
 import '../view/second_screen.dart';
+import '../widgets/barra_vidro.dart';
 
 class Contracheque extends StatefulWidget {
   Contracheque({Key? key}) : super(key: key);
@@ -110,16 +111,13 @@ class _ContrachequeState extends State<Contracheque> {
 
   // ── Seletor de anos no estilo do restante do app ────────────────────
   Widget _buildYearBar(bool isDark) {
-    return Container(
+    // Mesmo fundo da app bar: a faixa é a continuação dela, não outra
+    // superfície com tom próprio.
+    return Stack(
+      children: [
+        const Positioned.fill(child: FundoBarraVidro()),
+        Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C2128).withOpacity(0.72) : Colors.white.withOpacity(0.78),
-        border: Border(
-          bottom: BorderSide(
-            color: isDark ? const Color(0xFF30363D) : const Color(0xFFE8EDF5),
-          ),
-        ),
-      ),
       child: SizedBox(
         height: 32,
         child: ListView(
@@ -164,6 +162,8 @@ class _ContrachequeState extends State<Contracheque> {
           }).toList(),
         ),
       ),
+        ),
+      ],
     );
   }
 

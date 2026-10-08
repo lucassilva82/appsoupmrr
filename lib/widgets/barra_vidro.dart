@@ -18,10 +18,11 @@ import '../utils/app_theme.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 class FundoBarraVidro extends StatelessWidget {
-  /// Cantos arredondados embaixo, como nas telas internas.
+  /// Cantos arredondados embaixo. O padrão é reto, igual à barra da tela
+  /// inicial — era isso que deixava as telas internas com outro desenho.
   final bool arredondado;
 
-  const FundoBarraVidro({Key? key, this.arredondado = true}) : super(key: key);
+  const FundoBarraVidro({Key? key, this.arredondado = false}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

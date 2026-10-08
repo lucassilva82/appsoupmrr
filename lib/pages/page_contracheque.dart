@@ -643,9 +643,6 @@ class _PageContrachequeState extends State<PageContracheque> {
             centerTitle: true,
             iconTheme: const IconThemeData(color: Colors.white),
             flexibleSpace: const FundoBarraVidro(),
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-            ),
             title: Column(
               children: [
                 const Text(

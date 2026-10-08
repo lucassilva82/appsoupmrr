@@ -11,6 +11,7 @@ import 'notifications_page.dart';
 import 'page_militar.dart';
 import 'configuracoes.dart';
 import '../widgets/barra_navegacao.dart';
+import '../widgets/barra_vidro.dart';
 
 class MainShell extends StatefulWidget {
   final int initialIndex;
@@ -39,51 +40,43 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<Auth>(context);
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    // Mantém a assinatura do tema: a barra muda de degradê no claro/escuro.
+    Provider.of<ThemeProvider>(context);
     final notifProvider = Provider.of<NotificationProvider>(context);
 
     final isSuperUser = auth.isSuperUser;
     final isAdmin = auth.nivel == 1;
-    final isDark = themeProvider.isDark;
     final unread = notifProvider.notifications.where((n) => !n.clicked).length;
     final nome = auth.nomeMilitar ?? 'Militar';
 
-    final gradColors =
-        AppTheme.appBarGradient(isDark: isDark, isSuperUser: isSuperUser);
-
     return Scaffold(
       // ── AppBar dinâmico ─────────────────────────────────────────────────────
+      // ── AppBar dinâmico ─────────────────────────────────────────────────────
+      // A altura precisa somar o recorte do topo (ilha/notch). Sem isso o
+      // PreferredSize ficava com 56pt no total, o SafeArea empurrava o
+      // conteúdo para baixo e o título encostava na borda inferior.
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: gradColors
-                  .map((c) => c.withOpacity(isDark ? 0.82 : 0.90))
-                  .toList(),
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        preferredSize: Size.fromHeight(
+          kToolbarHeight + MediaQuery.of(context).padding.top,
+        ),
+        child: Stack(
+          children: [
+            const Positioned.fill(child: FundoBarraVidro()),
+            SafeArea(
+              bottom: false,
+              child: SizedBox(
+                height: kToolbarHeight,
+                child: _buildAppBarContent(
+                  context,
+                  nome: nome,
+                  isSuperUser: isSuperUser,
+                  isAdmin: isAdmin,
+                  unread: unread,
+                  notifProvider: notifProvider,
+                ),
+              ),
             ),
-            border: Border(
-              bottom: BorderSide(color: Colors.white.withOpacity(0.12)),
-            ),
-          ),
-          child: SafeArea(
-            bottom: false,
-            child: _buildAppBarContent(
-              context,
-              nome: nome,
-              isSuperUser: isSuperUser,
-              isAdmin: isAdmin,
-              unread: unread,
-              notifProvider: notifProvider,
-            ),
-          ),
-            ),
-          ),
+          ],
         ),
       ),
 
