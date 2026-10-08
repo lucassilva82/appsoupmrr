@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'vidro.dart';
 import 'package:provider/provider.dart';
 
 import '../models/auth_model.dart';
@@ -248,12 +249,15 @@ class _GridMenuItem extends StatelessWidget {
       iconColor = theme.colorScheme.primary;
     }
 
-    return Material(
-      color: bgColor,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: () => _onTap(context),
-        borderRadius: BorderRadius.circular(16),
+    // Superfície de vidro: o desfoque pega o fundo da home e deixa o item
+    // translúcido, no padrão do iOS, sem mexer no conteúdo do botão.
+    return CartaoVidro(
+      raio: 16,
+      tingimento: isLogout
+          ? Colors.redAccent
+          : (isPrivileged ? AppColors.gold : null),
+      onTap: () => _onTap(context),
+      child: SizedBox.expand(
         child: Stack(
           children: [
             Opacity(

@@ -7,6 +7,7 @@ import 'package:projetonovo/widgets/HomePlanoFeriasCard.dart';
 import 'package:projetonovo/widgets/anuncio_institucional.dart';
 import 'package:projetonovo/widgets/card_tempo_servico.dart';
 import 'package:projetonovo/widgets/carouselSlider.dart';
+import 'package:projetonovo/widgets/vidro.dart';
 import 'package:projetonovo/widgets/grid_menu.dart';
 import 'package:projetonovo/widgets/widget_dicas_app.dart';
 
@@ -52,10 +53,11 @@ class _HomeBodyState extends State<HomeBody>
   Widget build(BuildContext context) {
     super.build(context);
 
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
+    return FundoSuave(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 24),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ── Comandante / Sub-Comandante ──────────────────────────────────
@@ -101,8 +103,9 @@ class _HomeBodyState extends State<HomeBody>
             ),
           ),
         ],
-      ),
-    );
+          ),
+        ),
+      );
   }
 }
 

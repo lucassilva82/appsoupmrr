@@ -10,6 +10,7 @@ import '../utils/app_theme.dart';
 import '../utils/theme_provider.dart';
 import '../widgets/custom_appbar.dart';
 import '../widgets/dialogo_confirmacao.dart';
+import '../widgets/versao_app.dart';
 import 'alterar_senha_page.dart';
 import 'confirm_email.dart';
 
@@ -186,7 +187,12 @@ class SettingsBody extends StatelessWidget {
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Versão 2.0 • Polícia Militar de Roraima'),
+                        TextoVersao(
+                          comBuild: true,
+                          formato: (v) => v.isEmpty
+                              ? 'Polícia Militar de Roraima'
+                              : 'Versão $v • Polícia Militar de Roraima',
+                        ),
                         const SizedBox(height: 2),
                         Text(
                           'Desenvolvido pelo DTI — Departamento de Tecnologia da Informação',

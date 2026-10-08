@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../models/auth_model.dart';
 import '../widgets/auth_form.dart';
+import '../widgets/versao_app.dart';
 import '../utils/app_routes.dart';
 
 class AuthPage extends StatefulWidget {
@@ -154,9 +155,10 @@ class _AuthPageState extends State<AuthPage> {
                       const Spacer(flex: 2),
 
                       const SizedBox(height: 10),
-                      Text(
-                        'v2.0 — DTI/PMRR',
-                        style: TextStyle(
+                      TextoVersao(
+                        formato: (v) =>
+                            v.isEmpty ? 'DTI/PMRR' : 'v$v — DTI/PMRR',
+                        estilo: TextStyle(
                           fontSize: 11,
                           color: Colors.white.withOpacity(0.35),
                           letterSpacing: 0.5,
