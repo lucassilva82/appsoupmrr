@@ -258,7 +258,10 @@ class _GridMenuItem extends StatelessWidget {
           : (isPrivileged ? AppColors.gold : null),
       onTap: () => _onTap(context),
       child: SizedBox.expand(
+        // fit: expand — sem isso o Center encolhe e o conteúdo cola no topo,
+        // porque filhos não posicionados de um Stack recebem restrição frouxa.
         child: Stack(
+          fit: StackFit.expand,
           children: [
             Opacity(
               opacity: _isEmDesenvolvimento ? 0.45 : 1.0,
