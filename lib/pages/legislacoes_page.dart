@@ -228,18 +228,7 @@ class _LegislacoesPageState extends State<LegislacoesPage> {
 
     return Scaffold(
       appBar: const CustomAppBar(title: 'Legislações'),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              isDark ? const Color(0xFF0E1B2E) : const Color(0xFFEAF2FF),
-              theme.scaffoldBackgroundColor,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
+      body: SafeArea(
           child: Column(
             children: [
               Padding(
@@ -405,7 +394,6 @@ class _LegislacoesPageState extends State<LegislacoesPage> {
             ],
           ),
         ),
-      ),
     );
   }
 

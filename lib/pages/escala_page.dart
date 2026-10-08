@@ -6,6 +6,7 @@ import '../models/escala_model.dart';
 import '../services/escala_service.dart';
 import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
+import '../widgets/barra_vidro.dart';
 
 // ── EscalasPage ───────────────────────────────────────────────────────────────
 class EscalasPage extends StatefulWidget {
@@ -547,15 +548,7 @@ class _EscalasPageState extends State<EscalasPage>
               ),
             ]
           : null,
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.navy, AppColors.blue],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-      ),
+      flexibleSpace: const FundoBarraVidro(),
       shape: tabBar == null
           ? const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)))

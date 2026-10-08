@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:share_plus/share_plus.dart';
+import '../widgets/barra_vidro.dart';
 
 class PdfViewPage extends StatelessWidget {
   final String path;
@@ -11,6 +12,9 @@ class PdfViewPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: const FundoBarraVidro(),
         title: Text('Visualização do Contracheque'),
         actions: [
           IconButton(

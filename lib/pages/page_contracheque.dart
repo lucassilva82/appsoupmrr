@@ -21,6 +21,8 @@ import '../models/meses_contracheque_model.dart';
 import '../services/dados_sql.dart';
 import '../utils/app_theme.dart';
 import '../view/second_screen.dart';
+import '../widgets/vidro.dart';
+import '../widgets/barra_vidro.dart';
 
 class PageContracheque extends StatefulWidget {
   final MesesContracheque mesSelecionado;
@@ -632,26 +634,15 @@ class _PageContrachequeState extends State<PageContracheque> {
         if (!snapshot.hasData) return SecondScreen();
 
         return Scaffold(
-          backgroundColor:
-              isDark ? const Color(0xFF0D1117) : const Color(0xFFF4F6FA),
+          backgroundColor: Colors.transparent,
+          // fundo global (FundoSuave) aparece por baixo
           // ── AppBar — mesma cor que CustomAppBar ──────────────────
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
             centerTitle: true,
             iconTheme: const IconThemeData(color: Colors.white),
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: AppTheme.appBarGradient(
-                    isDark: isDark,
-                    isSuperUser: auth.isSuperUser,
-                  ),
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-            ),
+            flexibleSpace: const FundoBarraVidro(),
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
             ),
@@ -706,26 +697,12 @@ class _PageContrachequeState extends State<PageContracheque> {
 
   // ── Header card com dados do militar ─────────────────────────────────
   Widget _buildHeaderCard(Auth auth, bool isDark) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C2128).withOpacity(0.72) : Colors.white.withOpacity(0.78),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
-        ),
-        boxShadow: isDark
-            ? []
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 12,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-      ),
-      child: Column(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+      child: CartaoVidro(
+        raio: 16,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Column(
         children: [
           _headerRow(
             icon: Icons.person_outline_rounded,
@@ -763,6 +740,7 @@ class _PageContrachequeState extends State<PageContracheque> {
             isDark: isDark,
           ),
         ],
+        ),
       ),
     );
   }
@@ -810,49 +788,36 @@ class _PageContrachequeState extends State<PageContracheque> {
 
   // ── Cabeçalho da tabela ───────────────────────────────────────────────
   Widget _buildTableHeader(bool isDark) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.blue, AppColors.navy],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
+    // Faixa de vidro tingida de azul no lugar da barra sólida: o rótulo das
+    // colunas não precisa competir com os valores. O texto usa a cor primária
+    // do tema (contraste alto nos dois modos), não branco sobre azul.
+    return Builder(builder: (context) {
+      final theme = Theme.of(context);
+      final estilo = TextStyle(
+        color: theme.colorScheme.primary,
+        fontSize: 10,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.6,
+      );
+
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+        child: CartaoVidro(
+          raio: 12,
+          tingimento: theme.colorScheme.primary,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              SizedBox(width: 30, child: Text('TIPO', style: estilo)),
+              Expanded(child: Text('DESCRIÇÃO', style: estilo)),
+              Text('VALOR', style: estilo),
+            ],
+          ),
         ),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Row(
-        children: [
-          SizedBox(
-            width: 32,
-            child: Text('Tipo',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700)),
-          ),
-          Expanded(
-            child: Text('Descrição',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700)),
-          ),
-          SizedBox(
-            width: 90,
-            child: Text('Valor',
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
-    );
+      );
+    });
   }
 
-  // ── Linha de rubrica ──────────────────────────────────────────────────
   Widget _buildItemRow(TipoProvento item, bool isDark, int index) {
     final isProvento = item.tipoRubrica == 'P';
     final valor = isProvento ? item.provento : item.desconto;
@@ -940,92 +905,110 @@ class _PageContrachequeState extends State<PageContracheque> {
 
   // ── Barra de resumo (proventos / descontos / líquido) ─────────────────
   Widget _buildSummaryBar(bool isDark) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.blue, AppColors.navy],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
+    // Era um bloco sólido azul→navy. Agora é vidro tingido: continua sendo o
+    // elemento de mais peso da tela, mas deixa o fundo passar. As cores de
+    // provento/desconto mudam por modo para manter contraste de 4.5:1.
+    return Builder(builder: (context) {
+      final theme = Theme.of(context);
+      final verde = isDark ? const Color(0xFF6EE7A0) : const Color(0xFF14713B);
+      final vermelho =
+          isDark ? const Color(0xFFFF9E9E) : const Color(0xFFB3261E);
+
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+        child: CartaoVidro(
+          raio: 16,
+          tingimento: theme.colorScheme.primary,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              _summaryCol(
+                label: 'Proventos',
+                value:
+                    'R\$\u2009${CurrencyFormatter.format(proventos, _realSettings)}',
+                color: verde,
+                isDark: isDark,
+              ),
+              Container(
+                width: 1,
+                height: 36,
+                color: theme.colorScheme.onSurface.withOpacity(0.12),
+              ),
+              _summaryCol(
+                label: 'Descontos',
+                value:
+                    'R\$\u2009${CurrencyFormatter.format(descontos, _realSettings)}',
+                color: vermelho,
+                isDark: isDark,
+              ),
+              Container(
+                width: 1,
+                height: 36,
+                color: theme.colorScheme.onSurface.withOpacity(0.12),
+              ),
+              _summaryCol(
+                label: 'Líquido',
+                value:
+                    'R\$\u2009${CurrencyFormatter.format(totalLiquido, _realSettings)}',
+                color: theme.colorScheme.onSurface,
+                isDark: isDark,
+                destaque: true,
+              ),
+            ],
+          ),
         ),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          _summaryCol(
-            label: 'Proventos',
-            value:
-                'R\$\u2009${CurrencyFormatter.format(proventos, _realSettings)}',
-            color: const Color(0xFF69F0AE),
-          ),
-          Container(width: 1, height: 36, color: Colors.white24),
-          _summaryCol(
-            label: 'Descontos',
-            value:
-                'R\$\u2009${CurrencyFormatter.format(descontos, _realSettings)}',
-            color: const Color(0xFFFF8A80),
-          ),
-          Container(width: 1, height: 36, color: Colors.white24),
-          _summaryCol(
-            label: 'Líquido',
-            value:
-                'R\$\u2009${CurrencyFormatter.format(totalLiquido, _realSettings)}',
-            color: Colors.white,
-          ),
-        ],
-      ),
-    );
+      );
+    });
   }
 
-  Widget _summaryCol(
-      {required String label, required String value, required Color color}) {
+  Widget _summaryCol({
+    required String label,
+    required String value,
+    required Color color,
+    required bool isDark,
+    bool destaque = false,
+  }) {
     return Expanded(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 9,
-              color: Colors.white60,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.3,
+      child: Builder(builder: (context) {
+        final theme = Theme.of(context);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label.toUpperCase(),
+              style: TextStyle(
+                fontSize: 9,
+                color: theme.colorScheme.onSurface.withOpacity(0.60),
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
             ),
-          ),
-          const SizedBox(height: 3),
-          // AutoSizeText: shrink automático se o valor não couber
-          AutoSizeText(
-            value,
-            style: TextStyle(
-              fontSize: 11.5,
-              color: color,
-              fontWeight: FontWeight.w800,
+            const SizedBox(height: 3),
+            // AutoSizeText: shrink automático se o valor não couber
+            AutoSizeText(
+              value,
+              style: TextStyle(
+                fontSize: destaque ? 13 : 11.5,
+                color: color,
+                fontWeight: FontWeight.w800,
+              ),
+              maxLines: 1,
+              minFontSize: 7,
+              textAlign: TextAlign.center,
             ),
-            maxLines: 1,
-            minFontSize: 7,
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+          ],
+        );
+      }),
     );
   }
 
   // ── Barra inferior de compartilhamento ────────────────────────────────
   Widget _buildShareBar(Auth auth, bool isDark) {
     return SafeArea(
-      child: Container(
+      child: CartaoVidro(
+        raio: 0,
+        desfoque: 22,
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1C2128).withOpacity(0.72) : Colors.white.withOpacity(0.78),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
-              blurRadius: 16,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1063,8 +1046,12 @@ class _PageContrachequeState extends State<PageContracheque> {
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 12)),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.blue,
-                      side: const BorderSide(color: AppColors.blue),
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                      side: BorderSide(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.55)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
@@ -1091,7 +1078,7 @@ class _PageContrachequeState extends State<PageContracheque> {
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 12)),
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.blue,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),

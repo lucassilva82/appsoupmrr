@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../models/plantao_model.dart';
 import '../utils/app_routes.dart';
+import '../widgets/barra_vidro.dart';
 
 class ConfiguraPlantao extends StatefulWidget {
   ConfiguraPlantao({Key? key}) : super(key: key);
@@ -40,6 +41,9 @@ class _ConfiguraPlantaoState extends State<ConfiguraPlantao> {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: const FundoBarraVidro(),
         title: const Text('Cadastro de serviço'),
       ),
       body: SizedBox(

@@ -7,6 +7,7 @@ import '../models/endereco.dart';
 import '../models/militar.dart';
 import '../services/dados_sql.dart';
 import '../utils/app_routes.dart';
+import '../widgets/barra_vidro.dart';
 
 // ignore: must_be_immutable
 class EdicaoEnderecoPage extends StatefulWidget {
@@ -63,15 +64,7 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1976D2), Color(0xFF002154)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
+        flexibleSpace: const FundoBarraVidro(),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

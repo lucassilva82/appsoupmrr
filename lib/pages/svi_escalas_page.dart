@@ -4,6 +4,7 @@ import '../models/svi_model.dart';
 import '../services/escala_service.dart';
 import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
+import '../widgets/barra_vidro.dart';
 
 // ── Vagas SVI ─────────────────────────────────────────────────────────────────
 /// Lista de escalas SVI com vagas disponíveis para o militar se candidatar.
@@ -96,15 +97,7 @@ class _SviEscalasPageState extends State<SviEscalasPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.navy, AppColors.blue],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
+        flexibleSpace: const FundoBarraVidro(),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
         ),

@@ -721,7 +721,8 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
+      backgroundColor: Colors.transparent,
+          // fundo global (FundoSuave) aparece por baixo
       appBar: const CustomAppBar(title: 'Plano de Férias'),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

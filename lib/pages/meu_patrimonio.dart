@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/drawer_personalizado.dart';
+import '../widgets/barra_vidro.dart';
 
 class MeuPatrimonioPage extends StatefulWidget {
   const MeuPatrimonioPage({Key? key}) : super(key: key);
@@ -14,6 +15,9 @@ class _MeuPatrimonioPageState extends State<MeuPatrimonioPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: const FundoBarraVidro(),
         title: const Text('Meu Patrimonio'),
       ),
       body: Container(

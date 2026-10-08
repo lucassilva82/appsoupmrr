@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:projetonovo/models/auth_model.dart';
 import 'package:projetonovo/utils/app_theme.dart';
 import 'package:provider/provider.dart';
+import '../widgets/barra_vidro.dart';
 
 class DeclaracaoParentescoPage extends StatefulWidget {
   final String ano;
@@ -255,31 +256,11 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
           'Declaração de Parentesco',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
         ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.navy, AppColors.blue],
-              begin: Alignment.centerLeft,
-              end: Alignment.topRight,
-            ),
-          ),
-        ),
+        flexibleSpace: const FundoBarraVidro(),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              isDark ? const Color(0xFF0E1B2E) : const Color(0xFFEAF2FF),
-              theme.scaffoldBackgroundColor,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: isLoading
+      body: isLoading
             ? const Center(child: CircularProgressIndicator.adaptive())
             : _buildContent(theme),
-      ),
     );
   }
 

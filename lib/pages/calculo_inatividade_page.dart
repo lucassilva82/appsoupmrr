@@ -12,6 +12,7 @@ import '../models/auth_model.dart';
 import '../models/inatividade_model.dart';
 import '../utils/app_theme.dart';
 import '../utils/store.dart';
+import '../widgets/barra_vidro.dart';
 
 class CalculoInatividadePage extends StatefulWidget {
   const CalculoInatividadePage({Key? key}) : super(key: key);
@@ -301,7 +302,10 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
 
     if (_carregando) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Cálculo de Inatividade')),
+        appBar: AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      flexibleSpace: const FundoBarraVidro(),title: const Text('Cálculo de Inatividade')),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -311,6 +315,9 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: const FundoBarraVidro(),
         title: Text(noResultado ? 'Seu cálculo' : 'Cálculo de Inatividade'),
         actions: [
           if (noResultado)

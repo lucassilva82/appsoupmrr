@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/escala_model.dart';
 import '../services/escala_service.dart';
 import '../utils/app_theme.dart';
+import '../widgets/barra_vidro.dart';
 
 // ── EscalaDetalhePage ─────────────────────────────────────────────────────────
 class EscalaDetalhePage extends StatefulWidget {
@@ -238,15 +239,7 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.navy, AppColors.blue],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
+        flexibleSpace: const FundoBarraVidro(),
         shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(bottom: Radius.circular(20))),
         title: const Text(

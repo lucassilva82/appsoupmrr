@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../models/meses_contracheque_model.dart';
 import '../services/dados_sql.dart';
 import '../utils/app_theme.dart';
+import '../widgets/barra_vidro.dart';
 
 // ── Model de dados por mês ────────────────────────────────────────────────────
 class _MesData {
@@ -243,7 +244,8 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
         : null;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : const Color(0xFFF4F7FB),
+      backgroundColor: Colors.transparent,
+          // fundo global (FundoSuave) aparece por baixo
       body: CustomScrollView(
         slivers: [
           // ── AppBar ─────────────────────────────────────────────────────────
@@ -666,15 +668,7 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
   // ── Estado de carregamento animado ──────────────────────────────────────────
   Widget _buildLoading(bool isDark) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.navy, AppColors.blue],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
+      body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 44),
             child: Column(
@@ -779,16 +773,17 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
             ),
           ),
         ),
-      ),
     );
   }
 
   Widget _buildError(bool isDark) {
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : const Color(0xFFF4F7FB),
+      backgroundColor: Colors.transparent,
+          // fundo global (FundoSuave) aparece por baixo
       appBar: AppBar(
-        backgroundColor: AppColors.navy,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        flexibleSpace: const FundoBarraVidro(),
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text('Evolução Salarial',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),

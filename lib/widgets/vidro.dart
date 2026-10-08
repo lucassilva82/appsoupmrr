@@ -102,7 +102,10 @@ class CartaoVidro extends StatelessWidget {
 }
 
 /// Fundo com manchas de cor suaves, para o vidro ter o que desfocar.
-/// Sem isso o efeito some em telas de fundo liso.
+/// Sem isso o efeito some: vidro sobre fundo liso vira só um retângulo preto.
+/// As manchas ficam presas à viewport (não rolam com o conteúdo), que é o
+/// comportamento do iOS, e são posicionadas em fração da tela para cobrir
+/// qualquer tamanho de aparelho.
 class FundoSuave extends StatelessWidget {
   final Widget child;
 
@@ -114,34 +117,93 @@ class FundoSuave extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final primaria = theme.colorScheme.primary;
 
-    return Stack(
-      children: [
-        Positioned(
-          top: -80,
-          left: -60,
-          child: _Mancha(
-            cor: primaria.withOpacity(isDark ? 0.22 : 0.16),
-            tamanho: 260,
-          ),
-        ),
-        Positioned(
-          top: 180,
-          right: -90,
-          child: _Mancha(
-            cor: AppColors.lightBlue.withOpacity(isDark ? 0.16 : 0.14),
-            tamanho: 280,
-          ),
-        ),
-        Positioned(
-          bottom: -60,
-          left: -40,
-          child: _Mancha(
-            cor: AppColors.gold.withOpacity(isDark ? 0.10 : 0.10),
-            tamanho: 240,
-          ),
-        ),
-        child,
-      ],
+    return LayoutBuilder(
+      builder: (context, c) {
+        final l = c.maxWidth;
+        final a = c.maxHeight;
+
+        return Stack(
+          children: [
+            // Degradê de base: tira o preto chapado e dá direção à luz.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: isDark
+                          ? [
+                              Color.alphaBlend(
+                                  primaria.withOpacity(0.16), AppColors.darkBg),
+                              AppColors.darkBg,
+                              Color.alphaBlend(
+                                  AppColors.navy.withOpacity(0.55),
+                                  AppColors.darkBg),
+                            ]
+                          : [
+                              Color.alphaBlend(
+                                  primaria.withOpacity(0.10),
+                                  AppColors.lightBg),
+                              AppColors.lightBg,
+                              Color.alphaBlend(
+                                  AppColors.lightBlue.withOpacity(0.10),
+                                  AppColors.lightBg),
+                            ],
+                      stops: const [0.0, 0.45, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Manchas espalhadas pela altura toda — antes só havia três perto
+            // das bordas e o miolo da tela ficava sem nada para desfocar.
+            Positioned(
+              top: -a * 0.10,
+              left: -l * 0.25,
+              child: _Mancha(
+                cor: primaria.withOpacity(isDark ? 0.30 : 0.18),
+                tamanho: l * 0.95,
+              ),
+            ),
+            Positioned(
+              top: a * 0.14,
+              right: -l * 0.30,
+              child: _Mancha(
+                cor: AppColors.lightBlue.withOpacity(isDark ? 0.20 : 0.16),
+                tamanho: l * 0.90,
+              ),
+            ),
+            Positioned(
+              top: a * 0.42,
+              left: -l * 0.20,
+              child: _Mancha(
+                cor: AppColors.gold.withOpacity(isDark ? 0.10 : 0.10),
+                tamanho: l * 0.75,
+              ),
+            ),
+            Positioned(
+              top: a * 0.58,
+              right: -l * 0.18,
+              child: _Mancha(
+                cor: primaria.withOpacity(isDark ? 0.22 : 0.14),
+                tamanho: l * 0.85,
+              ),
+            ),
+            Positioned(
+              bottom: -a * 0.08,
+              left: l * 0.05,
+              child: _Mancha(
+                cor: AppColors.lightBlue.withOpacity(isDark ? 0.16 : 0.12),
+                tamanho: l * 0.95,
+              ),
+            ),
+
+            child,
+          ],
+        );
+      },
     );
   }
 }

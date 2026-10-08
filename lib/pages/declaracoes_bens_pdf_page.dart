@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:projetonovo/models/auth_model.dart';
 import 'package:projetonovo/utils/app_theme.dart';
 import 'package:provider/provider.dart';
+import '../widgets/barra_vidro.dart';
 
 String statusText(int status) {
   switch (status) {
@@ -490,28 +491,9 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
           'Declaração de Bens (PDF)',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
         ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.navy, AppColors.blue],
-              begin: Alignment.centerLeft,
-              end: Alignment.topRight,
-            ),
-          ),
-        ),
+        flexibleSpace: const FundoBarraVidro(),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              isDark ? const Color(0xFF0E1B2E) : const Color(0xFFEAF2FF),
-              theme.scaffoldBackgroundColor,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: isLoading
+      body: isLoading
             ? const Center(child: CircularProgressIndicator.adaptive())
             : SizedBox.expand(
                 child: _showUploadSection
@@ -576,7 +558,6 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
                         ],
                       ),
               ),
-      ),
     );
   }
 
@@ -667,15 +648,7 @@ class PdfViewerPage extends StatelessWidget {
           title,
           style: const TextStyle(color: Colors.white),
         ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.navy, AppColors.blue],
-              begin: Alignment.centerLeft,
-              end: Alignment.topRight,
-            ),
-          ),
-        ),
+        flexibleSpace: const FundoBarraVidro(),
       ),
       body: PDFView(
         filePath: filePath,

@@ -19,6 +19,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/auth_model.dart';
 import '../utils/app_theme.dart';
+import '../widgets/barra_vidro.dart';
 
 class DeclaracaoBensPage extends StatefulWidget {
   final String ano;
@@ -486,31 +487,12 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.navy, AppColors.blue],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-          ),
-        ),
+        flexibleSpace: const FundoBarraVidro(),
         title: const Text('Declarações de Bens',
             style: TextStyle(color: Colors.white)),
         leading: const BackButton(color: Colors.white),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              isDark ? const Color(0xFF0E1B2E) : const Color(0xFFEAF2FF),
-              theme.scaffoldBackgroundColor,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SingleChildScrollView(
+      body: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -535,7 +517,6 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
             ),
           ]),
         ),
-      ),
     );
   }
 

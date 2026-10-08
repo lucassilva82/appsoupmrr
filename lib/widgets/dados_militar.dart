@@ -10,6 +10,7 @@ import 'card_image_militar.dart';
 import 'dados_contato.dart';
 import 'dados_endereco.dart';
 import 'dados_principal.dart';
+import 'vidro.dart';
 
 /// Formata datas do banco (YYYY-MM-DD) para o padrão BR DD/MM/AAAA.
 String _fmtDataBr(String? s) {
@@ -50,15 +51,24 @@ class _DadosMilitarState extends State<DadosMilitar> {
           clipBehavior: Clip.none,
           alignment: Alignment.center,
           children: [
-            // Banner gradiente
+            // Banner: antes era um bloco azul chapado com corte reto. Agora o
+            // degradê desce para transparente, então ele encosta no fundo da
+            // tela sem costura — é o fundo que continua, não outra superfície.
             Container(
               width: double.infinity,
-              height: 90,
-              decoration: const BoxDecoration(
+              height: 110,
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF1976D2), Color(0xFF002154)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    (isDark ? const Color(0xFF1E3A5F) : const Color(0xFF1976D2))
+                        .withOpacity(isDark ? 0.75 : 0.85),
+                    (isDark ? AppColors.navy : AppColors.navy)
+                        .withOpacity(isDark ? 0.30 : 0.35),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.62, 1.0],
                 ),
               ),
             ),
@@ -69,9 +79,10 @@ class _DadosMilitarState extends State<DadosMilitar> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color:
-                        isDark ? theme.scaffoldBackgroundColor : Colors.white,
-                    width: 4,
+                    color: isDark
+                        ? Colors.white.withOpacity(0.22)
+                        : Colors.white.withOpacity(0.90),
+                    width: 3,
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -240,18 +251,9 @@ class _DadosMilitarState extends State<DadosMilitar> {
   }) {
     final theme = Theme.of(context);
     return Expanded(
-      child: Container(
+      child: CartaoVidro(
+        raio: 14,
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isDark
-              ? theme.colorScheme.surface.withOpacity(0.62)
-              : Colors.white.withOpacity(0.62),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
-            width: 1,
-          ),
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -295,28 +297,8 @@ class _DadosMilitarState extends State<DadosMilitar> {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark
-              ? theme.colorScheme.surface.withOpacity(0.72)
-              : Colors.white.withOpacity(0.78),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withOpacity(0.10)
-                : Colors.white.withOpacity(0.80),
-            width: 1,
-          ),
-          boxShadow: isDark
-              ? []
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-        ),
+      child: CartaoVidro(
+        raio: 16,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

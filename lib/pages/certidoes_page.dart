@@ -752,18 +752,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
 
     return Scaffold(
       appBar: CustomAppBar(title: 'Certidões'),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              isDark ? const Color(0xFF0E1B2E) : const Color(0xFFEAF2FF),
-              theme.scaffoldBackgroundColor,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
+      body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             child: Column(
@@ -910,7 +899,6 @@ class _CertidoesPageState extends State<CertidoesPage> {
             ),
           ),
         ),
-      ),
     );
   }
 
