@@ -241,7 +241,7 @@ class _AppInfoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
+        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -400,7 +400,7 @@ class _SystemInfoCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
+        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -519,7 +519,7 @@ class _FaqCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
+        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(

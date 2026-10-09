@@ -112,7 +112,8 @@ class _GridMenuItem extends StatelessWidget {
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             backgroundColor:
-                isDark ? const Color(0xFF2A2620) : const Color(0xFFFFF6E9),
+                isDark ? Color.alphaBlend(amber.withValues(alpha: 0.10), AppColors.darkCard)
+                    : const Color(0xFFFFF6E9),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
               side: BorderSide(color: amber.withOpacity(0.25)),

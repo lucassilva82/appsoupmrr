@@ -80,7 +80,7 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isDark
-                          ? const Color(0xFF30363D)
+                          ? AppColors.darkBorder
                           : const Color(0xFFDDE6F5),
                     ),
                   ),

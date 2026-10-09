@@ -148,11 +148,11 @@ class _DadosContatoState extends State<DadosContato> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color:
-                    isDark ? const Color(0xFF21262D) : const Color(0xFFF5F8FF),
+                    isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: isDark
-                      ? const Color(0xFF30363D)
+                      ? AppColors.darkBorder
                       : const Color(0xFFE0E7F0),
                   width: 1,
                 ),
@@ -183,8 +183,8 @@ class _DadosContatoState extends State<DadosContato> {
                         color: isWhats
                             ? const Color(0xFF25D366)
                             : (isDark
-                                ? const Color(0xFF2D333B)
-                                : Colors.grey.shade100),
+                                ? Colors.white.withValues(alpha: 0.055)
+                                : Colors.white.withValues(alpha: 0.72)),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isWhats
@@ -274,7 +274,7 @@ class _DadosContatoState extends State<DadosContato> {
             insetPadding: const EdgeInsets.symmetric(horizontal: 24),
             child: Container(
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1C2128).withOpacity(0.72) : Colors.white.withOpacity(0.78),
+                color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
@@ -477,7 +477,7 @@ class _DadosContatoState extends State<DadosContato> {
           insetPadding: const EdgeInsets.symmetric(horizontal: 24),
           child: Container(
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1C2128).withOpacity(0.72) : Colors.white.withOpacity(0.78),
+              color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
@@ -665,7 +665,7 @@ class _LoadingDialog extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 32),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1C2128).withOpacity(0.72) : Colors.white.withOpacity(0.78),
+            color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(

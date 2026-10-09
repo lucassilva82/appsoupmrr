@@ -517,7 +517,7 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
+        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? AppColors.darkBorder : const Color(0xFFE8EFFA),

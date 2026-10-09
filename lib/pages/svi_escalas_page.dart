@@ -213,7 +213,7 @@ class _SviEscalaCard extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
+            color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isDark ? AppColors.darkBorder : const Color(0xFFE8EFFA),
@@ -639,7 +639,7 @@ class _SviEscalaDetalheSheetState extends State<_SviEscalaDetalheSheet> {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
+            color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(

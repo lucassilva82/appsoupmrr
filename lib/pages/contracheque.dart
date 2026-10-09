@@ -269,11 +269,11 @@ class _ContrachequeState extends State<Contracheque> {
           },
           child: Container(
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1C2128).withOpacity(0.72) : Colors.white.withOpacity(0.78),
+              color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color:
-                    isDark ? const Color(0xFF30363D) : const Color(0xFFE8EDF5),
+                    isDark ? AppColors.darkBorder : const Color(0xFFE8EDF5),
               ),
               boxShadow: isDark
                   ? []

@@ -250,7 +250,7 @@ class _ActionHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
+        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
         border: Border(
           bottom: BorderSide(
             color: isDark
@@ -442,7 +442,7 @@ class _NotifTile extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isUnread
                       ? cat.color.withOpacity(isDark ? 0.14 : 0.07)
-                      : (isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78)),
+                      : (isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72)),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isUnread
@@ -561,7 +561,7 @@ class _NotifDetailSheet extends StatelessWidget {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
+            color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(

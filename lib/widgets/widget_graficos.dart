@@ -116,7 +116,7 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
                   color: active
                       ? (isDark ? const Color(0xFF2C5B7A) : AppColors.blue)
                       : isDark
-                          ? const Color(0xFF30363D)
+                          ? AppColors.darkBorder
                           : const Color(0xFFDDE6F5),
                 ),
                 showCheckmark: false,
@@ -137,7 +137,7 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: isDark
-                        ? const Color(0xFF30363D)
+                        ? AppColors.darkBorder
                         : const Color(0xFFDDE6F5),
                   ),
                 ),
@@ -428,7 +428,7 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
+        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(

@@ -360,7 +360,7 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
+        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
@@ -542,7 +542,7 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
                                 : AppColors.blue.withValues(alpha: 0.75),
                             strokeWidth: sel ? 2.5 : 1.5,
                             strokeColor:
-                                isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
+                                isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
                           );
                         },
                       ),
@@ -574,7 +574,7 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
       margin: const EdgeInsets.fromLTRB(2, 6, 2, 0),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF252E3D) : const Color(0xFFEEF5FF),
+        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isDark ? AppColors.darkBorder : const Color(0xFFCBDEFF),
@@ -616,7 +616,7 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
       double totalLiquido) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
+        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
@@ -895,7 +895,7 @@ class _SummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
+        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),

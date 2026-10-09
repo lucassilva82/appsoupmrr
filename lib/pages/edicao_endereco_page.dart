@@ -86,7 +86,7 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: isDark
-                      ? const Color(0xFF30363D)
+                      ? AppColors.darkBorder
                       : const Color(0xFFDDE6F5),
                 ),
               ),
@@ -193,7 +193,7 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                   color: widget.alterouDados
                       ? primaryBlue.withValues(alpha: 0.4)
                       : (isDark
-                          ? const Color(0xFF30363D)
+                          ? AppColors.darkBorder
                           : const Color(0xFFE8EFFA)),
                   width: widget.alterouDados ? 1.5 : 1,
                 ),
@@ -574,7 +574,7 @@ class _EnderecoLoadingDialog extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 32),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1C2128).withOpacity(0.72) : Colors.white.withOpacity(0.78),
+            color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/militar.dart';
+import '../utils/app_theme.dart';
 
 class DadosSituacaoFuncional extends StatefulWidget {
   final Militar militar;
@@ -64,7 +65,7 @@ class _DadosSituacaoFuncionalState extends State<DadosSituacaoFuncional> {
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
           decoration: BoxDecoration(
             color: isDark
-                ? const Color(0xFF21262D)
+                ? Colors.white.withValues(alpha: 0.055)
                 : theme.colorScheme.primary.withOpacity(0.05),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
@@ -173,7 +174,7 @@ class _DadosSituacaoFuncionalState extends State<DadosSituacaoFuncional> {
                           child: Container(
                             width: 2,
                             color: isDark
-                                ? const Color(0xFF30363D)
+                                ? AppColors.darkBorder
                                 : Colors.grey.shade200,
                           ),
                         ),
@@ -192,14 +193,14 @@ class _DadosSituacaoFuncionalState extends State<DadosSituacaoFuncional> {
                               ? const Color(0xFF0D2B5A).withValues(alpha: 0.4)
                               : const Color(0xFFE8F5E9))
                           : (isDark
-                              ? const Color(0xFF21262D)
-                              : const Color(0xFFF8F9FA)),
+                              ? Colors.white.withValues(alpha: 0.055)
+                              : Colors.white.withValues(alpha: 0.72)),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: isAtivo
                             ? const Color(0xFF2E7D32).withValues(alpha: 0.3)
                             : (isDark
-                                ? const Color(0xFF30363D)
+                                ? AppColors.darkBorder
                                 : const Color(0xFFE8E8E8)),
                         width: 1,
                       ),

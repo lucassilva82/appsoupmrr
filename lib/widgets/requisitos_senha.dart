@@ -46,7 +46,7 @@ class RequisitosSenha extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard.withOpacity(0.72) : Colors.white.withOpacity(0.78),
+        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),

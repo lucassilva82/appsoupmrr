@@ -111,6 +111,36 @@ class AppTheme {
       // Superfície translúcida: o fundo do app (com manchas suaves) aparece
       // por trás, dando o acabamento de vidro em todas as telas sem mexer
       // em cada uma. A borda é o que separa o card do fundo.
+      // ── Seletor segmentado ─────────────────────────────────────────────────
+      // O padrão do Material pinta o segmento ativo de cor cheia, que com a
+      // base escura vira o elemento mais claro da tela. Aqui ele é tingido,
+      // igual aos chips e à pílula da barra inferior.
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith((estados) {
+            if (estados.contains(WidgetState.selected)) {
+              return primary.withOpacity(isDark ? 0.26 : 0.16);
+            }
+            return onSurface.withOpacity(isDark ? 0.05 : 0.035);
+          }),
+          foregroundColor: WidgetStateProperty.resolveWith((estados) {
+            if (estados.contains(WidgetState.selected)) return primary;
+            return onSurface.withOpacity(0.62);
+          }),
+          side: WidgetStateProperty.resolveWith((estados) {
+            final selecionado = estados.contains(WidgetState.selected);
+            return BorderSide(
+              color: selecionado
+                  ? primary.withOpacity(0.55)
+                  : onSurface.withOpacity(0.15),
+            );
+          }),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+      ),
+
       // ── Diálogos e bottom sheets ───────────────────────────────────────────
       // Dezoito AlertDialogs espalhados pelo app herdam daqui; sem isso cada
       // um aparece como um bloco opaco sobre superfícies de vidro.

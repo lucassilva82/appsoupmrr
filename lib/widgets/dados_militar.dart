@@ -62,10 +62,12 @@ class _DadosMilitarState extends State<DadosMilitar> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    (isDark ? const Color(0xFF1E3A5F) : const Color(0xFF1976D2))
-                        .withOpacity(isDark ? 0.75 : 0.85),
+                    // Acompanha o degradê da app bar: com a base nova, o tom
+                    // antigo ficava como um bloco claro logo abaixo dela.
+                    (isDark ? const Color(0xFF0A1726) : const Color(0xFF1976D2))
+                        .withOpacity(isDark ? 0.90 : 0.85),
                     (isDark ? AppColors.navy : AppColors.navy)
-                        .withOpacity(isDark ? 0.30 : 0.35),
+                        .withOpacity(isDark ? 0.16 : 0.35),
                     Colors.transparent,
                   ],
                   stops: const [0.0, 0.62, 1.0],
