@@ -171,22 +171,14 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
                 setState(() => _selectedYear = year);
                 _loadData();
               },
-              selectedColor: AppColors.blue,
-              backgroundColor: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
-              labelStyle: TextStyle(
-                color: isSelected
-                    ? Colors.white
-                    : (isDark ? Colors.white70 : Colors.black87),
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
-                fontSize: 13,
-              ),
-              checkmarkColor: Colors.white,
-              side: BorderSide(
-                color: isSelected
-                    ? AppColors.blue
-                    : (isDark ? AppColors.darkBorder : Colors.grey.shade300),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              // cor, borda e tipografia vêm do chipTheme
+              side: isSelected
+                  ? BorderSide(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.55))
+                  : null,
             ),
           );
         }).toList(),

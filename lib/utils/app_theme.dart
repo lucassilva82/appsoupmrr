@@ -111,6 +111,32 @@ class AppTheme {
       // Superfície translúcida: o fundo do app (com manchas suaves) aparece
       // por trás, dando o acabamento de vidro em todas as telas sem mexer
       // em cada uma. A borda é o que separa o card do fundo.
+      // ── Chips ──────────────────────────────────────────────────────────────
+      // Mesma regra do seletor segmentado: selecionado é tingido, não pintado
+      // de cor cheia. Vale para os ChoiceChip e FilterChip das cinco telas
+      // que usam filtro (férias, mapa da força, comandos…).
+      chipTheme: ChipThemeData(
+        backgroundColor: onSurface.withOpacity(isDark ? 0.05 : 0.035),
+        selectedColor: primary.withOpacity(isDark ? 0.26 : 0.16),
+        checkmarkColor: primary,
+        showCheckmark: false,
+        side: BorderSide(color: onSurface.withOpacity(0.15)),
+        labelStyle: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: onSurface.withOpacity(0.70),
+        ),
+        secondaryLabelStyle: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: primary,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      ),
+
       // ── Seletor segmentado ─────────────────────────────────────────────────
       // O padrão do Material pinta o segmento ativo de cor cheia, que com a
       // base escura vira o elemento mais claro da tela. Aqui ele é tingido,

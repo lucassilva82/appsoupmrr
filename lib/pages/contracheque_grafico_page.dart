@@ -253,7 +253,10 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
             expandedHeight: 130,
             pinned: true,
             elevation: 0,
-            backgroundColor: AppColors.navy,
+            // Era navy opaco, e o degradê translúcido por cima dele virava
+            // um bloco azul claro sobre a base escura. Transparente, o
+            // degradê encosta no fundo da tela como as demais barras.
+            backgroundColor: Colors.transparent,
             iconTheme: const IconThemeData(color: Colors.white),
             flexibleSpace: FlexibleSpaceBar(
               collapseMode: CollapseMode.pin,
@@ -269,10 +272,10 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      AppColors.navy.withOpacity(isDark ? 0.82 : 0.92),
-                      AppColors.blue.withOpacity(isDark ? 0.62 : 0.80),
-                    ],
+                    colors: AppTheme.appBarGradient(
+                      isDark: isDark,
+                      isSuperUser: false,
+                    ).map((c) => c.withOpacity(isDark ? 0.92 : 0.90)).toList(),
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
