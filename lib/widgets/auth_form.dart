@@ -124,9 +124,6 @@ class _AuthFormState extends State<AuthForm> {
 
   @override
   Widget build(BuildContext context) {
-    // Largura do botão em repouso; ao carregar ele encolhe até 56.
-    final larguraTotal = MediaQuery.of(context).size.width - 88;
-
     return Form(
       key: _formKey,
       child: Column(
@@ -226,57 +223,76 @@ class _AuthFormState extends State<AuthForm> {
           const SizedBox(height: 16),
 
           // ── Botão Entrar ───────────────────────────────────────────────
-          // Ao enviar, o botão encolhe até virar um círculo com o indicador,
-          // em vez de só trocar o rótulo por um spinner. É o padrão dos apps
-          // atuais: o próprio controle vira o estado de carregamento.
-          Center(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 420),
-              curve: Curves.easeOutCubic,
-              width: _isLoading ? 56 : larguraTotal,
-              height: 56,
-              decoration: BoxDecoration(
-                color: AppColors.blue,
-                borderRadius: BorderRadius.circular(_isLoading ? 28 : 14),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _isLoading ? null : _submit,
-                  child: Center(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 180),
-                      child: _isLoading
-                          ? const SizedBox(
-                              key: ValueKey('carregando'),
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.4,
-                              ),
-                            )
-                          : const Row(
-                              key: ValueKey('rotulo'),
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Entrar',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(width: 8),
-                                Icon(Icons.arrow_forward_rounded,
-                                    size: AppIconSize.sm, color: Colors.white),
-                              ],
-                            ),
-                    ),
-                  ),
+          // O botão não muda de forma ao enviar: o rótulo passa a "Entrando…"
+          // e uma linha fina percorre a base. É mais contido que encolher o
+          // controle até virar um círculo, e mantém o alvo de toque no lugar
+          // enquanto a requisição acontece.
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _submit,
+              style: ElevatedButton.styleFrom(
+                elevation: 0,
+                padding: EdgeInsets.zero,
+                disabledBackgroundColor: AppColors.navy,
+                disabledForegroundColor: Colors.white,
+                side: BorderSide(
+                  color: AppColors.lightBlue.withOpacity(_isLoading ? 0.35 : 0.55),
                 ),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    child: _isLoading
+                        ? const Text(
+                            'Entrando…',
+                            key: ValueKey('carregando'),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white70,
+                            ),
+                          )
+                        : const Row(
+                            key: ValueKey('rotulo'),
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Entrar',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward_rounded,
+                                  size: AppIconSize.sm, color: Colors.white),
+                            ],
+                          ),
+                  ),
+                  if (_isLoading)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          bottom: Radius.circular(14),
+                        ),
+                        child: LinearProgressIndicator(
+                          minHeight: 3,
+                          backgroundColor: Colors.transparent,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.lightBlue.withOpacity(0.85),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),

@@ -61,12 +61,15 @@ class AppTheme {
     final secondary = _secondary(isDark, isSuperUser);
     final onPrimary = Colors.white;
 
-    // Cor dos botões cheios. A primária serve de acento em texto e ícone, e
-    // por isso é clara no modo escuro — não dá para usá-la como fundo de
-    // botão: branco em cima dela fica em 2,65:1. Os botões usam o azul
-    // institucional nos dois modos, que segura branco em 5,75:1 e é o azul
-    // escuro que o app já usa.
-    final corBotao = isSuperUser && !isDark ? AppColors.superBlue : AppColors.blue;
+    // Cor dos botões cheios: o navy institucional, que é o azul escuro do
+    // app. Branco em cima dele dá 15,6:1.
+    //
+    // Sozinho ele quase some no fundo escuro (1,23:1, abaixo dos 3:1 que um
+    // contorno de controle precisa), então vem com uma borda clara — é ela
+    // que delimita o botão, e fica em 3,42:1. Por isso o botão é escuro sem
+    // deixar de ser visível.
+    final corBotao = isSuperUser ? AppColors.superBlue : AppColors.navy;
+    final bordaBotao = AppColors.lightBlue.withOpacity(0.55);
     final bgColor = isDark ? AppColors.darkBg : AppColors.lightBg;
     final surface = isDark ? AppColors.darkSurface : AppColors.lightSurface;
     final card = isDark ? AppColors.darkCard : AppColors.lightCard;
@@ -243,6 +246,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           disabledBackgroundColor: corBotao.withOpacity(0.45),
           disabledForegroundColor: Colors.white70,
+          side: BorderSide(color: bordaBotao),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           // 52 de altura mínima: com 48 o indicador de carregamento ficava
@@ -261,6 +265,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           disabledBackgroundColor: corBotao.withOpacity(0.45),
           disabledForegroundColor: Colors.white70,
+          side: BorderSide(color: bordaBotao),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           minimumSize: const Size(0, 52),

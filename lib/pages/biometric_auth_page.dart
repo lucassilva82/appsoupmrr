@@ -355,48 +355,21 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
       {required VoidCallback? onTap,
       required String label,
       required IconData icon}) {
-    return AnimatedOpacity(
-      opacity: isLoading ? 0.6 : 1.0,
-      duration: const Duration(milliseconds: 250),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppColors.lightBlue, AppColors.blue, AppColors.navy],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.blue.withOpacity(0.38),
-                blurRadius: 14,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(16),
-            splashColor: Colors.white24,
-            child: SizedBox(
-              height: 54,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, color: Colors.white, size: 22),
-                  const SizedBox(width: 10),
-                  Text(label,
-                      style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.3)),
-                ],
-              ),
-            ),
+    // Era um degradê de três azuis com sombra colorida — o único botão assim
+    // no app. Agora é o mesmo navy com borda clara dos demais botões cheios.
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton.icon(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(elevation: 0),
+        icon: Icon(icon, size: 22),
+        label: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.3,
           ),
         ),
       ),
