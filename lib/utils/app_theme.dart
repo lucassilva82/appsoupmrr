@@ -59,13 +59,14 @@ class AppTheme {
     final primary = _primary(isDark, isSuperUser);
     final corErro = isDark ? Colors.redAccent : Colors.red;
     final secondary = _secondary(isDark, isSuperUser);
-    // Texto sobre a cor primária decidido pela luminância dela. No escuro a
-    // primária é um azul claro (#42A5F5) e o branco que vinha por padrão
-    // ficava em 2,65:1 — abaixo do mínimo — em todo botão cheio do app.
-    final onPrimary =
-        ThemeData.estimateBrightnessForColor(primary) == Brightness.dark
-            ? Colors.white
-            : const Color(0xFF0B1620);
+    final onPrimary = Colors.white;
+
+    // Cor dos botões cheios. A primária serve de acento em texto e ícone, e
+    // por isso é clara no modo escuro — não dá para usá-la como fundo de
+    // botão: branco em cima dela fica em 2,65:1. Os botões usam o azul
+    // institucional nos dois modos, que segura branco em 5,75:1 e é o azul
+    // escuro que o app já usa.
+    final corBotao = isSuperUser && !isDark ? AppColors.superBlue : AppColors.blue;
     final bgColor = isDark ? AppColors.darkBg : AppColors.lightBg;
     final surface = isDark ? AppColors.darkSurface : AppColors.lightSurface;
     final card = isDark ? AppColors.darkCard : AppColors.lightCard;
@@ -238,12 +239,32 @@ class AppTheme {
       // ── ElevatedButton ──────────────────────────────────────────────────────
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primary,
-          foregroundColor: onPrimary,
+          backgroundColor: corBotao,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: corBotao.withOpacity(0.45),
+          disabledForegroundColor: Colors.white70,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          // 52 de altura mínima: com 48 o indicador de carregamento ficava
+          // espremido dentro do botão.
+          minimumSize: const Size(0, 52),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
           elevation: isDark ? 0 : 2,
+          textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+      ),
+
+      // ── FilledButton ───────────────────────────────────────────────────────
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: corBotao,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: corBotao.withOpacity(0.45),
+          disabledForegroundColor: Colors.white70,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          minimumSize: const Size(0, 52),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
           textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
       ),

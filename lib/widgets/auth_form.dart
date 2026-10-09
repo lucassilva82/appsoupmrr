@@ -280,24 +280,11 @@ class _AuthFormState extends State<AuthForm> {
           // a capa escura do login ele continua sendo o elemento de mais peso.
           SizedBox(
             width: double.infinity,
-            height: 48,
             child: ElevatedButton(
               onPressed: _isLoading ? null : _submit,
-              // Mesma primária do app, não um azul só desta tela: o azul
-              // claro já é o que marca o rótulo em foco e a caixa de lembrar
-              // aqui, então o botão com outro azul destoava das duas coisas.
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.lightBlue,
-                foregroundColor: const Color(0xFF0B1620),
-                disabledBackgroundColor:
-                    AppColors.lightBlue.withOpacity(0.45),
-                disabledForegroundColor:
-                    const Color(0xFF0B1620).withOpacity(0.55),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+              // Cor, altura e raio vêm do elevatedButtonTheme — é o mesmo
+              // botão das demais telas, no azul institucional.
+              style: ElevatedButton.styleFrom(elevation: 0),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 transitionBuilder: (child, anim) =>
@@ -308,7 +295,7 @@ class _AuthFormState extends State<AuthForm> {
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                          color: Color(0xFF0B1620),
+                          color: Colors.white,
                           strokeWidth: 2,
                         ),
                       )

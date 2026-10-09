@@ -153,7 +153,9 @@ class _Cartao extends StatelessWidget {
                   children: [
                     Expanded(
                       child: SizedBox(
-                        height: 46,
+                        // Sem altura fixa: 46 cortava o rótulo depois que os
+                        // botões do tema passaram a 52 com fonte 16.
+                        height: 52,
                         child: OutlinedButton(
                           onPressed: () => Navigator.of(context).pop(false),
                           style: OutlinedButton.styleFrom(
@@ -164,13 +166,17 @@ class _Cartao extends StatelessWidget {
                             ),
                             foregroundColor:
                                 theme.colorScheme.onSurface.withOpacity(0.75),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 12),
                           ),
-                          child: Text(
-                            textoCancelar,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              textoCancelar,
+                              maxLines: 1,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600),
+                            ),
                           ),
                         ),
                       ),
@@ -178,20 +184,31 @@ class _Cartao extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: SizedBox(
-                        height: 46,
+                        height: 52,
                         child: ElevatedButton(
                           onPressed: () => Navigator.of(context).pop(true),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: cor,
-                            foregroundColor: Colors.white,
+                            foregroundColor:
+                                ThemeData.estimateBrightnessForColor(cor) ==
+                                        Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black87,
                             elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            // Deixa o texto decidir a largura; com padding de
+                            // 24 de cada lado um rótulo curto como "Sair"
+                            // ficava apertado contra as bordas.
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 12),
                           ),
-                          child: Text(
-                            textoConfirmar,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              textoConfirmar,
+                              maxLines: 1,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                       ),
