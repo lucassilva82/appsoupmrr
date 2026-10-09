@@ -350,7 +350,8 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
 
   Widget _sucesso() {
     final theme = Theme.of(context);
-    const verde = Color(0xFF2E7D32);
+    final isDark = theme.brightness == Brightness.dark;
+    final verde = isDark ? AppColors.sucessoEscuro : AppColors.sucesso;
 
     return Column(
       key: const ValueKey('sucesso'),
@@ -373,8 +374,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
                 shape: BoxShape.circle,
                 color: verde.withOpacity(0.12),
               ),
-              child: const Icon(Icons.verified_user_rounded,
-                  size: 44, color: verde),
+              child: Icon(Icons.verified_user_rounded, size: 44, color: verde),
             ),
           ),
         ),
@@ -471,8 +471,8 @@ class _ListaRequisitos extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final vazio = situacao.values.every((cumprida) => !cumprida);
 
-    const verde = Color(0xFF2E7D32);
-    const vermelho = Color(0xFFC62828);
+    final verde = isDark ? AppColors.sucessoEscuro : AppColors.sucesso;
+    final vermelho = isDark ? AppColors.falhaEscuro : AppColors.falha;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),

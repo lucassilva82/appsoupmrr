@@ -720,7 +720,8 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
 
   Widget _telaConcluido() {
     final theme = Theme.of(context);
-    const verde = Color(0xFF2E7D32);
+    final isDark = theme.brightness == Brightness.dark;
+    final verde = isDark ? AppColors.sucessoEscuro : AppColors.sucesso;
 
     return Column(
       key: const ValueKey('ok'),
@@ -742,7 +743,7 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
                 color: verde.withOpacity(0.12),
               ),
               child:
-                  const Icon(Icons.verified_rounded, size: 44, color: verde),
+                  Icon(Icons.verified_rounded, size: 44, color: verde),
             ),
           ),
         ),

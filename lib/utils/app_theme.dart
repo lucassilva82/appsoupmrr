@@ -19,6 +19,14 @@ class AppColors {
   static const lightSurface = Color(0xFFFFFFFF);
   static const lightCard = Color(0xFFFFFFFF);
 
+  // Verde e vermelho semânticos, por modo. O par escuro do Material
+  // (#2E7D32 / #C62828) fica em 3,7:1 e 3,4:1 sobre a base nova — reprova nos
+  // 4.5:1 de texto. Em fundo escuro usa-se a versão clara.
+  static const sucesso = Color(0xFF14713B);
+  static const sucessoEscuro = Color(0xFF6EE7A0);
+  static const falha = Color(0xFFB3261E);
+  static const falhaEscuro = Color(0xFFFF9E9E);
+
   // Superfícies modo escuro
   static const darkBg = Color(0xFF03050A);
   static const darkSurface = Color(0xFF080B11);

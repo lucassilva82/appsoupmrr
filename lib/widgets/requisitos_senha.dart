@@ -40,8 +40,8 @@ class RequisitosSenha extends StatelessWidget {
     final situacao = avaliarSenha(senha);
     final vazio = senha.isEmpty;
 
-    const verde = Color(0xFF2E7D32);
-    const vermelho = Color(0xFFC62828);
+    final verde = isDark ? AppColors.sucessoEscuro : AppColors.sucesso;
+    final vermelho = isDark ? AppColors.falhaEscuro : AppColors.falha;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),

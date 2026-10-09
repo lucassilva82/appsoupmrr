@@ -445,7 +445,8 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
   // ── Passo 4: concluído ────────────────────────────────────────────────────
 
   Widget _telaConcluido() {
-    const verde = Color(0xFF2E7D32);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final verde = isDark ? AppColors.sucessoEscuro : AppColors.sucesso;
     return Column(
       key: const ValueKey('ok'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -465,8 +466,7 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
                 shape: BoxShape.circle,
                 color: verde.withOpacity(0.12),
               ),
-              child: const Icon(Icons.verified_user_rounded,
-                  size: 44, color: verde),
+              child: Icon(Icons.verified_user_rounded, size: 44, color: verde),
             ),
           ),
         ),
