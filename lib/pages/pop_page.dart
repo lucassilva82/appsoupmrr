@@ -30,7 +30,7 @@ class _PopPageState extends State<PopPage> {
   Timer? _debounce;
   final ScrollController _scrollCtrl = ScrollController();
 
-  ButtonStyle _compactActionStyle(ThemeData theme) => ButtonStyle(
+  ButtonStyle _compactActionStyle(ThemeData _) => ButtonStyle(
         visualDensity: VisualDensity.compact,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         minimumSize: const WidgetStatePropertyAll(Size(0, 34)),
@@ -40,8 +40,9 @@ class _PopPageState extends State<PopPage> {
         textStyle: const WidgetStatePropertyAll(
           TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
         ),
-        backgroundColor: WidgetStatePropertyAll(theme.colorScheme.primary),
-        foregroundColor: WidgetStatePropertyAll(theme.colorScheme.onPrimary),
+        // Cor vem do filledButtonTheme; aqui só o tamanho compacto. Usar a
+        // primária deixava este botão no azul claro de acento, diferente de
+        // todos os outros botões do app.
       );
 
   int _toInt(dynamic v, [int fallback = 0]) {

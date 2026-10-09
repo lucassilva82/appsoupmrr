@@ -29,7 +29,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
   List<CertidaoModel> _certidoes = [];
   final Set<int> _expanded = {}; // controla expansão por certidão
 
-  ButtonStyle _compactActionStyle(ThemeData theme) => ButtonStyle(
+  ButtonStyle _compactActionStyle(ThemeData _) => ButtonStyle(
         visualDensity: VisualDensity.compact,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         minimumSize: const WidgetStatePropertyAll(Size(0, 34)),
@@ -39,8 +39,9 @@ class _CertidoesPageState extends State<CertidoesPage> {
         textStyle: const WidgetStatePropertyAll(
           TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
         ),
-        backgroundColor: WidgetStatePropertyAll(theme.colorScheme.primary),
-        foregroundColor: WidgetStatePropertyAll(theme.colorScheme.onPrimary),
+        // Cor vem do filledButtonTheme; aqui só o tamanho compacto. Usar a
+        // primária deixava este botão no azul claro de acento, diferente de
+        // todos os outros botões do app.
       );
 
   @override

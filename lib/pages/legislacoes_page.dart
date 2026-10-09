@@ -31,7 +31,7 @@ class _LegislacoesPageState extends State<LegislacoesPage> {
   Timer? _debounce;
   final ScrollController _scrollCtrl = ScrollController();
 
-  ButtonStyle _compactActionStyle(ThemeData theme) => ButtonStyle(
+  ButtonStyle _compactActionStyle(ThemeData _) => ButtonStyle(
         visualDensity: VisualDensity.compact,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         minimumSize: const WidgetStatePropertyAll(Size(0, 34)),
@@ -41,8 +41,9 @@ class _LegislacoesPageState extends State<LegislacoesPage> {
         textStyle: const WidgetStatePropertyAll(
           TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
         ),
-        backgroundColor: WidgetStatePropertyAll(theme.colorScheme.primary),
-        foregroundColor: WidgetStatePropertyAll(theme.colorScheme.onPrimary),
+        // Cor vem do filledButtonTheme; aqui só o tamanho compacto. Usar a
+        // primária deixava este botão no azul claro de acento, diferente de
+        // todos os outros botões do app.
       );
 
   // Helpers de conversão robusta (API pode retornar string para números)
