@@ -465,7 +465,7 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                                 titulo: 'Sucesso',
                                 texto: 'Endereço atualizado com sucesso!',
                                 confirmar: 'OK', aoConfirmar: () {
-                              Navigator.of(context).pop(); // fecha QuickAlert
+                              Navigator.of(context).pop(); // fecha o alerta
                               Navigator.of(context).pop(); // volta para perfil
                             });
                           } catch (error) {

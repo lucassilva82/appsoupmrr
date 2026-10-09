@@ -25,7 +25,6 @@ import 'package:screen_protector/screen_protector.dart';
 import 'package:screenshot_recording_detector/models/detection_event.dart';
 import 'package:screenshot_recording_detector/screenshot_recording_detector.dart';
 import 'package:app_settings/app_settings.dart';
-import 'package:quickalert/quickalert.dart';
 import 'package:flutter/services.dart'; // Adicione esta linha
 
 // ======== Páginas e models ======== //
@@ -63,6 +62,7 @@ import 'package:projetonovo/utils/app_routes.dart';
 
 import 'firebase_options.dart';
 import 'models/auth_model.dart';
+import 'widgets/dialogo_confirmacao.dart';
 import 'package:projetonovo/data/store.dart'; // Certifique-se de que Store está acessível
 
 // Instância global de notificações locais
@@ -610,80 +610,40 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     final dialogContext = navigatorKey.currentContext;
     if (dialogContext == null) return;
 
-    Future.delayed(Duration.zero, () {
-      if (Platform.isIOS) {
-        QuickAlert.show(
-          context: dialogContext,
-          type: QuickAlertType.info,
-          title: 'Permissão para Notificações',
-          text:
-              'Para continuar recebendo atualizações, permita o envio de notificações.',
-          confirmBtnText: 'Ativar',
-          confirmBtnTextStyle:
-              const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-          confirmBtnColor: Colors.blue,
-          showCancelBtn: true,
-          cancelBtnText: 'Cancelar',
-          cancelBtnTextStyle: const TextStyle(fontSize: 12),
-          onConfirmBtnTap: () async {
-            Navigator.of(dialogContext).pop();
-            var userData = await Store.getMap('userData');
-            userData['notificationsChoice'] = 'denied';
-            await Store.saveMap('userData', userData);
-            AppSettings.openAppSettings();
-          },
-          onCancelBtnTap: () async {
-            Navigator.of(dialogContext).pop();
-            var userData = await Store.getMap('userData');
-            userData['notificationsChoice'] = 'denied';
-            await Store.saveMap('userData', userData);
-            ScaffoldMessenger.of(dialogContext).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  "Notificações desativadas. Você pode ativar nas configurações.",
-                  style: TextStyle(fontSize: 12),
-                ),
-                duration: Duration(seconds: 2),
-              ),
-            );
-          },
-        );
-      } else {
-        QuickAlert.show(
-          context: dialogContext,
-          type: QuickAlertType.info,
-          title: 'Permissão para Notificações',
-          text:
-              'Para continuar recebendo atualizações, permita o envio de notificações.',
-          confirmBtnText: 'Ativar',
-          confirmBtnTextStyle:
-              const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-          confirmBtnColor: Colors.blue,
-          showCancelBtn: true,
-          cancelBtnText: 'Cancelar',
-          cancelBtnTextStyle: const TextStyle(fontSize: 12),
-          onConfirmBtnTap: () async {
-            Navigator.of(dialogContext).pop();
-            // Em Android, se o usuário desativou manualmente, abra as configurações
-            AppSettings.openAppSettings();
-          },
-          onCancelBtnTap: () async {
-            Navigator.of(dialogContext).pop();
-            var userData = await Store.getMap('userData');
-            userData['notificationsChoice'] = 'denied';
-            await Store.saveMap('userData', userData);
-            ScaffoldMessenger.of(dialogContext).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  "Notificações desativadas. Você pode ativar nas configurações.",
-                  style: TextStyle(fontSize: 12),
-                ),
-                duration: Duration(seconds: 2),
-              ),
-            );
-          },
-        );
+    // iOS e Android caíam em dois blocos idênticos de alerta; o que muda é
+    // só o que acontece ao confirmar.
+    Future.delayed(Duration.zero, () async {
+      final querAtivar = await dialogoConfirmacao(
+        dialogContext,
+        titulo: 'Permissão para Notificações',
+        mensagem: 'Para continuar recebendo atualizações, permita o envio de '
+            'notificações.',
+        textoConfirmar: 'Ativar',
+        icone: Icons.notifications_active_rounded,
+      );
+
+      if (querAtivar) {
+        if (Platform.isIOS) {
+          await FirebaseMessaging.instance.requestPermission();
+        } else {
+          AppSettings.openAppSettings();
+        }
+        return;
       }
+
+      var userData = await Store.getMap('userData');
+      userData['notificationsChoice'] = 'denied';
+      await Store.saveMap('userData', userData);
+      if (!dialogContext.mounted) return;
+      ScaffoldMessenger.of(dialogContext).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Notificações desativadas. Você pode ativar nas configurações.',
+            style: TextStyle(fontSize: 12),
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
     });
   }
 

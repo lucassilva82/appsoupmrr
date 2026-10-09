@@ -14,12 +14,12 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:extenso/extenso.dart';
 import 'package:provider/provider.dart';
-import 'package:quickalert/quickalert.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/auth_model.dart';
 import '../utils/app_theme.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/alerta.dart';
 
 class DeclaracaoBensPage extends StatefulWidget {
   final String ano;
@@ -148,10 +148,10 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
           _fadeCtrl.forward(from: 0);
         }
       } else {
-        _showQuickAlert('Erro ao buscar bens', QuickAlertType.error);
+        _alerta('Erro ao buscar bens', erro: true);
       }
     } catch (e) {
-      _showQuickAlert('Erro inesperado: $e', QuickAlertType.error);
+      _alerta('Erro inesperado: $e', erro: true);
     }
   }
 
@@ -183,15 +183,14 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
       final data = json.decode(resp.body);
       if (resp.statusCode == 200 && data['code'] == 1) {
         await _fetchBens();
-        _showQuickAlert('Bem cadastrado com sucesso', QuickAlertType.success);
+        _alerta('Bem cadastrado com sucesso');
         _resetForm();
       } else {
-        _showQuickAlert(
-            data['message'] ?? 'Erro ao enviar o bem', QuickAlertType.error);
+        _alerta(data['message'] ?? 'Erro ao enviar o bem', erro: true);
       }
     } catch (e) {
       Navigator.of(context).pop();
-      _showQuickAlert('Erro inesperado: $e', QuickAlertType.error);
+      _alerta('Erro inesperado: $e', erro: true);
     }
   }
 
@@ -206,15 +205,13 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
       final data = json.decode(resp.body);
       if (resp.statusCode == 200 && data['code'] == 1) {
         await _fetchBens();
-        _showQuickAlert(
-            'Declaração enviada com sucesso', QuickAlertType.success);
+        _alerta('Declaração enviada com sucesso');
       } else {
-        _showQuickAlert(data['message'] ?? 'Erro ao enviar declaração',
-            QuickAlertType.error);
+        _alerta(data['message'] ?? 'Erro ao enviar declaração', erro: true);
       }
     } catch (e) {
       Navigator.of(context).pop();
-      _showQuickAlert('Erro inesperado: $e', QuickAlertType.error);
+      _alerta('Erro inesperado: $e', erro: true);
     }
   }
 
@@ -240,15 +237,13 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
           tipoBem = 'Imóvel';
         });
         _resetForm();
-        _showQuickAlert(
-            'Declaração excluída com sucesso', QuickAlertType.success);
+        _alerta('Declaração excluída com sucesso');
       } else {
-        _showQuickAlert(data['message'] ?? 'Erro ao excluir declaração',
-            QuickAlertType.error);
+        _alerta(data['message'] ?? 'Erro ao excluir declaração', erro: true);
       }
     } catch (e) {
       Navigator.of(context).pop();
-      _showQuickAlert('Erro inesperado: $e', QuickAlertType.error);
+      _alerta('Erro inesperado: $e', erro: true);
     }
   }
 
@@ -268,14 +263,13 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
       final data = json.decode(resp.body);
       if (resp.statusCode == 200 && data['code'] == 1) {
         setState(() => bensEnviados.removeAt(index));
-        _showQuickAlert('Bem excluído com sucesso', QuickAlertType.success);
+        _alerta('Bem excluído com sucesso');
       } else {
-        _showQuickAlert(
-            data['message'] ?? 'Erro ao excluir o bem', QuickAlertType.error);
+        _alerta(data['message'] ?? 'Erro ao excluir o bem', erro: true);
       }
     } catch (e) {
       Navigator.of(context).pop();
-      _showQuickAlert('Erro inesperado: $e', QuickAlertType.error);
+      _alerta('Erro inesperado: $e', erro: true);
     }
   }
 
@@ -294,8 +288,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
             instituicaoController.text.isEmpty) ||
         (formaAquisicao == 'Financiado' && parcelasController.text.isEmpty) ||
         (formaAquisicao == 'Financiado' && gastosController.text.isEmpty)) {
-      _showQuickAlert(
-          'Preencha todos os campos obrigatórios', QuickAlertType.warning);
+      _alerta('Preencha todos os campos obrigatórios', erro: true);
       return false;
     }
     return true;
@@ -394,34 +387,13 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
     return NumberFormat.currency(locale: 'pt_BR', symbol: '').format(total);
   }
 
-  void _showQuickAlert(String message, QuickAlertType type) {
-    final isError =
-        type == QuickAlertType.error || type == QuickAlertType.warning;
-    final color = isError ? Colors.red.shade700 : Colors.green.shade700;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(
-              isError ? Icons.error_outline_rounded : Icons.check_circle,
-              color: color,
-              size: 18,
-            ),
-            const SizedBox(width: 8),
-            Text(isError ? 'Atenção' : 'Sucesso'),
-          ],
-        ),
-        content: Text(message),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
+  /// Atalho local: sucesso ou erro, com o visual dos alertas do app.
+  void _alerta(String message, {bool erro = false}) {
+    if (erro) {
+      alertaErro(context, titulo: 'Atenção', texto: message);
+    } else {
+      alertaSucesso(context, titulo: 'Sucesso', texto: message);
+    }
   }
 
   void _showLoading() {
