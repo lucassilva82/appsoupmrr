@@ -232,15 +232,13 @@ class _AuthFormState extends State<AuthForm> {
             height: 56,
             child: ElevatedButton(
               onPressed: _isLoading ? null : _submit,
+              // Cor e forma vêm do tema; aqui só a sombra, que é o que
+              // separa o botão do cartão de vidro sem desenhar uma linha.
               style: ElevatedButton.styleFrom(
                 elevation: 0,
                 disabledBackgroundColor: AppColors.navy,
                 disabledForegroundColor: Colors.white,
-                side: BorderSide(
-                  color: AppColors.lightBlue
-                      .withOpacity(_isLoading ? 0.45 : 1.0),
-                  width: 1.5,
-                ),
+                shadowColor: Colors.black,
               ),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 260),
