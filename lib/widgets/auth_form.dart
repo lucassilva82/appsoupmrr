@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/auth_model.dart';
 import '../utils/auth_exception.dart';
+import '../utils/app_theme.dart';
 
 class AuthForm extends StatefulWidget {
   bool exibeSenha = true;
@@ -245,12 +246,12 @@ class _AuthFormState extends State<AuthForm> {
                       height: 16,
                       decoration: BoxDecoration(
                         color: _lembrarAcesso
-                            ? const Color(0xFF42A5F5)
+                            ? AppColors.lightBlue
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(
                           color: _lembrarAcesso
-                              ? const Color(0xFF42A5F5)
+                              ? AppColors.lightBlue
                               : Colors.white38,
                           width: 1.4,
                         ),
@@ -272,84 +273,59 @@ class _AuthFormState extends State<AuthForm> {
           ),
           const SizedBox(height: 16),
 
-          // ── Botão ENTRAR — o botão absorve o estado de loading ───────
-          DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF1565C0).withOpacity(0.55),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+          // ── Botão Entrar ───────────────────────────────────────────────
+          // Mesma forma dos botões do app (altura 48, raio 12, caixa normal)
+          // em vez do degradê de três paradas com letterSpacing 2.5. Fica
+          // sólido no azul institucional: branco sobre ele dá 5,1:1, e sobre
+          // a capa escura do login ele continua sendo o elemento de mais peso.
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.blue,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: AppColors.blue.withOpacity(0.55),
+                disabledForegroundColor: Colors.white70,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: Material(
-                color: Colors.transparent,
-                child: Ink(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Color(0xFF42A5F5),
-                        Color(0xFF1565C0),
-                        Color(0xFF002154),
-                      ],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                  ),
-                  child: InkWell(
-                    onTap: _isLoading ? null : _submit,
-                    child: SizedBox(
-                      height: 54,
-                      child: Center(
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          transitionBuilder: (child, anim) =>
-                              FadeTransition(opacity: anim, child: child),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  key: ValueKey('loading'),
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Row(
-                                  key: ValueKey('content'),
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'ENTRAR',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w800,
-                                        color: Colors.white,
-                                        letterSpacing: 2.5,
-                                      ),
-                                    ),
-                                    SizedBox(width: 10),
-                                    Icon(
-                                      Icons.arrow_forward_rounded,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ],
-                                ),
+              ),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                transitionBuilder: (child, anim) =>
+                    FadeTransition(opacity: anim, child: child),
+                child: _isLoading
+                    ? const SizedBox(
+                        key: ValueKey('loading'),
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
                         ),
+                      )
+                    : const Row(
+                        key: ValueKey('content'),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Entrar',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(Icons.arrow_forward_rounded,
+                              size: AppIconSize.sm),
+                        ],
                       ),
-                    ),
-                  ),
-                ),
               ),
             ),
           ),
-          const SizedBox(height: 14),
-
 
           const SizedBox(height: 18),
 
@@ -403,26 +379,40 @@ class _AuthFormState extends State<AuthForm> {
       labelStyle: const TextStyle(color: Colors.white70, fontSize: 14),
       prefixIcon: Icon(icon, color: Colors.white60, size: 20),
       suffixIcon: suffixIcon,
+      // Raio 14, foco de 1,6 e erro de 12px: os mesmos números do
+      // inputDecorationTheme. O que não dá para herdar aqui é a cor, porque
+      // o campo fica sobre a capa escura e não sobre a superfície do app.
       filled: true,
       fillColor: Colors.white.withOpacity(0.08),
-      contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: Colors.white.withOpacity(0.20)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF42A5F5), width: 1.5),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.lightBlue, width: 1.6),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.redAccent),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.falhaEscuro, width: 1.2),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.falhaEscuro, width: 1.6),
       ),
-      errorStyle: const TextStyle(color: Colors.orangeAccent, fontSize: 11),
+      floatingLabelStyle: const TextStyle(
+        color: AppColors.lightBlue,
+        fontWeight: FontWeight.w600,
+        fontSize: 13,
+      ),
+      errorStyle: const TextStyle(
+        color: AppColors.falhaEscuro,
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        height: 1.3,
+      ),
+      errorMaxLines: 2,
     );
   }
 }
