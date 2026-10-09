@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../models/auth_model.dart';
 import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
+import '../widgets/versao_app.dart';
 
 class BiometricAuthPage extends StatefulWidget {
   const BiometricAuthPage({Key? key}) : super(key: key);
@@ -654,9 +655,11 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
                         const SizedBox(height: 28),
 
                         // Rodapé
-                        Text(
-                          'v2.0 • SouPMRR',
-                          style: TextStyle(
+                        // Versão real do pacote; estava fixa em v2.0 e o app
+                        // já está em 2.0.7.
+                        TextoVersao(
+                          formato: (v) => 'v$v • SouPMRR',
+                          estilo: TextStyle(
                             fontSize: 11,
                             letterSpacing: 0.6,
                             color: textSecondary.withOpacity(0.45),
