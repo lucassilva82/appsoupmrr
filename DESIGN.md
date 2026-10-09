@@ -219,22 +219,24 @@ O app é discreto **para que a ação se destaque**. Essa é a regra que decide:
 |---|---|
 | Fundo, cards, cabeçalhos, faixas, selos | Translúcido, discreto |
 | Cartão de destaque da tela | Vidro tingido, discreto |
-| **Botão da ação principal** | **Cheio, `colorScheme.primary`** |
+| **Botão da ação principal** | **Cheio — a cor vem do tema, nunca de `colorScheme.primary`** |
 | Botão secundário | `OutlinedButton` com a primária |
 | Ação destrutiva | Vermelho, e sempre com `dialogoConfirmacao` |
 
 Deixar tudo discreto, inclusive o botão, tira do usuário a única pista do que
 fazer na tela.
 
-**Texto sobre a primária**: no escuro ela é clara e texto branco fica em ~2:1.
-Decida pela luminância:
+**Botões cheios não usam a primária como fundo.** A primária é o acento de
+texto e ícone e por isso é clara no modo escuro: branco em cima dela fica em
+2,65:1. O fundo dos botões é `AppColors.acao`, definido no
+`elevatedButtonTheme` e no `filledButtonTheme` — a tela não redefine. Foi o
+erro mais repetido aqui: 21 botões fixavam a própria cor e nenhuma
+padronização chegava neles.
 
-```dart
-foregroundColor: ThemeData.estimateBrightnessForColor(primaria) ==
-        Brightness.dark
-    ? Colors.white
-    : Colors.black87,
-```
+**Por que não um navy.** Navy sobre o fundo escuro fica em 1,24:1, abaixo dos
+3:1 que o contorno de um controle precisa — o botão deixa de se delimitar do
+fundo. Nenhuma variação de navy chega lá. `AppColors.acao` é o tom mais escuro
+da família que passa: 3,25:1 de contorno e 5,94:1 de branco por cima.
 
 ---
 
