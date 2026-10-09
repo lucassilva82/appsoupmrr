@@ -14,10 +14,60 @@ class AuthPage extends StatefulWidget {
   State<AuthPage> createState() => _AuthPageState();
 }
 
-class _AuthPageState extends State<AuthPage> {
+class _AuthPageState extends State<AuthPage>
+    with SingleTickerProviderStateMixin {
+  // Entrada encadeada: cada peça aparece um pouco depois da anterior, no
+  // mesmo controlador. É o que dá a sensação de "montagem" dos apps atuais,
+  // em vez de a tela inteira surgir de uma vez.
+  late final AnimationController _entrada = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  );
+
+  /// Um trecho do controlador, com fade e deslocamento para cima.
+  Widget _surge(
+    double inicio,
+    double fim, {
+    required Widget child,
+    double deslocamento = 28,
+  }) {
+    final curva = CurvedAnimation(
+      parent: _entrada,
+      curve: Interval(inicio, fim, curve: Curves.easeOutCubic),
+    );
+    return AnimatedBuilder(
+      animation: curva,
+      builder: (_, filho) => Opacity(
+        opacity: curva.value,
+        child: Transform.translate(
+          offset: Offset(0, deslocamento * (1 - curva.value)),
+          child: filho,
+        ),
+      ),
+      child: child,
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _entrada.forward();
+  }
+
+  @override
+  void dispose() {
+    _entrada.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<Auth>(context);
+
+    // Quem pediu menos movimento no sistema recebe a tela já montada.
+    if (MediaQuery.of(context).disableAnimations && !_entrada.isCompleted) {
+      _entrada.value = 1;
+    }
 
     if (auth.isAuth) {
       WidgetsBinding.instance.addPostFrameCallback(
@@ -109,20 +159,28 @@ class _AuthPageState extends State<AuthPage> {
                       const Spacer(flex: 3),
 
                       // Texto institucional — abaixo do SouPMRR da imagem
-                      Text(
-                        'POLÍCIA MILITAR DE RORAIMA',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.white.withOpacity(0.70),
-                          letterSpacing: 3.5,
-                          fontWeight: FontWeight.w600,
+                      _surge(
+                        0.0,
+                        0.45,
+                        deslocamento: 16,
+                        child: Text(
+                          'POLÍCIA MILITAR DE RORAIMA',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.white.withOpacity(0.70),
+                            letterSpacing: 3.5,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
 
                       const Spacer(flex: 1),
 
                       // ── Glassmorphism card de login ────────────────────
-                      Padding(
+                      _surge(
+                        0.25,
+                        0.85,
+                        child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(26),
@@ -150,18 +208,24 @@ class _AuthPageState extends State<AuthPage> {
                             ),
                           ),
                         ),
+                        ),
                       ),
 
                       const Spacer(flex: 2),
 
                       const SizedBox(height: 10),
-                      TextoVersao(
+                      _surge(
+                        0.6,
+                        1.0,
+                        deslocamento: 12,
+                        child: TextoVersao(
                         formato: (v) =>
                             v.isEmpty ? 'DTI/PMRR' : 'v$v — DTI/PMRR',
                         estilo: TextStyle(
                           fontSize: 11,
                           color: Colors.white.withOpacity(0.35),
                           letterSpacing: 0.5,
+                        ),
                         ),
                       ),
                       const SizedBox(height: 20),

@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/auth_model.dart';
 import '../utils/auth_exception.dart';
 import '../utils/app_theme.dart';
+import 'convite_biometria.dart';
 
 class AuthForm extends StatefulWidget {
   bool exibeSenha = true;
@@ -67,66 +68,14 @@ class _AuthFormState extends State<AuthForm> {
     );
   }
 
+  /// Pergunta, uma vez, se a pessoa quer entrar por biometria nas próximas
+  /// vezes. O convite só aparece se o aparelho tiver sensor configurado, e só
+  /// liga depois de a biometria ser confirmada — ligar sem testar deixaria a
+  /// pessoa trancada fora no próximo acesso.
   Future<void> _askEnableBiometrics() async {
     final auth = Provider.of<Auth>(context, listen: false);
-
-    final answer = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.fingerprint, size: 60, color: Colors.blue),
-              const SizedBox(height: 16),
-              const Text(
-                'Ativar Biometria?',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Deseja habilitar login por biometria para os próximos acessos?',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[300]),
-                    onPressed: () => Navigator.of(ctx).pop(false),
-                    child: const Text(
-                      'NÃO',
-                      style: TextStyle(color: Colors.black),
-                    ),
-                  ),
-                  ElevatedButton(
-                    style:
-                        ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                    onPressed: () => Navigator.of(ctx).pop(true),
-                    child: const Text(
-                      'SIM',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        );
-      },
-    );
-
-    final bool biometriaAceita = answer ?? false;
-    auth.useBiometrics = biometriaAceita;
+    final ativou = await convidarParaBiometria(context);
+    auth.useBiometrics = ativou;
     await auth.saveUserData();
   }
 
@@ -175,6 +124,9 @@ class _AuthFormState extends State<AuthForm> {
 
   @override
   Widget build(BuildContext context) {
+    // Largura do botão em repouso; ao carregar ele encolhe até 56.
+    final larguraTotal = MediaQuery.of(context).size.width - 88;
+
     return Form(
       key: _formKey,
       child: Column(
@@ -274,47 +226,57 @@ class _AuthFormState extends State<AuthForm> {
           const SizedBox(height: 16),
 
           // ── Botão Entrar ───────────────────────────────────────────────
-          // Mesma forma dos botões do app (altura 48, raio 12, caixa normal)
-          // em vez do degradê de três paradas com letterSpacing 2.5. Fica
-          // sólido no azul institucional: branco sobre ele dá 5,1:1, e sobre
-          // a capa escura do login ele continua sendo o elemento de mais peso.
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _submit,
-              // Cor, altura e raio vêm do elevatedButtonTheme — é o mesmo
-              // botão das demais telas, no azul institucional.
-              style: ElevatedButton.styleFrom(elevation: 0),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                transitionBuilder: (child, anim) =>
-                    FadeTransition(opacity: anim, child: child),
-                child: _isLoading
-                    ? const SizedBox(
-                        key: ValueKey('loading'),
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Row(
-                        key: ValueKey('content'),
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Entrar',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
+          // Ao enviar, o botão encolhe até virar um círculo com o indicador,
+          // em vez de só trocar o rótulo por um spinner. É o padrão dos apps
+          // atuais: o próprio controle vira o estado de carregamento.
+          Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 420),
+              curve: Curves.easeOutCubic,
+              width: _isLoading ? 56 : larguraTotal,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.blue,
+                borderRadius: BorderRadius.circular(_isLoading ? 28 : 14),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _isLoading ? null : _submit,
+                  child: Center(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 180),
+                      child: _isLoading
+                          ? const SizedBox(
+                              key: ValueKey('carregando'),
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.4,
+                              ),
+                            )
+                          : const Row(
+                              key: ValueKey('rotulo'),
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Entrar',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Icon(Icons.arrow_forward_rounded,
+                                    size: AppIconSize.sm, color: Colors.white),
+                              ],
                             ),
-                          ),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_forward_rounded,
-                              size: AppIconSize.sm),
-                        ],
-                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
