@@ -59,7 +59,13 @@ class AppTheme {
     final primary = _primary(isDark, isSuperUser);
     final corErro = isDark ? Colors.redAccent : Colors.red;
     final secondary = _secondary(isDark, isSuperUser);
-    final onPrimary = isDark && isSuperUser ? Colors.black : Colors.white;
+    // Texto sobre a cor primária decidido pela luminância dela. No escuro a
+    // primária é um azul claro (#42A5F5) e o branco que vinha por padrão
+    // ficava em 2,65:1 — abaixo do mínimo — em todo botão cheio do app.
+    final onPrimary =
+        ThemeData.estimateBrightnessForColor(primary) == Brightness.dark
+            ? Colors.white
+            : const Color(0xFF0B1620);
     final bgColor = isDark ? AppColors.darkBg : AppColors.lightBg;
     final surface = isDark ? AppColors.darkSurface : AppColors.lightSurface;
     final card = isDark ? AppColors.darkCard : AppColors.lightCard;

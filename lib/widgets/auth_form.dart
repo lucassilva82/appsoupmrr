@@ -283,11 +283,16 @@ class _AuthFormState extends State<AuthForm> {
             height: 48,
             child: ElevatedButton(
               onPressed: _isLoading ? null : _submit,
+              // Mesma primária do app, não um azul só desta tela: o azul
+              // claro já é o que marca o rótulo em foco e a caixa de lembrar
+              // aqui, então o botão com outro azul destoava das duas coisas.
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.blue,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: AppColors.blue.withOpacity(0.55),
-                disabledForegroundColor: Colors.white70,
+                backgroundColor: AppColors.lightBlue,
+                foregroundColor: const Color(0xFF0B1620),
+                disabledBackgroundColor:
+                    AppColors.lightBlue.withOpacity(0.45),
+                disabledForegroundColor:
+                    const Color(0xFF0B1620).withOpacity(0.55),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -303,7 +308,7 @@ class _AuthFormState extends State<AuthForm> {
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: Color(0xFF0B1620),
                           strokeWidth: 2,
                         ),
                       )
