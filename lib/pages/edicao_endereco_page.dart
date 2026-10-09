@@ -408,7 +408,6 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                   label: const Text('Salvar Alterações',
                       style: TextStyle(fontSize: 15)),
                   style: FilledButton.styleFrom(
-                    backgroundColor: primaryBlue,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),

@@ -107,7 +107,6 @@ class _SviMeusVoluntariosPageState extends State<SviMeusVoluntariosPage> {
               ElevatedButton.icon(
                 onPressed: _load,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.blue,
                   foregroundColor: Colors.white,
                 ),
                 icon: const Icon(Icons.refresh_rounded),

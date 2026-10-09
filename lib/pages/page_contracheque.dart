@@ -1057,7 +1057,6 @@ class _PageContrachequeState extends State<PageContracheque> {
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 12)),
                     style: FilledButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
                       // No escuro a primária é clara: texto branco em cima
                       // dela fica em ~2:1. A cor do rótulo segue a luminância
                       // do fundo para manter a leitura.

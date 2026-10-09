@@ -1009,7 +1009,6 @@ class _SviErrorView extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.blue,
                 foregroundColor: Colors.white,
               ),
               icon: const Icon(Icons.refresh_rounded),
@@ -1099,7 +1098,6 @@ class _SviSemAdesaoView extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: onAderir,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.blue,
                 foregroundColor: Colors.white,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),

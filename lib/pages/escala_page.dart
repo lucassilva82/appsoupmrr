@@ -735,7 +735,6 @@ class _EscalasPageState extends State<EscalasPage>
             child: ElevatedButton(
               onPressed: _migrarSenha,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.blue,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
@@ -943,7 +942,6 @@ class _EscalasPageState extends State<EscalasPage>
             child: ElevatedButton(
               onPressed: _loginManual,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.blue,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
@@ -1017,7 +1015,6 @@ class _EscalasPageState extends State<EscalasPage>
               child: ElevatedButton(
                 onPressed: _confirm2FA,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.blue,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
@@ -1889,7 +1886,6 @@ class _ErrorView extends StatelessWidget {
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Tentar novamente'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.blue,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),

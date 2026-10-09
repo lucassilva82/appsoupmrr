@@ -4,6 +4,12 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
+  // Azul das ações. É a base do degradê do botão de login, e o único tom da
+  // família que passa nos 3:1 de contorno de controle sobre o fundo escuro —
+  // o navy fica em 1,24:1, ou seja, o botão não se delimita do fundo.
+  static const acao = Color(0xFF0565B5);
+  static const acaoClara = Color(0xFF087BCC);
+
   // Identidade visual PMRR
   static const navy = Color(0xFF002154);
   static const blue = Color(0xFF1565C0);
@@ -61,10 +67,10 @@ class AppTheme {
     final secondary = _secondary(isDark, isSuperUser);
     final onPrimary = Colors.white;
 
-    // Cor dos botões cheios: o navy institucional, igual para todo mundo.
-    // Antes variava por perfil e o gestor via um azul royal saturado
-    // (#003087) que destoava do resto, principalmente sobre o vidro do login.
-    const corBotao = AppColors.navy;
+    // Cor dos botões cheios: a mesma do botão de login, para o app inteiro
+    // falar a mesma língua. Medido sobre o fundo escuro: 3,25:1 de contorno
+    // (o navy dava 1,24:1) e 5,94:1 de branco por cima.
+    const corBotao = AppColors.acao;
     final bgColor = isDark ? AppColors.darkBg : AppColors.lightBg;
     final surface = isDark ? AppColors.darkSurface : AppColors.lightSurface;
     final card = isDark ? AppColors.darkCard : AppColors.lightCard;

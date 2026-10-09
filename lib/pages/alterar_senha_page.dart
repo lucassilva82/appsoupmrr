@@ -319,7 +319,6 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
                     : const Icon(Icons.save_rounded, size: 18),
                 label: Text(_carregando ? 'Alterando...' : 'Alterar senha'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),

@@ -675,7 +675,6 @@ class _NotifDetailSheet extends StatelessWidget {
                             navegarPorNotificacao(notif.route);
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.colorScheme.primary,
                             foregroundColor: theme.colorScheme.onPrimary,
                             padding: const EdgeInsets.symmetric(vertical: 13),
                             shape: RoundedRectangleBorder(
@@ -692,7 +691,6 @@ class _NotifDetailSheet extends StatelessWidget {
                         child: ElevatedButton(
                           onPressed: () => Navigator.of(context).pop(),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.colorScheme.primary,
                             foregroundColor: theme.colorScheme.onPrimary,
                             padding: const EdgeInsets.symmetric(vertical: 13),
                             shape: RoundedRectangleBorder(

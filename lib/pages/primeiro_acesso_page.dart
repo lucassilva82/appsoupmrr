@@ -358,7 +358,6 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
                 : const Icon(Icons.arrow_forward_rounded, size: 18),
             label: Text(_carregando ? 'Verificando...' : 'Continuar'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14)),
@@ -627,7 +626,6 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
             : Icon(icone, size: 18),
         label: Text(_carregando ? carregandoTexto : texto),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -701,7 +699,6 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
                 : const Icon(Icons.save_rounded, size: 18),
             label: Text(_carregando ? 'Salvando...' : 'Cadastrar senha'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14)),

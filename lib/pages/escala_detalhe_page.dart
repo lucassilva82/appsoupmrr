@@ -467,7 +467,6 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
             label: const Text('Dar Ciência',
                 style: TextStyle(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.blue,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
@@ -820,7 +819,6 @@ class _ErrorBody extends StatelessWidget {
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Tentar novamente'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.blue,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),

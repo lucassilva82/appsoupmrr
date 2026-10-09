@@ -275,7 +275,6 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
             : Icon(icone ?? Icons.arrow_forward_rounded, size: 18),
         label: Text(_carregando ? 'Aguarde...' : texto),
         style: ElevatedButton.styleFrom(
-          backgroundColor: theme.colorScheme.primary,
           foregroundColor: Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

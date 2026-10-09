@@ -382,7 +382,6 @@ class _DadosContatoState extends State<DadosContato> {
                                 ? () => Navigator.of(ctx).pop(true)
                                 : null,
                             style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.blue,
                               disabledBackgroundColor:
                                   AppColors.blue.withValues(alpha: 0.3),
                               padding: const EdgeInsets.symmetric(vertical: 13),

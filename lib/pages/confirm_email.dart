@@ -303,7 +303,6 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
                   : const Icon(Icons.send_rounded, size: 18),
               label: Text(_isLoading ? 'Enviando...' : 'Enviar confirmação'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -334,6 +333,7 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
   // Entra sozinho assim que o militar clica no link, sem fechar e abrir o app.
 
   Widget _confirmadoView() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -343,7 +343,7 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
           titulo: 'E-mail confirmado!',
           descricao: 'Seu endereço foi verificado com sucesso. Agora ele pode '
               'ser usado para recuperar sua senha.',
-          cor: const Color(0xFF2E7D32),
+          cor: isDark ? AppColors.sucessoEscuro : AppColors.sucesso,
         ),
         const SizedBox(height: 12),
         Text(
@@ -351,7 +351,7 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF2E7D32),
+                color: isDark ? AppColors.sucessoEscuro : AppColors.sucesso,
               ),
         ),
         const SizedBox(height: 28),
@@ -360,7 +360,7 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
           child: ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2E7D32),
+              backgroundColor: isDark ? AppColors.sucessoEscuro : AppColors.sucesso,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -380,6 +380,7 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
 
   Widget _enviado() {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final podeReenviar = _segundosParaReenviar <= 0 && !_isLoading;
 
     return Column(
@@ -389,7 +390,7 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
           icone: Icons.mark_email_read_rounded,
           titulo: 'E-mail enviado',
           descricao: 'Enviamos um link de confirmação para:',
-          cor: const Color(0xFF2E7D32),
+          cor: isDark ? AppColors.sucessoEscuro : AppColors.sucesso,
         ),
         const SizedBox(height: 12),
 

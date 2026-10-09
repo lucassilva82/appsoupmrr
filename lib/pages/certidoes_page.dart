@@ -1178,7 +1178,6 @@ class PdfViewerScreen extends StatelessWidget {
         pageFling: true,
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
         icon: const Icon(Icons.share_outlined),
         label: const Text(
