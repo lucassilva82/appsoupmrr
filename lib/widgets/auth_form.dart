@@ -223,75 +223,75 @@ class _AuthFormState extends State<AuthForm> {
           const SizedBox(height: 16),
 
           // ── Botão Entrar ───────────────────────────────────────────────
-          // Ao enviar não muda de forma nem ganha barra: o rótulo dá lugar a
-          // um indicador pequeno ao lado do texto, e o botão escurece de
-          // leve. É o que os apps de pagamento fazem — o controle continua
-          // reconhecível e o alvo de toque não se move.
+          // Degradê discreto nos azuis de destaque da interface interna. A
+          // altura é fixa e o conteúdo troca por dentro, então o botão não
+          // muda de tamanho ao carregar e nada abaixo dele se desloca.
           SizedBox(
             width: double.infinity,
             height: 56,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _submit,
-              // Cor e forma vêm do tema; aqui só a sombra, que é o que
-              // separa o botão do cartão de vidro sem desenhar uma linha.
-              style: ElevatedButton.styleFrom(
-                elevation: 0,
-                disabledBackgroundColor: AppColors.navy,
-                disabledForegroundColor: Colors.white,
-                shadowColor: Colors.black,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  // Sombra suave, sem brilho: cor neutra e deslocada para
+                  // baixo, só para destacar do cartão.
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.28),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 260),
-                switchInCurve: Curves.easeOut,
-                switchOutCurve: Curves.easeIn,
-                transitionBuilder: (child, anim) => FadeTransition(
-                  opacity: anim,
-                  child: ScaleTransition(
-                    scale: Tween<double>(begin: 0.94, end: 1.0).animate(anim),
-                    child: child,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Material(
+                  color: Colors.transparent,
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: _isLoading
+                            ? [
+                                const Color(0xFF087BCC).withOpacity(0.55),
+                                const Color(0xFF0565B5).withOpacity(0.55),
+                              ]
+                            : const [Color(0xFF087BCC), Color(0xFF0565B5)],
+                      ),
+                    ),
+                    child: InkWell(
+                      onTap: _isLoading ? null : _submit,
+                      // Resposta discreta ao toque: um véu claro de leve, sem
+                      // respingo colorido.
+                      highlightColor: Colors.white.withOpacity(0.06),
+                      splashColor: Colors.white.withOpacity(0.10),
+                      child: Center(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 220),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  key: ValueKey('carregando'),
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Entrar',
+                                  key: ValueKey('rotulo'),
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                child: _isLoading
-                    ? const Row(
-                        key: ValueKey('carregando'),
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white70,
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Text(
-                            'Entrando',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      )
-                    : const Row(
-                        key: ValueKey('rotulo'),
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Entrar',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_forward_rounded,
-                              size: AppIconSize.sm, color: Colors.white),
-                        ],
-                      ),
               ),
             ),
           ),
