@@ -203,10 +203,10 @@ class FundoSuave extends StatelessWidget {
                       colors: isDark
                           ? [
                               Color.alphaBlend(
-                                  primaria.withOpacity(0.16), AppColors.darkBg),
+                                  primaria.withOpacity(0.05), AppColors.darkBg),
                               AppColors.darkBg,
                               Color.alphaBlend(
-                                  AppColors.navy.withOpacity(0.55),
+                                  AppColors.navy.withOpacity(0.16),
                                   AppColors.darkBg),
                             ]
                           : [
@@ -231,7 +231,7 @@ class FundoSuave extends StatelessWidget {
               top: -a * 0.10,
               left: -l * 0.25,
               child: _Mancha(
-                cor: primaria.withOpacity(isDark ? 0.30 : 0.18),
+                cor: primaria.withOpacity(isDark ? 0.08 : 0.18),
                 tamanho: l * 0.95,
               ),
             ),
@@ -239,7 +239,7 @@ class FundoSuave extends StatelessWidget {
               top: a * 0.14,
               right: -l * 0.30,
               child: _Mancha(
-                cor: AppColors.lightBlue.withOpacity(isDark ? 0.20 : 0.16),
+                cor: AppColors.lightBlue.withOpacity(isDark ? 0.05 : 0.16),
                 tamanho: l * 0.90,
               ),
             ),
@@ -247,7 +247,7 @@ class FundoSuave extends StatelessWidget {
               top: a * 0.42,
               left: -l * 0.20,
               child: _Mancha(
-                cor: AppColors.gold.withOpacity(isDark ? 0.10 : 0.10),
+                cor: AppColors.gold.withOpacity(isDark ? 0.03 : 0.10),
                 tamanho: l * 0.75,
               ),
             ),
@@ -255,7 +255,7 @@ class FundoSuave extends StatelessWidget {
               top: a * 0.58,
               right: -l * 0.18,
               child: _Mancha(
-                cor: primaria.withOpacity(isDark ? 0.22 : 0.14),
+                cor: primaria.withOpacity(isDark ? 0.06 : 0.14),
                 tamanho: l * 0.85,
               ),
             ),
@@ -263,7 +263,7 @@ class FundoSuave extends StatelessWidget {
               bottom: -a * 0.08,
               left: l * 0.05,
               child: _Mancha(
-                cor: AppColors.lightBlue.withOpacity(isDark ? 0.16 : 0.12),
+                cor: AppColors.lightBlue.withOpacity(isDark ? 0.04 : 0.12),
                 tamanho: l * 0.95,
               ),
             ),

@@ -20,10 +20,10 @@ class AppColors {
   static const lightCard = Color(0xFFFFFFFF);
 
   // Superfícies modo escuro
-  static const darkBg = Color(0xFF0D1117);
-  static const darkSurface = Color(0xFF161B22);
-  static const darkCard = Color(0xFF21262D);
-  static const darkBorder = Color(0xFF30363D);
+  static const darkBg = Color(0xFF03050A);
+  static const darkSurface = Color(0xFF080B11);
+  static const darkCard = Color(0xFF0E1219);
+  static const darkBorder = Color(0xFF1C222A);
 }
 
 // ─── Tamanhos de ícone ───────────────────────────────────────────────────────
@@ -310,8 +310,8 @@ class AppTheme {
   }) {
     if (isDark) {
       return isSuperUser
-          ? [const Color(0xFF0D2B5A), const Color(0xFF0A1E3D)]
-          : [const Color(0xFF1E3A5F), AppColors.darkSurface];
+          ? [const Color(0xFF05142A), const Color(0xFF030B18)]
+          : [const Color(0xFF0A1726), AppColors.darkSurface];
     }
     // modo claro
     return isSuperUser
