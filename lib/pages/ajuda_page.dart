@@ -3,6 +3,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../utils/app_theme.dart';
+import '../widgets/vidro.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AjudaPage — Suporte Técnico
@@ -53,7 +54,9 @@ class _AjudaPageState extends State<AjudaPage> {
             expandedHeight: 220,
             pinned: true,
             stretch: true,
-            backgroundColor: AppColors.blue,
+            // Era AppColors.blue opaco por baixo do degradê translúcido, o
+            // que deixava o cabeçalho num azul muito mais claro que o resto.
+            backgroundColor: Colors.transparent,
             foregroundColor: Colors.white,
             iconTheme: const IconThemeData(color: Colors.white),
             title: const Text(
@@ -89,6 +92,7 @@ class _AjudaPageState extends State<AjudaPage> {
                             'assets/imagens/whatsapp.png',
                             width: 26,
                             height: 26,
+                            color: const Color(0xFF25D366),
                           ),
                           label: 'WhatsApp',
                           sublabel: 'Seg–Sex, 8h–17h',
@@ -100,9 +104,9 @@ class _AjudaPageState extends State<AjudaPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: _ContactCard(
-                          color: AppColors.blue,
-                          icon: const Icon(Icons.email_rounded,
-                              color: Colors.white, size: 26),
+                          color: theme.colorScheme.primary,
+                          icon: Icon(Icons.email_rounded,
+                              color: theme.colorScheme.primary, size: 26),
                           label: 'E-mail',
                           sublabel: 'dti@pmrr.rr.gov.br',
                           onTap: () => _launch(
@@ -142,10 +146,9 @@ class _AppBarBackground extends StatelessWidget {
       decoration: BoxDecoration(
         // Translúcido como as demais barras do app.
         gradient: LinearGradient(
-          colors: [
-            AppColors.navy.withOpacity(isDark ? 0.82 : 0.92),
-            AppColors.blue.withOpacity(isDark ? 0.62 : 0.80),
-          ],
+          colors: AppTheme.appBarGradient(isDark: isDark, isSuperUser: false)
+              .map((c) => c.withOpacity(isDark ? 0.92 : 0.90))
+              .toList(),
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -160,7 +163,7 @@ class _AppBarBackground extends StatelessWidget {
               height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.06),
+                color: Colors.white.withOpacity(0.025),
               ),
             ),
           ),
@@ -172,7 +175,7 @@ class _AppBarBackground extends StatelessWidget {
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withOpacity(0.02),
               ),
             ),
           ),
@@ -338,38 +341,39 @@ class _ContactCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: color,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
-          child: Column(
-            children: [
-              icon,
-              const SizedBox(height: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                sublabel,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 10,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Eram dois blocos chapados de verde e azul saturados, os elementos mais
+    // berrantes do app. A cor vira tingimento e passa para o ícone e o
+    // rótulo, que é como os demais destaques funcionam aqui.
+    return CartaoVidro(
+      raio: 14,
+      tingimento: color,
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+      child: Column(
+        children: [
+          icon,
+          const SizedBox(height: 10),
+          Text(
+            label,
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
+          const SizedBox(height: 3),
+          Text(
+            sublabel,
+            style: TextStyle(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
+              fontSize: 10.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

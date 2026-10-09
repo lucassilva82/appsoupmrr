@@ -90,6 +90,8 @@ class _DadosContatoState extends State<DadosContato> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Verde do WhatsApp, usado como tingimento e como cor de texto.
+    const verdeZap = Color(0xFF25D366);
     final isDark = theme.brightness == Brightness.dark;
     const primaryBlue = AppColors.blue;
 
@@ -172,19 +174,20 @@ class _DadosContatoState extends State<DadosContato> {
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 5),
+                      // Marcado, o verde entra como tingimento e não como
+                      // bloco cheio: era o único elemento sólido da ficha.
                       decoration: BoxDecoration(
                         color: isWhats
-                            ? const Color(0xFF25D366)
+                            ? verdeZap.withValues(alpha: isDark ? 0.20 : 0.14)
                             : (isDark
                                 ? Colors.white.withValues(alpha: 0.055)
                                 : Colors.white.withValues(alpha: 0.72)),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isWhats
-                              ? const Color(0xFF25D366)
-                              : (isDark
-                                  ? const Color(0xFF444D56)
-                                  : Colors.grey.shade300),
+                              ? verdeZap.withValues(alpha: 0.55)
+                              : theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.15),
                           width: 1,
                         ),
                       ),
@@ -195,7 +198,10 @@ class _DadosContatoState extends State<DadosContato> {
                             'assets/imagens/whatsapp.png',
                             width: 14,
                             height: 14,
-                            color: isWhats ? Colors.white : Colors.grey,
+                            color: isWhats
+                                ? verdeZap
+                                : theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.45),
                           ),
                           const SizedBox(width: 5),
                           Text(
@@ -203,7 +209,10 @@ class _DadosContatoState extends State<DadosContato> {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: isWhats ? Colors.white : Colors.grey,
+                              color: isWhats
+                                  ? verdeZap
+                                  : theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.55),
                             ),
                           ),
                         ],
