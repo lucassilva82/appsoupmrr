@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:projetonovo/utils/app_theme.dart';
 import 'package:projetonovo/widgets/dados_situacao_funcional.dart';
-import 'package:quickalert/quickalert.dart';
 
 import '../models/militar.dart';
 import '../services/dados_sql.dart';

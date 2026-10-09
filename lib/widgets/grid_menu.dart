@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/auth_model.dart';
 import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
+import 'dialogo_confirmacao.dart';
 
 class Choice {
   final String title;
@@ -201,27 +202,18 @@ class _GridMenuItem extends StatelessWidget {
         Navigator.of(context).pushNamed(AppRoutes.POP_PAGE);
         break;
       case 7:
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Text('Deseja sair?'),
-            content: const Text('Sua sessão será encerrada.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancelar'),
-              ),
-              TextButton(
-                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-                onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Sim'),
-              ),
-            ],
-          ),
+        // Usa o diálogo do app, não o AlertDialog cru: assim a saída tem o
+        // mesmo acabamento das demais confirmações.
+        final confirmed = await dialogoConfirmacao(
+          context,
+          titulo: 'Deseja sair?',
+          mensagem: 'Sua sessão será encerrada e você precisará entrar de '
+              'novo com a matrícula e a senha.',
+          textoConfirmar: 'Sair',
+          icone: Icons.logout_rounded,
+          cor: Colors.redAccent,
         );
-        if (confirmed == true && context.mounted) {
+        if (confirmed && context.mounted) {
           Provider.of<Auth>(context, listen: false).logout();
         }
         break;

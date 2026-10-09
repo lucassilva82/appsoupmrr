@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import '../utils/app_theme.dart';
@@ -75,22 +77,45 @@ class _Cartao extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
+        // Um diálogo flutua sobre o scrim: não há conteúdo atrás para o vidro
+        // desfocar. Por isso ele tem desfoque próprio e um fundo bem mais
+        // opaco que os cartões — a 5% ficava transparente a ponto de sumir.
         child: Material(
           color: Colors.transparent,
-          child: Container(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+              child: Container(
             constraints: const BoxConstraints(maxWidth: 360),
             padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: isDark
+                    ? [
+                        Color.alphaBlend(Colors.white.withOpacity(0.10),
+                            AppColors.darkCard),
+                        Color.alphaBlend(Colors.white.withOpacity(0.04),
+                            AppColors.darkCard),
+                      ]
+                    : [
+                        Colors.white.withOpacity(0.96),
+                        Colors.white.withOpacity(0.90),
+                      ],
+              ),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
+                color: isDark
+                    ? Colors.white.withOpacity(0.16)
+                    : Colors.white.withOpacity(0.80),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.45 : 0.18),
-                  blurRadius: 28,
-                  offset: const Offset(0, 10),
+                  color: Colors.black.withOpacity(isDark ? 0.55 : 0.18),
+                  blurRadius: 32,
+                  offset: const Offset(0, 12),
                 ),
               ],
             ),
@@ -174,6 +199,8 @@ class _Cartao extends StatelessWidget {
                   ],
                 ),
               ],
+            ),
+              ),
             ),
           ),
         ),

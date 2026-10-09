@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:projetonovo/utils/app_theme.dart';
-import 'package:quickalert/quickalert.dart';
 
 import '../models/militar.dart';
 import '../models/telefone.dart';
 import '../services/dados_sql.dart';
+import 'alerta.dart';
 
 class DadosContato extends StatefulWidget {
   final Militar militar;
@@ -67,28 +67,21 @@ class _DadosContatoState extends State<DadosContato> {
       Navigator.of(context, rootNavigator: true).pop(); // fecha loading
 
       // Confirmação de sucesso
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.success,
-        title: 'Salvo!',
-        text: !isWhats
-            ? 'WhatsApp marcado para\n${tel.numeroTel}'
-            : 'Contato alterado para chamada comum.',
-        confirmBtnText: 'OK',
-        confirmBtnColor: AppColors.blue,
-      );
+      alertaSucesso(context,
+          titulo: 'Salvo!',
+          texto: !isWhats
+              ? 'WhatsApp marcado para\n${tel.numeroTel}'
+              : 'Contato alterado para chamada comum.',
+          confirmar: 'OK');
     } catch (_) {
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
 
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
-        title: 'Erro',
-        text:
-            'Não foi possível salvar.\nVerifique sua conexão e tente novamente.',
-        confirmBtnText: 'OK',
-      );
+      alertaErro(context,
+          titulo: 'Erro',
+          texto:
+              'Não foi possível salvar.\nVerifique sua conexão e tente novamente.',
+          confirmar: 'OK');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -147,13 +140,13 @@ class _DadosContatoState extends State<DadosContato> {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color:
-                    isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.055)
+                    : Colors.white.withValues(alpha: 0.72),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: isDark
-                      ? AppColors.darkBorder
-                      : const Color(0xFFE0E7F0),
+                  color:
+                      isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0),
                   width: 1,
                 ),
               ),
@@ -222,18 +215,11 @@ class _DadosContatoState extends State<DadosContato> {
                   GestureDetector(
                     onTap: () async {
                       if (widget.militar.telefones.length <= 1) {
-                        QuickAlert.show(
-                          confirmBtnText: 'OK',
-                          context: context,
-                          type: QuickAlertType.error,
-                          title: 'Atenção',
-                          text:
-                              'É necessário ter ao menos um contato cadastrado.',
-                          backgroundColor:
-                              Theme.of(context).scaffoldBackgroundColor,
-                          titleColor: Theme.of(context).colorScheme.onSurface,
-                          textColor: Theme.of(context).colorScheme.onSurface,
-                        );
+                        alertaErro(context,
+                            titulo: 'Atenção',
+                            texto:
+                                'É necessário ter ao menos um contato cadastrado.',
+                            confirmar: 'OK');
                       } else {
                         await _openDialogExclui(
                             widget.militar.telefones, index);
@@ -274,7 +260,9 @@ class _DadosContatoState extends State<DadosContato> {
             insetPadding: const EdgeInsets.symmetric(horizontal: 24),
             child: Container(
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.055)
+                    : Colors.white.withValues(alpha: 0.72),
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
@@ -440,25 +428,18 @@ class _DadosContatoState extends State<DadosContato> {
       }
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.success,
-        title: 'Adicionado!',
-        text: 'Número $novoNumero cadastrado com sucesso.',
-        confirmBtnText: 'OK',
-        confirmBtnColor: AppColors.blue,
-      );
+      alertaSucesso(context,
+          titulo: 'Adicionado!',
+          texto: 'Número $novoNumero cadastrado com sucesso.',
+          confirmar: 'OK');
     } catch (_) {
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
-        title: 'Erro',
-        text:
-            'Não foi possível salvar.\nVerifique sua conexão e tente novamente.',
-        confirmBtnText: 'OK',
-      );
+      alertaErro(context,
+          titulo: 'Erro',
+          texto:
+              'Não foi possível salvar.\nVerifique sua conexão e tente novamente.',
+          confirmar: 'OK');
     }
   }
 
@@ -477,7 +458,9 @@ class _DadosContatoState extends State<DadosContato> {
           insetPadding: const EdgeInsets.symmetric(horizontal: 24),
           child: Container(
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.055)
+                  : Colors.white.withValues(alpha: 0.72),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
@@ -622,14 +605,10 @@ class _DadosContatoState extends State<DadosContato> {
       }
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.success,
-        title: 'Excluído!',
-        text: 'O número $numero foi removido.',
-        confirmBtnText: 'OK',
-        confirmBtnColor: AppColors.blue,
-      );
+      alertaSucesso(context,
+          titulo: 'Excluído!',
+          texto: 'O número $numero foi removido.',
+          confirmar: 'OK');
     } catch (_) {
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
@@ -637,14 +616,11 @@ class _DadosContatoState extends State<DadosContato> {
       lista.insert(
           index, Telefone(numeroTel: numero, tipo: Tipos.comum, value: false));
       setState(() {});
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
-        title: 'Erro',
-        text:
-            'Não foi possível excluir.\nVerifique sua conexão e tente novamente.',
-        confirmBtnText: 'OK',
-      );
+      alertaErro(context,
+          titulo: 'Erro',
+          texto:
+              'Não foi possível excluir.\nVerifique sua conexão e tente novamente.',
+          confirmar: 'OK');
     }
   }
 }
@@ -665,7 +641,9 @@ class _LoadingDialog extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 32),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.055)
+                : Colors.white.withValues(alpha: 0.72),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(

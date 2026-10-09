@@ -12,7 +12,6 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
-import 'package:quickalert/quickalert.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../models/auth_model.dart';
@@ -23,6 +22,7 @@ import '../utils/app_theme.dart';
 import '../view/second_screen.dart';
 import '../widgets/vidro.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/alerta.dart';
 
 class PageContracheque extends StatefulWidget {
   final MesesContracheque mesSelecionado;
@@ -568,13 +568,10 @@ class _PageContrachequeState extends State<PageContracheque> {
     } catch (e) {
       debugPrint('Erro ao compartilhar PDF: $e');
       if (!mounted) return;
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
-        title: 'Erro',
-        text: 'Não foi possível gerar o PDF.\n$e',
-        confirmBtnText: 'OK',
-      );
+      alertaErro(context,
+          titulo: 'Erro',
+          texto: 'Não foi possível gerar o PDF.\n$e',
+          confirmar: 'OK');
     } finally {
       if (mounted) setState(() => _sharingPdf = false);
     }
@@ -603,13 +600,10 @@ class _PageContrachequeState extends State<PageContracheque> {
     } catch (e) {
       debugPrint('Erro ao compartilhar imagem: $e');
       if (!mounted) return;
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
-        title: 'Erro',
-        text: 'Não foi possível gerar a imagem.\n$e',
-        confirmBtnText: 'OK',
-      );
+      alertaErro(context,
+          titulo: 'Erro',
+          texto: 'Não foi possível gerar a imagem.\n$e',
+          confirmar: 'OK');
     } finally {
       if (mounted) setState(() => _sharingImage = false);
     }
@@ -700,43 +694,43 @@ class _PageContrachequeState extends State<PageContracheque> {
         raio: 16,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
-        children: [
-          _headerRow(
-            icon: Icons.person_outline_rounded,
-            label: 'Nome',
-            value: auth.nomeCompleto ?? '-',
-            isDark: isDark,
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _headerRow(
-                  icon: Icons.badge_outlined,
-                  label: 'Matrícula',
-                  value: auth.matricula ?? '-',
-                  isDark: isDark,
+          children: [
+            _headerRow(
+              icon: Icons.person_outline_rounded,
+              label: 'Nome',
+              value: auth.nomeCompleto ?? '-',
+              isDark: isDark,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _headerRow(
+                    icon: Icons.badge_outlined,
+                    label: 'Matrícula',
+                    value: auth.matricula ?? '-',
+                    isDark: isDark,
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _headerRow(
-                  icon: Icons.calendar_month_outlined,
-                  label: 'Mês/Ano',
-                  value:
-                      '${widget.mesSelecionado.mes}/${widget.mesSelecionado.ano}',
-                  isDark: isDark,
+                Expanded(
+                  child: _headerRow(
+                    icon: Icons.calendar_month_outlined,
+                    label: 'Mês/Ano',
+                    value:
+                        '${widget.mesSelecionado.mes}/${widget.mesSelecionado.ano}',
+                    isDark: isDark,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          _headerRow(
-            icon: Icons.location_city_outlined,
-            label: 'Lotação',
-            value: widget.mesSelecionado.relacaoTrabalho,
-            isDark: isDark,
-          ),
-        ],
+              ],
+            ),
+            const SizedBox(height: 8),
+            _headerRow(
+              icon: Icons.location_city_outlined,
+              label: 'Lotação',
+              value: widget.mesSelecionado.relacaoTrabalho,
+              isDark: isDark,
+            ),
+          ],
         ),
       ),
     );
@@ -828,9 +822,8 @@ class _PageContrachequeState extends State<PageContracheque> {
     // tingimento leve, e quem comunica provento ou desconto é o selo P/D
     // mais o sinal do valor — não só a cor de fundo.
     final rowColor = accentColor.withValues(
-      alpha: isDark
-          ? (index.isEven ? 0.10 : 0.07)
-          : (index.isEven ? 0.07 : 0.04),
+      alpha:
+          isDark ? (index.isEven ? 0.10 : 0.07) : (index.isEven ? 0.07 : 0.04),
     );
 
     return Container(

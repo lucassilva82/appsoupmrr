@@ -6,7 +6,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
-import 'package:quickalert/quickalert.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:share_plus/share_plus.dart';
@@ -15,6 +14,7 @@ import 'package:flutter_pdfview/flutter_pdfview.dart';
 import '../models/certidao_model.dart';
 import '../models/auth_model.dart';
 import '../widgets/custom_appbar.dart';
+import '../widgets/alerta.dart';
 
 class CertidoesPage extends StatefulWidget {
   const CertidoesPage({super.key});
@@ -167,23 +167,15 @@ class _CertidoesPageState extends State<CertidoesPage> {
               submitting = false;
             });
             if (requestSuccess) {
-              await QuickAlert.show(
-                context: c2,
-                type: QuickAlertType.success,
-                title: 'Solicitação enviada',
-                text: 'Seu pedido foi registrado com sucesso.',
-                confirmBtnText: 'Ok',
-              );
+              await alertaSucesso(c2,
+                  titulo: 'Solicitação enviada',
+                  texto: 'Seu pedido foi registrado com sucesso.');
               Navigator.of(c2).pop(true);
               await _loadCertidoes();
             } else {
-              await QuickAlert.show(
-                context: c2,
-                type: QuickAlertType.error,
-                title: 'Erro',
-                text: requestErrorMessage ?? 'Erro ao inserir certidão.',
-                confirmBtnText: 'Ok',
-              );
+              await alertaErro(c2,
+                  titulo: 'Erro',
+                  texto: requestErrorMessage ?? 'Erro ao inserir certidão.');
             }
           }
 
@@ -212,13 +204,9 @@ class _CertidoesPageState extends State<CertidoesPage> {
               final auth = Provider.of<Auth>(context, listen: false);
               final matricula = auth.matricula;
               if (matricula == null || matricula.isEmpty) {
-                await QuickAlert.show(
-                  context: c2,
-                  type: QuickAlertType.error,
-                  title: 'Matrícula não disponível',
-                  text: 'Não foi possível identificar sua matrícula.',
-                  confirmBtnText: 'Ok',
-                );
+                await alertaErro(c2,
+                    titulo: 'Matrícula não disponível',
+                    texto: 'Não foi possível identificar sua matrícula.');
                 Navigator.of(c2).pop(false);
                 return;
               }
@@ -230,14 +218,10 @@ class _CertidoesPageState extends State<CertidoesPage> {
                   await http.get(uriCheck).timeout(const Duration(seconds: 12));
 
               if (respCheck.statusCode != 200) {
-                await QuickAlert.show(
-                  context: c2,
-                  type: QuickAlertType.error,
-                  title: 'Erro ao verificar',
-                  text:
-                      'Falha ao verificar certidões existentes (${respCheck.statusCode}).',
-                  confirmBtnText: 'Ok',
-                );
+                await alertaErro(c2,
+                    titulo: 'Erro ao verificar',
+                    texto:
+                        'Falha ao verificar certidões existentes (${respCheck.statusCode}).');
                 setStateModal(() {
                   submitting = false;
                 });
@@ -372,13 +356,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
                 showProgress = false;
                 submitting = false;
               });
-              await QuickAlert.show(
-                context: c2,
-                type: QuickAlertType.error,
-                title: 'Erro inesperado',
-                text: '$e',
-                confirmBtnText: 'Ok',
-              );
+              await alertaErro(c2, titulo: 'Erro inesperado', texto: '$e');
             }
           }
 
@@ -409,13 +387,9 @@ class _CertidoesPageState extends State<CertidoesPage> {
                       ),
                       IconButton(
                         onPressed: () async {
-                          await QuickAlert.show(
-                            context: c2,
-                            type: QuickAlertType.error,
-                            title: 'Solicitação cancelada',
-                            text: 'Você fechou a janela sem enviar.',
-                            confirmBtnText: 'Ok',
-                          );
+                          await alertaErro(c2,
+                              titulo: 'Solicitação cancelada',
+                              texto: 'Você fechou a janela sem enviar.');
                           Navigator.of(c2).pop(false);
                         },
                         icon: const Icon(Icons.close),
@@ -700,13 +674,9 @@ class _CertidoesPageState extends State<CertidoesPage> {
       }
 
       if (bytes == null) {
-        await QuickAlert.show(
-          context: context,
-          type: QuickAlertType.error,
-          title: 'Arquivo indisponível',
-          text: 'Não foi possível localizar o PDF desta certidão.',
-          confirmBtnText: 'Ok',
-        );
+        await alertaErro(context,
+            titulo: 'Arquivo indisponível',
+            texto: 'Não foi possível localizar o PDF desta certidão.');
         return null;
       }
 
@@ -716,13 +686,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
       await f.writeAsBytes(bytes, flush: true);
       return filePath;
     } catch (e) {
-      await QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
-        title: 'Erro ao abrir',
-        text: '$e',
-        confirmBtnText: 'Ok',
-      );
+      await alertaErro(context, titulo: 'Erro ao abrir', texto: '$e');
       return null;
     }
   }
@@ -753,152 +717,151 @@ class _CertidoesPageState extends State<CertidoesPage> {
     return Scaffold(
       appBar: CustomAppBar(title: 'Certidões'),
       body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Card(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 11),
-                    child: Row(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary
-                                .withValues(alpha: 0.10),
-                            borderRadius: BorderRadius.circular(9),
-                          ),
-                          padding: const EdgeInsets.all(9),
-                          child: Icon(Icons.how_to_reg_outlined,
-                              color: theme.colorScheme.primary, size: 20),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Solicitar nova certidão',
-                                  style: titleStyle),
-                              const SizedBox(height: 4),
-                              Text('Abra um pedido para emissão de certidão.',
-                                  style: smallStyle),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        FilledButton.icon(
-                          style: _compactActionStyle(theme),
-                          onPressed: _onSolicitar,
-                          icon: const Icon(Icons.add, size: 16),
-                          label: const Text('Solicitar'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Minhas Certidões',
-                        style: sectionStyle,
-                      ),
-                    ),
-                    if (!_loading && _certidoes.isNotEmpty)
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Card(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                  child: Row(
+                    children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
                           color:
-                              theme.colorScheme.primary.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
+                              theme.colorScheme.primary.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(9),
                         ),
-                        child: Text(
-                          '${_certidoes.length}',
-                          style: TextStyle(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
-                          ),
+                        padding: const EdgeInsets.all(9),
+                        child: Icon(Icons.how_to_reg_outlined,
+                            color: theme.colorScheme.primary, size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Solicitar nova certidão', style: titleStyle),
+                            const SizedBox(height: 4),
+                            Text('Abra um pedido para emissão de certidão.',
+                                style: smallStyle),
+                          ],
                         ),
-                      )
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: _loadCertidoes,
-                    child: Builder(builder: (context) {
-                      if (_loading && _certidoes.isEmpty) {
-                        return ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          children: [
-                            SizedBox(
-                              height: 120,
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                            )
-                          ],
-                        );
-                      }
-
-                      if (_error != null && _certidoes.isEmpty) {
-                        return ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.only(top: 8),
-                          children: [
-                            Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.error
-                                    .withValues(alpha: 0.10),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: theme.colorScheme.error
-                                      .withValues(alpha: 0.20),
-                                ),
-                              ),
-                              child: Text(
-                                "Você ainda não solicitou nenhuma certidão.\nPara solicitar, clique no botão 'Solicitar' acima.",
-                                style: TextStyle(
-                                  color: theme.colorScheme.error,
-                                  fontSize: 12.5,
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      }
-
-                      return ListView.separated(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.only(top: 8, bottom: 20),
-                        itemCount: _certidoes.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final c = _certidoes[index];
-                          return _buildCard(c, theme, smallStyle);
-                        },
-                      );
-                    }),
+                      ),
+                      const SizedBox(width: 6),
+                      FilledButton.icon(
+                        style: _compactActionStyle(theme),
+                        onPressed: _onSolicitar,
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text('Solicitar'),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
-              ],
-            ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Minhas Certidões',
+                      style: sectionStyle,
+                    ),
+                  ),
+                  if (!_loading && _certidoes.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color:
+                            theme.colorScheme.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${_certidoes.length}',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    )
+                ],
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _loadCertidoes,
+                  child: Builder(builder: (context) {
+                    if (_loading && _certidoes.isEmpty) {
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(
+                            height: 120,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          )
+                        ],
+                      );
+                    }
+
+                    if (_error != null && _certidoes.isEmpty) {
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.only(top: 8),
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.error
+                                  .withValues(alpha: 0.10),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: theme.colorScheme.error
+                                    .withValues(alpha: 0.20),
+                              ),
+                            ),
+                            child: Text(
+                              "Você ainda não solicitou nenhuma certidão.\nPara solicitar, clique no botão 'Solicitar' acima.",
+                              style: TextStyle(
+                                color: theme.colorScheme.error,
+                                fontSize: 12.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+
+                    return ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.only(top: 8, bottom: 20),
+                      itemCount: _certidoes.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final c = _certidoes[index];
+                        return _buildCard(c, theme, smallStyle);
+                      },
+                    );
+                  }),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
           ),
         ),
+      ),
     );
   }
 

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:projetonovo/utils/app_theme.dart';
-import 'package:quickalert/quickalert.dart';
 
 import '../models/endereco.dart';
 import '../models/militar.dart';
 import '../services/dados_sql.dart';
 import '../utils/app_routes.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/alerta.dart';
 
 // ignore: must_be_immutable
 class EdicaoEnderecoPage extends StatefulWidget {
@@ -85,9 +85,8 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                     : const Color(0xFFF2F6FF),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: isDark
-                      ? AppColors.darkBorder
-                      : const Color(0xFFDDE6F5),
+                  color:
+                      isDark ? AppColors.darkBorder : const Color(0xFFDDE6F5),
                 ),
               ),
               child: Row(
@@ -186,8 +185,8 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
             Container(
               decoration: BoxDecoration(
                 color: isDark
-              ? theme.colorScheme.surface.withOpacity(0.72)
-              : Colors.white.withOpacity(0.78),
+                    ? theme.colorScheme.surface.withOpacity(0.72)
+                    : Colors.white.withOpacity(0.78),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: widget.alterouDados
@@ -462,32 +461,22 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                             if (!mounted) return;
                             Navigator.of(context, rootNavigator: true).pop();
 
-                            QuickAlert.show(
-                              onConfirmBtnTap: () {
-                                Navigator.of(context).pop(); // fecha QuickAlert
-                                Navigator.of(context)
-                                    .pop(); // volta para perfil
-                              },
-                              context: context,
-                              title: 'Sucesso',
-                              confirmBtnText: 'OK',
-                              type: QuickAlertType.success,
-                              text: 'Endereço atualizado com sucesso!',
-                              confirmBtnColor: AppColors.blue,
-                            );
+                            alertaSucesso(context,
+                                titulo: 'Sucesso',
+                                texto: 'Endereço atualizado com sucesso!',
+                                confirmar: 'OK', aoConfirmar: () {
+                              Navigator.of(context).pop(); // fecha QuickAlert
+                              Navigator.of(context).pop(); // volta para perfil
+                            });
                           } catch (error) {
                             if (!mounted) return;
                             Navigator.of(context, rootNavigator: true).pop();
 
-                            QuickAlert.show(
-                              onConfirmBtnTap: () =>
-                                  Navigator.of(context).pop(),
-                              context: context,
-                              title: 'Erro',
-                              confirmBtnText: 'OK',
-                              type: QuickAlertType.error,
-                              text: 'Erro ao salvar. Tente novamente.',
-                            );
+                            alertaErro(context,
+                                titulo: 'Erro',
+                                texto: 'Erro ao salvar. Tente novamente.',
+                                confirmar: 'OK',
+                                aoConfirmar: () => Navigator.of(context).pop());
                           } finally {
                             if (mounted) setState(() => _saving = false);
                           }
@@ -574,7 +563,9 @@ class _EnderecoLoadingDialog extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 32),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.055)
+                : Colors.white.withValues(alpha: 0.72),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
