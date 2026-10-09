@@ -69,7 +69,13 @@ class AppTheme {
     // que delimita o botão, e fica em 3,42:1. Por isso o botão é escuro sem
     // deixar de ser visível.
     final corBotao = isSuperUser ? AppColors.superBlue : AppColors.navy;
-    final bordaBotao = AppColors.lightBlue.withOpacity(0.55);
+    // A skill manda contorno claro no glassmorphism, e o claro aqui é o azul
+    // de acento do app — o mesmo do rótulo em foco e da caixa de marcar.
+    // Medido: 4,7:1 contra o cartão de vidro do login e 7,3:1 contra o fundo
+    // escuro do app, acima dos 3:1 exigidos de um contorno de controle. A
+    // borda azul a 55% ficava em 2,5:1 sobre o cartão, que era o que fazia o
+    // botão escuro não se separar ali.
+    final bordaBotao = AppColors.lightBlue;
     final bgColor = isDark ? AppColors.darkBg : AppColors.lightBg;
     final surface = isDark ? AppColors.darkSurface : AppColors.lightSurface;
     final card = isDark ? AppColors.darkCard : AppColors.lightCard;
@@ -246,7 +252,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           disabledBackgroundColor: corBotao.withOpacity(0.45),
           disabledForegroundColor: Colors.white70,
-          side: BorderSide(color: bordaBotao),
+          side: BorderSide(color: bordaBotao, width: 1.5),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           // 52 de altura mínima: com 48 o indicador de carregamento ficava
@@ -265,7 +271,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           disabledBackgroundColor: corBotao.withOpacity(0.45),
           disabledForegroundColor: Colors.white70,
-          side: BorderSide(color: bordaBotao),
+          side: BorderSide(color: bordaBotao, width: 1.5),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           minimumSize: const Size(0, 52),

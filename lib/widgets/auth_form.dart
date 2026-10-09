@@ -223,10 +223,10 @@ class _AuthFormState extends State<AuthForm> {
           const SizedBox(height: 16),
 
           // ── Botão Entrar ───────────────────────────────────────────────
-          // O botão não muda de forma ao enviar: o rótulo passa a "Entrando…"
-          // e uma linha fina percorre a base. É mais contido que encolher o
-          // controle até virar um círculo, e mantém o alvo de toque no lugar
-          // enquanto a requisição acontece.
+          // Ao enviar não muda de forma nem ganha barra: o rótulo dá lugar a
+          // um indicador pequeno ao lado do texto, e o botão escurece de
+          // leve. É o que os apps de pagamento fazem — o controle continua
+          // reconhecível e o alvo de toque não se move.
           SizedBox(
             width: double.infinity,
             height: 56,
@@ -234,65 +234,66 @@ class _AuthFormState extends State<AuthForm> {
               onPressed: _isLoading ? null : _submit,
               style: ElevatedButton.styleFrom(
                 elevation: 0,
-                padding: EdgeInsets.zero,
                 disabledBackgroundColor: AppColors.navy,
                 disabledForegroundColor: Colors.white,
                 side: BorderSide(
-                  color: AppColors.lightBlue.withOpacity(_isLoading ? 0.35 : 0.55),
+                  color: AppColors.lightBlue
+                      .withOpacity(_isLoading ? 0.45 : 1.0),
+                  width: 1.5,
                 ),
               ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 220),
-                    child: _isLoading
-                        ? const Text(
-                            'Entrando…',
-                            key: ValueKey('carregando'),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 260),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, anim) => FadeTransition(
+                  opacity: anim,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.94, end: 1.0).animate(anim),
+                    child: child,
+                  ),
+                ),
+                child: _isLoading
+                    ? const Row(
+                        key: ValueKey('carregando'),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            'Entrando',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Colors.white70,
                             ),
-                          )
-                        : const Row(
-                            key: ValueKey('rotulo'),
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Entrar',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_forward_rounded,
-                                  size: AppIconSize.sm, color: Colors.white),
-                            ],
                           ),
-                  ),
-                  if (_isLoading)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          bottom: Radius.circular(14),
-                        ),
-                        child: LinearProgressIndicator(
-                          minHeight: 3,
-                          backgroundColor: Colors.transparent,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.lightBlue.withOpacity(0.85),
+                        ],
+                      )
+                    : const Row(
+                        key: ValueKey('rotulo'),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Entrar',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
+                          SizedBox(width: 8),
+                          Icon(Icons.arrow_forward_rounded,
+                              size: AppIconSize.sm, color: Colors.white),
+                        ],
                       ),
-                    ),
-                ],
               ),
             ),
           ),

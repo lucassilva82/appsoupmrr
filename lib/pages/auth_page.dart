@@ -24,12 +24,15 @@ class _AuthPageState extends State<AuthPage>
     duration: const Duration(milliseconds: 1100),
   );
 
-  /// Um trecho do controlador, com fade e deslocamento para cima.
+  /// Um trecho do controlador: a peça aparece subindo e, se `escala` for
+  /// verdadeiro, crescendo de 0,96 — é o detalhe que dá o assentamento das
+  /// aberturas de app bem acabadas, em vez de um fade seco.
   Widget _surge(
     double inicio,
     double fim, {
     required Widget child,
     double deslocamento = 28,
+    bool escala = false,
   }) {
     final curva = CurvedAnimation(
       parent: _entrada,
@@ -37,13 +40,19 @@ class _AuthPageState extends State<AuthPage>
     );
     return AnimatedBuilder(
       animation: curva,
-      builder: (_, filho) => Opacity(
-        opacity: curva.value,
-        child: Transform.translate(
-          offset: Offset(0, deslocamento * (1 - curva.value)),
+      builder: (_, filho) {
+        final t = curva.value;
+        final conteudo = Transform.translate(
+          offset: Offset(0, deslocamento * (1 - t)),
           child: filho,
-        ),
-      ),
+        );
+        return Opacity(
+          opacity: t,
+          child: escala
+              ? Transform.scale(scale: 0.96 + 0.04 * t, child: conteudo)
+              : conteudo,
+        );
+      },
       child: child,
     );
   }
@@ -178,8 +187,9 @@ class _AuthPageState extends State<AuthPage>
 
                       // ── Glassmorphism card de login ────────────────────
                       _surge(
-                        0.25,
-                        0.85,
+                        0.22,
+                        0.88,
+                        escala: true,
                         child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: ClipRRect(
