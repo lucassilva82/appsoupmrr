@@ -89,15 +89,16 @@ class _WidgetMapaGeralState extends State<WidgetMapaGeral> {
         label: Text(sig),
         selected: selected,
         onSelected: (v) => _toggleChip(sig, v),
-        // Selecionado é tingimento + borda, não um bloco sólido: com os 15
-        // postos marcados a tela virava uma parede azul.
-        selectedColor: theme.colorScheme.primary
-            .withValues(alpha: isDark ? 0.26 : 0.16),
-        backgroundColor: theme.colorScheme.onSurface
-            .withValues(alpha: isDark ? 0.06 : 0.04),
+        // Com os quinze postos marcados — que é o estado padrão — a faixa
+        // virava um bloco azul do tamanho de dois terços da tela. Marcado
+        // passou a ser texto e borda; o preenchimento quase não tinge.
+        selectedColor:
+            theme.colorScheme.primary.withValues(alpha: isDark ? 0.10 : 0.07),
+        backgroundColor:
+            theme.colorScheme.onSurface.withValues(alpha: isDark ? 0.06 : 0.04),
         side: BorderSide(
           color: selected
-              ? theme.colorScheme.primary.withValues(alpha: 0.55)
+              ? theme.colorScheme.primary.withValues(alpha: 0.30)
               : theme.colorScheme.onSurface.withValues(alpha: 0.15),
         ),
         showCheckmark: false,
@@ -130,15 +131,14 @@ class _WidgetMapaGeralState extends State<WidgetMapaGeral> {
                   decoration: BoxDecoration(
                     color: allSel
                         ? theme.colorScheme.primary
-                            .withValues(alpha: isDark ? 0.26 : 0.16)
+                            .withValues(alpha: isDark ? 0.10 : 0.07)
                         : theme.colorScheme.onSurface
                             .withValues(alpha: isDark ? 0.06 : 0.04),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: allSel
-                          ? theme.colorScheme.primary.withValues(alpha: 0.55)
-                          : theme.colorScheme.onSurface
-                              .withValues(alpha: 0.15),
+                          ? theme.colorScheme.primary.withValues(alpha: 0.30)
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.15),
                     ),
                   ),
                   child: Row(
@@ -289,18 +289,19 @@ class _WidgetMapaGeralState extends State<WidgetMapaGeral> {
                 ),
               ),
               const SizedBox(width: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.blue.withValues(alpha: isDark ? 0.20 : 0.10),
-                  borderRadius: BorderRadius.circular(20),
-                ),
+              // Número sem a pílula azul que havia atrás. Eram quinze
+              // pílulas numa lista de quinze linhas: o acento deixa de
+              // acentuar quando está em tudo. A barra ao lado já carrega
+              // o azul, e ela é quem compara as linhas entre si.
+              SizedBox(
+                width: 34,
                 child: Text(
                   d.quantidade.toString(),
+                  textAlign: TextAlign.right,
                   style: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? AppColors.lightBlue : AppColors.blue,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -385,24 +386,28 @@ class _WidgetMapaGeralState extends State<WidgetMapaGeral> {
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 10),
-                      color: theme.colorScheme.primary
-                          .withValues(alpha: isDark ? 0.16 : 0.10),
+                      // Cabeçalho de tabela, não ação: superfície neutra e
+                      // texto de apoio. Em azul, era mais um bloco da cor do
+                      // acento numa tela que já tinha quatro.
+                      color: theme.colorScheme.onSurface
+                          .withValues(alpha: isDark ? 0.05 : 0.04),
                       child: Row(
                         children: [
                           Expanded(
                             child: Text('Situação Funcional',
                                 style: TextStyle(
-                                    color: theme.colorScheme.primary,
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.62),
                                     fontSize: 12,
-                                    fontWeight: FontWeight.w700,
+                                    fontWeight: FontWeight.w600,
                                     letterSpacing: 0.3)),
                           ),
                           Text('Efetivo',
                               style: TextStyle(
-                                  color: theme.colorScheme.primary
-                                      .withValues(alpha: 0.80),
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.48),
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600)),
+                                  fontWeight: FontWeight.w500)),
                         ],
                       ),
                     ),
@@ -428,13 +433,15 @@ class _WidgetMapaGeralState extends State<WidgetMapaGeral> {
                         margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 11),
+                        // Superfície neutra; quem fica no acento é o número,
+                        // que é o dado que o card existe para mostrar.
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary
-                              .withValues(alpha: isDark ? 0.20 : 0.12),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: isDark ? 0.055 : 0.04),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: theme.colorScheme.primary
-                                .withValues(alpha: 0.35),
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.12),
                           ),
                         ),
                         child: Row(
@@ -447,20 +454,11 @@ class _WidgetMapaGeralState extends State<WidgetMapaGeral> {
                                       fontWeight: FontWeight.w800,
                                       letterSpacing: 0.5)),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary
-                                    .withValues(alpha: 0.22),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(total.toString(),
-                                  style: TextStyle(
-                                      color: theme.colorScheme.onSurface,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w800)),
-                            ),
+                            Text(total.toString(),
+                                style: TextStyle(
+                                    color: theme.colorScheme.primary,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w800)),
                           ],
                         ),
                       ),
