@@ -1,7 +1,8 @@
 // lib/pages/militar_detalhe_full_page.dart
 //
 // ▸ Foto com “carimbo” anti‐cópia (login, CPF, IP, data/hora) sobreposta.
-// ▸ FLAG_SECURE (Android) para bloquear screenshot / gravação de tela.
+// ▸ Bloqueio de captura de tela ligado **aqui**, não no app inteiro: esta é
+//   a tela com dado pessoal de terceiro. Ver lib/utils/protecao_tela.dart.
 // ▸ IP público obtido na montagem via api.ipify.org.
 // ▸ Restante da lógica permanece intocada.
 
@@ -23,6 +24,7 @@ import '../widgets/custom_appbar.dart';
 import '../widgets/dados_situacao_funcional.dart';
 import '../models/auth_model.dart'; // fornece auth.matricula, auth.cpf
 import '../utils/app_theme.dart';
+import '../utils/protecao_tela.dart';
 
 class MilitarDetalheFullPage extends StatefulWidget {
   final String matricula;
@@ -54,6 +56,16 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
 
     _future = _fetchTudo();
     _fetchIp();
+
+    // Liga o bloqueio ao abrir a ficha e desliga ao sair, para o resto do
+    // app continuar livre para print e gravação.
+    ProtecaoTela.ligar();
+  }
+
+  @override
+  void dispose() {
+    ProtecaoTela.desligar();
+    super.dispose();
   }
 
   Future<void> _fetchIp() async {
@@ -153,6 +165,12 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
               children: [
                 // ── Header com foto ───────────────────────────────────────
                 _buildHeroHeader(context, m, auth, theme, isDark),
+
+                // O aviso fica escrito na tela porque é a única forma de o
+                // militar saber da regra nos dois sistemas antes de tentar:
+                // no Android quem avisa é o próprio sistema, no iOS só dá
+                // para avisar depois da captura.
+                const _AvisoPrintBloqueado(),
 
                 const SizedBox(height: 12),
 
@@ -612,4 +630,43 @@ class MilitarMock extends Militar {
           imageUrl: '',
           fichaFuncional: ficha,
         );
+}
+
+/// Faixa que informa o bloqueio de captura na ficha do militar.
+class _AvisoPrintBloqueado extends StatelessWidget {
+  const _AvisoPrintBloqueado({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    const cor = Color(0xFFC77800);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        decoration: BoxDecoration(
+          color: cor.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: cor.withValues(alpha: 0.30)),
+        ),
+        child: Row(children: [
+          const Icon(Icons.no_photography_outlined,
+              size: AppIconSize.sm, color: cor),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              ProtecaoTela.aviso,
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.35,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.85),
+              ),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
 }

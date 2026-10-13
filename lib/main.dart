@@ -21,7 +21,7 @@ import 'package:projetonovo/utils/notification_provider.dart';
 import 'package:projetonovo/utils/theme_provider.dart';
 import 'package:projetonovo/utils/app_theme.dart';
 import 'package:provider/provider.dart';
-import 'package:screen_protector/screen_protector.dart';
+import 'utils/protecao_tela.dart';
 import 'package:screenshot_recording_detector/models/detection_event.dart';
 import 'package:screenshot_recording_detector/screenshot_recording_detector.dart';
 import 'package:app_settings/app_settings.dart';
@@ -122,22 +122,13 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // aqui — o app sincroniza o stream do Firestore ao abrir.
 }
 
-// Bloqueio nativo (Android) + iOS ≤ 16
-Future<void> _secureScreen() async {
-  if (Platform.isAndroid) {
-    await ScreenProtector.protectDataLeakageOn(); // FLAG_SECURE
-  } else if (Platform.isIOS) {
-    await ScreenProtector.preventScreenshotOn(); // print preto ≤ iOS 16
-  }
-}
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  print('[DEBUG] 1) Bloqueio nativo preliminar');
-  await _secureScreen();
-
-  print('[DEBUG] 2) Inicializa detector universal');
+  // O bloqueio de captura não é mais global: ele é ligado pela própria tela
+  // que precisa dele (a ficha do militar, em ProtecaoTela). No resto do app
+  // o militar pode printar e gravar — são dados dele.
+  print('[DEBUG] 1) Inicializa detector de captura');
   await ScreenshotRecordingDetector.initialize();
 
   print('[DEBUG] 3) Inicializando Firebase');
@@ -439,16 +430,30 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // _setupMethodChannel();
     ScreenshotRecordingDetector.detectionStream.listen((DetectionEvent event) {
       if (!mounted) return;
+      // Fora de uma tela protegida não há o que esconder nem o que avisar.
+      if (!ProtecaoTela.ativa.value) return;
       if (Platform.isAndroid) return;
       if (Platform.isIOS) {
         if (event.type == CaptureType.screenshot) {
           setState(() => _needBlur = true);
+          mostrarToastEvento(
+            ProtecaoTela.aviso,
+            Colors.orange.shade800,
+            icone: Icons.no_photography_rounded,
+          );
           Future.delayed(const Duration(milliseconds: 400), () {
             if (mounted) setState(() => _needBlur = false);
           });
           return;
         }
         final recording = event.isRecording ?? false;
+        if (recording) {
+          mostrarToastEvento(
+            ProtecaoTela.aviso,
+            Colors.orange.shade800,
+            icone: Icons.no_photography_rounded,
+          );
+        }
         setState(() => _needBlur = recording);
       }
     });
