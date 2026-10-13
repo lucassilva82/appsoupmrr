@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AppColors.darkBg. A janela nativa abre nesta cor para nao piscar
+         branco antes do primeiro frame do Flutter. -->
+    <color name="fundo_abertura">#FF03050A</color>
+</resources>

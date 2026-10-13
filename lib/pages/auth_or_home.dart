@@ -6,6 +6,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/auth_model.dart';
+import '../widgets/abertura_soupmrr.dart';
 import 'auth_page.dart';
 import 'biometric_auth_page.dart';
 import 'main_shell.dart';
@@ -30,11 +31,20 @@ class _AuthOrHomeState extends State<AuthOrHome> {
 
     // 1) Tenta autoLogin
     // 2) Depois busca min_version no Firestore e compara
-    _initFuture = auth.tryAutoLogin().then((_) {
-      debugPrint(
-          "[LOG] initState: tryAutoLogin finalizado, agora checkVersion...");
-      return _checkVersionFromFirestore();
-    });
+    // Piso de tempo para a abertura. Sem ele, numa sessão já autenticada o
+    // carregamento termina em ~300ms e a animação aparece como um tremor —
+    // pior do que não ter animação nenhuma.
+    _initFuture = () async {
+      final trabalho = auth.tryAutoLogin().then((_) {
+        debugPrint(
+            "[LOG] initState: tryAutoLogin finalizado, agora checkVersion...");
+        return _checkVersionFromFirestore();
+      });
+      await Future.wait([
+        trabalho,
+        Future<void>.delayed(const Duration(milliseconds: 1500)),
+      ]);
+    }();
   }
 
   /// Busca a `min_version` no Firestore (coleção 'appConfig', doc 'versions')
@@ -132,42 +142,7 @@ class _AuthOrHomeState extends State<AuthOrHome> {
 
         if (snapshot.connectionState == ConnectionState.waiting) {
           debugPrint("[LOG] FutureBuilder: Loading...");
-          return Scaffold(
-            body: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.asset(
-                  'assets/imagens/entradacapa.png',
-                  fit: BoxFit.cover,
-                ),
-                Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Color(0x44000D1A),
-                        Color(0xAA001233),
-                        Color(0xEE001233)
-                      ],
-                      stops: [0.0, 0.50, 1.0],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                  ),
-                ),
-                const Center(
-                  child: SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(
-                      color: Color(0xFF42A5F5),
-                      backgroundColor: Color(0x2642A5F5),
-                      strokeWidth: 2,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
+          return const AberturaSouPMRR();
         } else if (snapshot.hasError) {
           debugPrint(
               "[LOG] FutureBuilder: snapshot.hasError => ${snapshot.error}");
