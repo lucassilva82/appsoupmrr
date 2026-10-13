@@ -222,6 +222,17 @@ class ApiServices {
   // Legislações - Consumo da API externa
   // ================================
 
+  // A API de legislações mora fora da nossa infraestrutura (pm.rr.gov.br).
+  // As telas de lista já põem 8s na própria chamada; estes limites são a
+  // rede de baixo, para os caminhos que não passam por lá — paginação,
+  // detalhe e download de PDF. Sem eles, um servidor que aceita a conexão,
+  // fecha o TLS e depois não responde (como em 13/10/2026) deixa o toque
+  // num documento girando para sempre.
+  static const Duration _limiteLegislacoes = Duration(seconds: 12);
+
+  // PDF é arquivo: mais folga, mas ainda com fim.
+  static const Duration _limitePdf = Duration(seconds: 30);
+
   /// Lista legislações com filtros e paginação.
   /// Retorna o JSON completo da API: { ok, meta, data: [...] }
   static Future<Map<String, dynamic>> listarLegislacoes({
@@ -261,7 +272,7 @@ class ApiServices {
       final res = await http.get(uri, headers: {
         'X-API-KEY': legislacoesApiKey,
         'Accept': 'application/json',
-      });
+      }).timeout(_limiteLegislacoes);
       debugPrint('[LEGIS] status: ${res.statusCode}');
       if (res.statusCode != 200) {
         throw Exception('HTTP ${res.statusCode}');
@@ -283,7 +294,7 @@ class ApiServices {
       final res = await http.get(uri, headers: {
         'X-API-KEY': legislacoesApiKey,
         'Accept': 'application/json',
-      });
+      }).timeout(_limiteLegislacoes);
       if (res.statusCode != 200) {
         throw Exception('HTTP ${res.statusCode}');
       }
@@ -303,7 +314,9 @@ class ApiServices {
         : Uri.parse(legislacoesBaseUrl)
             .replace(queryParameters: {'action': 'pdf', 'id': '$id'});
     debugPrint('[LEGIS] PDF -> $uri');
-    final res = await http.get(uri, headers: {'X-API-KEY': legislacoesApiKey});
+    final res = await http
+        .get(uri, headers: {'X-API-KEY': legislacoesApiKey})
+        .timeout(_limitePdf);
     if (res.statusCode != 200) {
       throw Exception('Falha ao baixar PDF (HTTP ${res.statusCode})');
     }
