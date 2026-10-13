@@ -47,7 +47,21 @@ android {
 
     defaultConfig {
         applicationId = "pm.rr.soupmrr"
-        minSdk = flutter.minSdkVersion
+        // Fixo de propósito, e não `flutter.minSdkVersion`.
+        //
+        // Aquele valor muda sozinho quando o Flutter é atualizado, sem
+        // aparecer em diff nenhum. Foi o que aconteceu em 08/10: a
+        // atualização para o Flutter 3.47.6 levou o minSdk de 21 para 24 em
+        // silêncio, e só descobrimos no envio à Play, que avisou da perda de
+        // 1.732 aparelhos — Android 5.0, 5.1 e 6.0.
+        //
+        // 24 é o piso real hoje: `local_auth_android` exige 24 para a
+        // biometria, e o próprio Flutter adota 24. Baixar daqui significa
+        // tirar o login por biometria.
+        //
+        // Mudar este número derruba ou devolve aparelhos. Que seja uma
+        // decisão, com o número à vista — não um efeito colateral.
+        minSdk = 24
         targetSdk = 36
         versionCode = 49
         versionName = "2.1.0"
