@@ -49,8 +49,8 @@ android {
         applicationId = "pm.rr.soupmrr"
         minSdk = flutter.minSdkVersion
         targetSdk = 36
-        versionCode = 47
-        versionName = "2.0.7"
+        versionCode = 48
+        versionName = "2.1.0"
     }
 }
 
