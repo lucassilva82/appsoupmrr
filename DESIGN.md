@@ -50,6 +50,7 @@ Você não precisa fazer `if (Platform.isAndroid)` na sua tela. Use o componente
 | `RequisitosSenha`, `AvisoCaixa`, `decoracaoCampo` | `lib/widgets/requisitos_senha.dart` | Telas de senha e acesso |
 | `VersaoApp`, `TextoVersao` | `lib/widgets/versao_app.dart` | Versão do app (lê do `PackageInfo`, nunca hardcode) |
 | `CabecalhoCartao`, `DestaqueCartao`, `BarraProgressoCartao`, `PilulaCartao`, `ParCartao`, `MarcadorCartao`, `DivisorCartao`, `RodapeCartao` | `lib/widgets/cartao_painel.dart` | As peças dos cards do painel — ver §2b |
+| `MarcaDaguaCartao` | `lib/widgets/marca_dagua_cartao.dart` | O desenho apagado no canto do card — ver §2c |
 
 ### `CartaoVidro`
 
@@ -110,6 +111,33 @@ Regras que caem desse desenho:
   quantas; "2ª de 2 parcelas" responde.
 - Os tamanhos saem de `AppDisplaySize`, nunca de um número solto no card —
   foi assim que os três voltaram a divergir depois da primeira padronização.
+
+---
+
+## 2c. A marca d'água dos cards
+
+Cada card do painel tem, no canto, um desenho grande, inclinado e quase
+apagado. Não é enfeite solto: ele repete em forma o que o card diz em texto.
+
+| Card | Desenho | O que o acento marca |
+|---|---|---|
+| Plano de férias | calendário | o intervalo selecionado |
+| Contracheque | folha de pagamento | a linha do líquido |
+| Tempo de serviço | medalha | o arco do tempo cumprido (o percentual de verdade) |
+
+Três coisas aprendidas fazendo isto:
+
+- **Desenhar, não usar `Icon(...)` em corpo 90.** Ícone do Material nesse
+  tamanho não vira ilustração, vira um ícone grande: traço de espessura fixa,
+  sem hierarquia interna e com canto duro batendo na borda do card.
+- **Máscara radial, nunca linear.** Um degradê de um canto ao outro deixa o
+  canto oposto opaco, e lá o desenho encosta no texto com aresta de régua.
+- **Os tons ficam juntos**, em `_Tons`, para os três terem o mesmo peso.
+  Ajustar um sem os outros é o caminho para um aparecer mais que o resto.
+
+A posição é por card (`Positioned`), porque cada um tem um controle diferente
+no canto para desviar — o olho do contracheque, o percentual do tempo de
+serviço.
 
 ---
 

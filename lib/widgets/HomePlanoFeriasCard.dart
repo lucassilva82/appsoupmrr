@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'cartao_painel.dart';
+import 'marca_dagua_cartao.dart';
 import 'vidro.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -18,8 +19,7 @@ class _Periodo {
   final DateTime? inicio;
   final DateTime? fim;
 
-  bool get concluido =>
-      fim != null && fim!.isBefore(DateTime.now());
+  bool get concluido => fim != null && fim!.isBefore(DateTime.now());
 
   bool get emAndamento {
     final hoje = DateTime.now();
@@ -127,8 +127,18 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
   }
 
   static const _meses = [
-    'jan', 'fev', 'mar', 'abr', 'mai', 'jun',
-    'jul', 'ago', 'set', 'out', 'nov', 'dez',
+    'jan',
+    'fev',
+    'mar',
+    'abr',
+    'mai',
+    'jun',
+    'jul',
+    'ago',
+    'set',
+    'out',
+    'nov',
+    'dez',
   ];
 
   /// "6 — 20 jul de 2026" quando cabe no mesmo mês, "21 dez — 4 jan" quando
@@ -289,8 +299,8 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
 
         if (periodos.isEmpty) return _buildVazio(context);
 
-        periodos.sort((a, b) => (a.inicio ?? DateTime(2100))
-            .compareTo(b.inicio ?? DateTime(2100)));
+        periodos.sort((a, b) =>
+            (a.inicio ?? DateTime(2100)).compareTo(b.inicio ?? DateTime(2100)));
 
         // O período em destaque é o que ainda vai acontecer — ou o que está
         // acontecendo. Com tudo no passado, destaca-se o último, já concluído.
@@ -330,9 +340,10 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
         final duracao = destaque.duracao;
 
         // 13º antecipado
-        final prevAntRaw =
-            (r['prev_feri_antecipado'] ?? r['prev_feri_antecipado_format'] ?? '')
-                .toString();
+        final prevAntRaw = (r['prev_feri_antecipado'] ??
+                r['prev_feri_antecipado_format'] ??
+                '')
+            .toString();
         String? antecipado;
         if (prevAntRaw.isNotEmpty) {
           final v = prevAntRaw.toLowerCase();
@@ -351,19 +362,10 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
             children: [
               // Marca d'água: dá profundidade ao bloco do destaque sem
               // disputar leitura. Fora da árvore semântica, é decoração.
-              Positioned(
-                top: 38,
-                right: -10,
-                child: ExcludeSemantics(
-                  child: Icon(
-                    Icons.calendar_month_outlined,
-                    size: 92,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.05),
-                  ),
-                ),
+              const Positioned(
+                top: 46,
+                right: -30,
+                child: MarcaDaguaCartao(desenho: DesenhoMarca.calendario),
               ),
               Padding(
                 padding: kPaddingCartao,
@@ -380,15 +382,12 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
                       meta: 'Ref. $ano',
                     ),
                     const SizedBox(height: 12),
-
                     DestaqueCartao(
                       rotulo: rotuloDestaque,
                       valor: d.intervalo,
                       tamanho: AppDisplaySize.heroiMenor,
                     ),
-
                     const SizedBox(height: 8),
-
                     Text.rich(
                       TextSpan(children: [
                         TextSpan(
@@ -407,12 +406,10 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
                       ]),
                       style: const TextStyle(fontSize: 13.5),
                     ),
-
                     for (final p in outros) ...[
                       const DivisorCartao(espaco: 12),
                       _linhaPeriodo(context, p),
                     ],
-
                     const DivisorCartao(espaco: 12),
                     RodapeCartao(
                       icone: antecipado == null

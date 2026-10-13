@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'cartao_painel.dart';
+import 'marca_dagua_cartao.dart';
 import 'vidro.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -241,7 +242,8 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
           return _buildSkeleton(isDark);
         }
         if (snapshot.hasError) {
-          return _buildError(context, 'Não foi possível carregar o contracheque.');
+          return _buildError(
+              context, 'Não foi possível carregar o contracheque.');
         }
         final dados = snapshot.data;
         if (dados == null || dados.isEmpty) {
@@ -290,99 +292,109 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
     return CartaoVidro(
       raio: 16,
       onTap: temVarios ? null : aoTocarCartao,
-      child: Padding(
-        padding: kPaddingCartao,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CabecalhoCartao(
-              icone: Icons.receipt_long_outlined,
-              titulo: 'Contracheque',
-              meta: referencia.isEmpty ? null : referencia,
-              mostrarSeta: !temVarios,
-              acao: Semantics(
-                button: true,
-                label: _showValues ? 'Ocultar valores' : 'Mostrar valores',
-                child: InkResponse(
-                  onTap: () => setState(() => _showValues = !_showValues),
-                  radius: 24,
-                  child: SizedBox(
-                    width: 44,
-                    height: 44,
-                    child: Icon(
-                      _showValues
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      size: AppIconSize.sm,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.55),
+      child: Stack(
+        children: [
+          // Abaixo do olho e da seta, para não disputar com os controles.
+          const Positioned(
+            top: 50,
+            right: -34,
+            child: MarcaDaguaCartao(desenho: DesenhoMarca.folha),
+          ),
+          Padding(
+            padding: kPaddingCartao,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CabecalhoCartao(
+                  icone: Icons.receipt_long_outlined,
+                  titulo: 'Contracheque',
+                  meta: referencia.isEmpty ? null : referencia,
+                  mostrarSeta: !temVarios,
+                  acao: Semantics(
+                    button: true,
+                    label: _showValues ? 'Ocultar valores' : 'Mostrar valores',
+                    child: InkResponse(
+                      onTap: () => setState(() => _showValues = !_showValues),
+                      radius: 24,
+                      child: SizedBox(
+                        width: 44,
+                        height: 44,
+                        child: Icon(
+                          _showValues
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          size: AppIconSize.sm,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.55),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
 
-            const SizedBox(height: 6),
+                const SizedBox(height: 6),
 
-            // ── O líquido é o número do card ─────────────────────────────
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: DestaqueCartao(
-                    rotulo: temVarios ? 'Líquido total' : 'Líquido',
-                    valor: valor(liquido),
-                    tamanho: AppDisplaySize.heroiMenor,
-                  ),
+                // ── O líquido é o número do card ─────────────────────────────
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: DestaqueCartao(
+                        rotulo: temVarios ? 'Líquido total' : 'Líquido',
+                        valor: valor(liquido),
+                        tamanho: AppDisplaySize.heroiMenor,
+                      ),
+                    ),
+                    if (_isCurrentMonth)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: PilulaCartao(texto: 'Novo'),
+                      ),
+                  ],
                 ),
-                if (_isCurrentMonth)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: PilulaCartao(texto: 'Novo'),
-                  ),
+
+                const DivisorCartao(espaco: 12),
+
+                // ── Proventos e descontos, lado a lado ───────────────────────
+                Row(
+                  children: [
+                    Expanded(
+                      child: _parValor(
+                        rotulo: 'Proventos',
+                        valorTexto: valor(bruto),
+                        icone: Icons.arrow_upward_rounded,
+                        cor: verde,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _parValor(
+                        rotulo: 'Descontos',
+                        valorTexto: valor(descontos),
+                        icone: Icons.arrow_downward_rounded,
+                        cor: vermelho,
+                        aDireita: true,
+                      ),
+                    ),
+                  ],
+                ),
+
+                // ── Vínculos ─────────────────────────────────────────────────
+                // Sempre visíveis: o total sozinho esconderia que há mais de um.
+                if (temVarios) ...[
+                  const DivisorCartao(espaco: 12),
+                  for (var n = 0; n < _vinculos.length; n++) ...[
+                    if (n > 0) const SizedBox(height: 10),
+                    _linhaVinculo(_vinculos[n], fmt),
+                  ],
+                ],
               ],
             ),
-
-            const DivisorCartao(espaco: 12),
-
-            // ── Proventos e descontos, lado a lado ───────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: _parValor(
-                    rotulo: 'Proventos',
-                    valorTexto: valor(bruto),
-                    icone: Icons.arrow_upward_rounded,
-                    cor: verde,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _parValor(
-                    rotulo: 'Descontos',
-                    valorTexto: valor(descontos),
-                    icone: Icons.arrow_downward_rounded,
-                    cor: vermelho,
-                    aDireita: true,
-                  ),
-                ),
-              ],
-            ),
-
-            // ── Vínculos ─────────────────────────────────────────────────
-            // Sempre visíveis: o total sozinho esconderia que há mais de um.
-            if (temVarios) ...[
-              const DivisorCartao(espaco: 12),
-              for (var n = 0; n < _vinculos.length; n++) ...[
-                if (n > 0) const SizedBox(height: 10),
-                _linhaVinculo(_vinculos[n], fmt),
-              ],
-            ],
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

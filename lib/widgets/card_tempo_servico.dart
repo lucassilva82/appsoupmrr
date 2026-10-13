@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'cartao_painel.dart';
+import 'marca_dagua_cartao.dart';
 import 'vidro.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -209,69 +210,83 @@ class CardTempoServico extends StatelessWidget {
           raio: 16,
           onTap: () => Navigator.of(context)
               .pushNamed(AppRoutes.CALCULO_INATIVIDADE_PAGE),
-          child: Padding(
-            padding: kPaddingCartao,
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CabecalhoCartao(
-                    icone: Icons.military_tech_outlined,
-                    titulo: 'Tempo de serviço',
-                  ),
-                  const SizedBox(height: 10),
-
-                  // O percentual ao lado do número, não numa legenda embaixo
-                  // da barra: é a mesma informação e economiza uma linha.
-                  Row(
+          child: Stack(
+            children: [
+              // O arco da medalha é o mesmo percentual da barra — por isso
+              // ele recebe percTotal em vez de um valor bonito fixo.
+              Positioned(
+                top: 58,
+                right: -34,
+                child: MarcaDaguaCartao(
+                  desenho: DesenhoMarca.medalha,
+                  progresso: percTotal,
+                ),
+              ),
+              Padding(
+                padding: kPaddingCartao,
+                child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        child: DestaqueCartao(
-                          valor: partes.heroi,
-                          complemento: partes.resto,
-                          tamanho: AppDisplaySize.heroi,
-                        ),
+                      const CabecalhoCartao(
+                        icone: Icons.military_tech_outlined,
+                        titulo: 'Tempo de serviço',
                       ),
-                      const SizedBox(width: 10),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 3),
-                        child: Text(
-                          '$pct%',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            color: Theme.of(context).colorScheme.primary,
+                      const SizedBox(height: 10),
+
+                      // O percentual ao lado do número, não numa legenda embaixo
+                      // da barra: é a mesma informação e economiza uma linha.
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: DestaqueCartao(
+                              valor: partes.heroi,
+                              complemento: partes.resto,
+                              tamanho: AppDisplaySize.heroi,
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 10),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 3),
+                            child: Text(
+                              '$pct%',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
 
-                  const SizedBox(height: 12),
+                      const SizedBox(height: 12),
 
-                  BarraProgressoCartao(
-                    valor: percTotal,
-                    valorBase: diasAgregados > 0 ? percNormal : null,
-                    semantica: 'Tempo de serviço cumprido',
-                  ),
+                      BarraProgressoCartao(
+                        valor: percTotal,
+                        valorBase: diasAgregados > 0 ? percNormal : null,
+                        semantica: 'Tempo de serviço cumprido',
+                      ),
 
-                  // Meta, data e quanto falta numa frase só. Eram três
-                  // blocos — par rótulo/valor, pílula e divisor — para
-                  // dizer o que cabe aqui.
-                  if (previsao != null) ...[
-                    const SizedBox(height: 10),
-                    Text(
-                      'Meta de 30 anos em $previsao'
-                      '${faltam == null ? '' : ' · $faltam'}',
-                      style: TextStyle(
-                          fontSize: 13, color: TomCartao.medio(context)),
-                    ),
-                  ],
+                      // Meta, data e quanto falta numa frase só. Eram três
+                      // blocos — par rótulo/valor, pílula e divisor — para
+                      // dizer o que cabe aqui.
+                      if (previsao != null) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          'Meta de 30 anos em $previsao'
+                          '${faltam == null ? '' : ' · $faltam'}',
+                          style: TextStyle(
+                              fontSize: 13, color: TomCartao.medio(context)),
+                        ),
+                      ],
 
-                  const SizedBox(height: 6),
-                  RodapeCartao(texto: origem),
-                ]),
+                      const SizedBox(height: 6),
+                      RodapeCartao(texto: origem),
+                    ]),
+              ),
+            ],
           ),
         );
       },
