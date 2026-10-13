@@ -13,6 +13,8 @@ import '../models/inatividade_model.dart';
 import '../utils/app_theme.dart';
 import '../utils/store.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/cartao_painel.dart';
+import '../widgets/vidro.dart';
 
 class CalculoInatividadePage extends StatefulWidget {
   const CalculoInatividadePage({Key? key}) : super(key: key);
@@ -173,8 +175,7 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Novo cálculo'),
         content: const Text(
             'Os dados informados e o resultado atual serão apagados. '
@@ -303,9 +304,10 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
     if (_carregando) {
       return Scaffold(
         appBar: AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      flexibleSpace: const FundoBarraVidro(),title: const Text('Cálculo de Inatividade')),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            flexibleSpace: const FundoBarraVidro(),
+            title: const Text('Cálculo de Inatividade')),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -339,9 +341,9 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
         transitionBuilder: (child, anim) => FadeTransition(
           opacity: anim,
           child: SlideTransition(
-            position: Tween<Offset>(
-                    begin: const Offset(0, 0.035), end: Offset.zero)
-                .animate(anim),
+            position:
+                Tween<Offset>(begin: const Offset(0, 0.035), end: Offset.zero)
+                    .animate(anim),
             child: child,
           ),
         ),
@@ -416,7 +418,9 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                     children: [
                       _cardDados(theme),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 10),
+                      _cardTempos(theme),
+                      const SizedBox(height: 16),
                       _botaoCalcular(theme),
                     ],
                   ),
@@ -436,8 +440,8 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
             minimumSize: const Size.fromHeight(50),
             textStyle: const TextStyle(
                 fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.2),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           ),
         ),
       ),
@@ -452,179 +456,177 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
   // ── Card de dados (editável) ───────────────────────────────────────────
   Widget _cardDados(ThemeData theme) {
     return _Card(
+      titulo: 'Identificação',
+      icone: Icons.badge_outlined,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Icon(Icons.badge_rounded, size: 18, color: theme.colorScheme.primary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text('Seus dados',
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.bold)),
-          ),
-        ]),
-          const SizedBox(height: 4),
-          Text(
-            'Puxamos o que está cadastrado no sistema. Confira e corrija se '
-            'algo estiver desatualizado — o cálculo usa exatamente estes valores.',
-            style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
-          ),
-          const SizedBox(height: 14),
-          _campoData(
-            theme,
-            rotulo: 'Data de incorporação / praça',
-            valor: _dataIncorporacao,
-            doSistema: _incorporacaoDoSistema != null &&
-                _dataIncorporacao == _incorporacaoDoSistema,
-            primeiro: DateTime(1960),
-            onChanged: (d) => _atualizar(() => _dataIncorporacao = d),
-          ),
-          const SizedBox(height: 10),
-          _campoData(
-            theme,
-            rotulo: 'Data de nascimento',
-            valor: _dataNascimento,
-            doSistema: false,
-            primeiro: DateTime(1940),
-            onChanged: (d) => _atualizar(() => _dataNascimento = d),
-            ajuda: 'Define a idade-limite para reserva de ofício.',
-          ),
-          const SizedBox(height: 14),
-          Text('Sexo',
-              style: theme.textTheme.labelMedium
-                  ?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 6),
-          SegmentedButton<Sexo>(
-            segments: const [
-              ButtonSegment(value: Sexo.masculino, label: Text('Masculino')),
-              ButtonSegment(value: Sexo.feminino, label: Text('Feminino')),
-            ],
-            selected: {_sexo},
-            onSelectionChanged: (s) => _atualizar(() => _sexo = s.first),
-            style: ButtonStyle(
-              visualDensity: VisualDensity.compact,
-              textStyle: WidgetStatePropertyAll(
-                  theme.textTheme.labelMedium ?? const TextStyle()),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Em RR o tempo mínimo do ente é 30 anos (homem) e 25 anos (mulher) '
-            '— LC/RR 194/2012, art. 115, II.',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.hintColor, fontSize: 11),
-          ),
-          const SizedBox(height: 14),
-          DropdownButtonFormField<PostoGraduacao>(
-            value: _posto,
-            isExpanded: true,
-            decoration: InputDecoration(
-              labelText: 'Posto / graduação atual',
-              isDense: true,
-              filled: true,
-            ),
-            items: PostoGraduacao.values
-                .map((p) => DropdownMenuItem(value: p, child: Text(p.label)))
-                .toList(),
-            onChanged: (p) => _atualizar(() => _posto = p),
-          ),
-          const SizedBox(height: 16),
-          _campoDuracao(
-            theme,
-            rotulo: 'Tempo militar em outra organização',
-            ajuda: 'Forças Armadas, outra PM ou CBM. Soma no seu tempo de '
-                'serviço militar e conta como atividade militar — '
-                'LC/RR 305/2022, art. 2º, V.',
-            dias: _diasServicoMilitarAnterior,
-            onChanged: (d) =>
-                _atualizar(() => _diasServicoMilitarAnterior = d ?? 0),
-          ),
-          const SizedBox(height: 16),
-          _campoDuracao(
-            theme,
-            rotulo: 'Tempo averbado civil',
-            ajuda: 'RGPS, outro RPPS ou iniciativa privada. Soma só na '
-                'contribuição — LC/RR 194/2012, art. 144, I.',
-            dias: _diasAverbadosCivis,
-            doSistema: _iperDoSistema != null &&
-                _diasAverbadosCivis == _iperDoSistema &&
-                _iperDoSistema! > 0,
-            onChanged: (d) => _atualizar(() => _diasAverbadosCivis = d ?? 0),
-          ),
-          if (_iperDoSistema != null && _iperDoSistema! > 0) ...[
-            const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFC77800).withOpacity(0.09),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.call_split_rounded,
-                        size: 14, color: Color(0xFFC77800)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'O IPER informa a averbação sem separar a origem. Se '
-                        'parte dela for tempo de Forças Armadas ou de outra '
-                        'PM/CBM, mova essa parte para o campo acima — lá ela '
-                        'conta como atividade militar, aqui não.',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(fontSize: 11, height: 1.35),
-                      ),
-                    ),
-                  ]),
-            ),
+        const SizedBox(height: 0),
+        Text(
+          'Puxados do sistema. Confira e corrija — o cálculo usa '
+          'exatamente estes valores.',
+          style: TextStyle(fontSize: 12.5, color: TomCartao.medio(context)),
+        ),
+        const SizedBox(height: 14),
+        _campoData(
+          theme,
+          rotulo: 'Data de incorporação / praça',
+          valor: _dataIncorporacao,
+          doSistema: _incorporacaoDoSistema != null &&
+              _dataIncorporacao == _incorporacaoDoSistema,
+          primeiro: DateTime(1960),
+          onChanged: (d) => _atualizar(() => _dataIncorporacao = d),
+        ),
+        const SizedBox(height: 10),
+        _campoData(
+          theme,
+          rotulo: 'Data de nascimento',
+          valor: _dataNascimento,
+          doSistema: false,
+          primeiro: DateTime(1940),
+          onChanged: (d) => _atualizar(() => _dataNascimento = d),
+          ajuda: 'Define a idade-limite para reserva de ofício.',
+        ),
+        const SizedBox(height: 14),
+        Text('Sexo',
+            style: theme.textTheme.labelMedium
+                ?.copyWith(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        SegmentedButton<Sexo>(
+          segments: const [
+            ButtonSegment(value: Sexo.masculino, label: Text('Masculino')),
+            ButtonSegment(value: Sexo.feminino, label: Text('Feminino')),
           ],
-          const SizedBox(height: 16),
-          _campoDuracao(
-            theme,
-            rotulo: 'Tempo cedido a função civil',
-            ajuda: 'Períodos cedido a órgão civil ou em função de natureza '
-                'civil. Conta como tempo de serviço, mas sai da atividade '
-                'militar — LC/RR 305/2022, art. 2º, IV. Deixe zerado se nunca '
-                'foi cedido.',
-            dias: _diasFuncaoCivil,
-            onChanged: (d) => _atualizar(() => _diasFuncaoCivil = d ?? 0),
+          selected: {_sexo},
+          onSelectionChanged: (s) => _atualizar(() => _sexo = s.first),
+          style: ButtonStyle(
+            visualDensity: VisualDensity.compact,
+            textStyle: WidgetStatePropertyAll(
+                theme.textTheme.labelMedium ?? const TextStyle()),
           ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<HipoteseIncapacidade?>(
-            value: _incapacidade,
-            isExpanded: true,
-            decoration: InputDecoration(
-              labelText: 'Incapacidade definitiva',
-              helperText: 'Reforma por invalidez independe de tempo de '
-                  'serviço. Deixe vazio se não for o caso.',
-              helperMaxLines: 3,
-              isDense: true,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Define o tempo mínimo do ente: 30 anos (homem), 25 (mulher).',
+          style: TextStyle(fontSize: 12, color: TomCartao.medio(context)),
+        ),
+        const SizedBox(height: 14),
+        DropdownButtonFormField<PostoGraduacao>(
+          value: _posto,
+          isExpanded: true,
+          decoration: InputDecoration(
+            labelText: 'Posto / graduação atual',
+            isDense: true,
+            filled: true,
+          ),
+          items: PostoGraduacao.values
+              .map((p) => DropdownMenuItem(value: p, child: Text(p.label)))
+              .toList(),
+          onChanged: (p) => _atualizar(() => _posto = p),
+        ),
+      ]),
+    );
+  }
+
+  /// Tempos que entram ou saem da conta. Separado da identificação porque
+  /// são coisas de naturezas diferentes: ali é quem o militar é, aqui é o
+  /// que ele traz de fora — e num card só viravam uma lista sem fim.
+  Widget _cardTempos(ThemeData theme) {
+    return _Card(
+      titulo: 'Tempos averbados',
+      icone: Icons.more_time_rounded,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _campoDuracao(
+          theme,
+          rotulo: 'Tempo militar em outra organização',
+          ajuda: 'Forças Armadas, outra PM ou CBM. Conta como atividade '
+              'militar.',
+          dias: _diasServicoMilitarAnterior,
+          onChanged: (d) =>
+              _atualizar(() => _diasServicoMilitarAnterior = d ?? 0),
+        ),
+        const SizedBox(height: 16),
+        _campoDuracao(
+          theme,
+          rotulo: 'Tempo averbado civil',
+          ajuda: 'RGPS, outro RPPS ou iniciativa privada. Soma só na '
+              'contribuição.',
+          dias: _diasAverbadosCivis,
+          doSistema: _iperDoSistema != null &&
+              _diasAverbadosCivis == _iperDoSistema &&
+              _iperDoSistema! > 0,
+          onChanged: (d) => _atualizar(() => _diasAverbadosCivis = d ?? 0),
+        ),
+        if (_iperDoSistema != null && _iperDoSistema! > 0) ...[
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFC77800).withOpacity(0.09),
+              borderRadius: BorderRadius.circular(8),
             ),
-            items: [
-              const DropdownMenuItem(value: null, child: Text('— não se aplica —')),
-              ...HipoteseIncapacidade.values.map((h) =>
-                  DropdownMenuItem(value: h, child: Text(h.label))),
-            ],
-            onChanged: (h) => _atualizar(() => _incapacidade = h),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Icon(Icons.call_split_rounded,
+                  size: 14, color: Color(0xFFC77800)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'O IPER informa a averbação sem separar a origem. Se '
+                  'parte dela for tempo de Forças Armadas ou de outra '
+                  'PM/CBM, mova essa parte para o campo acima — lá ela '
+                  'conta como atividade militar, aqui não.',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(fontSize: 11, height: 1.35),
+                ),
+              ),
+            ]),
           ),
-          const SizedBox(height: 20),
-          _campoDuracao(
-            theme,
-            rotulo: 'Afastamentos não computados',
-            ajuda: 'LTIP, agregações e demais períodos que não contam como '
-                'tempo de serviço (LC/RR 305/2022, art. 117).',
-            dias: _diasAfastamentos,
-            onChanged: (d) => _atualizar(() => _diasAfastamentos = d ?? 0),
+        ],
+        const SizedBox(height: 16),
+        _campoDuracao(
+          theme,
+          rotulo: 'Tempo cedido a função civil',
+          ajuda: 'Conta como tempo de serviço, mas sai da atividade '
+              'militar. Zerado se nunca foi cedido.',
+          dias: _diasFuncaoCivil,
+          onChanged: (d) => _atualizar(() => _diasFuncaoCivil = d ?? 0),
+        ),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<HipoteseIncapacidade?>(
+          value: _incapacidade,
+          isExpanded: true,
+          decoration: InputDecoration(
+            labelText: 'Incapacidade definitiva',
+            helperText: 'Reforma por invalidez independe de tempo de '
+                'serviço. Deixe vazio se não for o caso.',
+            helperMaxLines: 3,
+            isDense: true,
           ),
-          const SizedBox(height: 14),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: _restaurarDoSistema,
-              icon: const Icon(Icons.restore_rounded, size: 16),
-              label: const Text('Restaurar do sistema'),
-              style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-            ),
+          items: [
+            const DropdownMenuItem(
+                value: null, child: Text('— não se aplica —')),
+            ...HipoteseIncapacidade.values
+                .map((h) => DropdownMenuItem(value: h, child: Text(h.label))),
+          ],
+          onChanged: (h) => _atualizar(() => _incapacidade = h),
+        ),
+        const SizedBox(height: 20),
+        _campoDuracao(
+          theme,
+          rotulo: 'Afastamentos não computados',
+          ajuda: 'LTIP, agregações e outros períodos que não contam como '
+              'tempo de serviço.',
+          dias: _diasAfastamentos,
+          onChanged: (d) => _atualizar(() => _diasAfastamentos = d ?? 0),
+        ),
+        const SizedBox(height: 14),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: _restaurarDoSistema,
+            icon: const Icon(Icons.restore_rounded, size: 16),
+            label: const Text('Restaurar do sistema'),
+            style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
           ),
+        ),
       ]),
     );
   }
@@ -701,53 +703,56 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
       onChanged(opcional && total == 0 ? null : total);
     }
 
+    Widget caixa(String unidade, int? valor, int limite, ValueChanged<int> ao) {
+      return Expanded(
+        child: Column(
+          children: [
+            _MiniNumero(
+              key: ValueKey('$rotulo-$unidade-$valor'),
+              valorInicial: valor,
+              max: limite,
+              onChanged: ao,
+            ),
+            const SizedBox(height: 5),
+            Text(
+              unidade,
+              style: TextStyle(fontSize: 11.5, color: TomCartao.medio(context)),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
         Expanded(
           child: Text(rotulo,
-              style: theme.textTheme.labelMedium
-                  ?.copyWith(fontWeight: FontWeight.w600)),
+              style:
+                  const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         ),
         if (doSistema) _TagSistema(),
       ]),
-      const SizedBox(height: 6),
+      const SizedBox(height: 8),
       Row(children: [
-        Expanded(
-          child: _MiniNumero(
-            key: ValueKey('$rotulo-a-$anos'),
-            valorInicial: dias == null ? null : anos,
-            sufixo: 'anos',
-            onChanged: (x) => emitir(x, meses, ds),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _MiniNumero(
-            key: ValueKey('$rotulo-m-$meses'),
-            valorInicial: dias == null ? null : meses,
-            sufixo: 'meses',
-            max: 11,
-            onChanged: (x) => emitir(anos, x, ds),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _MiniNumero(
-            key: ValueKey('$rotulo-d-$ds'),
-            valorInicial: dias == null ? null : ds,
-            sufixo: 'dias',
-            max: 29,
-            onChanged: (x) => emitir(anos, meses, x),
-          ),
-        ),
+        caixa('anos', dias == null ? null : anos, 99,
+            (x) => emitir(x, meses, ds)),
+        const SizedBox(width: 10),
+        caixa('meses', dias == null ? null : meses, 11,
+            (x) => emitir(anos, x, ds)),
+        const SizedBox(width: 10),
+        caixa('dias', dias == null ? null : ds, 29,
+            (x) => emitir(anos, meses, x)),
       ]),
-      const SizedBox(height: 4),
+      const SizedBox(height: 8),
+      // A ajuda ficou curta de propósito. A citação legal de cada campo foi
+      // para a folha "Base legal" da barra superior: três linhas de
+      // "LC/RR 305/2022, art. 2º, V" debaixo de cada campo era o que mais
+      // dava peso de formulário web a esta tela.
       Text(
         dias == null || dias == 0
             ? ajuda
             : '$ajuda  •  total: ${TempoFmt.extenso(dias)}',
-        style: theme.textTheme.bodySmall
-            ?.copyWith(color: theme.hintColor, fontSize: 11),
+        style: TextStyle(fontSize: 12, color: TomCartao.medio(context)),
       ),
     ]);
   }
@@ -790,61 +795,61 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
               item(
                 'DL 667/1969, art. 24-A, I, "a" — regra permanente',
                 'Integral desde que cumprido o tempo mínimo de 35 anos de '
-                'serviço, dos quais no mínimo 30 anos de exercício de '
-                'atividade de natureza militar.',
+                    'serviço, dos quais no mínimo 30 anos de exercício de '
+                    'atividade de natureza militar.',
               ),
               item(
                 'DL 667/1969, art. 24-A, I, "b" — proporcional',
                 'Proporcional, com base em tantas quotas de remuneração do '
-                'posto ou da graduação quantos forem os anos de serviço, se '
-                'transferido para a inatividade sem atingir o tempo mínimo.',
+                    'posto ou da graduação quantos forem os anos de serviço, se '
+                    'transferido para a inatividade sem atingir o tempo mínimo.',
               ),
               item(
                 'DL 667/1969, art. 24-F — direito adquirido',
                 'Assegurado o direito adquirido a quem cumpriu os requisitos '
-                'da lei do ente federativo, observados os critérios de '
-                'concessão e de cálculo em vigor na data de atendimento.',
+                    'da lei do ente federativo, observados os critérios de '
+                    'concessão e de cálculo em vigor na data de atendimento.',
               ),
               item(
                 'DL 667/1969, art. 24-G, I — pedágio',
                 'Se o tempo mínimo exigido pela legislação do ente for de 30 '
-                'anos ou menos, cumprir o tempo de serviço faltante, '
-                'acrescido de 17%. Em Roraima o mínimo era 30 anos (homem) e '
-                '25 anos (mulher), logo aplica-se o pedágio.',
+                    'anos ou menos, cumprir o tempo de serviço faltante, '
+                    'acrescido de 17%. Em Roraima o mínimo era 30 anos (homem) e '
+                    '25 anos (mulher), logo aplica-se o pedágio.',
               ),
               item(
                 'DL 667/1969, art. 24-G, parágrafo único',
                 'Além do pedágio, o militar deve contar no mínimo 25 anos de '
-                'exercício de atividade de natureza militar, acrescidos de 4 '
-                'meses a cada ano faltante para atingir o tempo mínimo do '
-                'ente, limitado a 5 anos de acréscimo.',
+                    'exercício de atividade de natureza militar, acrescidos de 4 '
+                    'meses a cada ano faltante para atingir o tempo mínimo do '
+                    'ente, limitado a 5 anos de acréscimo.',
               ),
               item(
                 'LC/RR 305/2022, art. 23 — reserva a pedido',
                 'Proventos integrais desde que implementadas as regras para a '
-                'inatividade previstas em norma geral da União. §1º: '
-                'admitidos até 15/12/2019 podem pedir proporcional com 20 '
-                'anos de efetivo serviço (homem) ou 15 anos (mulher). §2º: '
-                'ingressos a partir de 16/12/2019, 30 anos de natureza militar.',
+                    'inatividade previstas em norma geral da União. §1º: '
+                    'admitidos até 15/12/2019 podem pedir proporcional com 20 '
+                    'anos de efetivo serviço (homem) ou 15 anos (mulher). §2º: '
+                    'ingressos a partir de 16/12/2019, 30 anos de natureza militar.',
               ),
               item(
                 'LC/RR 305/2022, art. 24, I — idade-limite',
                 'Coronel 67, tenente-coronel 65, major 64, capitães e oficiais '
-                'subalternos 63, subtenente 63, 1º sargento 57, cabo 54 e '
-                'soldado de 1ª classe 50 anos.',
+                    'subalternos 63, subtenente 63, 1º sargento 57, cabo 54 e '
+                    'soldado de 1ª classe 50 anos.',
               ),
               item(
                 'LC/RR 305/2022, arts. 120 e 121 — disposições transitórias',
                 'Integral a quem implementou, cumulativamente até 31/12/2021, '
-                '30 anos de contribuição (homem) ou 25 (mulher) e 20 anos de '
-                'efetivo serviço na PMRR/CBMRR (homem) ou 15 (mulher). É '
-                'também a data-base adotada neste cálculo.',
+                    '30 anos de contribuição (homem) ou 25 (mulher) e 20 anos de '
+                    'efetivo serviço na PMRR/CBMRR (homem) ou 15 (mulher). É '
+                    'também a data-base adotada neste cálculo.',
               ),
               item(
                 'LC/RR 308/2022',
                 'Alterou a LC/RR 194/2012 (Estatuto), remetendo os requisitos '
-                'de reserva remunerada à Lei do Sistema de Proteção Social '
-                'dos Militares de Roraima.',
+                    'de reserva remunerada à Lei do Sistema de Proteção Social '
+                    'dos Militares de Roraima.',
               ),
             ],
           ),
@@ -875,7 +880,6 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
         ]),
       );
 }
-
 
 /// Fases da tela: preencher, apurar, ver o resultado.
 enum _Fase { formulario, calculando, pronto }
@@ -1040,23 +1044,19 @@ class _LinhaEtapa extends StatelessWidget {
           ),
           const SizedBox(width: 13),
           Expanded(
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(etapa.titulo,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight:
-                            ativa ? FontWeight.bold : FontWeight.w600,
-                        color: ativa ? cor : null,
-                        fontSize: 14,
-                      )),
-                  const SizedBox(height: 2),
-                  Text(etapa.detalhe,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: 11.5,
-                          height: 1.35,
-                          color: theme.hintColor)),
-                ]),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(etapa.titulo,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: ativa ? FontWeight.bold : FontWeight.w600,
+                    color: ativa ? cor : null,
+                    fontSize: 14,
+                  )),
+              const SizedBox(height: 2),
+              Text(etapa.detalhe,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                      fontSize: 11.5, height: 1.35, color: theme.hintColor)),
+            ]),
           ),
         ]),
       ),
@@ -1066,24 +1066,39 @@ class _LinhaEtapa extends StatelessWidget {
 
 // ─── Componentes visuais ─────────────────────────────────────────────────────
 
+/// Superfície dos cards do módulo. Era um `Container` com cor e borda
+/// próprias — mais uma superfície opaca fora do padrão, justamente o que o
+/// DESIGN.md §2 manda não refazer. Agora é o `CartaoVidro` do app, com o
+/// mesmo recheio dos cards do painel.
 class _Card extends StatelessWidget {
   final Widget child;
-  const _Card({required this.child});
+  final String? titulo;
+  final IconData? icone;
+
+  const _Card({required this.child, this.titulo, this.icone});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80)),
+    return CartaoVidro(
+      raio: 16,
+      child: Padding(
+        padding: kPaddingCartao,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (titulo != null) ...[
+              CabecalhoCartao(
+                icone: icone ?? Icons.info_outline_rounded,
+                titulo: titulo!,
+                mostrarSeta: false,
+              ),
+              const SizedBox(height: 14),
+            ],
+            child,
+          ],
+        ),
       ),
-      child: child,
     );
   }
 }
@@ -1108,16 +1123,20 @@ class _TagSistema extends StatelessWidget {
 }
 
 /// Campo numérico compacto usado nos trios anos/meses/dias.
+/// Só a caixa. O rótulo da unidade fica **fora**, abaixo dela.
+///
+/// Antes era `suffixText` dentro do campo, e ele simplesmente não aparecia:
+/// o InputDecorator esconde prefixo e sufixo enquanto o campo está vazio e
+/// sem foco. O resultado eram três caixas idênticas com "0", sem nada que
+/// dissesse qual era ano, mês ou dia.
 class _MiniNumero extends StatefulWidget {
   final int? valorInicial;
-  final String sufixo;
   final int max;
   final ValueChanged<int> onChanged;
 
   const _MiniNumero({
     Key? key,
     required this.valorInicial,
-    required this.sufixo,
     required this.onChanged,
     this.max = 99,
   }) : super(key: key);
@@ -1146,7 +1165,6 @@ class _MiniNumeroState extends State<_MiniNumero> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return TextField(
       controller: _c,
       keyboardType: TextInputType.number,
@@ -1154,14 +1172,12 @@ class _MiniNumeroState extends State<_MiniNumero> {
         FilteringTextInputFormatter.digitsOnly,
         LengthLimitingTextInputFormatter(2),
       ],
-      style: theme.textTheme.bodyMedium,
-      decoration: InputDecoration(
+      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+      textAlign: TextAlign.center,
+      decoration: const InputDecoration(
         hintText: '0',
-        suffixText: widget.sufixo,
-        suffixStyle: TextStyle(fontSize: 10, color: theme.hintColor),
         isDense: true,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 13),
         filled: true,
       ),
       onChanged: (s) {
@@ -1209,13 +1225,14 @@ class _CardRegime extends StatelessWidget {
       child: Row(children: [
         Container(
           padding: const EdgeInsets.all(9),
-          decoration:
-              BoxDecoration(color: cor.withOpacity(0.16), shape: BoxShape.circle),
+          decoration: BoxDecoration(
+              color: cor.withOpacity(0.16), shape: BoxShape.circle),
           child: Icon(icone, color: cor, size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('Regime aplicável',
                 style: theme.textTheme.labelSmall
                     ?.copyWith(color: theme.hintColor)),
@@ -1358,7 +1375,9 @@ class _CardRequisito extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              ok ? 'cumprido' : '${(requisito.percentual * 100).toStringAsFixed(1)}%',
+              ok
+                  ? 'cumprido'
+                  : '${(requisito.percentual * 100).toStringAsFixed(1)}%',
               style: TextStyle(
                   fontSize: 10.5, fontWeight: FontWeight.bold, color: cor),
             ),
@@ -1386,7 +1405,8 @@ class _CardRequisito extends StatelessWidget {
             valor: TempoFmt.curto(requisito.exigidoDias),
             detalhe: requisito.detalheExigido,
           ),
-          _Metrica(rotulo: 'Você tem', valor: TempoFmt.curto(requisito.atualDias)),
+          _Metrica(
+              rotulo: 'Você tem', valor: TempoFmt.curto(requisito.atualDias)),
           _Metrica(
             rotulo: 'Falta',
             valor: ok ? '—' : TempoFmt.curto(requisito.faltaDias),
@@ -1500,11 +1520,11 @@ class _CardPedagio extends StatelessWidget {
         linha('Mínimo de serviço militar', '$minCorporacao anos'),
         linha('Seu serviço militar na Data Base',
             TempoFmt.curto(r.diasTempoServicoMilitar)),
-        linha('Faltante',
-            TempoFmt.curto(r.faltanteServicoNaDataCorteDias)),
+        linha('Faltante', TempoFmt.curto(r.faltanteServicoNaDataCorteDias)),
         linha('Anos faltantes (truncados)', '${r.anosFaltantesAcrescimo}'),
         linha('Acréscimo (4 meses por ano)',
-            '${r.acrescimoAtividadeMilitarMeses} meses', forte: true),
+            '${r.acrescimoAtividadeMilitarMeses} meses',
+            forte: true),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(10),
@@ -1521,8 +1541,8 @@ class _CardPedagio extends StatelessWidget {
                 : 'Os dois pedágios são independentes e precisam ser cumpridos '
                     'juntos: cada um tem sua própria base de cálculo e a '
                     'integralidade só vem quando o último deles fechar.',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(fontSize: 11, height: 1.35),
+            style:
+                theme.textTheme.bodySmall?.copyWith(fontSize: 11, height: 1.35),
           ),
         ),
       ]),
@@ -1679,14 +1699,13 @@ class _CardReforma extends StatelessWidget {
           decoration: BoxDecoration(
             color: (cor ?? theme.hintColor).withOpacity(0.07),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-                color: (cor ?? theme.hintColor).withOpacity(0.25)),
+            border:
+                Border.all(color: (cor ?? theme.hintColor).withOpacity(0.25)),
           ),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             if (tag != null) ...[
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
                   color: theme.hintColor.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(5),
@@ -1700,16 +1719,17 @@ class _CardReforma extends StatelessWidget {
               const SizedBox(width: 10),
             ],
             Expanded(
-              child:
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(titulo,
-                    style: theme.textTheme.labelMedium
-                        ?.copyWith(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 2),
-                Text(corpo,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(fontSize: 11.5, height: 1.4)),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(titulo,
+                        style: theme.textTheme.labelMedium
+                            ?.copyWith(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 2),
+                    Text(corpo,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(fontSize: 11.5, height: 1.4)),
+                  ]),
             ),
           ]),
         );
@@ -1862,8 +1882,8 @@ class _CardMemorial extends StatelessWidget {
               flex: 2,
               child: Text(val,
                   textAlign: TextAlign.right,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                      fontSize: 11, fontWeight: FontWeight.w600)),
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(fontSize: 11, fontWeight: FontWeight.w600)),
             ),
           ]),
         );
@@ -1979,8 +1999,8 @@ class _CardAvisos extends StatelessWidget {
                   child: Container(
                     width: 4,
                     height: 4,
-                    decoration: const BoxDecoration(
-                        color: cor, shape: BoxShape.circle),
+                    decoration:
+                        const BoxDecoration(color: cor, shape: BoxShape.circle),
                   ),
                 ),
                 const SizedBox(width: 9),
