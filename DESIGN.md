@@ -49,6 +49,7 @@ Você não precisa fazer `if (Platform.isAndroid)` na sua tela. Use o componente
 | `dialogoConfirmacao` | `lib/widgets/dialogo_confirmacao.dart` | Confirmar ação destrutiva |
 | `RequisitosSenha`, `AvisoCaixa`, `decoracaoCampo` | `lib/widgets/requisitos_senha.dart` | Telas de senha e acesso |
 | `VersaoApp`, `TextoVersao` | `lib/widgets/versao_app.dart` | Versão do app (lê do `PackageInfo`, nunca hardcode) |
+| `CabecalhoCartao`, `DestaqueCartao`, `BarraProgressoCartao`, `PilulaCartao`, `ParCartao`, `MarcadorCartao`, `DivisorCartao`, `RodapeCartao` | `lib/widgets/cartao_painel.dart` | As peças dos cards do painel — ver §2b |
 
 ### `CartaoVidro`
 
@@ -70,6 +71,45 @@ CartaoVidro(
 Vidro tingido com a primária do tema. **O conteúdo usa as cores do tema**
 (`onSurface`, `primary`), nunca `Colors.white` fixo — no modo claro o fundo
 dele é claro.
+
+---
+
+## 2b. Gramática dos cards do painel
+
+Os cards de dado da Início — tempo de serviço, contracheque, plano de férias —
+seguem todos a mesma ordem:
+
+```
+cabeçalho discreto  →  UM número grande  →  apoio  →  rodapé
+```
+
+O peso fica todo no número. Tudo em volta é cinza de apoio, e só a ação
+(pílula, link) usa azul. Antes era o contrário: selo, chip, badge e barra
+disputavam atenção e o dado em si saía em 11pt espremido dentro da barra de
+progresso.
+
+Regras que caem desse desenho:
+
+- **Nada de quadradinho tingido atrás do ícone do cabeçalho.** É uma segunda
+  superfície dentro de uma superfície — o empilhamento de tons do §3b.
+- **Um rótulo por bloco**, em caixa alta, 11pt, na primária (`estiloRotulo`).
+- **Barra de progresso sem texto dentro.** Rótulo sobre barra colorida não
+  fecha 4.5:1 em toda a extensão, porque o fundo muda no meio dela.
+- **Legenda de quadradinhos coloridos, não.** Quando há duas origens de dado,
+  a barra sai em dois tons e o rodapé nomeia a segunda em uma frase.
+- **Selo não pisca.** O `NOVO` do contracheque tinha um `AnimationController`
+  em `repeat(reverse: true)` eterno; movimento aqui responde a estado, não
+  decora (§7).
+- Cada card usa `kPaddingCartao` e raio 16, para que empilhados pareçam a
+  mesma família.
+- **Pílula cheia só para o que é curto e pontual.** O countdown das férias
+  era uma faixa azul de 40pt dizendo "Começam em 69 dias"; virou uma linha de
+  texto com o azul só na parte que importa, e sobrou espaço para dizer também
+  quanto dura o período. Frase explica mais que selo e ocupa menos.
+- **Rótulo diz a posição, não só o nome.** "2ª parcela" não responde de
+  quantas; "2ª de 2 parcelas" responde.
+- Os tamanhos saem de `AppDisplaySize`, nunca de um número solto no card —
+  foi assim que os três voltaram a divergir depois da primeira padronização.
 
 ---
 
@@ -166,6 +206,19 @@ Nada de multiplicar tudo por um fator. Havia um `scale = 0.82` nessa tela que
 transformava 13 em 10,66 e 11,5 em 9,43 — valores arbitrários, exatamente o
 que a regra de consistência proíbe. Use os números da escala: 10, 11, 12, 13,
 14, 16, 18.
+
+Acima disso há a escala de display, só para o número herói de um card
+(`AppDisplaySize`, em `cartao_painel.dart`):
+
+| Token | Valor | Onde |
+|---|---|---|
+| `heroi` | 28 | o número principal do card |
+| `heroiMenor` | 24 | quando o texto é longo — datas, moeda |
+| `apoio` | 17 | a segunda linha do herói |
+| `valor` | 18 | valor de um par rótulo/valor |
+
+Herói sempre dentro de `FittedBox(fit: BoxFit.scaleDown)`: é texto vindo de
+dado, e um nome de mês comprido não pode estourar o card.
 
 ---
 
@@ -303,4 +356,8 @@ Confirmar e-mail, Alterar senha, modal de biometria.
 
 Detalhe de comando (`detalhes_mapa_forca_comando_page.dart`) também: era a
 última tela feita de superfícies azuis sólidas com texto branco.
+
+Os três cards de dado da Início foram refeitos na gramática do §2b. Os três
+fixavam `const primaryBlue = Color(0xFF1565C0)` no próprio arquivo — o azul
+não vinha do tema em nenhum deles.
 

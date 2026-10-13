@@ -1,13 +1,49 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'cartao_painel.dart';
 import 'vidro.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import '../models/auth_model.dart';
 import '../utils/app_routes.dart';
-import '../utils/app_theme.dart';
+
+/// Um trecho de férias já resolvido em datas, para o card não ficar
+/// remexendo em string crua no meio do layout.
+class _Periodo {
+  const _Periodo(this.rotulo, this.inicio, this.fim);
+
+  final String rotulo;
+  final DateTime? inicio;
+  final DateTime? fim;
+
+  bool get concluido =>
+      fim != null && fim!.isBefore(DateTime.now());
+
+  bool get emAndamento {
+    final hoje = DateTime.now();
+    if (inicio == null) return false;
+    return !inicio!.isAfter(hoje) && (fim == null || !fim!.isBefore(hoje));
+  }
+
+  /// Quantos dias o período dura, com as duas pontas incluídas.
+  int? get duracao {
+    if (inicio == null || fim == null) return null;
+    final d = fim!.difference(inicio!).inDays + 1;
+    return d > 0 ? d : null;
+  }
+
+  /// Dias até começar, contando hoje como zero.
+  int? get faltam {
+    if (inicio == null) return null;
+    final hoje = DateTime.now();
+    final d = DateTime(inicio!.year, inicio!.month, inicio!.day)
+        .difference(DateTime(hoje.year, hoje.month, hoje.day))
+        .inDays;
+    return d > 0 ? d : null;
+  }
+}
 
 class HomePlanoFeriasCard extends StatefulWidget {
   const HomePlanoFeriasCard({Key? key}) : super(key: key);
@@ -90,34 +126,38 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
             (fi.toString() == '1' || fi.toString().toLowerCase() == 'true'));
   }
 
-  // Retorna {label, color, icon} para o status do período
-  ({String label, Color color, IconData icon})? _periodoStatus(
-      String startRaw, String endRaw) {
-    final startDt = _tryParse(startRaw);
-    if (startDt == null) return null;
-    final endDt = _tryParse(endRaw);
-    final now = DateTime.now();
-    if (endDt != null && endDt.isBefore(now)) {
+  static const _meses = [
+    'jan', 'fev', 'mar', 'abr', 'mai', 'jun',
+    'jul', 'ago', 'set', 'out', 'nov', 'dez',
+  ];
+
+  /// "6 — 20 jul de 2026" quando cabe no mesmo mês, "21 dez — 4 jan" quando
+  /// atravessa. O ano sai separado, na linha de apoio, porque repetir
+  /// "2026" duas vezes na mesma frase é ruído.
+  ({String intervalo, String? anos}) _formatar(DateTime? i, DateTime? f) {
+    if (i == null && f == null) return (intervalo: '—', anos: null);
+    if (i == null || f == null) {
+      final d = (i ?? f)!;
       return (
-        label: 'Concluído',
-        color: Colors.grey,
-        icon: Icons.check_circle_outline
+        intervalo: '${d.day} ${_meses[d.month - 1]}',
+        anos: '${d.year}',
       );
     }
-    if (startDt.isBefore(now) ||
-        startDt.isAtSameMomentAs(DateTime(now.year, now.month, now.day))) {
+    if (i.year == f.year && i.month == f.month) {
       return (
-        label: 'Em andamento',
-        color: const Color(0xFF22C55E),
-        icon: Icons.play_circle_outline
+        intervalo: '${i.day} — ${f.day} ${_meses[i.month - 1]}',
+        anos: '${i.year}',
       );
     }
-    final days = startDt.difference(now).inDays + 1;
-    final label = days == 1 ? 'Amanhã' : 'Em ${days}d';
-    return (label: label, color: AppColors.blue, icon: Icons.schedule_outlined);
+    final intervalo =
+        '${i.day} ${_meses[i.month - 1]} — ${f.day} ${_meses[f.month - 1]}';
+    return (
+      intervalo: intervalo,
+      anos: i.year == f.year ? '${i.year}' : '${i.year} → ${f.year}',
+    );
   }
 
-  // ── Skeleton ─────────────────────────────────────────────────────────
+  // ── Esqueleto ────────────────────────────────────────────────────────
   Widget _buildSkeleton(bool isDark) {
     final base =
         isDark ? Colors.white.withValues(alpha: 0.07) : Colors.grey.shade200;
@@ -125,348 +165,266 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
         Container(
           width: w,
           height: h,
-          margin: const EdgeInsets.only(bottom: 6),
+          margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
               color: base, borderRadius: BorderRadius.circular(r)),
         );
     return CartaoVidro(
       raio: 16,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        padding: kPaddingCartao,
         child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(children: [
-                blob(w: 36, h: 36, r: 10),
-                const SizedBox(width: 10),
-                Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [blob(w: 110, h: 12), blob(w: 60, h: 10)]),
-                const Spacer(),
-                blob(w: 52, h: 24, r: 20),
-              ]),
-              const SizedBox(height: 14),
-              blob(h: 44, r: 10),
+              blob(w: 160, h: 18),
+              const SizedBox(height: 8),
+              blob(w: 120, h: 11),
+              blob(w: 210, h: 25, r: 10),
               const SizedBox(height: 6),
-              blob(h: 44, r: 10),
+              blob(w: 180, h: 32, r: 20),
             ]),
       ),
     );
   }
 
-  // ── Linha de período ─────────────────────────────────────────────────
-  Widget _buildPeriodRow({
-    required String label,
-    required String startRaw,
-    required String startFmt,
-    required String endFmt,
-    required bool isDark,
-  }) {
-    final status =
-        _periodoStatus(startRaw, _tryParse(endFmt) != null ? endFmt : '');
-    final bgColor = isDark
-        ? Colors.white.withValues(alpha: 0.04)
-        : AppColors.blue.withValues(alpha: 0.04);
-    final borderColor =
-        isDark ? AppColors.darkBorder : AppColors.blue.withValues(alpha: 0.15);
+  // ── Linha de um período secundário ───────────────────────────────────
+  // Uma linha só: rótulo à esquerda, datas à direita. Antes eram duas
+  // linhas mais um círculo de 24px para dizer "1ª parcela, concluída".
+  Widget _linhaPeriodo(BuildContext context, _Periodo p) {
+    final d = _formatar(p.inicio, p.fim);
+    final sufixo = d.anos == null ? '' : ' de ${d.anos}';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 5),
-      padding: const EdgeInsets.fromLTRB(10, 7, 10, 7),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: borderColor, width: 0.8),
-      ),
-      child: Row(children: [
-        Icon(Icons.event_outlined, size: 14, color: AppColors.blue),
-        const SizedBox(width: 8),
-        Expanded(
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(label.toUpperCase(),
-                style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.4,
-                    color: isDark ? Colors.white54 : Colors.black45)),
-            const SizedBox(height: 2),
-            Text(
-              '${startFmt.isNotEmpty ? startFmt : "—"}  →  ${endFmt.isNotEmpty ? endFmt : "—"}',
-              style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B)),
-            ),
-          ]),
-        ),
-        if (status != null) ...[
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-            decoration: BoxDecoration(
-              color: status.color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(status.icon, size: 10, color: status.color),
-              const SizedBox(width: 3),
-              Text(status.label,
-                  style: TextStyle(
-                      fontSize: 9,
-                      color: status.color,
-                      fontWeight: FontWeight.w700)),
-            ]),
+    return Row(
+      children: [
+        MarcadorCartao(concluido: p.concluido),
+        const SizedBox(width: 10),
+        Text(
+          p.rotulo,
+          style: TextStyle(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context)
+                .colorScheme
+                .onSurface
+                .withValues(alpha: p.concluido ? 0.72 : 0.92),
           ),
-        ],
-      ]),
+        ),
+        const Spacer(),
+        Text('${d.intervalo}$sufixo',
+            style: TextStyle(fontSize: 12.5, color: TomCartao.medio(context))),
+      ],
+    );
+  }
+
+  // ── Card vazio ───────────────────────────────────────────────────────
+  Widget _buildVazio(BuildContext context) {
+    return CartaoVidro(
+      raio: 16,
+      onTap: () =>
+          Navigator.of(context).pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE),
+      child: Padding(
+        padding: kPaddingCartao,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CabecalhoCartao(
+              icone: Icons.beach_access_outlined,
+              titulo: 'Plano de férias',
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'Nenhum plano cadastrado para este ano.',
+              style: TextStyle(fontSize: 15, color: TomCartao.medio(context)),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final t = Theme.of(context);
-    const primaryBlue = Color(0xFF1565C0);
-    const bgAccent = Color(0xFFE3F2FD);
 
     return FutureBuilder<Map<String, dynamic>?>(
       future: _futurePlan,
       builder: (ctx, snap) {
-        if (snap.connectionState == ConnectionState.waiting)
+        if (snap.connectionState == ConnectionState.waiting) {
           return _buildSkeleton(isDark);
+        }
 
         final r = snap.data;
+        if (r == null) return _buildVazio(context);
 
-        // Estado vazio / erro
-        if (r == null) {
-          return CartaoVidro(
-            raio: 16,
-            child: InkWell(
-              onTap: () => Navigator.of(context)
-                  .pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE),
-              borderRadius: BorderRadius.circular(16),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                child: Row(children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? primaryBlue.withValues(alpha: 0.18)
-                          : bgAccent,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.beach_access_rounded,
-                        color: primaryBlue, size: 18),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text('Nenhum plano de férias para o ano atual.',
-                        style:
-                            TextStyle(color: Colors.grey[500], fontSize: 13)),
-                  ),
-                  const Icon(Icons.chevron_right_rounded,
-                      size: 16, color: primaryBlue),
-                ]),
-              ),
-            ),
-          );
-        }
-
-        // Dados disponíveis
-        final ano =
-            (r['ano_base_nome'] ?? r['ano'] ?? r['year'])?.toString() ?? '';
+        final ano = (r['ano_base_nome'] ?? r['ano'] ?? r['year'])?.toString() ??
+            '${DateTime.now().year}';
         final integral = _isIntegral(r);
 
-        final prevIniRaw = _fmtDate(r['prev_feri_inicio']);
-        final prevFimRaw = _fmtDate(r['prev_feri_final']);
-        final p1i = _fmtDate(r['1p_inicio']);
-        final p1f = _fmtDate(r['1p_fim']);
-        final p2i = _fmtDate(r['2p_inicio']);
-        final p2f = _fmtDate(r['2p_fim']);
-        final p3i = _fmtDate(r['3p_inicio']);
-        final p3f = _fmtDate(r['3p_fim']);
+        DateTime? dt(dynamic v) => _tryParse(_fmtDate(v));
 
-        final prevAntRaw = (r['prev_feri_antecipado'] ??
-                r['prev_feri_antecipado_format'] ??
-                '')
-            .toString();
-        String? antecipadoLabel;
-        if (prevAntRaw.isNotEmpty) {
-          final v = prevAntRaw.toLowerCase();
-          if (v == 'a')
-            antecipadoLabel = '13º pago no aniversário';
-          else if (v == 'b')
-            antecipadoLabel = '13º pago parcelado';
-          else
-            antecipadoLabel = prevAntRaw;
-        }
-
-        // Próxima data futura (para badge global)
-        DateTime? nearest;
-        for (final raw in [prevIniRaw, p1i, p2i, p3i]) {
-          if (raw.isEmpty) continue;
-          final dt = _tryParse(raw);
-          if (dt == null) continue;
-          if (!dt.isBefore(DateTime.now())) {
-            if (nearest == null || dt.isBefore(nearest)) nearest = dt;
+        final periodos = <_Periodo>[];
+        if (integral) {
+          final i = dt(r['prev_feri_inicio']);
+          final f = dt(r['prev_feri_final']);
+          if (i != null || f != null) {
+            periodos.add(_Periodo('Período integral', i, f));
+          }
+        } else {
+          const rotulos = ['1ª parcela', '2ª parcela', '3ª parcela'];
+          const chaves = [
+            ['1p_inicio', '1p_fim'],
+            ['2p_inicio', '2p_fim'],
+            ['3p_inicio', '3p_fim'],
+          ];
+          for (var n = 0; n < chaves.length; n++) {
+            final i = dt(r[chaves[n][0]]);
+            final f = dt(r[chaves[n][1]]);
+            if (i != null || f != null) {
+              periodos.add(_Periodo(rotulos[n], i, f));
+            }
           }
         }
-        final daysLeft = nearest != null
-            ? nearest.difference(DateTime.now()).inDays + 1
-            : null;
+
+        if (periodos.isEmpty) return _buildVazio(context);
+
+        periodos.sort((a, b) => (a.inicio ?? DateTime(2100))
+            .compareTo(b.inicio ?? DateTime(2100)));
+
+        // O período em destaque é o que ainda vai acontecer — ou o que está
+        // acontecendo. Com tudo no passado, destaca-se o último, já concluído.
+        final destaque = periodos.firstWhere(
+          (p) => !p.concluido,
+          orElse: () => periodos.last,
+        );
+        final outros = periodos.where((p) => p != destaque).toList();
+
+        final d = _formatar(destaque.inicio, destaque.fim);
+        final faltam = destaque.faltam;
+
+        // "2ª de 2 parcelas" responde o que "2ª parcela" sozinho deixava no
+        // ar: quantas são, e em qual delas o militar está.
+        final posicao = periodos.indexOf(destaque) + 1;
+        final rotuloDestaque = integral
+            ? 'Período integral'
+            : '${posicao}ª de ${periodos.length} '
+                '${periodos.length == 1 ? 'parcela' : 'parcelas'}';
+
+        // A pílula azul virou frase. Ela ocupava uma faixa inteira do card
+        // para dizer uma coisa que cabe numa linha de texto — e frase diz
+        // mais: quando começa e quanto dura.
+        final String quando;
+        if (destaque.concluido) {
+          quando = 'Período concluído';
+        } else if (destaque.emAndamento) {
+          quando = 'Em andamento agora';
+        } else if (faltam == null) {
+          quando = 'A começar';
+        } else if (faltam == 1) {
+          quando = 'Começam amanhã';
+        } else {
+          quando = 'Começam em $faltam dias';
+        }
+
+        final duracao = destaque.duracao;
+
+        // 13º antecipado
+        final prevAntRaw =
+            (r['prev_feri_antecipado'] ?? r['prev_feri_antecipado_format'] ?? '')
+                .toString();
+        String? antecipado;
+        if (prevAntRaw.isNotEmpty) {
+          final v = prevAntRaw.toLowerCase();
+          antecipado = v == 'a'
+              ? '13º pago no aniversário'
+              : v == 'b'
+                  ? '13º pago parcelado'
+                  : prevAntRaw;
+        }
 
         return CartaoVidro(
           raio: 16,
-          child: InkWell(
-            onTap: () =>
-                Navigator.of(context).pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE),
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-              child: Column(
+          onTap: () =>
+              Navigator.of(context).pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE),
+          child: Stack(
+            children: [
+              // Marca d'água: dá profundidade ao bloco do destaque sem
+              // disputar leitura. Fora da árvore semântica, é decoração.
+              Positioned(
+                top: 38,
+                right: -10,
+                child: ExcludeSemantics(
+                  child: Icon(
+                    Icons.calendar_month_outlined,
+                    size: 92,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.05),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: kPaddingCartao,
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // ── Header ────────────────────────────────────────────
-                    Row(children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? primaryBlue.withValues(alpha: 0.18)
-                              : bgAccent,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.beach_access_rounded,
-                            color: primaryBlue, size: 18),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Plano de Férias',
-                                  style: t.textTheme.titleSmall
-                                      ?.copyWith(fontWeight: FontWeight.bold)),
-                              Row(children: [
-                                Text(
-                                    'Ano ${ano.isNotEmpty ? ano : DateTime.now().year}',
-                                    style: t.textTheme.labelSmall
-                                        ?.copyWith(color: Colors.grey[500])),
-                                if (!integral) ...[
-                                  const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 1),
-                                    decoration: BoxDecoration(
-                                      color: Colors.amber.withValues(
-                                          alpha: isDark ? 0.18 : 0.12),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text('PARCELADA',
-                                        style: TextStyle(
-                                            fontSize: 8.5,
-                                            fontWeight: FontWeight.w800,
-                                            color: isDark
-                                                ? Colors.amber.shade300
-                                                : Colors.amber.shade800)),
-                                  ),
-                                ],
-                              ]),
-                            ]),
-                      ),
-                      // Countdown badge
-                      if (daysLeft != null && daysLeft > 0)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: primaryBlue.withValues(
-                                alpha: isDark ? 0.18 : 0.10),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            daysLeft == 1 ? 'Amanhã' : 'Em ${daysLeft}d',
-                            style: const TextStyle(
-                                color: primaryBlue,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                    ]),
+                    CabecalhoCartao(
+                      icone: Icons.beach_access_outlined,
+                      titulo: 'Plano de férias',
+                      // O ano-base é o que diz se estas são as férias do ano
+                      // corrente ou um período atrasado sendo gozado agora —
+                      // a data sozinha não conta isso.
+                      meta: 'Ref. $ano',
+                    ),
+                    const SizedBox(height: 12),
+
+                    DestaqueCartao(
+                      rotulo: rotuloDestaque,
+                      valor: d.intervalo,
+                      tamanho: AppDisplaySize.heroiMenor,
+                    ),
 
                     const SizedBox(height: 8),
 
-                    // ── Períodos com status ────────────────────────────────
-                    if (integral) ...[
-                      if (prevIniRaw.isNotEmpty || prevFimRaw.isNotEmpty)
-                        _buildPeriodRow(
-                          label: 'Período Integral',
-                          startRaw: prevIniRaw,
-                          startFmt: prevIniRaw,
-                          endFmt: prevFimRaw,
-                          isDark: isDark,
+                    Text.rich(
+                      TextSpan(children: [
+                        TextSpan(
+                          text: quando,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                         ),
-                    ] else ...[
-                      if (p1i.isNotEmpty || p1f.isNotEmpty)
-                        _buildPeriodRow(
-                            label: '1ª Parcela',
-                            startRaw: p1i,
-                            startFmt: p1i,
-                            endFmt: p1f,
-                            isDark: isDark),
-                      if (p2i.isNotEmpty || p2f.isNotEmpty)
-                        _buildPeriodRow(
-                            label: '2ª Parcela',
-                            startRaw: p2i,
-                            startFmt: p2i,
-                            endFmt: p2f,
-                            isDark: isDark),
-                      if (p3i.isNotEmpty || p3f.isNotEmpty)
-                        _buildPeriodRow(
-                            label: '3ª Parcela',
-                            startRaw: p3i,
-                            startFmt: p3i,
-                            endFmt: p3f,
-                            isDark: isDark),
+                        if (duracao != null)
+                          TextSpan(
+                            text: '  ·  $duracao '
+                                '${duracao == 1 ? 'dia' : 'dias'} de férias',
+                            style: TextStyle(color: TomCartao.medio(context)),
+                          ),
+                      ]),
+                      style: const TextStyle(fontSize: 13.5),
+                    ),
+
+                    for (final p in outros) ...[
+                      const DivisorCartao(espaco: 12),
+                      _linhaPeriodo(context, p),
                     ],
 
-                    // ── Footer: 13º + Ver detalhes ───────────────────────
-                    Row(children: [
-                      if (antecipadoLabel != null) ...[
-                        Icon(Icons.monetization_on_outlined,
-                            size: 13,
-                            color: isDark
-                                ? Colors.amber.shade300
-                                : Colors.amber.shade700),
-                        const SizedBox(width: 5),
-                        Expanded(
-                          child: Text(antecipadoLabel,
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark
-                                      ? Colors.amber.shade300
-                                      : Colors.amber.shade800),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis),
-                        ),
-                      ] else
-                        const Spacer(),
-                      Text('Ver detalhes',
-                          style: TextStyle(
-                              color: primaryBlue,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600)),
-                      const SizedBox(width: 2),
-                      const Icon(Icons.chevron_right_rounded,
-                          size: 16, color: primaryBlue),
-                    ]),
-                  ]),
-            ),
+                    const DivisorCartao(espaco: 12),
+                    RodapeCartao(
+                      icone: antecipado == null
+                          ? null
+                          : Icons.info_outline_rounded,
+                      texto: antecipado,
+                      acaoTexto: 'Ver detalhes',
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         );
       },

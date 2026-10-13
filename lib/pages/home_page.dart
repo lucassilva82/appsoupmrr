@@ -75,9 +75,9 @@ class _HomeBodyState extends State<HomeBody>
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Column(
               children: [
-                CardTempoServico(),
-                const SizedBox(height: 10),
                 const HomeContrachequeCard(),
+                const SizedBox(height: 10),
+                CardTempoServico(),
                 const SizedBox(height: 10),
                 const HomePlanoFeriasCard(),
               ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'cartao_painel.dart';
 import 'vidro.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +8,7 @@ import '../models/auth_model.dart';
 import '../models/meses_contracheque_model.dart';
 import '../services/dados_sql.dart';
 import '../utils/app_routes.dart';
+import '../utils/app_theme.dart';
 
 class HomeContrachequeCard extends StatefulWidget {
   const HomeContrachequeCard({Key? key}) : super(key: key);
@@ -33,8 +35,7 @@ class _Vinculo {
   double get liquido => proventos - descontos;
 }
 
-class _HomeContrachequeCardState extends State<HomeContrachequeCard>
-    with TickerProviderStateMixin {
+class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
   late Future<List<_Vinculo>?> _futureContracheque =
       Future.value(null); // valor seguro até initState carregar
 
@@ -48,9 +49,6 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard>
   List<_Vinculo> _vinculos = const [];
   MesesContracheque? _ultimoMes;
 
-  late final AnimationController _pulseCtrl;
-  late final Animation<double> _pulseAnim;
-
   bool get _isCurrentMonth {
     if (_mesNumero == null || ano == null) return false;
     final now = DateTime.now();
@@ -60,24 +58,11 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard>
   @override
   void initState() {
     super.initState();
-    _pulseCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
-    _pulseAnim = Tween<double>(begin: 0.45, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
-    );
     final auth = Provider.of<Auth>(context, listen: false);
     final cpf = auth.cpf;
     if (cpf != null && cpf.isNotEmpty) {
       _futureContracheque = _buscarUltimoContracheque(cpf);
     }
-  }
-
-  @override
-  void dispose() {
-    _pulseCtrl.dispose();
-    super.dispose();
   }
 
   Future<List<_Vinculo>?> _buscarUltimoContracheque(String cpf) async {
@@ -190,102 +175,64 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard>
   }
 
   // ── Skeleton compacto (espelha o novo layout) ───────────────────────
-  Widget _buildSkeleton(bool isDark) {
-    final base =
-        isDark ? Colors.white.withValues(alpha: 0.07) : Colors.grey.shade200;
-    blob({double w = double.infinity, double h = 12.0, double r = 6.0}) =>
-        Container(
-          width: w,
-          height: h,
-          decoration: BoxDecoration(
-              color: base, borderRadius: BorderRadius.circular(r)),
-        );
-    return CartaoVidro(
-      raio: 16,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Linha 1
-            Row(children: [
-              blob(w: 30, h: 30, r: 9),
-              const SizedBox(width: 9),
-              blob(w: 90, h: 12, r: 6),
-              const SizedBox(width: 8),
-              blob(w: 60, h: 20, r: 6),
-              const Spacer(),
-              blob(w: 20, h: 20, r: 6),
-            ]),
-            const SizedBox(height: 10),
-            // Linha 2: 3 colunas
-            IntrinsicHeight(
-              child: Row(children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      blob(w: 50, h: 9, r: 4),
-                      const SizedBox(height: 4),
-                      blob(w: 70, h: 12, r: 4)
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      blob(w: 40, h: 9, r: 4),
-                      const SizedBox(height: 4),
-                      blob(w: 100, h: 14, r: 4)
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      blob(w: 50, h: 9, r: 4),
-                      const SizedBox(height: 4),
-                      blob(w: 70, h: 12, r: 4)
-                    ],
-                  ),
-                ),
-              ]),
-            ),
-          ],
+  Widget _blob(bool isDark,
+          {double w = double.infinity, double h = 12, double r = 6}) =>
+      Container(
+        width: w,
+        height: h,
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.07)
+              : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(r),
         ),
-      ),
-    );
-  }
+      );
 
-  // ── Error state ───────────────────────────────────────────────────────
-  Widget _buildError(bool isDark, String msg) {
-    return CartaoVidro(
-      raio: 16,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
-        child: Row(children: [
-          Icon(Icons.receipt_long_rounded, color: Colors.grey[400], size: 28),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(msg,
-                style: TextStyle(color: Colors.grey[500], fontSize: 13),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis),
+  Widget _buildSkeleton(bool isDark) => CartaoVidro(
+        raio: 16,
+        child: Padding(
+          padding: kPaddingCartao,
+          child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _blob(isDark, w: 150, h: 18),
+                const SizedBox(height: 10),
+                _blob(isDark, w: 70, h: 11),
+                _blob(isDark, w: 220, h: 32, r: 10),
+                const SizedBox(height: 14),
+                _blob(isDark, h: 36, r: 8),
+              ]),
+        ),
+      );
+
+  Widget _buildError(BuildContext context, String msg) => CartaoVidro(
+        raio: 16,
+        onTap: () =>
+            Navigator.of(context).pushNamed(AppRoutes.CONTRACHEQUE_PAGE),
+        child: Padding(
+          padding: kPaddingCartao,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CabecalhoCartao(
+                icone: Icons.receipt_long_outlined,
+                titulo: 'Contracheque',
+              ),
+              const SizedBox(height: 14),
+              Text(msg,
+                  style:
+                      TextStyle(fontSize: 15, color: TomCartao.medio(context))),
+            ],
           ),
-        ]),
-      ),
-    );
-  }
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final t = Theme.of(context);
 
     return FutureBuilder<List<_Vinculo>?>(
       future: _futureContracheque,
@@ -294,13 +241,13 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard>
           return _buildSkeleton(isDark);
         }
         if (snapshot.hasError) {
-          return _buildError(isDark, 'Erro ao carregar contracheque.');
+          return _buildError(context, 'Não foi possível carregar o contracheque.');
         }
         final dados = snapshot.data;
         if (dados == null || dados.isEmpty) {
-          return _buildError(isDark, 'Nenhum contracheque encontrado.');
+          return _buildError(context, 'Nenhum contracheque encontrado.');
         }
-        return _buildCard(isDark, t);
+        return _buildCard(context, isDark);
       },
     );
   }
@@ -313,26 +260,21 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard>
     );
   }
 
-  Widget _buildCard(bool isDark, ThemeData t) {
+  Widget _buildCard(BuildContext context, bool isDark) {
     final fmt =
         NumberFormat.currency(locale: 'pt_BR', symbol: '', decimalDigits: 2);
-    const primaryBlue = Color(0xFF1565C0);
-    const greenColor = Color(0xFF2E7D32);
-    const redColor = Color(0xFFB71C1C);
-    const bgAccent = Color(0xFFE3F2FD);
-    final divColor =
-        isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.08);
 
-    // Com um vínculo só não há o que expandir: o card inteiro abre o
-    // contracheque, como era antes.
+    // Verde e vermelho por modo — o par do Material reprova em contraste
+    // sobre a base escura nova (ver DESIGN.md §3 Cores).
+    final verde = isDark ? AppColors.sucessoEscuro : AppColors.sucesso;
+    final vermelho = isDark ? AppColors.falhaEscuro : AppColors.falha;
+
     final temVarios = _vinculos.length > 1;
 
-    String maskedOrFmt(double v) =>
-        _showValues ? 'R\$ ${fmt.format(v)}' : '••••••';
+    String valor(double v) => _showValues ? 'R\$ ${fmt.format(v)}' : '••••••';
 
-    // Com vários vínculos a lista já vem aberta e cada linha abre o seu
-    // contracheque; o cartão em si não tem ação para não haver dúvida sobre
-    // qual vínculo seria aberto.
+    // Com um vínculo só, o card inteiro abre a folha. Com vários, não: não
+    // haveria como saber qual deles o toque abriria.
     void aoTocarCartao() {
       if (temVarios) return;
       final folha = _vinculos.isNotEmpty ? _vinculos.first.folha : _ultimoMes;
@@ -343,361 +285,208 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard>
       }
     }
 
+    final referencia = '${mesNome ?? ''} ${ano ?? ''}'.trim();
+
     return CartaoVidro(
       raio: 16,
-      child: InkWell(
-        onTap: aoTocarCartao,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // ── Linha 1: ícone · título · badge · mês · olho ────────────
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? primaryBlue.withValues(alpha: 0.18)
-                          : bgAccent,
-                      borderRadius: BorderRadius.circular(9),
-                    ),
-                    child: const Icon(Icons.receipt_long_rounded,
-                        color: primaryBlue, size: 16),
-                  ),
-                  const SizedBox(width: 9),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text('Contracheque',
-                          style: t.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold, fontSize: 13)),
-                      if (_isCurrentMonth) ...[
-                        const SizedBox(width: 5),
-                        AnimatedBuilder(
-                          animation: _pulseAnim,
-                          builder: (_, __) => Opacity(
-                            opacity: _pulseAnim.value,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 5, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF2E7D32),
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              child: const Text('NOVO',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.8,
-                                  )),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.07)
-                          : Colors.white.withValues(alpha: 0.72),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '${mesNome ?? ''} ${ano ?? ''}',
-                      maxLines: 1,
-                      style: TextStyle(
-                          fontSize: 10,
-                          color: isDark ? Colors.white54 : Colors.black45,
-                          fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: () => setState(() => _showValues = !_showValues),
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Icon(
-                        _showValues
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                        size: 17,
-                        color: Colors.grey[400],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  if (temVarios)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: t.colorScheme.primary
-                            .withValues(alpha: isDark ? 0.18 : 0.10),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        '${_vinculos.length} vínculos',
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w700,
-                          color: t.colorScheme.primary,
-                        ),
-                      ),
-                    )
-                  else
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 16,
-                      color: isDark
-                          ? Colors.white38
-                          : Colors.black.withValues(alpha: 0.28),
-                    ),
-                ],
-              ),
-
-              const SizedBox(height: 10),
-
-              // ── Linha 2: Proventos | Líquido | Descontos ───────────────
-              SizedBox(
-                height: 46,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _compactValue(
-                        label: 'Proventos',
-                        value: maskedOrFmt(bruto),
-                        icon: Icons.arrow_upward_rounded,
-                        color: greenColor,
-                        isDark: isDark,
-                        align: CrossAxisAlignment.start,
-                      ),
-                    ),
-                    Container(
-                        width: 1,
-                        height: 34,
-                        margin: const EdgeInsets.symmetric(horizontal: 10),
-                        color: divColor),
-                    Expanded(
-                      flex: 2,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            temVarios ? 'LÍQUIDO TOTAL' : 'LÍQUIDO',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.2,
-                              color: isDark ? Colors.white38 : Colors.black38,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              _showValues
-                                  ? 'R\$ ${fmt.format(liquido)}'
-                                  : '••••••',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                                color: isDark
-                                    ? Colors.white
-                                    : const Color(0xFF1A1A2E),
-                                letterSpacing: _showValues ? -0.5 : 3,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                        width: 1,
-                        height: 34,
-                        margin: const EdgeInsets.symmetric(horizontal: 10),
-                        color: divColor),
-                    Expanded(
-                      child: _compactValue(
-                        label: 'Descontos',
-                        value: maskedOrFmt(descontos),
-                        icon: Icons.arrow_downward_rounded,
-                        color: redColor,
-                        isDark: isDark,
-                        align: CrossAxisAlignment.end,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // ── Lista dos vínculos ─────────────────────────────────────
-              // Sempre visível: o total sozinho esconderia o fato de haver
-              // mais de um vínculo.
-              if (temVarios) ...[
-                const SizedBox(height: 10),
-                Divider(height: 1, color: divColor),
-                const SizedBox(height: 4),
-                for (final v in _vinculos) _linhaVinculo(v, isDark, fmt),
-              ],
-
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Linha de um vínculo dentro do card expandido ──────────────────────
-  Widget _linhaVinculo(_Vinculo v, bool isDark, NumberFormat fmt) {
-    final theme = Theme.of(context);
-    final cor = theme.colorScheme.primary;
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 6),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => _abrirContracheque(v.folha),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
-            decoration: BoxDecoration(
-              color: cor.withValues(alpha: isDark ? 0.10 : 0.06),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: cor.withValues(alpha: isDark ? 0.22 : 0.16),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.description_outlined, size: 15, color: cor),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        v.rotulo,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 1),
-                      Text(
-                        'Mat. ${v.folha.matricula}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.55),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _showValues
-                          ? 'R\$ ${fmt.format(v.liquido)}'
-                          : '••••••',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: theme.colorScheme.onSurface,
-                        letterSpacing: _showValues ? -0.3 : 2,
-                      ),
-                    ),
-                    const SizedBox(height: 1),
-                    Text(
-                      _showValues
-                          ? '+${fmt.format(v.proventos)} · -${fmt.format(v.descontos)}'
-                          : 'proventos · descontos',
-                      style: TextStyle(
-                        fontSize: 8.5,
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.50),
-                      ),
-                    ),
-                  ],
-                ),
-                Icon(Icons.chevron_right_rounded,
-                    size: 16,
-                    color: theme.colorScheme.onSurface
-                        .withValues(alpha: 0.35)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-
-  Widget _compactValue({
-    required String label,
-    required String value,
-    required IconData icon,
-    required Color color,
-    required bool isDark,
-    required CrossAxisAlignment align,
-  }) {
-    return Column(
-      crossAxisAlignment: align,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Row(
-          mainAxisAlignment: align == CrossAxisAlignment.end
-              ? MainAxisAlignment.end
-              : MainAxisAlignment.start,
+      onTap: temVarios ? null : aoTocarCartao,
+      child: Padding(
+        padding: kPaddingCartao,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 10, color: color),
-            const SizedBox(width: 3),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 9, color: color, fontWeight: FontWeight.w600)),
+            CabecalhoCartao(
+              icone: Icons.receipt_long_outlined,
+              titulo: 'Contracheque',
+              meta: referencia.isEmpty ? null : referencia,
+              mostrarSeta: !temVarios,
+              acao: Semantics(
+                button: true,
+                label: _showValues ? 'Ocultar valores' : 'Mostrar valores',
+                child: InkResponse(
+                  onTap: () => setState(() => _showValues = !_showValues),
+                  radius: 24,
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: Icon(
+                      _showValues
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      size: AppIconSize.sm,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.55),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 6),
+
+            // ── O líquido é o número do card ─────────────────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: DestaqueCartao(
+                    rotulo: temVarios ? 'Líquido total' : 'Líquido',
+                    valor: valor(liquido),
+                    tamanho: AppDisplaySize.heroiMenor,
+                  ),
+                ),
+                if (_isCurrentMonth)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: PilulaCartao(texto: 'Novo'),
+                  ),
+              ],
+            ),
+
+            const DivisorCartao(espaco: 12),
+
+            // ── Proventos e descontos, lado a lado ───────────────────────
+            Row(
+              children: [
+                Expanded(
+                  child: _parValor(
+                    rotulo: 'Proventos',
+                    valorTexto: valor(bruto),
+                    icone: Icons.arrow_upward_rounded,
+                    cor: verde,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _parValor(
+                    rotulo: 'Descontos',
+                    valorTexto: valor(descontos),
+                    icone: Icons.arrow_downward_rounded,
+                    cor: vermelho,
+                    aDireita: true,
+                  ),
+                ),
+              ],
+            ),
+
+            // ── Vínculos ─────────────────────────────────────────────────
+            // Sempre visíveis: o total sozinho esconderia que há mais de um.
+            if (temVarios) ...[
+              const DivisorCartao(espaco: 12),
+              for (var n = 0; n < _vinculos.length; n++) ...[
+                if (n > 0) const SizedBox(height: 10),
+                _linhaVinculo(_vinculos[n], fmt),
+              ],
+            ],
           ],
         ),
-        const SizedBox(height: 2),
+      ),
+    );
+  }
+
+  /// Rótulo com seta semântica em cima, valor embaixo. A seta e o sinal
+  /// existem porque cor sozinha não pode carregar o significado.
+  Widget _parValor({
+    required String rotulo,
+    required String valorTexto,
+    required IconData icone,
+    required Color cor,
+    bool aDireita = false,
+  }) {
+    final alinhamento =
+        aDireita ? CrossAxisAlignment.end : CrossAxisAlignment.start;
+
+    return Column(
+      crossAxisAlignment: alinhamento,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisAlignment:
+              aDireita ? MainAxisAlignment.end : MainAxisAlignment.start,
+          children: [
+            Icon(icone, size: AppIconSize.xxs, color: cor),
+            const SizedBox(width: 4),
+            Text(rotulo,
+                style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w600, color: cor)),
+          ],
+        ),
+        const SizedBox(height: 4),
         FittedBox(
           fit: BoxFit.scaleDown,
-          alignment: align == CrossAxisAlignment.end
-              ? Alignment.centerRight
-              : Alignment.centerLeft,
+          alignment: aDireita ? Alignment.centerRight : Alignment.centerLeft,
           child: Text(
-            value,
-            textAlign: align == CrossAxisAlignment.end
-                ? TextAlign.end
-                : TextAlign.start,
+            valorTexto,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white70 : const Color(0xFF1A1A2E),
-              letterSpacing: value.contains('•') ? 2 : 0,
+              letterSpacing: _showValues ? -0.2 : 2,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.88),
             ),
           ),
         ),
       ],
+    );
+  }
+
+  /// Uma folha, quando o militar tem mais de um vínculo no mês.
+  Widget _linhaVinculo(_Vinculo v, NumberFormat fmt) {
+    final cor = Theme.of(context).colorScheme.onSurface;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => _abrirContracheque(v.folha),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Icon(Icons.description_outlined,
+                size: AppIconSize.xs, color: cor.withValues(alpha: 0.55)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    v.rotulo,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: cor.withValues(alpha: 0.92),
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text('Mat. ${v.folha.matricula}',
+                      style: TextStyle(
+                          fontSize: 11.5, color: TomCartao.medio(context))),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _showValues ? 'R\$ ${fmt.format(v.liquido)}' : '••••••',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                letterSpacing: _showValues ? -0.2 : 2,
+                color: cor.withValues(alpha: 0.92),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right_rounded,
+                size: AppIconSize.xs, color: cor.withValues(alpha: 0.38)),
+          ],
+        ),
+      ),
     );
   }
 }
