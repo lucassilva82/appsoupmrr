@@ -1413,6 +1413,44 @@ class _CardRequisito extends StatelessWidget {
             destaque: !ok,
           ),
         ]),
+        // Quando a parcela de dias passa de 29 — "19a 11m 34d" — o militar
+        // lê como erro de conta. Não é, e a explicação aparece aqui mesmo,
+        // junto do número, em vez de ficar escondida numa ajuda.
+        if (TempoFmt.notaResto(requisito.atualDias) != null) ...[
+          const SizedBox(height: 10),
+          _NotaResto(texto: TempoFmt.notaResto(requisito.atualDias)!),
+        ],
+      ]),
+    );
+  }
+}
+
+/// A explicação dos dias que passam de 29.
+class _NotaResto extends StatelessWidget {
+  const _NotaResto({Key? key, required this.texto}) : super(key: key);
+
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    final cor = Theme.of(context).colorScheme.onSurface;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(11, 9, 11, 9),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(Icons.help_outline_rounded,
+            size: AppIconSize.xs, color: TomCartao.medio(context)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            texto,
+            style: TextStyle(
+                fontSize: 12, height: 1.4, color: TomCartao.medio(context)),
+          ),
+        ),
       ]),
     );
   }

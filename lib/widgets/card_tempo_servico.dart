@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../models/auth_model.dart';
+import '../models/inatividade_model.dart';
 import '../utils/app_routes.dart';
 
 class CardTempoServico extends StatelessWidget {
@@ -279,6 +280,20 @@ class CardTempoServico extends StatelessWidget {
                           '${faltam == null ? '' : ' · $faltam'}',
                           style: TextStyle(
                               fontSize: 13, color: TomCartao.medio(context)),
+                        ),
+                      ],
+
+                      // Explica a parcela de dias quando ela passa de 29.
+                      // Mesma nota do cálculo de inatividade, pela mesma
+                      // razão: ali o número parece errado e não está.
+                      if (TempoFmt.notaResto(diasTotal) != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          TempoFmt.notaResto(diasTotal)!,
+                          style: TextStyle(
+                              fontSize: 12,
+                              height: 1.35,
+                              color: TomCartao.medio(context)),
                         ),
                       ],
 

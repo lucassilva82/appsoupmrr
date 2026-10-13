@@ -171,10 +171,16 @@ extension HipoteseInfo on HipoteseIncapacidade {
 /// Demais hipóteses de reserva de ofício — art. 24, II a VI da LC/RR
 /// 305/2022. Todas exigem 20 anos de contribuição e geram proporcionais.
 const hipotesesReservaOficio = <List<String>>[
-  ['II', 'Mais de 2 anos, contínuos ou não, em licença para tratar de '
-      'interesse particular'],
-  ['III', 'Mais de 2 anos contínuos em licença para tratamento de saúde de '
-      'pessoa da família'],
+  [
+    'II',
+    'Mais de 2 anos, contínuos ou não, em licença para tratar de '
+        'interesse particular'
+  ],
+  [
+    'III',
+    'Mais de 2 anos contínuos em licença para tratamento de saúde de '
+        'pessoa da família'
+  ],
   ['IV', 'Mais de 2 anos agregado por posse em cargo público civil temporário'],
   ['V', 'Promoção por tempo de contribuição e serviço militar'],
   ['VI', 'Diplomação em cargo eletivo'],
@@ -565,8 +571,7 @@ class CalculadoraInatividade {
     final contribNoCorte =
         servicoNoCorte + e.diasServicoMilitarAnterior + e.diasAverbadosCivis;
 
-    final minEnteDias =
-        _anosParaDias(ParametrosLegais.minimoEnteAnos(e.sexo));
+    final minEnteDias = _anosParaDias(ParametrosLegais.minimoEnteAnos(e.sexo));
     final minCorporacaoDias =
         _anosParaDias(ParametrosLegais.minimoServicoCorporacaoAnos(e.sexo));
     final tol = ParametrosLegais.toleranciaDias;
@@ -580,8 +585,7 @@ class CalculadoraInatividade {
     // Corporação. O que fica de fora é o tempo civil, que só entra na
     // contribuição. A letra dos arts. 120, II e 121 diz "efetivo serviço na
     // PMRR/CBMRR", mas o critério aplicado é o da natureza militar do tempo.
-    final servicoMilitarNoCorte =
-        servicoNoCorte + e.diasServicoMilitarAnterior;
+    final servicoMilitarNoCorte = servicoNoCorte + e.diasServicoMilitarAnterior;
     final cumpriuArt120 = contribNoCorte >= (minEnteDias - tol) &&
         servicoMilitarNoCorte >= (minCorporacaoDias - tol);
 
@@ -681,7 +685,8 @@ class CalculadoraInatividade {
           atualDias: ativMilitarHoje,
           detalheExigido: acrescimoMeses > 0
               ? '${TempoFmt.curto(_anosParaDias(ParametrosLegais.transicaoAtividadeMilitarBaseAnos))}'
-                  ' + $acrescimoMeses' 'm de acréscimo'
+                  ' + $acrescimoMeses'
+                  'm de acréscimo'
               : null,
         );
 
@@ -691,8 +696,7 @@ class CalculadoraInatividade {
             '(DL 667/1969, art. 24-G, parágrafo único).',
           );
         } else if (acrescimoMeses == 0) {
-          final minAnos =
-              ParametrosLegais.minimoServicoCorporacaoAnos(e.sexo);
+          final minAnos = ParametrosLegais.minimoServicoCorporacaoAnos(e.sexo);
           avisos.add(
             'Você já conta os $minAnos anos de tempo de serviço militar, '
             'portanto o 2º pedágio não se aplica: a exigência de atividade de '
@@ -854,6 +858,37 @@ class TempoFmt {
     return partes.first;
   }
 
+  /// Explica a parcela de dias quando ela passa de 29 — e só nesse caso.
+  ///
+  /// Com ano de 365 dias e mês de 30, doze meses fecham 360: sobram cinco
+  /// dias por ano que não formam mês nenhum. Por isso a última parcela pode
+  /// chegar a 34 dias em vez de virar mais um mês, e por isso "19a 11m 34d"
+  /// está certo mesmo parecendo errado.
+  ///
+  /// A conta em dias é a que vale para os prazos; esta nota existe porque o
+  /// desdobramento em anos/meses/dias é que confunde — e porque nessa faixa
+  /// ele esconde o que mais interessa: quanto falta para fechar o ano.
+  ///
+  /// Retorna `null` quando não há nada a explicar.
+  static String? notaResto(int totalDias) {
+    if (totalDias <= 0) return null;
+    const a = ParametrosLegais.diasPorAno;
+    const m = ParametrosLegais.diasPorMes;
+    final anos = totalDias ~/ a;
+    final resto = totalDias % a;
+    final meses = (resto ~/ m).clamp(0, 11);
+    final dias = resto - meses * m;
+    if (dias <= m - 1) return null;
+
+    final faltam = a - resto;
+    final proximo = anos + 1;
+    return 'São $dias dias, e não mais um mês, porque o ano conta $a dias '
+        'mas doze meses de $m fecham ${m * 12} — sobram ${a - m * 12} dias '
+        'que não formam mês. '
+        '${faltam == 1 ? "Falta 1 dia" : "Faltam $faltam dias"} '
+        'para $proximo ${proximo == 1 ? "ano" : "anos"}.';
+  }
+
   /// "24a 3m 12d" — versão compacta para chips e tabelas.
   static String curto(int totalDias) {
     if (totalDias <= 0) return '0d';
@@ -871,8 +906,18 @@ class TempoFmt {
   }
 
   static const _meses = [
-    'jan', 'fev', 'mar', 'abr', 'mai', 'jun',
-    'jul', 'ago', 'set', 'out', 'nov', 'dez',
+    'jan',
+    'fev',
+    'mar',
+    'abr',
+    'mai',
+    'jun',
+    'jul',
+    'ago',
+    'set',
+    'out',
+    'nov',
+    'dez',
   ];
 
   /// "12/mar/2031"
