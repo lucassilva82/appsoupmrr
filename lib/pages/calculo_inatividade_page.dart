@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:provider/provider.dart';
 
 import '../models/auth_model.dart';
@@ -1264,53 +1263,40 @@ class _CardPrevisao extends StatelessWidget {
 
     return _Card(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Icon(ok ? Icons.check_circle_rounded : Icons.event_available_rounded,
-              size: 18, color: cor),
-          const SizedBox(width: 8),
-          Text(
-            ok ? 'Você já pode requerer' : 'Previsão de integralidade',
-            style: theme.textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-        ]),
+        CabecalhoCartao(
+          icone: ok
+              ? Icons.check_circle_outline_rounded
+              : Icons.event_available_outlined,
+          titulo: ok ? 'Você já pode requerer' : 'Previsão de integralidade',
+          mostrarSeta: false,
+        ),
         const SizedBox(height: 12),
         if (ok)
-          Text(
-            'Reserva remunerada com proventos integrais',
-            style: theme.textTheme.titleMedium
-                ?.copyWith(color: cor, fontWeight: FontWeight.bold),
+          DestaqueCartao(
+            valor: 'Agora',
+            complemento: 'Reserva com proventos integrais',
+            tamanho: AppDisplaySize.heroiMenor,
+            corValor: cor,
           )
         else ...[
-          Text(
-            TempoFmt.mesAno(resultado.dataPrevistaIntegral).toUpperCase(),
-            style: theme.textTheme.headlineMedium?.copyWith(
-                color: cor, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+          // Mês/ano grande e a data exata logo abaixo: o militar quer saber
+          // "quando", e a precisão de dia é apoio, não manchete.
+          DestaqueCartao(
+            valor:
+                TempoFmt.mesAno(resultado.dataPrevistaIntegral).toUpperCase(),
+            tamanho: AppDisplaySize.heroi,
+            corValor: cor,
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 6),
           Text(
-            'em ${TempoFmt.data(resultado.dataPrevistaIntegral)} — '
-            'faltam ${TempoFmt.extenso(resultado.diasFaltantesIntegral)}',
-            style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
+            '${TempoFmt.data(resultado.dataPrevistaIntegral)}  ·  faltam '
+            '${TempoFmt.extenso(resultado.diasFaltantesIntegral)}',
+            style: TextStyle(fontSize: 13, color: TomCartao.medio(context)),
           ),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-            decoration: BoxDecoration(
-              color: theme.hintColor.withOpacity(0.07),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(children: [
-              Icon(Icons.flag_rounded, size: 13, color: theme.hintColor),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'Requisito que define a data: ${resultado.requisitoLimitante}',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(fontSize: 11, color: theme.hintColor),
-                ),
-              ),
-            ]),
+          const DivisorCartao(espaco: 12),
+          RodapeCartao(
+            icone: Icons.flag_outlined,
+            texto: 'Define a data: ${resultado.requisitoLimitante}',
           ),
         ],
         if (resultado.idadeLimiteAntesDaIntegralidade) ...[
@@ -1353,52 +1339,53 @@ class _CardRequisito extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final ok = requisito.cumprido;
     final cor = ok ? const Color(0xFF2E7D32) : AppColors.blue;
 
+    final pct = '${(requisito.percentual * 100).toStringAsFixed(1)}%'
+        .replaceAll('.', ',');
+
     return _Card(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // Cabeçalho e percentual ao lado, como nos cards do painel. Eram
+        // três métricas de peso igual e o militar tinha de garimpar qual
+        // delas respondia "e aí, quanto falta?".
         Row(children: [
-          Icon(icone, size: 17, color: cor),
-          const SizedBox(width: 8),
+          Icon(icone, size: AppIconSize.sm, color: cor),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(requisito.nome,
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.bold, height: 1.2)),
+                style: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.w600, height: 1.2)),
           ),
-          const SizedBox(width: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: cor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              ok
-                  ? 'cumprido'
-                  : '${(requisito.percentual * 100).toStringAsFixed(1)}%',
-              style: TextStyle(
-                  fontSize: 10.5, fontWeight: FontWeight.bold, color: cor),
-            ),
+          const SizedBox(width: 8),
+          Text(
+            ok ? 'cumprido' : pct,
+            style: TextStyle(
+                fontSize: 15, fontWeight: FontWeight.w700, color: cor),
           ),
         ]),
-        const SizedBox(height: 3),
-        Text(requisito.fundamento,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(fontSize: 10.5, color: theme.hintColor)),
-        const SizedBox(height: 10),
-        LinearPercentIndicator(
-          percent: requisito.percentual,
-          lineHeight: 8,
-          animation: true,
-          animationDuration: 700,
-          barRadius: const Radius.circular(20),
-          progressColor: cor,
-          backgroundColor: theme.hintColor.withOpacity(0.13),
-          padding: EdgeInsets.zero,
+
+        const SizedBox(height: 12),
+
+        // O herói é o que falta. É a pergunta que leva o militar a abrir
+        // esta tela; cumprido, o herói passa a ser o próprio cumprimento.
+        DestaqueCartao(
+          rotulo: ok ? 'Requisito' : 'Falta',
+          valor: ok ? 'Cumprido' : TempoFmt.curto(requisito.faltaDias),
+          tamanho: AppDisplaySize.heroiMenor,
+          corValor: ok ? cor : null,
         ),
+
+        const SizedBox(height: 14),
+
+        BarraProgressoCartao(
+          valor: requisito.percentual,
+          semantica: requisito.nome,
+        ),
+
         const SizedBox(height: 10),
+
         Row(children: [
           _Metrica(
             rotulo: 'Exigido',
@@ -1407,11 +1394,6 @@ class _CardRequisito extends StatelessWidget {
           ),
           _Metrica(
               rotulo: 'Você tem', valor: TempoFmt.curto(requisito.atualDias)),
-          _Metrica(
-            rotulo: 'Falta',
-            valor: ok ? '—' : TempoFmt.curto(requisito.faltaDias),
-            destaque: !ok,
-          ),
         ]),
         // Quando a parcela de dias passa de 29 — "19a 11m 34d" — o militar
         // lê como erro de conta. Não é, e a explicação aparece aqui mesmo,
@@ -1420,6 +1402,11 @@ class _CardRequisito extends StatelessWidget {
           const SizedBox(height: 10),
           _NotaResto(texto: TempoFmt.notaResto(requisito.atualDias)!),
         ],
+
+        // A base legal é referência, não manchete: sai de debaixo do título
+        // e vira rodapé, como nos cards do painel.
+        const DivisorCartao(espaco: 12),
+        RodapeCartao(icone: Icons.gavel_rounded, texto: requisito.fundamento),
       ]),
     );
   }
@@ -1459,33 +1446,23 @@ class _NotaResto extends StatelessWidget {
 class _Metrica extends StatelessWidget {
   final String rotulo;
   final String valor;
-  final bool destaque;
   final String? detalhe;
-  const _Metrica(
-      {required this.rotulo,
-      required this.valor,
-      this.destaque = false,
-      this.detalhe});
+  const _Metrica({required this.rotulo, required this.valor, this.detalhe});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    // Métrica de apoio: o número que importa virou o herói do card, então
+    // estas duas ficam no tamanho de leitura, não de manchete.
     return Expanded(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(rotulo,
-            style: theme.textTheme.labelSmall
-                ?.copyWith(color: theme.hintColor, fontSize: 10)),
-        const SizedBox(height: 1),
+            style: TextStyle(fontSize: 12, color: TomCartao.medio(context))),
+        const SizedBox(height: 2),
         Text(valor,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: destaque ? AppColors.blue : null,
-            )),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
         if (detalhe != null)
           Text(detalhe!,
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: theme.hintColor, fontSize: 9.5)),
+              style: TextStyle(fontSize: 11, color: TomCartao.fraco(context))),
       ]),
     );
   }
