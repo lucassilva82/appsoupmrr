@@ -20,7 +20,9 @@ import '../models/militar.dart';
 import '../models/militar_detalhe_full.dart';
 import '../models/ficha_funcional.dart';
 import '../services/dados_sql.dart';
+import '../widgets/cartao_painel.dart';
 import '../widgets/custom_appbar.dart';
+import '../widgets/vidro.dart';
 import '../widgets/dados_situacao_funcional.dart';
 import '../models/auth_model.dart'; // fornece auth.matricula, auth.cpf
 import '../utils/app_theme.dart';
@@ -292,113 +294,112 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
   Widget _buildHeroHeader(BuildContext context, MilitarDetalheFull m, Auth auth,
       ThemeData theme, bool isDark) {
     final imageUrl = _resolveImageUrl(m.imagemUrl) ?? widget.preloadedImageUrl;
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [AppColors.navy, AppColors.darkBg]
-              : [AppColors.blue, const Color(0xFF1A3A6B)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Foto com carimbo
-          GestureDetector(
-            onTap: () => _showImageModal(context, m.imagemUrl ?? ''),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: SizedBox(
-                width: 100,
-                height: 125,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    CachedNetworkImage(
-                      imageUrl: imageUrl ?? '',
-                      fit: BoxFit.cover,
-                      alignment: Alignment.topCenter,
-                      memCacheWidth: 200,
-                      placeholder: (_, __) => Container(
+    // Era um degradê azul sólido ocupando a largura toda — a última
+    // superfície chapada desta tela, e justamente o que o DESIGN.md §1 manda
+    // não fazer: a tela não pinta o próprio fundo, ela usa CartaoVidro e
+    // deixa o fundo global aparecer.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: CartaoVidro(
+        raio: 16,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Foto com carimbo
+            GestureDetector(
+              onTap: () => _showImageModal(context, m.imagemUrl ?? ''),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox(
+                  width: 100,
+                  height: 125,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      CachedNetworkImage(
+                        imageUrl: imageUrl ?? '',
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
+                        memCacheWidth: 200,
+                        placeholder: (_, __) => Container(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            child: const Center(
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))),
+                        errorWidget: (_, __, ___) => Container(
                           color: Colors.white.withValues(alpha: 0.1),
-                          child: const Center(
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white))),
-                      errorWidget: (_, __, ___) => Container(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        child: const Icon(Icons.person,
-                            size: 48, color: Colors.white54),
+                          child: const Icon(Icons.person,
+                              size: 48, color: Colors.white54),
+                        ),
                       ),
-                    ),
-                    IgnorePointer(
-                      child: Opacity(
-                        opacity: .12,
-                        child: GridView.builder(
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2, mainAxisExtent: 75),
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemBuilder: (_, __) => Text(
-                            'Login: ${auth.matricula}\nCPF: ${auth.cpf}\nIP : $_ip\n$_dateTimeStr',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                                fontSize: 12,
-                                height: 1.25,
-                                color: Colors.white),
+                      IgnorePointer(
+                        child: Opacity(
+                          opacity: .12,
+                          child: GridView.builder(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2, mainAxisExtent: 75),
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemBuilder: (_, __) => Text(
+                              'Login: ${auth.matricula}\nCPF: ${auth.cpf}\nIP : $_ip\n$_dateTimeStr',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  height: 1.25,
+                                  color: Colors.white),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '${m.postoGraduacao} • ${m.quadro}',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3),
+                    ),
                   ),
-                  child: Text(
-                    '${m.postoGraduacao} • ${m.quadro}',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.3),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(m.nomeCompleto,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        height: 1.25)),
-                const SizedBox(height: 12),
-                _headerRow(Icons.badge_rounded, 'Mat. PMRR: ${m.matricula}'),
-                const SizedBox(height: 5),
-                _headerRow(
-                    Icons.verified_user_rounded, 'Mat. SEGAD: ${m.matRhNova}'),
-                const SizedBox(height: 5),
-                _headerRow(Icons.credit_card_rounded, 'CPF: ${m.cpf}'),
-                const SizedBox(height: 5),
-                _headerRow(Icons.calendar_today_rounded,
-                    'Incorporação: ${_fmtDate(m.incorporacao)}'),
-              ],
+                  const SizedBox(height: 8),
+                  Text(m.nomeCompleto,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          height: 1.25)),
+                  const SizedBox(height: 12),
+                  _headerRow(Icons.badge_rounded, 'Mat. PMRR: ${m.matricula}'),
+                  const SizedBox(height: 5),
+                  _headerRow(Icons.verified_user_rounded,
+                      'Mat. SEGAD: ${m.matRhNova}'),
+                  const SizedBox(height: 5),
+                  _headerRow(Icons.credit_card_rounded, 'CPF: ${m.cpf}'),
+                  const SizedBox(height: 5),
+                  _headerRow(Icons.calendar_today_rounded,
+                      'Incorporação: ${_fmtDate(m.incorporacao)}'),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -419,22 +420,15 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
 
   Widget _buildSection(
       {required ThemeData theme, required bool isDark, required Widget child}) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    // Margem 16 como o resto do app (era 12) e a superfície do app no lugar
+    // do Container com cardColor, borda e sombra próprios.
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: CartaoVidro(
+        raio: 16,
+        padding: kPaddingCartao,
+        child: child,
       ),
-      child: child,
     );
   }
 
@@ -466,14 +460,15 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
     );
   }
 
-  Widget _iconBox(IconData icon, Color color, bool isDark) => Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: isDark ? 0.18 : 0.10),
-          borderRadius: BorderRadius.circular(9),
-        ),
-        child: Icon(icon, size: 18, color: color),
+  /// Ícone de linha, sem o quadrado tingido que havia atrás.
+  ///
+  /// O quadrado era uma segunda superfície dentro de um card que já é
+  /// superfície — o empilhamento de tons do DESIGN.md §3b. Sem ele a linha
+  /// fica mais leve e o dado, que é o que importa, ganha o peso.
+  Widget _iconBox(IconData icon, Color color, bool isDark) => SizedBox(
+        width: 30,
+        height: 30,
+        child: Icon(icon, size: AppIconSize.sm, color: color),
       );
 
   Widget _divider(ThemeData theme) => Divider(

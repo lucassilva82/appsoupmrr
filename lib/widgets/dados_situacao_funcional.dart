@@ -187,18 +187,19 @@ class _DadosSituacaoFuncionalState extends State<DadosSituacaoFuncional> {
                   child: Container(
                     margin: EdgeInsets.only(bottom: isLast ? 0 : 10),
                     padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                    // Mesma superfície para todos os itens. O ativo tinha um
+                    // fundo azul `#0D2B5A` enquanto o estado dele é verde:
+                    // dois tons de superfície sem motivo, e com as cores se
+                    // contradizendo. Quem marca o ativo é o ponto verde, o
+                    // selo "Ativo" e a borda — não uma cor de fundo própria.
                     decoration: BoxDecoration(
-                      color: isAtivo
-                          ? (isDark
-                              ? const Color(0xFF0D2B5A).withValues(alpha: 0.4)
-                              : const Color(0xFFE8F5E9))
-                          : (isDark
-                              ? Colors.white.withValues(alpha: 0.055)
-                              : Colors.white.withValues(alpha: 0.72)),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.055)
+                          : Colors.white.withValues(alpha: 0.72),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: isAtivo
-                            ? const Color(0xFF2E7D32).withValues(alpha: 0.3)
+                            ? const Color(0xFF2E7D32).withValues(alpha: 0.45)
                             : (isDark
                                 ? AppColors.darkBorder
                                 : const Color(0xFFE8E8E8)),
