@@ -296,9 +296,9 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
         children: [
           // Abaixo do olho e da seta, para não disputar com os controles.
           const Positioned(
-            top: 50,
-            right: -34,
-            child: MarcaDaguaCartao(desenho: DesenhoMarca.folha),
+            top: 46,
+            right: -4,
+            child: MarcaDaguaCartao(desenho: DesenhoMarca.cedula),
           ),
           Padding(
             padding: kPaddingCartao,

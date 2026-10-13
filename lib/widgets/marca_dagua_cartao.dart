@@ -24,8 +24,8 @@ enum DesenhoMarca {
   /// Calendário com um intervalo selecionado — plano de férias.
   calendario,
 
-  /// Folha de pagamento com a linha do líquido destacada — contracheque.
-  folha,
+  /// Cédula com o valor destacado — contracheque.
+  cedula,
 
   /// Medalha com o arco do progresso — tempo de serviço.
   medalha,
@@ -52,8 +52,8 @@ class MarcaDaguaCartao extends StatelessWidget {
       case DesenhoMarca.calendario:
         pintura = _PinturaCalendario(cor: cor, acento: AppColors.acaoClara);
         break;
-      case DesenhoMarca.folha:
-        pintura = _PinturaFolha(cor: cor, acento: AppColors.acaoClara);
+      case DesenhoMarca.cedula:
+        pintura = _PinturaCedula(cor: cor, acento: AppColors.acaoClara);
         break;
       case DesenhoMarca.medalha:
         pintura = _PinturaMedalha(
@@ -224,88 +224,80 @@ class _PinturaCalendario extends CustomPainter {
       antiga.cor != cor || antiga.acento != acento;
 }
 
-// ─── Folha de pagamento ──────────────────────────────────────────────────────
+// ─── Cédula ──────────────────────────────────────────────────────────────────
 
-class _PinturaFolha extends CustomPainter {
-  const _PinturaFolha({required this.cor, required this.acento});
+class _PinturaCedula extends CustomPainter {
+  const _PinturaCedula({required this.cor, required this.acento});
 
   final Color cor;
   final Color acento;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final corpo = RRect.fromRectAndRadius(
-      Rect.fromLTRB(8, 0, size.width - 8, size.height),
-      const Radius.circular(14),
+    _luz(canvas, size, acento, em: const Alignment(0.1, 0.0));
+
+    // Uma segunda nota atrás, só insinuada. Sem ela a cédula fica achatada
+    // no card; com ela vira um maço, que é o que um contracheque é.
+    final atras = RRect.fromRectAndRadius(
+      Rect.fromLTWH(16, 10, 112, 60),
+      const Radius.circular(8),
+    );
+    canvas.drawRRect(atras, _preenche(cor, _Tons.corpo * 0.7));
+    canvas.drawRRect(atras, _contorna(cor, _Tons.borda * 0.7, 1.2));
+
+    // A nota da frente.
+    final nota = RRect.fromRectAndRadius(
+      Rect.fromLTWH(2, 36, 124, 70),
+      const Radius.circular(9),
+    );
+    canvas.drawRRect(nota, _preenche(cor, _Tons.corpo));
+    canvas.drawRRect(nota, _contorna(cor, _Tons.borda));
+
+    // Moldura interna — é o que faz a forma ler como cédula e não como
+    // mais um retângulo arredondado.
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(9, 43, 110, 56),
+        const Radius.circular(6),
+      ),
+      _contorna(cor, _Tons.borda * 0.8, 1.0),
     );
 
-    _luz(canvas, size, acento, em: const Alignment(0.18, -0.1));
-    canvas.drawRRect(corpo, _preenche(cor, _Tons.corpo));
-
-    // Cabeçalho da folha.
-    canvas.save();
-    canvas.clipRRect(corpo);
-    canvas.drawRect(
-      Rect.fromLTRB(8, 0, size.width - 8, 22),
-      _preenche(acento, _Tons.tinta),
+    // Janela da efígie. Um pouco abaixo dos demais tons: é uma mancha
+    // grande e cheia, e no mesmo alfa das linhas ela puxava mais luz que
+    // o valor — que é o que tem de estar aceso aqui.
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: const Offset(38, 71),
+        width: 30,
+        height: 38,
+      ),
+      _preenche(cor, _Tons.conteudo * 0.72),
     );
-    canvas.restore();
 
-    canvas.drawRRect(corpo, _contorna(cor, _Tons.borda));
+    // O valor, e só ele aceso: é o líquido que o card mostra grande logo
+    // ao lado. Fica à direita de propósito — é onde o foco da máscara está,
+    // e marca d'água tem um ponto nítido só.
+    final valor = Rect.fromLTWH(66, 56, 46, 17);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(valor, const Radius.circular(5)),
+      _destaca(valor, acento),
+    );
 
-    // Linhas de rubrica: rótulo à esquerda, valor à direita, como na folha
-    // de verdade. A terceira é o líquido — é ela que o card mostra grande.
-    const esquerda = 20.0;
-    final direita = size.width - 20.0;
-    const alturaLinha = 8.0;
-    const vao = 13.0;
-    const topo = 36.0;
-    const larguraValor = 24.0;
-
-    const larguraRotulo = [44.0, 52.0, 38.0, 48.0];
-
-    for (var n = 0; n < larguraRotulo.length; n++) {
-      final y = topo + n * (alturaLinha + vao);
-      final destaque = n == 2;
-
-      final rotulo = Rect.fromLTWH(
-        esquerda,
-        y,
-        larguraRotulo[n],
-        alturaLinha,
+    // Duas linhas de ornamentação sob o valor.
+    for (final linha in [
+      Rect.fromLTWH(66, 80, 36, 6),
+      Rect.fromLTWH(66, 92, 24, 6),
+    ]) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(linha, const Radius.circular(3)),
+        _preenche(cor, _Tons.conteudo),
       );
-      final valor = Rect.fromLTWH(
-        direita - larguraValor,
-        y,
-        larguraValor,
-        alturaLinha,
-      );
-
-      if (destaque) {
-        // A linha inteira acesa, não só o valor: é o total da folha.
-        final faixa = Rect.fromLTRB(
-          esquerda - 5,
-          y - 5,
-          direita + 5,
-          y + alturaLinha + 5,
-        );
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(faixa, const Radius.circular(9)),
-          _destaca(faixa, acento),
-        );
-      } else {
-        for (final r in [rotulo, valor]) {
-          canvas.drawRRect(
-            RRect.fromRectAndRadius(r, const Radius.circular(4)),
-            _preenche(cor, _Tons.conteudo),
-          );
-        }
-      }
     }
   }
 
   @override
-  bool shouldRepaint(_PinturaFolha antiga) =>
+  bool shouldRepaint(_PinturaCedula antiga) =>
       antiga.cor != cor || antiga.acento != acento;
 }
 

@@ -122,7 +122,7 @@ apagado. Não é enfeite solto: ele repete em forma o que o card diz em texto.
 | Card | Desenho | O que o acento marca |
 |---|---|---|
 | Plano de férias | calendário | o intervalo selecionado |
-| Contracheque | folha de pagamento | a linha do líquido |
+| Contracheque | cédula | o valor da nota |
 | Tempo de serviço | medalha | o arco do tempo cumprido (o percentual de verdade) |
 
 Três coisas aprendidas fazendo isto:
