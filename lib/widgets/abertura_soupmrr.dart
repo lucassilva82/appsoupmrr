@@ -231,18 +231,6 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
                     ],
                   ),
                 ),
-
-                Positioned(
-                  bottom: 64,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Opacity(
-                      opacity: _trecho(0.9, 1.0),
-                      child: const _LinhaCarregando(),
-                    ),
-                  ),
-                ),
               ],
             );
           },
@@ -668,63 +656,4 @@ class _PinturaMoldura extends CustomPainter {
       antiga.trilha != trilha ||
       antiga.onda != onda ||
       antiga.corrente != corrente;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _LinhaCarregando extends StatefulWidget {
-  const _LinhaCarregando({Key? key}) : super(key: key);
-
-  @override
-  State<_LinhaCarregando> createState() => _LinhaCarregandoState();
-}
-
-class _LinhaCarregandoState extends State<_LinhaCarregando>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1500),
-  )..repeat();
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 104,
-      height: 2,
-      child: AnimatedBuilder(
-        animation: _c,
-        builder: (_, __) => ClipRRect(
-          borderRadius: BorderRadius.circular(2),
-          child: Stack(
-            children: [
-              Container(color: Colors.white.withValues(alpha: 0.12)),
-              Align(
-                alignment: Alignment(-1 + 2 * _c.value, 0),
-                child: FractionallySizedBox(
-                  widthFactor: 0.42,
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.transparent,
-                          AppColors.acaoClara,
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
