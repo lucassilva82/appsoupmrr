@@ -42,7 +42,7 @@ class _AuthOrHomeState extends State<AuthOrHome> {
       });
       await Future.wait([
         trabalho,
-        Future<void>.delayed(const Duration(milliseconds: 1500)),
+        Future<void>.delayed(const Duration(milliseconds: 2600)),
       ]);
     }();
   }

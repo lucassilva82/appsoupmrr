@@ -80,6 +80,7 @@ flutter:
     - assets/imagens/pdf.png
     - assets/imagens/capa.png
     - assets/imagens/entradacapa.png
+    - assets/imagens/fundo_abertura.jpg
     - assets/imagens/logo_dti.jpeg
     - assets/imagens/iconesoupm.png
     - assets/imagens/whatsapp.png
