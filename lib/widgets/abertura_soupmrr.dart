@@ -62,6 +62,7 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
     with TickerProviderStateMixin {
   late final AnimationController _c;
   late final AnimationController _ambiente;
+  late final AnimationController _camera;
 
   @override
   void initState() {
@@ -75,6 +76,15 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
       vsync: this,
       duration: const Duration(milliseconds: 7000),
     );
+    // O recuo de câmera é mais longo que a montagem de propósito. Depois que
+    // a marca fica pronta, a tela ainda permanece cerca de um segundo para
+    // dar tempo de ver o conjunto — e nesse intervalo a imagem não pode
+    // congelar. Amarrado ao controlador da marca, ela paralisava no último
+    // quadro e a permanência virava tela travada.
+    _camera = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 6000),
+    );
   }
 
   @override
@@ -82,9 +92,11 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
     super.didChangeDependencies();
     if (MediaQuery.of(context).disableAnimations) {
       _c.value = 1;
+      _camera.value = 1;
     } else if (!_c.isAnimating && _c.value == 0) {
       _c.forward();
       _ambiente.repeat();
+      _camera.forward();
     }
   }
 
@@ -92,6 +104,7 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
   void dispose() {
     _c.dispose();
     _ambiente.dispose();
+    _camera.dispose();
     super.dispose();
   }
 
@@ -109,7 +122,7 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
       backgroundColor: AppColors.darkBg,
       body: SizedBox.expand(
         child: AnimatedBuilder(
-          animation: Listenable.merge([_c, _ambiente]),
+          animation: Listenable.merge([_c, _ambiente, _camera]),
           builder: (context, _) {
             final entrouFundo = _trecho(0.0, 0.22);
 
@@ -120,8 +133,8 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
                 Opacity(
                   opacity: entrouFundo,
                   child: Transform.scale(
-                    scale:
-                        1.16 - 0.16 * Curves.easeOutCubic.transform(_c.value),
+                    scale: 1.16 -
+                        0.16 * Curves.easeOutCubic.transform(_camera.value),
                     child: Image.asset(
                       'assets/imagens/fundo_abertura.jpg',
                       fit: BoxFit.cover,

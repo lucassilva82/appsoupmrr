@@ -31,9 +31,12 @@ class _AuthOrHomeState extends State<AuthOrHome> {
 
     // 1) Tenta autoLogin
     // 2) Depois busca min_version no Firestore e compara
-    // Piso de tempo para a abertura. Sem ele, numa sessão já autenticada o
-    // carregamento termina em ~300ms e a animação aparece como um tremor —
-    // pior do que não ter animação nenhuma.
+    // Piso de tempo para a abertura: os 2,5s da animação mais ~1,1s de
+    // permanência com a marca pronta. Sem a permanência a assinatura entrava
+    // e o app abria no quadro seguinte — ninguém via o conjunto montado.
+    //
+    // E sem piso nenhum, numa sessão já autenticada o carregamento termina em
+    // ~300ms e a animação vira um tremor, pior do que não ter animação.
     _initFuture = () async {
       final trabalho = auth.tryAutoLogin().then((_) {
         debugPrint(
@@ -42,7 +45,7 @@ class _AuthOrHomeState extends State<AuthOrHome> {
       });
       await Future.wait([
         trabalho,
-        Future<void>.delayed(const Duration(milliseconds: 2600)),
+        Future<void>.delayed(const Duration(milliseconds: 3600)),
       ]);
     }();
   }
