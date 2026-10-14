@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Splash do Android 12+ (API 31). Fica em values-v31 porque estes
+      atributos não existem em versões anteriores.
+
+      Mesma cor da janela nativa e do primeiro quadro do Flutter: as três
+      camadas nascem iguais, então a troca entre elas não tem como piscar.
+    -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/fundo_abertura</item>
+        <item name="android:windowSplashScreenBackground">@color/fundo_abertura</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_vazio</item>
+    </style>
+    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/fundo_abertura</item>
+    </style>
+</resources>

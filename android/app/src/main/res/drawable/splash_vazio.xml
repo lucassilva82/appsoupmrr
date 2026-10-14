@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Ícone vazio para a splash do Android 12+.
+
+  A partir do Android 12 o sistema exibe uma splash própria, obrigatória, com
+  o ícone do app no centro. O ícone do SouPMRR é uma arte cheia, então ele
+  aparecia como uma foto recortada em círculo antes da abertura — duas
+  aberturas diferentes, uma emendada na outra.
+
+  Com um ícone transparente sobra só o fundo, na mesma cor em que a abertura
+  do Flutter começa. O sistema continua exibindo a splash dele; ela é que
+  deixa de competir com a nossa.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@android:color/transparent" />
+    <size android:width="1dp" android:height="1dp" />
+</shape>

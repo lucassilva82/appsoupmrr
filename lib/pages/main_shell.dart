@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/auth_model.dart';
+import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 import '../utils/notification_provider.dart';
 import '../utils/theme_provider.dart';
@@ -24,6 +25,10 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   late int _currentIndex;
 
+  /// Evita agendar a saída mais de uma vez: `build` roda várias vezes entre
+  /// o toque em "Sair" e a troca de tela.
+  bool _saindo = false;
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +45,31 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<Auth>(context);
+
+    // ── Fim de sessão ───────────────────────────────────────────────────
+    // O login entra por `pushReplacementNamed(HOME_PAGE)`, então o MainShell
+    // é uma **rota** e o AuthOrHome — que é quem observa a autenticação —
+    // some da pilha. Sem isto, `logout()` mudava o estado e a tela não se
+    // mexia: o militar tocava em Sair, confirmava, e continuava onde estava.
+    // Só fechando e reabrindo o app, porque aí o AuthOrHome roda de novo.
+    //
+    // A guarda fica aqui, e não em cada chamada de `logout()`, porque são
+    // quatro lugares hoje — menu, drawer, configurações e biometria — e a
+    // quinta que aparecer vai esquecer de navegar.
+    //
+    // Vale também para a expiração do prazo de sessão, que é o outro jeito
+    // de `isAuth` virar falso com a tela aberta.
+    if (!auth.isAuth && !_saindo) {
+      _saindo = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.AUTH_PAGE,
+          (_) => false,
+        );
+      });
+    }
+
     // Mantém a assinatura do tema: a barra muda de degradê no claro/escuro.
     Provider.of<ThemeProvider>(context);
     final notifProvider = Provider.of<NotificationProvider>(context);
