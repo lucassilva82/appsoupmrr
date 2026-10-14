@@ -12,6 +12,15 @@ class AppColors {
 
   // Identidade visual PMRR
   static const navy = Color(0xFF002154);
+
+  /// Cor das telas nativas de abertura e do primeiro quadro da animação.
+  ///
+  /// É o navy institucional, e precisa ser a **mesma** nos três lugares —
+  /// LaunchScreen.storyboard, launch_background.xml e o Scaffold da
+  /// abertura. Antes era `darkBg`, e o resultado era preto: a tela nativa
+  /// abria escura, o Flutter abria escuro, e a animação só trazia cor
+  /// depois. Agora o app nasce azul e escurece junto com a imagem.
+  static const aberturaFundo = navy;
   static const blue = Color(0xFF1565C0);
   static const lightBlue = Color(0xFF42A5F5);
   static const gold = Color(0xFFFFB300);

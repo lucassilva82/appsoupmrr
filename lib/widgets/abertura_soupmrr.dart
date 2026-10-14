@@ -119,7 +119,7 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
         (MediaQuery.of(context).size.width * 0.76).clamp(230.0, 340.0);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: AppColors.aberturaFundo,
       body: SizedBox.expand(
         child: AnimatedBuilder(
           animation: Listenable.merge([_c, _ambiente, _camera]),
@@ -129,34 +129,43 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
             return Stack(
               fit: StackFit.expand,
               children: [
-                // ── Fundo: textura de circuito com recuo lento de câmera ──
+                // ── Fundo ─────────────────────────────────────────────────
+                // A imagem **e** o escurecimento entram juntos, no mesmo
+                // Opacity. Com o degradê fora dele, ele valia desde o
+                // primeiro quadro e o app abria preto, por mais que o
+                // Scaffold e a tela nativa fossem azuis — o azul existia e
+                // ficava coberto. Agora o primeiro quadro é a cor nativa
+                // limpa, e o escurecimento chega com a textura.
                 Opacity(
                   opacity: entrouFundo,
-                  child: Transform.scale(
-                    scale: 1.16 -
-                        0.16 * Curves.easeOutCubic.transform(_camera.value),
-                    child: Image.asset(
-                      'assets/imagens/fundo_abertura.jpg',
-                      fit: BoxFit.cover,
-                    ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Transform.scale(
+                        scale: 1.16 -
+                            0.16 * Curves.easeOutCubic.transform(_camera.value),
+                        child: Image.asset(
+                          'assets/imagens/fundo_abertura.jpg',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Color(0xE6000810),
+                              Color(0x99001A33),
+                              Color(0xE6000810),
+                            ],
+                            stops: [0.0, 0.45, 1.0],
+                          ),
+                        ),
+                        child: SizedBox.expand(),
+                      ),
+                    ],
                   ),
-                ),
-
-                // Escurece para a marca ter contraste.
-                const DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color(0xE6000810),
-                        Color(0x99001A33),
-                        Color(0xE6000810),
-                      ],
-                      stops: [0.0, 0.45, 1.0],
-                    ),
-                  ),
-                  child: SizedBox.expand(),
                 ),
 
                 // ── Trilhas vivas ─────────────────────────────────────────
@@ -172,15 +181,18 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
                   ),
                 ),
 
-                const DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      radius: 0.95,
-                      colors: [Colors.transparent, Color(0xCC000508)],
-                      stops: [0.45, 1.0],
+                Opacity(
+                  opacity: entrouFundo,
+                  child: const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        radius: 0.95,
+                        colors: [Colors.transparent, Color(0xCC000508)],
+                        stops: [0.45, 1.0],
+                      ),
                     ),
+                    child: SizedBox.expand(),
                   ),
-                  child: SizedBox.expand(),
                 ),
 
                 // ── A marca ───────────────────────────────────────────────

@@ -13,6 +13,6 @@
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_vazio</item>
     </style>
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
-        <item name="android:windowBackground">@color/fundo_abertura</item>
+        <item name="android:windowBackground">@color/fundo_app</item>
     </style>
 </resources>
