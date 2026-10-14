@@ -13,14 +13,17 @@ class AppColors {
   // Identidade visual PMRR
   static const navy = Color(0xFF002154);
 
-  /// Cor das telas nativas de abertura e do primeiro quadro da animação.
+  /// Cor das telas nativas de abertura: `LaunchScreen.storyboard`,
+  /// `launch_background.xml` e a splash do Android 12.
   ///
-  /// É o navy institucional, e precisa ser a **mesma** nos três lugares —
-  /// LaunchScreen.storyboard, launch_background.xml e o Scaffold da
-  /// abertura. Antes era `darkBg`, e o resultado era preto: a tela nativa
-  /// abria escura, o Flutter abria escuro, e a animação só trazia cor
-  /// depois. Agora o app nasce azul e escurece junto com a imagem.
-  static const aberturaFundo = navy;
+  /// É o topo do degradê da app bar no modo escuro (ver
+  /// `AppTheme.appBarGradient`). O app abre na mesma cor da barra que o
+  /// militar vai ver em todas as telas — e a abertura do Flutter continua
+  /// esse degradê, então a emenda entre nativo e Flutter não aparece.
+  ///
+  /// Precisa acompanhar o degradê da app bar se ele mudar. Tem de ser cor
+  /// chapada: a splash do Android 12 não aceita degradê, só uma cor.
+  static const aberturaFundo = Color(0xFF0A1726);
   static const blue = Color(0xFF1565C0);
   static const lightBlue = Color(0xFF42A5F5);
   static const gold = Color(0xFFFFB300);

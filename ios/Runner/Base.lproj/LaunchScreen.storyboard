@@ -19,8 +19,8 @@
                             <imageView opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" image="LaunchImage" translatesAutoresizingMaskIntoConstraints="NO" id="YRO-k0-Ey4">
                             </imageView>
                         </subviews>
-                        <!-- AppColors.aberturaFundo, o navy institucional (#002154). Tem de ser a mesma cor do primeiro quadro da abertura do Flutter: as duas emendam sem transicao, e o app abre azul em vez de preto. -->
-                        <color key="backgroundColor" red="0.0" green="0.12941176470588237" blue="0.32941176470588235" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <!-- AppColors.aberturaFundo: o topo do degrade da app bar no escuro (#0A1726). A abertura do Flutter continua esse degrade, entao a emenda entre esta tela e a primeira do app nao aparece. -->
+                        <color key="backgroundColor" red="0.0392156862745098" green="0.09019607843137255" blue="0.14901960784313725" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="YRO-k0-Ey4" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="1a2-6s-vTC"/>
                             <constraint firstItem="YRO-k0-Ey4" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="4X2-HB-R7a"/>

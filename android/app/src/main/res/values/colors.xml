@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- AppColors.aberturaFundo, o navy institucional. A janela nativa, a
+    <!-- AppColors.aberturaFundo: o topo do degrade da app bar no escuro. A
          splash do Android 12 e o primeiro quadro da abertura do Flutter
          usam esta mesma cor; e isso que faz as tres emendarem. -->
-    <color name="fundo_abertura">#FF002154</color>
+    <color name="fundo_abertura">#FF0A1726</color>
     <!-- AppColors.darkBg. Janela que fica **atras** do Flutter depois do
          primeiro quadro. Nao e a cor de abertura: se fosse, o azul
          reapareceria em transicoes e ao retomar o app. -->

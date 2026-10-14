@@ -129,6 +129,23 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
             return Stack(
               fit: StackFit.expand,
               children: [
+                // Base: o mesmo degradê da app bar no escuro. A tela nativa
+                // abre na cor do topo dele, então o Flutter assume sem
+                // emenda — e o militar reconhece a barra que vai ver em
+                // todas as telas. Sempre o degradê escuro: a abertura roda
+                // antes de o tema do usuário ser lido.
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: AppTheme.appBarGradient(
+                          isDark: true, isSuperUser: false),
+                    ),
+                  ),
+                  child: const SizedBox.expand(),
+                ),
+
                 // ── Fundo ─────────────────────────────────────────────────
                 // A imagem **e** o escurecimento entram juntos, no mesmo
                 // Opacity. Com o degradê fora dele, ele valia desde o
