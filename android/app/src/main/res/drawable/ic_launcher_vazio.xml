@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Camada da frente do ícone adaptativo, vazia de propósito.
+
+  A arte do SouPMRR é de sangria, sem assunto separável do fundo: a marca
+  está impressa sobre a textura de circuito, na mesma imagem. Então ela
+  inteira vai na camada de trás, e a da frente fica transparente.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@android:color/transparent" />
+    <size android:width="1dp" android:height="1dp" />
+</shape>

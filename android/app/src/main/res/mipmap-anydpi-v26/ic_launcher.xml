@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Ícone adaptativo (Android 8+).
+
+  Sem este arquivo o projeto só tinha o `ic_launcher.png` legado, e o
+  lançador aplicava o tratamento de compatibilidade: encolhia o ícone e o
+  assentava num fundo **branco** recortado na máscara do sistema. Era de
+  onde vinha a borda branca que o iOS não tem — lá o quadrado é usado
+  inteiro, só com os cantos arredondados.
+
+  As camadas medem 108dp, das quais o sistema garante exibir os 72dp
+  centrais; por isso elas são geradas do mestre de 1000px e não das
+  versões legadas de 48dp.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@mipmap/ic_launcher_fundo" />
+    <foreground android:drawable="@drawable/ic_launcher_vazio" />
+    <monochrome android:drawable="@drawable/ic_launcher_vazio" />
+</adaptive-icon>
