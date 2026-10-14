@@ -8,4 +8,8 @@
          primeiro quadro. Nao e a cor de abertura: se fosse, o azul
          reapareceria em transicoes e ao retomar o app. -->
     <color name="fundo_app">#FF03050A</color>
+    <!-- Media das bordas de iconesoupm.png. E a cor de base do icone
+         adaptativo, visivel so nas quinas de mascaras que passam do
+         circulo inscrito. -->
+    <color name="icone_borda">#FF144D65</color>
 </resources>

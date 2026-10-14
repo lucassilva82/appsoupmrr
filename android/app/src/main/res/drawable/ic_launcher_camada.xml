@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Camada de trás do ícone adaptativo.
+
+  A camada do ícone adaptativo mede 108dp, mas o sistema só garante exibir
+  os **72dp centrais** — ou seja, o lançador dá um zoom de 1,5x em tudo que
+  for desenhado do tamanho da camada. Com a arte ocupando os 108dp, a marca
+  SOU PMRR chegava ampliada e espremida contra a borda do círculo.
+
+  Aqui a arte entra com 76dp, centralizada: o recorte do sistema passa a
+  mostrá-la quase inteira, na mesma proporção em que ela aparece no ícone do
+  iOS, onde não há zoom nenhum — lá o quadrado é usado inteiro.
+
+  Os 76dp, e não 72, dão uma folga para máscaras que vão além do círculo
+  inscrito; nessas, a cor de base aparece só nas quinas.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/icone_borda" />
+    <item
+        android:width="76dp"
+        android:height="76dp"
+        android:gravity="center"
+        android:drawable="@mipmap/ic_launcher_fundo" />
+</layer-list>

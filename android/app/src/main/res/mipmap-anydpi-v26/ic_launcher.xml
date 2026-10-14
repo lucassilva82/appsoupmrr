@@ -5,15 +5,18 @@
   Sem este arquivo o projeto só tinha o `ic_launcher.png` legado, e o
   lançador aplicava o tratamento de compatibilidade: encolhia o ícone e o
   assentava num fundo **branco** recortado na máscara do sistema. Era de
-  onde vinha a borda branca que o iOS não tem — lá o quadrado é usado
-  inteiro, só com os cantos arredondados.
+  onde vinha a borda branca que o iOS não tem.
 
-  As camadas medem 108dp, das quais o sistema garante exibir os 72dp
-  centrais; por isso elas são geradas do mestre de 1000px e não das
-  versões legadas de 48dp.
+  A arte do SouPMRR é de sangria, com a marca impressa sobre a textura de
+  circuito: não há assunto separável para dividir em duas camadas. Então
+  ela inteira vai atrás, dimensionada em ic_launcher_camada, e a camada da
+  frente fica vazia.
+
+  Sem `monochrome` de propósito: um monocromático transparente faria o
+  ícone sumir para quem liga os ícones temáticos no Android 13+. Sem ele, o
+  sistema usa o ícone normal.
 -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@mipmap/ic_launcher_fundo" />
+    <background android:drawable="@drawable/ic_launcher_camada" />
     <foreground android:drawable="@drawable/ic_launcher_vazio" />
-    <monochrome android:drawable="@drawable/ic_launcher_vazio" />
 </adaptive-icon>
