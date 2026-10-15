@@ -12,13 +12,35 @@ import '../models/auth_model.dart';
 import '../models/inatividade_model.dart';
 import '../utils/app_routes.dart';
 
-class CardTempoServico extends StatelessWidget {
+class CardTempoServico extends StatefulWidget {
   const CardTempoServico({Key? key, this.diasAgregadosTeste}) : super(key: key);
 
   final int? diasAgregadosTeste;
 
+  @override
+  State<CardTempoServico> createState() => _CardTempoServicoState();
+}
+
+class _CardTempoServicoState extends State<CardTempoServico> {
+  // O card era StatelessWidget e montava a consulta dentro do build(). Como o
+  // build observa o Auth (`Provider.of<Auth>(context)` sem listen: false),
+  // qualquer notificação do Auth reconstruía o card e disparava uma requisição
+  // HTTP nova ao listar_policial_iper.php — e o esqueleto de carregamento
+  // voltava junto. Agora a consulta é guardada e só refeita se a matrícula
+  // mudar, que é a única entrada dela.
+  String? _matriculaConsultada;
+  Future<int>? _diasAgregados;
+
+  Future<int> _futurePara(String matricula) {
+    if (_matriculaConsultada != matricula || _diasAgregados == null) {
+      _matriculaConsultada = matricula;
+      _diasAgregados = _buscarDiasAgregados(matricula);
+    }
+    return _diasAgregados!;
+  }
+
   Future<int> _buscarDiasAgregados(String matricula) async {
-    if (diasAgregadosTeste != null) return diasAgregadosTeste!;
+    if (widget.diasAgregadosTeste != null) return widget.diasAgregadosTeste!;
     final uri = Uri.parse(
       'https://pmrr.online/flutter/sigrh/listar_policial_iper.php?matricula=$matricula',
     );
@@ -143,7 +165,7 @@ class CardTempoServico extends StatelessWidget {
     if (dataInc != null) diasNormal = DateTime.now().difference(dataInc).inDays;
 
     return FutureBuilder<int>(
-      future: _buscarDiasAgregados(matricula),
+      future: _futurePara(matricula),
       builder: (context, snap) {
         final isLoading = snap.connectionState == ConnectionState.waiting;
 

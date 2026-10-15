@@ -10,17 +10,33 @@ import '../utils/app_routes.dart';
 import '../view/second_screen.dart';
 
 class Contracheque extends StatefulWidget {
-  Contracheque({Key? key}) : super(key: key);
+  const Contracheque({Key? key}) : super(key: key);
 
   @override
-  _ContrachequeState createState() => _ContrachequeState();
-
-  String _anoSelecionado = DateTime.now().year.toString();
-  late List<MesesContracheque> mesesContracheque;
+  State<Contracheque> createState() => _ContrachequeState();
 }
 
 class _ContrachequeState extends State<Contracheque> {
   final DadosSql dadosSql = DadosSql();
+
+  // O ano selecionado morava no widget. Widget é imutável por contrato no
+  // Flutter — estado que muda pertence ao State, e guardá-lo no widget faz o
+  // valor sobreviver a trocas que deveriam reiniciá-lo.
+  String _anoSelecionado = DateTime.now().year.toString();
+
+  // A consulta era montada dentro do build(), então qualquer reconstrução do
+  // pai refazia a busca no servidor à toa e devolvia a lista ao estado de
+  // carregamento. Agora ela só é refeita quando o ano muda, que é a única
+  // coisa capaz de mudar o resultado.
+  late Future<List<MesesContracheque>> _dados = _buscaDadosSql(_anoSelecionado);
+
+  void _selecionaAno(String ano) {
+    if (ano == _anoSelecionado) return;
+    setState(() {
+      _anoSelecionado = ano;
+      _dados = _buscaDadosSql(ano);
+    });
+  }
 
   List<int> get listaAnos {
     final anoAtual = DateTime.now().year;
@@ -29,9 +45,7 @@ class _ContrachequeState extends State<Contracheque> {
 
   Future<List<MesesContracheque>> _buscaDadosSql(String ano) async {
     final auth = Provider.of<Auth>(context, listen: false);
-    widget.mesesContracheque =
-        await dadosSql.listaMesesContracheque(auth.cpf!, ano);
-    return widget.mesesContracheque;
+    return dadosSql.listaMesesContracheque(auth.cpf!, ano);
   }
 
   /// Agrupa a lista por mês (chave = "mes_ano"), preservando a ordem
@@ -74,7 +88,7 @@ class _ContrachequeState extends State<Contracheque> {
             AppRoutes.CONTRACHEQUE_GRAFICO_PAGE,
             arguments: {
               'cpf': auth.cpf!,
-              'ano': widget._anoSelecionado,
+              'ano': _anoSelecionado,
             },
           );
         },
@@ -88,7 +102,7 @@ class _ContrachequeState extends State<Contracheque> {
           // ── Lista agrupada ────────────────────────────────────────────
           Expanded(
             child: FutureBuilder<List<MesesContracheque>>(
-              future: _buscaDadosSql(widget._anoSelecionado),
+              future: _dados,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
@@ -126,10 +140,10 @@ class _ContrachequeState extends State<Contracheque> {
           separatorBuilder: (_, __) => const SizedBox(width: 8),
           itemBuilder: (context, i) {
             final anoStr = listaAnos[i].toString();
-            final isSelected = anoStr == widget._anoSelecionado;
+            final isSelected = anoStr == _anoSelecionado;
 
             return GestureDetector(
-              onTap: () => setState(() => widget._anoSelecionado = anoStr),
+              onTap: () => _selecionaAno(anoStr),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeOut,
@@ -402,7 +416,7 @@ class _ContrachequeState extends State<Contracheque> {
               size: 64, color: isDark ? Colors.white24 : Colors.grey.shade300),
           const SizedBox(height: 16),
           Text(
-            'Nenhum contracheque em ${widget._anoSelecionado}',
+            'Nenhum contracheque em ${_anoSelecionado}',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
