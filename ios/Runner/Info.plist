@@ -59,6 +59,36 @@
 		<string>fetch</string>
 		<string>remote-notification</string>
 	</array>
+	<!-- Ciclo de vida UIScene.
+	     Sem este manifesto o iPadOS 27.2 derruba o app na abertura: o UIKit
+	     dispara __UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption
+	     e o processo morre com EXC_BREAKPOINT antes de qualquer código nosso
+	     rodar. Foi assim que a Apple rejeitou a 2.1.0 e a 2.1.2, nas duas vezes
+	     num iPad — no iPhone a adoção ainda era só um aviso, e por isso os
+	     testes pela TestFlight passavam.
+	     O FlutterSceneDelegate vem do próprio engine. O app tem uma janela só,
+	     então UIApplicationSupportsMultipleScenes fica falso. -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

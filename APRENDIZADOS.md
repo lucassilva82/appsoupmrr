@@ -252,3 +252,46 @@ sem saber por que ela estava ali.
 PlistBuddy por conveniência, conferir o diff depois — `git diff` denuncia na
 hora, pela quantidade de linhas alteradas muito maior que a mudança pedida.
 
+---
+
+## 16. O aviso de UIScene no build era a causa de duas rejeições
+
+**O que aconteceu.** A Apple rejeitou a 2.1.0 e a 2.1.2 com "crashed on launch".
+Na primeira rejeição não havia crash log nem aparelho informado, e eu atribuí ao
+watchdog do iOS — reestruturei o `main()` para desenhar antes de inicializar.
+Não resolveu, porque não era isso.
+
+Na segunda rejeição a Apple anexou os logs. O frame 0 da thread principal:
+
+    UIKitCore  __UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption_block_invoke
+    EXC_BREAKPOINT / SIGTRAP · iPad15,3 · iPadOS 27.2
+
+O iPadOS 27.2 derruba na abertura os apps que não adotaram o ciclo de vida
+`UIScene`. O UIKit dispara a armadilha **antes de qualquer código nosso rodar** —
+nem Dart, nem plugin, nem `main()`. Por isso a reestruturação não alcançava.
+
+**Por que só no iPad.** No iPhone a adoção ainda era apenas um aviso. Os testes
+pela TestFlight em iPhone passavam, e isso reforçou a hipótese errada.
+
+**O que eu deveria ter visto.** O `flutter run` imprimia, em todos os builds:
+
+    To ensure your app continues to launch on upcoming iOS versions,
+    UIScene lifecycle support will soon be required.
+
+Eu tratei como mais um aviso de depreciação, junto dos de Kotlin e Swift Package
+Manager. Era a causa raiz, em texto claro, na saída de todo build.
+
+**A correção.** `UIApplicationSceneManifest` no Info.plist apontando para o
+`FlutterSceneDelegate`, que o engine já fornece. Uma janela só, então
+`UIApplicationSupportsMultipleScenes` fica falso.
+
+**O que fazer daqui em diante.**
+
+- Ler os avisos de depreciação do build, não só os erros. "Will soon be
+  required" tem data de validade, e ela chega sem avisar de novo.
+- Rejeição por crash sem log: pedir o log à Apple antes de teorizar. Duas
+  semanas de fila se perderam numa hipótese que os logs teriam derrubado em
+  minutos.
+- Testar em iPad, não só em iPhone. A Apple revisa no aparelho que quiser, e
+  escolheu iPad nas duas vezes.
+
