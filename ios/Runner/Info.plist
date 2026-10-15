@@ -2,8 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSFaceIDUsageDescription</key>
-	<string>O aplicativo precisa da FaceID para autenticar você com segurança.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -21,13 +19,24 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.1.2</string>
+	<string>2.1.3</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>2.1.2</string>
+	<string>2.1.3</string>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<true/>
+	<!-- Conformidade de exportação de criptografia.
+	     O app não implementa criptografia própria: só consome o TLS do sistema
+	     para falar com a API da PMRR e com o Firebase. Isso cai na isenção da
+	     Apple, então a resposta é "não usa criptografia não isenta".
+	     Sem esta chave a App Store Connect pergunta isso a cada build enviado,
+	     e a compilação fica travada em "Faltam dados de conformidade" até ser
+	     respondida — foi o que segurou a 2.1.2.
+	     Atenção: o PlistBuddy reescreve o arquivo e apaga comentários. Para
+	     mexer na versão, edite o XML direto ou recoloque este bloco depois. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
@@ -37,6 +46,8 @@
 	</dict>
 	<key>NSDocumentsFolderUsageDescription</key>
 	<string>Permissão para acessar documentos no dispositivo.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>O aplicativo precisa da FaceID para autenticar você com segurança.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Permissão para salvar arquivos na biblioteca de fotos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -66,15 +77,6 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
-	<false/>
-	<!-- Conformidade de exportação de criptografia.
-	     O app não implementa criptografia própria: só consome o TLS do sistema
-	     para falar com a API da PMRR e com o Firebase. Isso cai na isenção da
-	     Apple, então a resposta é "não usa criptografia não isenta".
-	     Sem esta chave a App Store Connect pergunta isso a cada build enviado,
-	     e a compilação fica travada em "Faltam dados de conformidade" até ser
-	     respondida — foi o que segurou a 2.1.2. -->
-	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>
 </plist>

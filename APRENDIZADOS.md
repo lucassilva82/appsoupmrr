@@ -237,3 +237,18 @@ rasterização para imagem precisa percorrer todas e empilhá-las. Pedir
 `pages: [0]` estava certo enquanto o documento sempre cabia numa página; depois
 da paginação, faria a imagem perder rubricas sem avisar.
 
+---
+
+## 15. PlistBuddy apaga os comentários do Info.plist
+
+**O que aconteceu.** Ao subir a versão com
+`PlistBuddy -c "Set :CFBundleShortVersionString ..."`, o arquivo foi reescrito
+inteiro: as chaves saíram reordenadas em ordem alfabética e o comentário que
+explicava a chave `ITSAppUsesNonExemptEncryption` desapareceu. Nenhum valor se
+perdeu, mas o comentário era justamente o que impedia alguém remover a chave
+sem saber por que ela estava ali.
+
+**O que fazer.** Para mexer no Info.plist, editar o XML direto. Se usar o
+PlistBuddy por conveniência, conferir o diff depois — `git diff` denuncia na
+hora, pela quantidade de linhas alteradas muito maior que a mudança pedida.
+
