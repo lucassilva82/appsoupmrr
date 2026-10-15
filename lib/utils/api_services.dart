@@ -10,7 +10,28 @@ class ApiServices {
   // API de Legislações (externa)
   static const String legislacoesBaseUrl =
       'https://pm.rr.gov.br/api/legislacoes.php';
-  static const String legislacoesApiKey = 'pMrrGIT_9f2Kx7QvL4nA1cZ8tY6uE3wB';
+  // A chave vem do build, nunca do código-fonte. Este repositório é público:
+  // uma chave escrita aqui vira pública no instante do push, e continua pública
+  // no histórico mesmo depois de removida. Foi o que aconteceu com a chave
+  // anterior, versionada em 3522d09.
+  //
+  // Passe no build:  flutter build apk --dart-define-from-file=env.json
+  // O env.json fica fora do git (ver .gitignore e env.example.json).
+  //
+  // Importante entender o alcance disto: tirar a chave do repositório impede
+  // que qualquer pessoa na internet a leia no GitHub. NÃO a torna secreta para
+  // quem instala o app — qualquer chave compilada num binário pode ser extraída
+  // dele. Enquanto o app falar direto com a API de legislações, essa chave é,
+  // na prática, conhecida por quem tiver o APK. A correção definitiva é a API
+  // ser chamada pelo nosso backend (pmrr.online), que já autentica o militar,
+  // em vez de pelo aplicativo.
+  static const String legislacoesApiKey =
+      String.fromEnvironment('LEGISLACOES_API_KEY');
+
+  /// Verdadeiro quando o build saiu sem a chave definida. As telas de
+  /// Legislações e POPs não funcionam nesse caso, e é melhor dizer isso alto
+  /// do que deixar a API responder 401 e parecer instabilidade da rede.
+  static bool get semChaveLegislacoes => legislacoesApiKey.isEmpty;
 
   /// Envia a matrícula e o e-mail via GET ao endpoint `api_update_email.php`
   /// Retorna um Map: {"code": int, "message": String, ...}
@@ -268,6 +289,9 @@ class ApiServices {
 
     final uri = Uri.parse(legislacoesBaseUrl).replace(queryParameters: params);
     debugPrint('[LEGIS] GET -> $uri');
+    if (semChaveLegislacoes) {
+      debugPrint('[LEGIS] ATENÇÃO: build sem LEGISLACOES_API_KEY — a API vai recusar.');
+    }
     try {
       final res = await http.get(uri, headers: {
         'X-API-KEY': legislacoesApiKey,

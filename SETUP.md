@@ -68,6 +68,7 @@ que é público.
 |---|---|---|
 | `android/app/upload-keystore.jks` | Keystore de assinatura do release Android | **Sem ele é impossível publicar atualizações na Play Store.** Não existe como recuperar — faça backup em local seguro. |
 | `android/key.properties` | Senhas/alias do keystore acima | Build de release Android falha na assinatura |
+| `env.json` | Chaves de API usadas no build (hoje só `LEGISLACOES_API_KEY`) | O app compila, mas Legislações e POPs respondem 401. Copie de `env.example.json`. |
 
 Formato esperado de `android/key.properties` (valores reais vêm da máquina antiga):
 
@@ -137,8 +138,14 @@ flutter run
 ### Android (Play Store)
 
 ```bash
-flutter build appbundle --release   # gera build/app/outputs/bundle/release/app-release.aab
+flutter build appbundle --release --dart-define-from-file=env.json
+# gera build/app/outputs/bundle/release/app-release.aab
 ```
+
+O `--dart-define-from-file` é obrigatório: sem ele a chave da API de legislações
+sai vazia do build e as telas de Legislações e POPs param de carregar, com cara
+de instabilidade de rede. O app avisa no log (`[LEGIS] ATENÇÃO: build sem
+LEGISLACOES_API_KEY`), mas o usuário final não vê isso.
 
 Antes de cada envio, incrementar em `android/app/build.gradle.kts`:
 `versionCode` (número inteiro sempre crescente) e `versionName`.
@@ -149,6 +156,10 @@ Antes de cada envio, incrementar em `android/app/build.gradle.kts`:
 2. Abrir **`ios/Runner.xcworkspace`** no Xcode
 3. Selecionar **"Any iOS Device (arm64)"** (o Archive fica desabilitado em simulador)
 4. **Product → Archive**
+
+> O Archive pelo Xcode não lê o `env.json`. Para que a chave entre no build iOS,
+> rode antes `flutter build ipa --release --dart-define-from-file=env.json` (que
+> já gera o `.xcarchive` e o `.ipa` prontos), ou configure o define no scheme.
 5. **Window → Organizer** → aba **Archives** → **Distribute App** → **App Store Connect** → **Upload**
 
 ---

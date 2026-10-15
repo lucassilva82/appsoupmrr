@@ -51,3 +51,7 @@ app.*.map.json
 
 # Dados sensíveis / arquivos de trabalho pessoal (não versionar)
 /1 - Simulação Inatividade Militares.xlsx
+
+# Chaves de build — copie o env.example.json para env.json e preencha.
+# Nunca versione o env.json: este repositório é público.
+env.json

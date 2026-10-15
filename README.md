@@ -1,17 +1,34 @@
 # SouPMRR
 
-A new Flutter project.
+Aplicativo institucional da Polícia Militar do Estado de Roraima. Reúne as
+informações funcionais do militar — contracheque, tempo de serviço, plano de
+férias, declarações, certidões — e a consulta à base normativa da corporação.
 
-## Getting Started
+Flutter (Android e iOS). O acesso é restrito aos militares da PMRR.
 
-This project is a starting point for a Flutter application.
+## Documentação
 
-A few resources to get you started if this is your first Flutter project:
+| Documento | Para quê |
+|---|---|
+| [SETUP.md](SETUP.md) | Montar o projeto numa máquina nova, versões validadas das ferramentas, arquivos que não vêm no clone e comandos de build |
+| [APRENDIZADOS.md](APRENDIZADOS.md) | Erros que já custaram caro e como evitá-los. **Leia antes de publicar uma versão.** |
+| [DESIGN.md](DESIGN.md) | Padrão visual: cores, tipografia, espaçamentos e a gramática dos cartões |
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Build
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-# appsoupmrr
+Os builds precisam das chaves de API, que não estão no repositório:
+
+```bash
+cp env.example.json env.json   # preencha com as chaves reais
+flutter build appbundle --release --dart-define-from-file=env.json
+```
+
+Sem o `--dart-define-from-file` o app compila, mas as telas de Legislações e
+POPs param de carregar. Detalhes na seção 5 do [SETUP.md](SETUP.md).
+
+## Atenção
+
+Este repositório é **público**. Nunca commite chaves, senhas, keystores ou
+dados de militares. O que fica de fora está listado na seção 3 do
+[SETUP.md](SETUP.md), e o motivo está no item 3 do
+[APRENDIZADOS.md](APRENDIZADOS.md).
