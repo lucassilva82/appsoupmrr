@@ -125,132 +125,174 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // O bloqueio de captura não é mais global: ele é ligado pela própria tela
-  // que precisa dele (a ficha do militar, em ProtecaoTela). No resto do app
-  // o militar pode printar e gravar — são dados dele.
-  print('[DEBUG] 1) Inicializa detector de captura');
-  await ScreenshotRecordingDetector.initialize();
+  // ── Por que o runApp vem cedo ───────────────────────────────────────────
+  //
+  // Antes, o `runApp` era a última linha desta função, depois de uns dez
+  // `await` — Firebase, canal de notificação, notificações locais pedindo
+  // permissão do iOS, `requestPermission` de push, busca do token FCM com
+  // um laço de espera de três segundos, inscrição em tópicos. Nada disso
+  // protegido por `try`.
+  //
+  // Isso significa que nenhum pixel era desenhado até tudo terminar. No
+  // aparelho do revisor da Apple, em release, o resultado foi "o app trava
+  // ao abrir": caixas de permissão do sistema aparecendo sobre uma tela
+  // vazia, e o iOS encerra o app que demora a entregar o primeiro quadro.
+  // Em debug no simulador isso nunca aparece, porque esse limite não existe
+  // ali e as permissões se comportam de outro jeito.
+  //
+  // Agora só fica aqui o que o primeiro quadro realmente exige, com guarda
+  // e prazo. O resto corre depois, sem segurar a tela.
 
-  print('[DEBUG] 3) Inicializando Firebase');
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  print('[DEBUG] 3.1) Criando canal de notificação (Android)');
-  const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'default_channel',
-    'Notificações',
-    importance: Importance.max,
-  );
-
-  await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(channel);
-
-  print('[DEBUG] 4) Inicializando notificações locais');
-  const initAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
-  const initIOS = DarwinInitializationSettings(
-    requestAlertPermission: true,
-    requestBadgePermission: true,
-    requestSoundPermission: true,
-  );
-  await flutterLocalNotificationsPlugin.initialize(
-    const InitializationSettings(android: initAndroid, iOS: initIOS),
-    onDidReceiveNotificationResponse: (resp) {
-      print('[DEBUG] Notificação local clicada – payload: ${resp.payload}');
-      navegarPorNotificacao(resp.payload);
-    },
-  );
-
-  print('[DEBUG] 5) Registrando background handler FCM');
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-  // Em foreground NÃO deixamos o FCM apresentar o banner nativo, pois o banner
-  // é exibido pelo stream do Firestore (funciona no device E no simulador).
-  // Isso evita banner duplicado no iPhone real. Em background/terminado o SO
-  // continua exibindo a notificação normalmente (estas opções não se aplicam).
-  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-    alert: false,
-    badge: false,
-    sound: false,
-  );
-
-  // 6) Permissões iOS
-  if (Platform.isIOS) {
-    print('[FCM] Solicitando permissão de notificação iOS');
-    NotificationSettings settings =
-        await FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-    print('[FCM] Permissão iOS: ${settings.authorizationStatus}');
+  // O NotificationProvider liga no Firestore já no construtor, e ele é
+  // criado junto com a árvore — por isso o Firebase não dá para adiar. Com
+  // prazo: sem rede, o app abre do mesmo jeito e tenta de novo depois.
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    ).timeout(const Duration(seconds: 10));
+  } catch (e) {
+    debugPrint('[INIT] Firebase não subiu no startup: $e');
   }
 
-  print('[DEBUG] Registrando listener onTokenRefresh');
-  FirebaseMessaging.instance.onTokenRefresh.listen((token) async {
-    print('[DEBUG] FCM Token atualizado: $token');
+  // Local, rápido, sem rede. Mas se falhar, qualquer DateFormat com locale
+  // quebra — então é guardado e não derruba a abertura.
+  try {
+    await initializeDateFormatting();
+  } catch (e) {
+    debugPrint('[INIT] initializeDateFormatting falhou: $e');
+  }
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => Auth()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
+
+  // Daqui para baixo nada bloqueia a tela.
+  unawaited(_prepararServicos());
+}
+
+/// Tudo que o app precisa, mas que o primeiro quadro não espera.
+///
+/// Cada passo é independente e guardado: um que falhe não impede os
+/// seguintes, e nenhum deles derruba o app.
+Future<void> _prepararServicos() async {
+  Future<void> passo(String nome, Future<void> Function() corpo) async {
     try {
-      final userData = await Store.getMap('userData');
-      final matricula = userData['matricula'];
-      if (matricula != null && matricula.toString().isNotEmpty) {
-        await FirebaseFirestore.instance
-            .collection('militares')
-            .doc(matricula.toString())
-            .set({'fcmToken': token}, SetOptions(merge: true));
-        print(
-            '[FCM] ✅ Token renovado salvo → militares/$matricula → fcmToken OK');
-      }
+      await corpo();
     } catch (e) {
-      print('[FCM] ❌ ERRO ao salvar token renovado: $e');
+      debugPrint('[INIT] $nome falhou: $e');
     }
+  }
+
+  await passo('detector de captura', () async {
+    await ScreenshotRecordingDetector.initialize();
   });
 
-  // Obtém o FCM token. No iOS device físico o getToken() funciona direto.
-  // No simulador, getToken() lança apns-token-not-set, mas o AppDelegate
-  // captura o token nativamente e grava em UserDefaults (native_fcm_token).
-  print('[FCM] ── Obtendo token inicial ──');
-  String? fcmToken;
-  try {
-    fcmToken = await FirebaseMessaging.instance.getToken();
-  } catch (e) {
-    print('[FCM] getToken() falhou no startup ($e)');
-  }
-  if (fcmToken == null) {
-    // Fallback nativo (simulador): aguarda o AppDelegate gravar o token.
-    for (int i = 0; i < 6 && (fcmToken == null || fcmToken.isEmpty); i++) {
-      fcmToken = await Store.getString('native_fcm_token');
-      if (fcmToken.isEmpty) {
-        await Future.delayed(const Duration(milliseconds: 500));
+  await passo('canal de notificação', () async {
+    const canal = AndroidNotificationChannel(
+      'default_channel',
+      'Notificações',
+      importance: Importance.max,
+    );
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(canal);
+  });
+
+  await passo('notificações locais', () async {
+    const initAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+    // As três permissões saem em `false` de propósito. Em `true`, o plugin
+    // abre a caixa do sistema no instante da inicialização — era a segunda
+    // caixa a aparecer sobre a tela vazia. Quem pede é
+    // `_checkNotificationPermission`, depois do primeiro quadro e com uma
+    // explicação antes.
+    const initIOS = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
+    await flutterLocalNotificationsPlugin.initialize(
+      const InitializationSettings(android: initAndroid, iOS: initIOS),
+      onDidReceiveNotificationResponse: (resp) {
+        debugPrint(
+            '[DEBUG] Notificação local clicada – payload: ${resp.payload}');
+        navegarPorNotificacao(resp.payload);
+      },
+    );
+  });
+
+  await passo('handler de background FCM', () async {
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  });
+
+  // Em foreground o banner é exibido pelo stream do Firestore, não pelo FCM,
+  // para não duplicar com o banner nativo do SO.
+  await passo('apresentação em foreground', () async {
+    await FirebaseMessaging.instance
+        .setForegroundNotificationPresentationOptions(
+      alert: false,
+      badge: false,
+      sound: false,
+    );
+  });
+
+  // Sem `requestPermission` aqui. Pedir permissão não é tarefa de
+  // inicialização: `_checkNotificationPermission` já faz isso depois do
+  // primeiro quadro, mostrando antes um diálogo do app que explica por quê.
+
+  await passo('listener de token', () async {
+    FirebaseMessaging.instance.onTokenRefresh.listen((token) async {
+      try {
+        final userData = await Store.getMap('userData');
+        final matricula = userData['matricula'];
+        if (matricula != null && matricula.toString().isNotEmpty) {
+          await FirebaseFirestore.instance
+              .collection('militares')
+              .doc(matricula.toString())
+              .set({'fcmToken': token}, SetOptions(merge: true));
+          debugPrint('[FCM] ✅ Token renovado salvo → militares/$matricula');
+        }
+      } catch (e) {
+        debugPrint('[FCM] ❌ ERRO ao salvar token renovado: $e');
+      }
+    });
+  });
+
+  // O token pode demorar: no simulador o getToken lança até o AppDelegate
+  // gravar o token nativo. Esperar por isso está certo **aqui**, fora do
+  // caminho do primeiro quadro — antes, esse laço segurava a abertura por
+  // até três segundos.
+  await passo('token inicial', () async {
+    String? token;
+    try {
+      token = await FirebaseMessaging.instance.getToken();
+    } catch (e) {
+      debugPrint('[FCM] getToken() falhou: $e');
+    }
+    if (token == null || token.isEmpty) {
+      for (var i = 0; i < 6 && (token == null || token.isEmpty); i++) {
+        token = await Store.getString('native_fcm_token');
+        if (token.isEmpty) {
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
       }
     }
-  }
-  if (fcmToken != null && fcmToken.isNotEmpty) {
-    print('[FCM] ✅ Token inicial: ${fcmToken.substring(0, 40)}...');
-  } else {
-    print(
-        '[FCM] ⚠️ Token não obtido no startup — onTokenRefresh/login salvarão depois.');
-  }
+    debugPrint(token != null && token.isNotEmpty
+        ? '[FCM] ✅ Token inicial obtido'
+        : '[FCM] ⚠️ Token não obtido no startup');
+  });
 
-  try {
+  await passo('inscrição em tópicos', () async {
     await FirebaseMessaging.instance.subscribeToTopic('todos_militares');
     await FirebaseMessaging.instance.subscribeToTopic('pmrr_usuarios');
-    print('[FCM] ✅ Inscrito nos tópicos: todos_militares, pmrr_usuarios');
-  } catch (e) {
-    print('[FCM] ⚠️ Inscrição em tópicos adiada (APNs não pronto): $e');
-  }
-
-  print('[DEBUG] Inicializando datas e rodando app');
-  initializeDateFormatting().then((_) {
-    runApp(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => NotificationProvider()),
-          ChangeNotifierProvider(create: (_) => Auth()),
-          ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ],
-        child: const MyApp(),
-      ),
-    );
+    debugPrint('[FCM] ✅ Inscrito nos tópicos');
   });
 }
 
