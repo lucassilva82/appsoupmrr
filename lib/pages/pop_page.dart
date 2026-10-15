@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:projetonovo/utils/api_services.dart';
 import 'package:projetonovo/widgets/custom_appbar.dart';
 import 'package:share_plus/share_plus.dart';
+import '../widgets/vidro.dart';
 
 class PopPage extends StatefulWidget {
   const PopPage({Key? key}) : super(key: key);
@@ -220,7 +221,7 @@ class _PopPageState extends State<PopPage> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: const CustomAppBar(title: 'POP'),
       body: SafeArea(
           child: Column(
@@ -380,7 +381,7 @@ class _PopPageState extends State<PopPage> {
             ],
           ),
         ),
-    );
+    ));
   }
 
   Widget _buildGallery(BuildContext context, ThemeData theme) {
@@ -627,7 +628,7 @@ class _PdfViewerPop extends StatelessWidget {
     final shownTitle = compactTitle.length > 48
         ? compactTitle.substring(0, 48) + '…'
         : compactTitle;
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: CustomAppBar(title: shownTitle),
       body: PDFView(
         filePath: filePath,
@@ -652,6 +653,6 @@ class _PdfViewerPop extends StatelessWidget {
           }
         },
       ),
-    );
+    ));
   }
 }

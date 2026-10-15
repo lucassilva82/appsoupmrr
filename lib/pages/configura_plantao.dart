@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/plantao_model.dart';
 import '../utils/app_routes.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/vidro.dart';
 
 class ConfiguraPlantao extends StatefulWidget {
   ConfiguraPlantao({Key? key}) : super(key: key);
@@ -39,7 +40,7 @@ class _ConfiguraPlantaoState extends State<ConfiguraPlantao> {
     double hieght = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.height;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -162,7 +163,7 @@ class _ConfiguraPlantaoState extends State<ConfiguraPlantao> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   _selecionaData() async {

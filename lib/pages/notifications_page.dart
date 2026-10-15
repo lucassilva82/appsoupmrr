@@ -5,6 +5,7 @@ import 'package:projetonovo/utils/app_theme.dart';
 import 'package:projetonovo/utils/notification_provider.dart';
 import 'package:projetonovo/widgets/custom_appbar.dart';
 import 'package:provider/provider.dart';
+import '../widgets/vidro.dart';
 
 // ── Helpers de categoria / tempo ──────────────────────────────────────────────
 /// Mapeia a rota da notificação para um ícone + cor de categoria, dando o
@@ -762,9 +763,9 @@ class NotificationsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: CustomAppBar(title: 'Notificações'),
       body: const NotificationsBody(),
-    );
+    ));
   }
 }

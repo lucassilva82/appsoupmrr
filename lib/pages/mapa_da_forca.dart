@@ -40,7 +40,7 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
     final isDark = theme.brightness == Brightness.dark;
     const primaryBlue = AppColors.blue;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: const CustomAppBar(title: 'Mapa da Força'),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,7 +168,7 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _bannerEfetivo(BuildContext context, bool isDark) {

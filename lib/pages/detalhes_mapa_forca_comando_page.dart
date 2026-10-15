@@ -14,6 +14,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import '../models/map_busca_detalhes_model.dart';
 import '../pages/militar_detalhe_full_page.dart';
 import '../widgets/custom_appbar.dart';
+import '../widgets/vidro.dart';
 
 class DetalhesMapaForcaComandoPage extends StatefulWidget {
   final MapBuscaDetalhesModel dadosBusca;
@@ -344,7 +345,7 @@ class _DetalhesMapaForcaComandoPageState
   /* ---------------- BUILD ---------------- */
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: CustomAppBar(title: widget.dadosBusca.descricao),
       body: Column(
         children: [
@@ -495,7 +496,7 @@ class _DetalhesMapaForcaComandoPageState
           ),
         ],
       ),
-    );
+    ));
   }
 }
 

@@ -9,6 +9,7 @@ import '../utils/api_services.dart';
 import '../utils/app_theme.dart';
 import '../widgets/custom_appbar.dart';
 import '../widgets/requisitos_senha.dart';
+import '../widgets/vidro.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RecuperarSenhaPage
@@ -149,7 +150,7 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: const CustomAppBar(title: 'Recuperar senha'),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
@@ -181,7 +182,7 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   /// Trilha de progresso dos três passos.

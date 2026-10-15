@@ -9,6 +9,7 @@ import '../models/auth_model.dart';
 import '../utils/api_services.dart';
 import '../utils/app_theme.dart';
 import '../widgets/custom_appbar.dart';
+import '../widgets/vidro.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AlterarSenhaPage
@@ -154,7 +155,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: const CustomAppBar(title: 'Alterar senha'),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
@@ -175,7 +176,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
           child: _concluido ? _sucesso() : _formulario(),
         ),
       ),
-    );
+    ));
   }
 
   // ── Formulário ────────────────────────────────────────────────────────────

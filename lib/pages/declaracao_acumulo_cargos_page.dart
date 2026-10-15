@@ -6,6 +6,7 @@ import 'package:projetonovo/models/auth_model.dart';
 import 'package:projetonovo/utils/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/vidro.dart';
 
 class DeclaracaoAcumuloCargosPage extends StatefulWidget {
   final String ano;
@@ -229,7 +230,7 @@ class _DeclaracaoAcumuloCargosPageState
     final isDark = theme.brightness == Brightness.dark;
     final auth = Provider.of<Auth>(context, listen: false);
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
@@ -241,7 +242,7 @@ class _DeclaracaoAcumuloCargosPageState
       body: isLoading
             ? const Center(child: CircularProgressIndicator.adaptive())
             : _buildContent(theme, auth),
-    );
+    ));
   }
 
   Widget _buildContent(ThemeData theme, Auth auth) {

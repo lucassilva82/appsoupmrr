@@ -8,6 +8,7 @@ import '../models/meses_contracheque_model.dart';
 import '../services/dados_sql.dart';
 import '../utils/app_routes.dart';
 import '../view/second_screen.dart';
+import '../widgets/vidro.dart';
 
 class Contracheque extends StatefulWidget {
   const Contracheque({Key? key}) : super(key: key);
@@ -79,7 +80,7 @@ class _ContrachequeState extends State<Contracheque> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: CustomAppBar(title: 'Contracheques'),
       floatingActionButton: _ShimmerFab(
         onTap: () {
@@ -119,7 +120,7 @@ class _ContrachequeState extends State<Contracheque> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   // ── Seletor de anos ───────────────────────────────────────────────────

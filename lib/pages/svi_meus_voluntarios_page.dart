@@ -4,6 +4,7 @@ import '../models/svi_model.dart';
 import '../services/escala_service.dart';
 import '../utils/app_theme.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/vidro.dart';
 
 // ── Meus Voluntários ──────────────────────────────────────────────────────────
 /// Histórico dos serviços SVI em que o militar se candidatou.
@@ -61,7 +62,7 @@ class _SviMeusVoluntariosPageState extends State<SviMeusVoluntariosPage> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
@@ -80,7 +81,7 @@ class _SviMeusVoluntariosPageState extends State<SviMeusVoluntariosPage> {
         ),
       ),
       body: _buildBody(theme, isDark),
-    );
+    ));
   }
 
   Widget _buildBody(ThemeData theme, bool isDark) {

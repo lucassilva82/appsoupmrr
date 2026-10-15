@@ -230,7 +230,7 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: const CustomAppBar(title: 'Primeiro acesso'),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
@@ -257,7 +257,7 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
           },
         ),
       ),
-    );
+    ));
   }
 
   Widget _cabecalho(IconData icone, String titulo, String descricao,

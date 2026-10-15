@@ -14,6 +14,7 @@ import '../models/map_busca_detalhes_model.dart';
 import '../models/auth_model.dart';
 import '../pages/militar_detalhe_full_page.dart';
 import '../widgets/custom_appbar.dart';
+import '../widgets/vidro.dart';
 
 class DetalhesMapaForcaPage extends StatefulWidget {
   final MapBuscaDetalhesModel dadosBusca;
@@ -123,7 +124,7 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
     final isDark = theme.brightness == Brightness.dark;
     final auth = Provider.of<Auth>(context, listen: false);
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: CustomAppBar(
           title:
               '${widget.dadosBusca.descricao} - ${widget.dadosBusca.quantidade}'),
@@ -175,7 +176,7 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
           );
         },
       ),
-    );
+    ));
   }
 
   String? _resolveImgUrl(String? raw) {

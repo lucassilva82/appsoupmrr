@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../models/auth_model.dart';
 import '../utils/app_theme.dart';
 import '../widgets/custom_appbar.dart';
+import '../widgets/vidro.dart';
 
 class PlanoDeFeriasPage extends StatefulWidget {
   const PlanoDeFeriasPage({super.key});
@@ -719,7 +720,7 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       backgroundColor: Colors.transparent,
           // fundo global (FundoSuave) aparece por baixo
       appBar: const CustomAppBar(title: 'Plano de Férias'),
@@ -753,6 +754,6 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
           ),
         ],
       ),
-    );
+    ));
   }
 }

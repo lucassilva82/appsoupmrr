@@ -15,6 +15,7 @@ import '../models/certidao_model.dart';
 import '../models/auth_model.dart';
 import '../widgets/custom_appbar.dart';
 import '../widgets/alerta.dart';
+import '../widgets/vidro.dart';
 
 class CertidoesPage extends StatefulWidget {
   const CertidoesPage({super.key});
@@ -715,7 +716,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
       color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
     );
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: CustomAppBar(title: 'Certidões'),
       body: SafeArea(
         child: Padding(
@@ -863,7 +864,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _statusStepper(int currentStatus, Color activeColor, ThemeData theme) {
@@ -1169,7 +1170,7 @@ class PdfViewerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: CustomAppBar(title: title ?? 'Certidão'),
       body: PDFView(
         filePath: filePath,
@@ -1199,6 +1200,6 @@ class PdfViewerScreen extends StatelessWidget {
           }
         },
       ),
-    );
+    ));
   }
 }

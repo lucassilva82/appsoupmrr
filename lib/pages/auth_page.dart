@@ -6,6 +6,7 @@ import '../models/auth_model.dart';
 import '../widgets/auth_form.dart';
 import '../widgets/versao_app.dart';
 import '../utils/app_routes.dart';
+import '../widgets/vidro.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({Key? key}) : super(key: key);
@@ -86,7 +87,7 @@ class _AuthPageState extends State<AuthPage>
 
     final size = MediaQuery.of(context).size;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       body: SizedBox.expand(
         child: Stack(
           children: [
@@ -247,6 +248,6 @@ class _AuthPageState extends State<AuthPage>
           ],
         ),
       ),
-    );
+    ));
   }
 }

@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:projetonovo/utils/api_services.dart';
 import 'dart:async';
+import '../widgets/vidro.dart';
 // import 'package:pdf_text/pdf_text.dart'; // Removido por ora: usaremos ementa/palavras_chave para resumo
 
 class LegislacoesPage extends StatefulWidget {
@@ -227,7 +228,7 @@ class _LegislacoesPageState extends State<LegislacoesPage> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: const CustomAppBar(title: 'Legislações'),
       body: SafeArea(
           child: Column(
@@ -387,7 +388,7 @@ class _LegislacoesPageState extends State<LegislacoesPage> {
             ],
           ),
         ),
-    );
+    ));
   }
 
   Widget _buildGallery(BuildContext context, ThemeData theme) {
@@ -635,7 +636,7 @@ class _PdfViewerLegislacao extends StatelessWidget {
     final shownTitle = compactTitle.length > 48
         ? compactTitle.substring(0, 48) + '…'
         : compactTitle;
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: CustomAppBar(title: shownTitle),
       body: PDFView(
         filePath: filePath,
@@ -660,6 +661,6 @@ class _PdfViewerLegislacao extends StatelessWidget {
           }
         },
       ),
-    );
+    ));
   }
 }

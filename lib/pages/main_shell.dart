@@ -13,6 +13,7 @@ import 'page_militar.dart';
 import 'configuracoes.dart';
 import '../widgets/barra_navegacao.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/vidro.dart';
 
 class MainShell extends StatefulWidget {
   final int initialIndex;
@@ -79,7 +80,7 @@ class _MainShellState extends State<MainShell> {
     final unread = notifProvider.notifications.where((n) => !n.clicked).length;
     final nome = auth.nomeMilitar ?? 'Militar';
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       // ── AppBar dinâmico ─────────────────────────────────────────────────────
       // ── AppBar dinâmico ─────────────────────────────────────────────────────
       // A altura precisa somar o recorte do topo (ilha/notch). Sem isso o
@@ -149,7 +150,7 @@ class _MainShellState extends State<MainShell> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   // ── AppBar content ────────────────────────────────────────────────────────

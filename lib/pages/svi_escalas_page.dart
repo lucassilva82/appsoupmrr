@@ -5,6 +5,7 @@ import '../services/escala_service.dart';
 import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/vidro.dart';
 
 // ── Vagas SVI ─────────────────────────────────────────────────────────────────
 /// Lista de escalas SVI com vagas disponíveis para o militar se candidatar.
@@ -90,7 +91,7 @@ class _SviEscalasPageState extends State<SviEscalasPage> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
@@ -117,7 +118,7 @@ class _SviEscalasPageState extends State<SviEscalasPage> {
         ],
       ),
       body: _buildBody(theme, isDark),
-    );
+    ));
   }
 
   Widget _buildBody(ThemeData theme, bool isDark) {

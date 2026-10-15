@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:share_plus/share_plus.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/vidro.dart';
 
 class PdfViewPage extends StatelessWidget {
   final String path;
@@ -10,7 +11,7 @@ class PdfViewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -29,6 +30,6 @@ class PdfViewPage extends StatelessWidget {
       body: PDFView(
         filePath: path,
       ),
-    );
+    ));
   }
 }

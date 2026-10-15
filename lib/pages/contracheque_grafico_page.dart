@@ -8,6 +8,7 @@ import '../models/meses_contracheque_model.dart';
 import '../services/dados_sql.dart';
 import '../utils/app_theme.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/vidro.dart';
 
 // ── Model de dados por mês ────────────────────────────────────────────────────
 class _MesData {
@@ -243,7 +244,7 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
         ? dados[_touchedIndex!]
         : null;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       backgroundColor: Colors.transparent,
           // fundo global (FundoSuave) aparece por baixo
       body: CustomScrollView(
@@ -343,7 +344,7 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   // ── Card do gráfico ─────────────────────────────────────────────────────────
@@ -673,7 +674,7 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
 
   // ── Estado de carregamento animado ──────────────────────────────────────────
   Widget _buildLoading(bool isDark) {
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 44),
@@ -779,11 +780,11 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
             ),
           ),
         ),
-    );
+    ));
   }
 
   Widget _buildError(bool isDark) {
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       backgroundColor: Colors.transparent,
           // fundo global (FundoSuave) aparece por baixo
       appBar: AppBar(
@@ -814,7 +815,7 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
           ],
         ),
       ),
-    );
+    ));
   }
 }
 

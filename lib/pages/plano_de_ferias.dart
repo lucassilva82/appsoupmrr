@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../widgets/drawer_personalizado.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/vidro.dart';
 
 class PlanoDeFerias extends StatefulWidget {
   const PlanoDeFerias({Key? key}) : super(key: key);
@@ -13,7 +14,7 @@ class PlanoDeFerias extends StatefulWidget {
 class _PlanoDeFeriasState extends State<PlanoDeFerias> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -22,6 +23,6 @@ class _PlanoDeFeriasState extends State<PlanoDeFerias> {
       ),
       drawer: DrawerPersonalizado(),
       body: Container(),
-    );
+    ));
   }
 }

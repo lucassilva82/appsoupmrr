@@ -4,6 +4,7 @@ import '../models/escala_model.dart';
 import '../services/escala_service.dart';
 import '../utils/app_theme.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/vidro.dart';
 
 // ── EscalaDetalhePage ─────────────────────────────────────────────────────────
 class EscalaDetalhePage extends StatefulWidget {
@@ -232,7 +233,7 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
@@ -255,7 +256,7 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
           : _error != null
               ? _ErrorBody(message: _error!, onRetry: _load)
               : _buildContent(theme, isDark),
-    );
+    ));
   }
 
   Widget _buildContent(ThemeData theme, bool isDark) {

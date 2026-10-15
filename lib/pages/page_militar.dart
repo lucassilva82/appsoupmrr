@@ -6,6 +6,7 @@ import '../models/auth_model.dart';
 import '../models/militar.dart';
 import '../services/dados_sql.dart';
 import '../widgets/dados_militar.dart';
+import '../widgets/vidro.dart';
 
 // ── PageMilitarBody ───────────────────────────────────────────────────────────
 // Conteúdo da aba "Perfil" dentro do MainShell.
@@ -111,9 +112,9 @@ class PageMilitar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: CustomAppBar(title: 'Ficha Individual'),
       body: const PageMilitarBody(),
-    );
+    ));
   }
 }

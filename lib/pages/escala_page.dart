@@ -7,6 +7,7 @@ import '../services/escala_service.dart';
 import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/vidro.dart';
 
 // ── EscalasPage ───────────────────────────────────────────────────────────────
 class EscalasPage extends StatefulWidget {
@@ -504,11 +505,11 @@ class _EscalasPageState extends State<EscalasPage>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: _buildAppBar(theme),
       body: _buildBody(theme, isDark),
-    );
+    ));
   }
 
   PreferredSizeWidget _buildAppBar(ThemeData theme) {

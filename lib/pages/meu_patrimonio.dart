@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../widgets/drawer_personalizado.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/vidro.dart';
 
 class MeuPatrimonioPage extends StatefulWidget {
   const MeuPatrimonioPage({Key? key}) : super(key: key);
@@ -13,7 +14,7 @@ class MeuPatrimonioPage extends StatefulWidget {
 class _MeuPatrimonioPageState extends State<MeuPatrimonioPage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -24,6 +25,6 @@ class _MeuPatrimonioPageState extends State<MeuPatrimonioPage> {
         child: Text('Dados Financeiros'),
       ),
       drawer: DrawerPersonalizado(),
-    );
+    ));
   }
 }

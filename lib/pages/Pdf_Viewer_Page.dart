@@ -1,6 +1,7 @@
 import 'package:pdfx/pdfx.dart';
 import 'package:flutter/material.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/vidro.dart';
 
 class PdfViewerPage extends StatefulWidget {
   final String pdfPath; // Caminho do arquivo PDF
@@ -36,7 +37,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -64,6 +65,6 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
               : Offstage()
         ],
       ),
-    );
+    ));
   }
 }

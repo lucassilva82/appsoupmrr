@@ -145,7 +145,7 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
     final isDark = theme.brightness == Brightness.dark;
     final auth = Provider.of<Auth>(context, listen: false); // para carimbo
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: const CustomAppBar(title: 'Dados do Militar'),
       body: FutureBuilder<Tuple>(
         future: _future,
@@ -264,7 +264,7 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
           );
         },
       ),
-    );
+    ));
   }
 
   /* formata data do banco (YYYY-MM-DD) para padrão brasileiro */

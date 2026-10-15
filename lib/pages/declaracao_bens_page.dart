@@ -20,6 +20,7 @@ import '../models/auth_model.dart';
 import '../utils/app_theme.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/alerta.dart';
+import '../widgets/vidro.dart';
 
 class DeclaracaoBensPage extends StatefulWidget {
   final String ano;
@@ -456,7 +457,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
     final width = MediaQuery.of(context).size.width;
     final radius = BorderRadius.circular(12);
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: AppBar(
         elevation: 0,
         flexibleSpace: const FundoBarraVidro(),
@@ -489,7 +490,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
             ),
           ]),
         ),
-    );
+    ));
   }
 
   //--------------------------------------------------------------------

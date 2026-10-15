@@ -46,7 +46,7 @@ class _DeclaracoesPageState extends State<DeclaracoesPage> {
     final bgTop = isDark ? const Color(0xFF0E1B2E) : const Color(0xFFE8F1FF);
     final bgBottom = isDark ? AppColors.darkBg : AppColors.lightBg;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: CustomAppBar(title: 'Declarações'),
       body: SafeArea(
           child: SingleChildScrollView(
@@ -69,7 +69,7 @@ class _DeclaracoesPageState extends State<DeclaracoesPage> {
             ),
           ),
         ),
-    );
+    ));
   }
 
   Widget _buildHeroCard(ThemeData theme) {

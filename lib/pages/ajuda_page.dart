@@ -44,7 +44,7 @@ class _AjudaPageState extends State<AjudaPage> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
@@ -132,7 +132,7 @@ class _AjudaPageState extends State<AjudaPage> {
           ),
         ],
       ),
-    );
+    ));
   }
 }
 

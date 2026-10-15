@@ -10,6 +10,7 @@ import 'package:projetonovo/models/auth_model.dart';
 import 'package:projetonovo/utils/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/vidro.dart';
 
 String statusText(int status) {
   switch (status) {
@@ -484,7 +485,7 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
@@ -558,7 +559,7 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
                         ],
                       ),
               ),
-    );
+    ));
   }
 
   Future<void> _showNotice({
@@ -641,7 +642,7 @@ class PdfViewerPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
@@ -657,6 +658,6 @@ class PdfViewerPage extends StatelessWidget {
         autoSpacing: false,
         pageFling: true,
       ),
-    );
+    ));
   }
 }

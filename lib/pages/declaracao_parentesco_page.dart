@@ -6,6 +6,7 @@ import 'package:projetonovo/models/auth_model.dart';
 import 'package:projetonovo/utils/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../widgets/barra_vidro.dart';
+import '../widgets/vidro.dart';
 
 class DeclaracaoParentescoPage extends StatefulWidget {
   final String ano;
@@ -249,7 +250,7 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
@@ -261,7 +262,7 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
       body: isLoading
             ? const Center(child: CircularProgressIndicator.adaptive())
             : _buildContent(theme),
-    );
+    ));
   }
 
   Widget _buildContent(ThemeData theme) {

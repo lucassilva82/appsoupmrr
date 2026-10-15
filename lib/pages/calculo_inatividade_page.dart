@@ -301,20 +301,20 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
     final theme = Theme.of(context);
 
     if (_carregando) {
-      return Scaffold(
+      return FundoSuave(child: Scaffold(
         appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
             flexibleSpace: const FundoBarraVidro(),
             title: const Text('Cálculo de Inatividade')),
         body: const Center(child: CircularProgressIndicator()),
-      );
+      ));
     }
 
     final resultado = _fase == _Fase.pronto ? _resultado : null;
     final noResultado = resultado != null;
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -424,7 +424,7 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
                     ],
                   ),
       ),
-    );
+    ));
   }
 
   Widget _botaoCalcular(ThemeData theme) {

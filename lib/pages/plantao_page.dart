@@ -6,6 +6,7 @@ import '../models/plantao_model.dart';
 import '../utils/app_routes.dart';
 import '../widgets/calendar_widget.dart';
 import '../widgets/drawer_personalizado.dart';
+import '../widgets/vidro.dart';
 
 // ignore: must_be_immutable
 class PlantaoPage extends StatefulWidget {
@@ -52,7 +53,7 @@ class _PlantaoPageState extends State<PlantaoPage> {
           } else if (snapshot.hasError) {
             return Text('Ocorreu um erro');
           } else {
-            return Scaffold(
+            return FundoSuave(child: Scaffold(
               appBar: CustomAppBar(title: 'Meu Plantao'),
               body: Container(
                 child: Column(
@@ -139,7 +140,7 @@ class _PlantaoPageState extends State<PlantaoPage> {
                 ),
               ),
               // drawer: Drawerpersonalizado(),
-            );
+            ));
           }
         });
   }

@@ -204,7 +204,7 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: const CustomAppBar(title: 'Verificar e-mail'),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
@@ -213,7 +213,7 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
             ? _confirmadoView()
             : (_emailEnviado == null ? _formulario() : _enviado()),
       ),
-    );
+    ));
   }
 
   // ── Estado 1: formulário ──────────────────────────────────────────────────

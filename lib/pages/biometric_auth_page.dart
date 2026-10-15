@@ -8,6 +8,7 @@ import '../models/auth_model.dart';
 import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 import '../widgets/versao_app.dart';
+import '../widgets/vidro.dart';
 
 class BiometricAuthPage extends StatefulWidget {
   const BiometricAuthPage({Key? key}) : super(key: key);
@@ -79,7 +80,7 @@ class _BiometricAuthPageState extends State<BiometricAuthPage> {
       "[LOG] BiometricAuthPage build. biometricModalShown=${auth.biometricModalShown}",
     );
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       body: SizedBox.expand(
         child: Stack(
           children: [
@@ -156,7 +157,7 @@ class _BiometricAuthPageState extends State<BiometricAuthPage> {
           ],
         ),
       ),
-    );
+    ));
   }
 }
 

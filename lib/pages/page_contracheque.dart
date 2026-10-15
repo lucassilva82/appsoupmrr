@@ -831,7 +831,7 @@ class _PageContrachequeState extends State<PageContracheque> {
         if (snapshot.hasError) return SecondScreen();
         if (!snapshot.hasData) return SecondScreen();
 
-        return Scaffold(
+        return FundoSuave(child: Scaffold(
           backgroundColor: Colors.transparent,
           // fundo global (FundoSuave) aparece por baixo
           // ── AppBar — mesma cor que CustomAppBar ──────────────────
@@ -885,7 +885,7 @@ class _PageContrachequeState extends State<PageContracheque> {
               _buildSummaryBar(isDark),
             ],
           ),
-        );
+        ));
       },
     );
   }

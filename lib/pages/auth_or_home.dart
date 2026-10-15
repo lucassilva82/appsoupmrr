@@ -10,6 +10,7 @@ import '../widgets/abertura_soupmrr.dart';
 import 'auth_page.dart';
 import 'biometric_auth_page.dart';
 import 'main_shell.dart';
+import '../widgets/vidro.dart';
 
 class AuthOrHome extends StatefulWidget {
   const AuthOrHome({Key? key}) : super(key: key);
@@ -185,7 +186,7 @@ class _AuthOrHomeState extends State<AuthOrHome> {
     debugPrint(
         "[LOG] _buildForceUpdateScreen: Exibindo tela de atualização...");
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       // Fundo com imagem
       body: Container(
         decoration: const BoxDecoration(
@@ -263,6 +264,6 @@ class _AuthOrHomeState extends State<AuthOrHome> {
           ),
         ),
       ),
-    );
+    ));
   }
 }

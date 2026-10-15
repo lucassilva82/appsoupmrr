@@ -9,6 +9,7 @@ import '../pages/main_shell.dart';
 import '../utils/my_colors.dart';
 import '../animation/fade_animation.dart';
 import '../utils/my_strings.dart';
+import '../widgets/vidro.dart';
 
 class SecondScreen extends StatelessWidget {
   const SecondScreen({Key? key}) : super(key: key);
@@ -18,7 +19,7 @@ class SecondScreen extends StatelessWidget {
     var textTheme = Theme.of(context).textTheme;
     var size = MediaQuery.of(context).size;
     var leftPadding = 15.0;
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
         backgroundColor: Colors.white,
         appBar: const MyAppBar(),
         body: SizedBox(
@@ -115,6 +116,6 @@ class SecondScreen extends StatelessWidget {
               ),
             ],
           ),
-        ));
+        )));
   }
 }

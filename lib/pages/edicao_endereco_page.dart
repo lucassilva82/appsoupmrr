@@ -8,6 +8,7 @@ import '../services/dados_sql.dart';
 import '../utils/app_routes.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/alerta.dart';
+import '../widgets/vidro.dart';
 
 // ignore: must_be_immutable
 class EdicaoEnderecoPage extends StatefulWidget {
@@ -53,7 +54,7 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
       widget.inicio = false;
     }
 
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: AppBar(
         title: const Text(
           'Atualizar Endereço',
@@ -485,7 +486,7 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _endRow(

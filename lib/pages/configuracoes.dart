@@ -728,9 +728,9 @@ class Configuracoes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return FundoSuave(child: Scaffold(
       appBar: CustomAppBar(title: 'Configurações'),
       body: const SettingsBody(),
-    );
+    ));
   }
 }
