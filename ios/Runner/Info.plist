@@ -67,5 +67,14 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<!-- Conformidade de exportação de criptografia.
+	     O app não implementa criptografia própria: só consome o TLS do sistema
+	     para falar com a API da PMRR e com o Firebase. Isso cai na isenção da
+	     Apple, então a resposta é "não usa criptografia não isenta".
+	     Sem esta chave a App Store Connect pergunta isso a cada build enviado,
+	     e a compilação fica travada em "Faltam dados de conformidade" até ser
+	     respondida — foi o que segurou a 2.1.2. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
