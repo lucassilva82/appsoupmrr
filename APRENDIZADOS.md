@@ -194,3 +194,46 @@ instante, não aquela tela. O arquivo não tem nenhuma cor clara fixa e já usa
 conferir se o desvio é dela ou do app todo — olhar as barras do sistema, a
 configuração de tema e tentar reproduzir. Não foi possível reproduzir aquele
 render, e a tela ficou como estava.
+
+---
+
+## 13. No dart_pdf, cor com alfa é pintada cheia
+
+**O que aconteceu.** No redesenho do contracheque em PDF usei cores
+translúcidas para os fios, as faixas alternadas e as etiquetas P/D. Saiu tudo
+chapado: as linhas pares viraram azul sólido com o texto ilegível, as
+etiquetas viraram blocos sem a letra, e o cartão do líquido saiu branco com o
+valor branco por cima — invisível.
+
+**Por quê.** O `setFillColor` do pacote emite apenas `r g b rg`. O canal alfa
+do `PdfColor` é descartado no preenchimento; não existe nenhuma referência a
+`.alpha` no arquivo de gráficos.
+
+**O que fazer.** Pré-misturar a cor contra o fundo real
+(`mistura(fundo, frente, t)`). Transparência de verdade só com `pw.Opacity`,
+que é o que a marca d'água do brasão usa. Pré-misturar ainda imprime melhor,
+porque não depende de grupo de transparência do leitor de PDF.
+
+---
+
+## 14. No dart_pdf, só SpanningWidget quebra entre páginas
+
+**O que aconteceu.** Depois de trocar o encolhimento de fonte por paginação de
+verdade, um contracheque de 42 rubricas estourava em
+`TooManyPagesException` e o usuário via "Não foi possível gerar o PDF".
+
+**Por quê.** No `MultiPage`, apenas widgets que implementam `SpanningWidget`
+— `Table`, `Column`/`Row`, `Wrap`, `GridView`, `Text` — se dividem entre
+páginas. Eu tinha envolvido a tabela num `Padding` e num `ClipRRect` para dar
+a calha lateral e arredondar os cantos. Qualquer embrulho desses trava a
+quebra, e o MultiPage fica gerando páginas até bater no limite de 20.
+
+**O que fazer.** A tabela entra como filha direta do `build:`. A calha lateral
+vem da `margin` do `PageTheme`, e o arredondamento vem do `borderRadius` na
+decoração da própria linha de cabeçalho.
+
+**Efeito colateral a lembrar.** Quando o PDF passa a ter mais de uma página, a
+rasterização para imagem precisa percorrer todas e empilhá-las. Pedir
+`pages: [0]` estava certo enquanto o documento sempre cabia numa página; depois
+da paginação, faria a imagem perder rubricas sem avisar.
+
