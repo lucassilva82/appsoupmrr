@@ -799,47 +799,52 @@ class _PageContrachequeState extends State<PageContracheque> {
     final theme = Theme.of(context);
     final apagado = theme.colorScheme.onSurface.withValues(alpha: 0.6);
 
+    // As duas opções têm o mesmo peso visual: o ícone é que identifica o
+    // formato, e nenhuma das duas deve ser empurrada para o militar.
     Widget opcao({
-      required IconData icone,
+      required Widget icone,
       required String titulo,
       required String detalhe,
-      required bool destaque,
       required VoidCallback aoTocar,
     }) =>
         Expanded(
           child: Material(
-            color: destaque
-                ? AppColors.blue
-                : theme.colorScheme.onSurface.withValues(alpha: 0.06),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
             child: InkWell(
               onTap: aoTocar,
               borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Column(
-                  children: [
-                    Icon(icone,
-                        size: 19,
-                        color: destaque
-                            ? Colors.white
-                            : theme.colorScheme.onSurface),
-                    const SizedBox(height: 5),
-                    Text(titulo,
-                        style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: destaque
-                                ? Colors.white
-                                : theme.colorScheme.onSurface)),
-                    const SizedBox(height: 1),
-                    Text(detalhe,
-                        style: TextStyle(
-                            fontSize: 11.5,
-                            color: destaque
-                                ? Colors.white.withValues(alpha: 0.78)
-                                : apagado)),
-                  ],
+              child: Ink(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.10)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 13, 12, 12),
+                  child: Row(
+                    children: [
+                      icone,
+                      const SizedBox(width: 11),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(titulo,
+                                style: TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: theme.colorScheme.onSurface)),
+                            const SizedBox(height: 1),
+                            Text(detalhe,
+                                style:
+                                    TextStyle(fontSize: 11, color: apagado)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -902,19 +907,16 @@ class _PageContrachequeState extends State<PageContracheque> {
                 Row(
                   children: [
                     opcao(
-                      icone: Icons.picture_as_pdf_outlined,
+                      icone: const _IconePdf(altura: 30),
                       titulo: 'PDF',
                       detalhe: _tamanhoLegivel(bytesPdf),
-                      destaque: true,
-                      aoTocar: () =>
-                          Navigator.of(ctx).pop(_FormatoEnvio.pdf),
+                      aoTocar: () => Navigator.of(ctx).pop(_FormatoEnvio.pdf),
                     ),
                     const SizedBox(width: 10),
                     opcao(
-                      icone: Icons.image_outlined,
+                      icone: const _IconeImagem(altura: 30),
                       titulo: 'Imagem',
                       detalhe: _tamanhoLegivel(bytesImagem),
-                      destaque: false,
                       aoTocar: () =>
                           Navigator.of(ctx).pop(_FormatoEnvio.imagem),
                     ),
@@ -1110,8 +1112,8 @@ class _PageContrachequeState extends State<PageContracheque> {
         RichText(
           text: TextSpan(
             style: theme.textTheme.headlineSmall?.copyWith(
-              fontSize: 27,
-              fontWeight: FontWeight.w700,
+              fontSize: 23,
+              fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSurface,
               letterSpacing: -0.3,
             ),
@@ -1128,7 +1130,7 @@ class _PageContrachequeState extends State<PageContracheque> {
         const SizedBox(height: 3),
         Text('Demonstrativo de pagamento',
             style: theme.textTheme.bodySmall
-                ?.copyWith(color: _apagado(theme), fontSize: 12.5)),
+                ?.copyWith(color: _apagado(theme), fontSize: 11.5)),
       ],
     );
   }
@@ -1140,13 +1142,13 @@ class _PageContrachequeState extends State<PageContracheque> {
           children: [
             Text(etiqueta,
                 style: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 10.5,
                     color: _apagado(theme),
                     fontWeight: FontWeight.w400)),
             const SizedBox(height: 2),
             Text(valor.isEmpty ? 'Não informado' : valor,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 12.5,
                   color: valor.isEmpty
                       ? _apagado(theme)
                       : theme.colorScheme.onSurface,
@@ -1184,14 +1186,14 @@ class _PageContrachequeState extends State<PageContracheque> {
                   children: [
                     Text('SERVIDOR',
                         style: TextStyle(
-                            fontSize: 10,
-                            letterSpacing: 1.4,
+                            fontSize: 9,
+                            letterSpacing: 1.2,
                             fontWeight: FontWeight.w600,
                             color: _apagado(theme))),
                     const SizedBox(height: 3),
                     Text(auth.nomeCompleto ?? '—',
                         style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 14.5,
                             fontWeight: FontWeight.w600,
                             color: theme.colorScheme.onSurface)),
                   ],
@@ -1261,7 +1263,7 @@ class _PageContrachequeState extends State<PageContracheque> {
         children: [
           Text('Valor líquido',
               style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 12,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.75))),
           const SizedBox(height: 8),
           _valorGrande(theme),
@@ -1295,10 +1297,10 @@ class _PageContrachequeState extends State<PageContracheque> {
     if (!_valoresVisiveis) {
       return Text(_oculto,
           style: TextStyle(
-              fontSize: 34,
+              fontSize: 29,
               height: 1.0,
               letterSpacing: 2,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.45)));
     }
     return RichText(
@@ -1307,17 +1309,17 @@ class _PageContrachequeState extends State<PageContracheque> {
           TextSpan(
             text: 'R\$ ',
             style: TextStyle(
-                fontSize: 19,
+                fontSize: 16,
                 fontWeight: FontWeight.w500,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.72)),
           ),
           TextSpan(
             text: CurrencyFormatter.format(totalLiquido, _realSettings),
             style: TextStyle(
-                fontSize: 34,
+                fontSize: 29,
                 height: 1.0,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.8,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.6,
                 color: theme.colorScheme.onSurface),
           ),
         ],
@@ -1331,14 +1333,14 @@ class _PageContrachequeState extends State<PageContracheque> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(etiqueta,
-            style: TextStyle(fontSize: 12.5, color: _apagado(theme))),
+            style: TextStyle(fontSize: 11.5, color: _apagado(theme))),
         const SizedBox(height: 3),
         Text(
           _valoresVisiveis
               ? 'R\$ ${CurrencyFormatter.format(valor, _realSettings)}'
               : _oculto,
           style: TextStyle(
-              fontSize: 15.5,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
               color: _valoresVisiveis
                   ? cor
@@ -1360,11 +1362,11 @@ class _PageContrachequeState extends State<PageContracheque> {
         const SizedBox(width: 9),
         Text(rotulo,
             style: TextStyle(
-                fontSize: 15, fontWeight: FontWeight.w600, color: cor)),
+                fontSize: 13.5, fontWeight: FontWeight.w600, color: cor)),
         const Spacer(),
         Text(
             '$quantidade ${quantidade == 1 ? "lançamento" : "lançamentos"}',
-            style: TextStyle(fontSize: 12.5, color: _apagado(theme))),
+            style: TextStyle(fontSize: 11.5, color: _apagado(theme))),
       ],
     );
   }
@@ -1413,15 +1415,16 @@ class _PageContrachequeState extends State<PageContracheque> {
               children: [
                 Text(partes.$1,
                     style: TextStyle(
-                        fontSize: 14.5,
-                        height: 1.25,
+                        fontSize: 13,
+                        height: 1.3,
                         fontWeight: FontWeight.w500,
+                        letterSpacing: 0.15,
                         color: theme.colorScheme.onSurface)),
                 if (partes.$2 != null) ...[
                   const SizedBox(height: 2),
                   Text(partes.$2!,
                       style:
-                          TextStyle(fontSize: 11.5, color: _apagado(theme))),
+                          TextStyle(fontSize: 10.5, color: _apagado(theme))),
                 ],
               ],
             ),
@@ -1430,7 +1433,7 @@ class _PageContrachequeState extends State<PageContracheque> {
           Text(
             _valoresVisiveis ? 'R\$ $bruto' : _oculto,
             style: TextStyle(
-                fontSize: 14.5,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: _valoresVisiveis
                     ? cor
@@ -1482,42 +1485,40 @@ class _PageContrachequeState extends State<PageContracheque> {
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.blue,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(13)),
                 ),
+                // Centrado. Antes o rótulo ficava à esquerda e "PDF ou
+                // imagem" à direita, e os dois pesos disputavam a atenção
+                // dentro do mesmo botão. O formato é escolhido na prévia, e é
+                // lá que ele precisa aparecer.
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Row(
-                      children: [
-                        ocupado
-                            ? const SizedBox(
-                                width: 17,
-                                height: 17,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white))
-                            : const Icon(Icons.ios_share_rounded, size: 18),
-                        const SizedBox(width: 10),
-                        Text(ocupado ? 'Gerando…' : 'Compartilhar',
-                            style: const TextStyle(
-                                fontSize: 15.5,
-                                fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                    Text('PDF ou imagem',
-                        style: TextStyle(
-                            fontSize: 12.5,
-                            color: Colors.white.withValues(alpha: 0.78))),
+                    ocupado
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.ios_share_rounded, size: 17),
+                    const SizedBox(width: 9),
+                    Text(ocupado ? 'Gerando documento…' : 'Compartilhar',
+                        style: const TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.1)),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 9),
             Text(
-              'Demonstrativo para visualização. Não substitui o documento oficial.',
+              'PDF ou imagem · não substitui o documento oficial',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11, color: _apagado(theme)),
+              style: TextStyle(fontSize: 10.5, color: _apagado(theme)),
             ),
           ],
         ),
@@ -1565,3 +1566,190 @@ class _BotaoOlho extends StatelessWidget {
 
 /// Formato escolhido na prévia de compartilhamento.
 enum _FormatoEnvio { pdf, imagem }
+
+/// Ícone de arquivo PDF: folha branca com o canto dobrado e a tarja vermelha,
+/// como o sistema desenha num gerenciador de arquivos.
+///
+/// Um glifo monocromático de biblioteca não diz ao militar o que ele vai
+/// receber; esta forma sim, porque é a mesma que ele já viu no celular.
+class _IconePdf extends StatelessWidget {
+  const _IconePdf({this.altura = 30});
+
+  final double altura;
+
+  @override
+  Widget build(BuildContext context) {
+    final largura = altura * 0.78;
+    return SizedBox(
+      width: largura,
+      height: altura,
+      child: Stack(
+        children: [
+          CustomPaint(
+              size: Size(largura, altura), painter: const _PintorFolha()),
+          Positioned(
+            left: largura * 0.10,
+            right: largura * 0.10,
+            bottom: altura * 0.15,
+            child: Container(
+              height: altura * 0.29,
+              decoration: BoxDecoration(
+                color: const Color(0xFFD93F32),
+                borderRadius: BorderRadius.circular(2),
+              ),
+              alignment: Alignment.center,
+              child: FittedBox(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 1.5),
+                  child: Text('PDF',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: altura * 0.26,
+                        height: 1.0,
+                        letterSpacing: 0.1,
+                      )),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PintorFolha extends CustomPainter {
+  const _PintorFolha();
+
+  static const _papel = Color(0xFFFBFCFD);
+  static const _borda = Color(0xFFB6C0CE);
+  static const _dobra = Color(0xFFDCE3EC);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final d = size.width * 0.34; // tamanho do canto dobrado
+    const r = 2.5;
+
+    final folha = Path()
+      ..moveTo(r, 0)
+      ..lineTo(size.width - d, 0)
+      ..lineTo(size.width, d)
+      ..lineTo(size.width, size.height - r)
+      ..quadraticBezierTo(
+          size.width, size.height, size.width - r, size.height)
+      ..lineTo(r, size.height)
+      ..quadraticBezierTo(0, size.height, 0, size.height - r)
+      ..lineTo(0, r)
+      ..quadraticBezierTo(0, 0, r, 0)
+      ..close();
+
+    canvas.drawPath(folha, Paint()..color = _papel);
+    canvas.drawPath(
+        folha,
+        Paint()
+          ..color = _borda
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.9);
+
+    final canto = Path()
+      ..moveTo(size.width - d, 0)
+      ..lineTo(size.width, d)
+      ..lineTo(size.width - d, d)
+      ..close();
+    canvas.drawPath(canto, Paint()..color = _dobra);
+    canvas.drawPath(
+        canto,
+        Paint()
+          ..color = _borda
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.9);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Ícone de imagem: uma miniatura de foto — céu, sol e serra —, que é como
+/// o sistema representa um arquivo de imagem.
+class _IconeImagem extends StatelessWidget {
+  const _IconeImagem({this.altura = 30});
+
+  final double altura;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: altura * 0.94,
+        height: altura,
+        child: CustomPaint(
+            size: Size(altura * 0.94, altura), painter: const _PintorFoto()),
+      );
+}
+
+class _PintorFoto extends CustomPainter {
+  const _PintorFoto();
+
+  static const _borda = Color(0xFFB6C0CE);
+  static const _ceuAlto = Color(0xFFBFE2F7);
+  static const _ceuBaixo = Color(0xFFE9F4FB);
+  static const _sol = Color(0xFFF5C451);
+  static const _serraLonge = Color(0xFF7FB2A6);
+  static const _serraPerto = Color(0xFF4E8C7E);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final moldura = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      const Radius.circular(3.5),
+    );
+
+    canvas.save();
+    canvas.clipRRect(moldura);
+
+    // Céu
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [_ceuAlto, _ceuBaixo],
+        ).createShader(Offset.zero & size),
+    );
+
+    // Sol
+    canvas.drawCircle(
+      Offset(size.width * 0.74, size.height * 0.27),
+      size.width * 0.11,
+      Paint()..color = _sol,
+    );
+
+    // Serra ao fundo
+    final longe = Path()
+      ..moveTo(0, size.height)
+      ..lineTo(size.width * 0.30, size.height * 0.46)
+      ..lineTo(size.width * 0.62, size.height)
+      ..close();
+    canvas.drawPath(longe, Paint()..color = _serraLonge);
+
+    // Serra à frente
+    final perto = Path()
+      ..moveTo(size.width * 0.34, size.height)
+      ..lineTo(size.width * 0.66, size.height * 0.56)
+      ..lineTo(size.width, size.height)
+      ..close();
+    canvas.drawPath(perto, Paint()..color = _serraPerto);
+
+    canvas.restore();
+
+    canvas.drawRRect(
+        moldura,
+        Paint()
+          ..color = _borda
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.9);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
