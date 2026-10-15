@@ -2,7 +2,6 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:currency_formatter/currency_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -41,6 +40,10 @@ class _PageContrachequeState extends State<PageContracheque> {
   late double totalLiquido;
   bool _sharingPdf = false;
   bool _sharingImage = false;
+
+  // Valores à mostra ou escondidos. Começa visível: quem abriu o
+  // contracheque veio justamente para ver os números.
+  bool _valoresVisiveis = true;
 
   // Arquivos guardados depois de gerados. Compartilhar o mesmo mês de novo
   // não refaz o PDF nem a rasterização, que é a parte cara da operação.
@@ -165,8 +168,6 @@ class _PageContrachequeState extends State<PageContracheque> {
     final papelFundo = PdfColor.fromHex('#F7F9FC');
     final verde = PdfColor.fromHex('#0F7B3F');
     final vermelho = PdfColor.fromHex('#B42318');
-    final verdeClaro = PdfColor.fromHex('#6EE7A8');
-    final vermelhoClaro = PdfColor.fromHex('#FCA5A5');
 
     /// Mistura duas cores. É daqui que vêm os fios, as faixas alternadas e
     /// as etiquetas: tinta diluída no fundo, em vez de cinzas chapados.
@@ -233,7 +234,7 @@ class _PageContrachequeState extends State<PageContracheque> {
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              sobrescrito(etiqueta, cor: mistura(navy, PdfColors.white, 0.62), tam: 6.5),
+              sobrescrito(etiqueta, tam: 6.5),
               pw.SizedBox(height: 5),
               pw.Text('R\$ $valor',
                   style: pw.TextStyle(
@@ -520,16 +521,16 @@ class _PageContrachequeState extends State<PageContracheque> {
         );
 
     // ── Totais ────────────────────────────────────────────────────────
-    // O líquido é o único herói da página: fica num cartão interno, sobre
-    // o degradê, com o dobro do corpo dos outros dois.
+    // Bloco claro, não uma tarja azul. A primeira versão repetia aqui o
+    // degradê escuro do cabeçalho e ficava pesada: num documento oficial o
+    // azul forte marca a identidade no topo, não grita no meio da página. A
+    // hierarquia vem do corpo do número e do contraste, não da saturação.
+    //
+    // O líquido segue sendo o único herói: cartão interno, dobro do corpo.
     pw.Widget totais() => pw.Container(
           decoration: pw.BoxDecoration(
-            gradient: pw.LinearGradient(
-              begin: pw.Alignment.centerLeft,
-              end: pw.Alignment.centerRight,
-              colors: [navyFundo, navy, navyClaro],
-              stops: const [0.0, 0.5, 1.0],
-            ),
+            color: mistura(papel, navy, 0.04),
+            border: pw.Border.all(color: fio, width: 0.6),
             borderRadius: const pw.BorderRadius.all(pw.Radius.circular(12)),
           ),
           padding: const pw.EdgeInsets.all(6),
@@ -537,18 +538,17 @@ class _PageContrachequeState extends State<PageContracheque> {
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
               pw.SizedBox(width: 16),
-              totalSecundario('Proventos', dinheiro(proventos, _realSettings),
-                  verdeClaro),
-              pw.Container(
-                  width: 0.8,
-                  height: 36,
-                  color: mistura(navy, PdfColors.white, 0.22)),
+              totalSecundario(
+                  'Proventos', dinheiro(proventos, _realSettings), verde),
+              pw.Container(width: 0.8, height: 34, color: fio),
               pw.SizedBox(width: 16),
-              totalSecundario('Descontos', dinheiro(descontos, _realSettings),
-                  vermelhoClaro),
+              totalSecundario(
+                  'Descontos', dinheiro(descontos, _realSettings), vermelho),
               pw.Container(
                 decoration: pw.BoxDecoration(
-                  color: mistura(navy, PdfColors.white, 0.13),
+                  color: papel,
+                  border: pw.Border.all(
+                      color: mistura(papel, navy, 0.18), width: 0.7),
                   borderRadius:
                       const pw.BorderRadius.all(pw.Radius.circular(8)),
                 ),
@@ -557,13 +557,14 @@ class _PageContrachequeState extends State<PageContracheque> {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
-                    sobrescrito('Líquido a receber', cor: ouro, tam: 6.5),
+                    sobrescrito('Líquido a receber',
+                        cor: mistura(papel, navy, 0.62), tam: 6.5),
                     pw.SizedBox(height: 5),
                     pw.Text(
                         'R\$ ${dinheiro(totalLiquido, _realSettings)}',
                         style: pw.TextStyle(
                             fontSize: 19,
-                            color: PdfColors.white,
+                            color: navy,
                             fontWeight: pw.FontWeight.bold)),
                   ],
                 ),
@@ -779,19 +780,73 @@ class _PageContrachequeState extends State<PageContracheque> {
     return '${(bytes / 1000000).toStringAsFixed(1)} MB';
   }
 
-  /// Mostra o que será enviado antes de abrir a folha do sistema.
+  /// Mostra o que será enviado e deixa escolher o formato ali mesmo.
   ///
-  /// O PDF é uma renderização própria, diferente da tela: cabeçalho, logos e
-  /// layout que o militar nunca viu. Como ele costuma mandar isso para banco,
-  /// locador ou RH, e mensagem enviada não volta, vale conferir antes. A
-  /// prévia mostra exatamente a página que vai no arquivo.
-  Future<bool> _confirmarEnvio({
-    required bool comoPdf,
+  /// O PDF é uma renderização própria, diferente da tela: cabeçalho, brasão e
+  /// layout de documento que o militar nunca viu. Como ele costuma mandar
+  /// isso para banco, locador ou RH, e mensagem enviada não volta, vale
+  /// conferir antes.
+  ///
+  /// Escolher PDF ou imagem aqui, e não antes, é o que permite um botão só na
+  /// tela: decidir o formato sem ver o documento era pedir uma escolha no
+  /// escuro. Como os dois arquivos já estão prontos neste ponto, qualquer um
+  /// dos dois envia na hora.
+  Future<_FormatoEnvio?> _escolherEnvio({
     required Uint8List pagina,
-    required int tamanhoBytes,
-  }) async {
+    required int bytesPdf,
+    required int bytesImagem,
+  }) {
     final theme = Theme.of(context);
-    final confirmado = await showModalBottomSheet<bool>(
+    final apagado = theme.colorScheme.onSurface.withValues(alpha: 0.6);
+
+    Widget opcao({
+      required IconData icone,
+      required String titulo,
+      required String detalhe,
+      required bool destaque,
+      required VoidCallback aoTocar,
+    }) =>
+        Expanded(
+          child: Material(
+            color: destaque
+                ? AppColors.blue
+                : theme.colorScheme.onSurface.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              onTap: aoTocar,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Column(
+                  children: [
+                    Icon(icone,
+                        size: 19,
+                        color: destaque
+                            ? Colors.white
+                            : theme.colorScheme.onSurface),
+                    const SizedBox(height: 5),
+                    Text(titulo,
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: destaque
+                                ? Colors.white
+                                : theme.colorScheme.onSurface)),
+                    const SizedBox(height: 1),
+                    Text(detalhe,
+                        style: TextStyle(
+                            fontSize: 11.5,
+                            color: destaque
+                                ? Colors.white.withValues(alpha: 0.78)
+                                : apagado)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+
+    return showModalBottomSheet<_FormatoEnvio>(
       context: context,
       isScrollControlled: true,
       backgroundColor: theme.colorScheme.surface,
@@ -815,19 +870,13 @@ class _PageContrachequeState extends State<PageContracheque> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                Text(
-                  'Confira antes de enviar',
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                ),
+                Text('Confira antes de enviar',
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
                 Text(
-                  '${comoPdf ? "PDF" : "Imagem PNG"} · '
-                  '${_tamanhoLegivel(tamanhoBytes)} · '
-                  '${widget.mesSelecionado.mesExtenso}/${widget.mesSelecionado.ano}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
-                  ),
+                  'Contracheque de ${widget.mesSelecionado.mesExtenso}/${widget.mesSelecionado.ano}',
+                  style: theme.textTheme.bodySmall?.copyWith(color: apagado),
                 ),
                 const SizedBox(height: 14),
 
@@ -835,7 +884,7 @@ class _PageContrachequeState extends State<PageContracheque> {
                 // pequeno fica ilegível sem isso, e conferir é o objetivo.
                 Flexible(
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: altura * 0.56),
+                    constraints: BoxConstraints(maxHeight: altura * 0.52),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
@@ -852,37 +901,29 @@ class _PageContrachequeState extends State<PageContracheque> {
                 const SizedBox(height: 14),
                 Row(
                   children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: const Text('Cancelar'),
-                      ),
+                    opcao(
+                      icone: Icons.picture_as_pdf_outlined,
+                      titulo: 'PDF',
+                      detalhe: _tamanhoLegivel(bytesPdf),
+                      destaque: true,
+                      aoTocar: () =>
+                          Navigator.of(ctx).pop(_FormatoEnvio.pdf),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        icon: const Icon(Icons.ios_share_rounded, size: 18),
-                        label: const Text('Compartilhar'),
-                        style: FilledButton.styleFrom(
-                          foregroundColor:
-                              ThemeData.estimateBrightnessForColor(
-                                          theme.colorScheme.primary) ==
-                                      Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black87,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
+                    const SizedBox(width: 10),
+                    opcao(
+                      icone: Icons.image_outlined,
+                      titulo: 'Imagem',
+                      detalhe: _tamanhoLegivel(bytesImagem),
+                      destaque: false,
+                      aoTocar: () =>
+                          Navigator.of(ctx).pop(_FormatoEnvio.imagem),
                     ),
                   ],
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancelar'),
                 ),
               ],
             ),
@@ -890,43 +931,36 @@ class _PageContrachequeState extends State<PageContracheque> {
         );
       },
     );
-    return confirmado ?? false;
   }
 
-  Future<void> _compartilhar(Auth auth, {required bool comoPdf}) async {
+  Future<void> _compartilhar(Auth auth) async {
     if (_sharingPdf || _sharingImage) return;
-    setState(() {
-      if (comoPdf) {
-        _sharingPdf = true;
-      } else {
-        _sharingImage = true;
-      }
-    });
+    setState(() => _sharingPdf = true);
 
     try {
-      // Gera o arquivo e a prévia. A rasterização é compartilhada, então o
-      // segundo formato não paga esse custo de novo.
-      final arquivo =
-          comoPdf ? await _arquivoPdf(auth) : await _arquivoImagem(auth);
+      // Os dois arquivos saem da mesma geração: o PDF e, dele, a
+      // rasterização que serve à prévia e ao PNG. Fazer os dois agora é o
+      // que deixa a escolha na prévia ser instantânea.
+      final arquivoPdf = await _arquivoPdf(auth);
       final pagina = await _rasterizar(auth);
-      final tamanho = await arquivo.length();
+      final arquivoImagem = await _arquivoImagem(auth);
 
       // A tela pode ter sido fechada enquanto o arquivo era gerado.
       if (!mounted) return;
-
-      // O estado de "gerando" acaba aqui: o que vem a seguir já é visível.
       setState(() {
         _sharingPdf = false;
         _sharingImage = false;
       });
 
-      final enviar = await _confirmarEnvio(
-        comoPdf: comoPdf,
+      final escolha = await _escolherEnvio(
         pagina: pagina,
-        tamanhoBytes: tamanho,
+        bytesPdf: await arquivoPdf.length(),
+        bytesImagem: await arquivoImagem.length(),
       );
-      if (!enviar || !mounted) return;
+      if (escolha == null || !mounted) return;
 
+      final arquivo =
+          escolha == _FormatoEnvio.pdf ? arquivoPdf : arquivoImagem;
       await Share.shareXFiles(
         [XFile(arquivo.path)],
         subject:
@@ -937,15 +971,12 @@ class _PageContrachequeState extends State<PageContracheque> {
       // confiável se o envio aconteceu, e exibir "enviado!" com base nisso
       // mentiria para metade dos usuários.
     } catch (e) {
-      debugPrint('[CONTRACHEQUE] erro ao compartilhar '
-          '${comoPdf ? "PDF" : "imagem"}: $e');
+      debugPrint('[CONTRACHEQUE] erro ao compartilhar: $e');
       if (!mounted) return;
       alertaErro(
         context,
         titulo: 'Erro',
-        texto: comoPdf
-            ? 'Não foi possível gerar o PDF do contracheque.'
-            : 'Não foi possível gerar a imagem do contracheque.',
+        texto: 'Não foi possível gerar o contracheque para compartilhar.',
         confirmar: 'OK',
       );
     } finally {
@@ -962,7 +993,6 @@ class _PageContrachequeState extends State<PageContracheque> {
   Widget build(BuildContext context) {
     final auth = Provider.of<Auth>(context, listen: false);
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return FutureBuilder<ContrachequeModel>(
       future: _dados,
@@ -976,451 +1006,518 @@ class _PageContrachequeState extends State<PageContracheque> {
         if (snapshot.hasError) return SecondScreen();
         if (!snapshot.hasData) return SecondScreen();
 
-        return FundoSuave(child: Scaffold(
-          backgroundColor: Colors.transparent,
-          // fundo global (FundoSuave) aparece por baixo
-          // ── AppBar — mesma cor que CustomAppBar ──────────────────
-          appBar: AppBar(
+        final proventosLista = contracheque.proventos
+            .where((r) => r.tipoRubrica == 'P')
+            .toList();
+        final descontosLista = contracheque.proventos
+            .where((r) => r.tipoRubrica != 'P')
+            .toList();
+
+        return FundoSuave(
+          child: Scaffold(
             backgroundColor: Colors.transparent,
-            elevation: 0,
-            centerTitle: true,
-            iconTheme: const IconThemeData(color: Colors.white),
-            flexibleSpace: const FundoBarraVidro(),
-            title: Column(
-              children: [
-                const Text(
-                  'Contracheque',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2),
-                ),
-                Text(
-                  '${widget.mesSelecionado.mesExtenso} / ${widget.mesSelecionado.ano}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              centerTitle: true,
+              iconTheme: const IconThemeData(color: Colors.white),
+              flexibleSpace: const FundoBarraVidro(),
+              title: const Text(
+                'Contracheque',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.4),
+              ),
+              actions: [
+                // Esconder os valores aqui serve para o militar abrir o
+                // contracheque ao lado de outra pessoa. O mesmo gesto já
+                // existe no cartão da tela inicial.
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: _BotaoOlho(
+                    visivel: _valoresVisiveis,
+                    aoTocar: () =>
+                        setState(() => _valoresVisiveis = !_valoresVisiveis),
+                  ),
                 ),
               ],
             ),
+            bottomNavigationBar: _barraCompartilhar(auth),
+            body: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              children: [
+                _tituloCompetencia(theme),
+                const SizedBox(height: 18),
+                _cartaoServidor(auth, theme),
+                const SizedBox(height: 14),
+                _cartaoLiquido(theme),
+                const SizedBox(height: 22),
+                if (proventosLista.isNotEmpty) ...[
+                  _tituloSecao(theme,
+                      rotulo: 'Proventos',
+                      cor: _verde,
+                      quantidade: proventosLista.length),
+                  const SizedBox(height: 10),
+                  _blocoRubricas(theme, proventosLista, _verde),
+                  const SizedBox(height: 22),
+                ],
+                if (descontosLista.isNotEmpty) ...[
+                  _tituloSecao(theme,
+                      rotulo: 'Descontos',
+                      cor: _vermelho,
+                      quantidade: descontosLista.length),
+                  const SizedBox(height: 10),
+                  _blocoRubricas(theme, descontosLista, _vermelho),
+                ],
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
-
-          // ── Botões de compartilhar fixos no rodapé ──────────────────
-          bottomNavigationBar: _buildShareBar(auth, isDark),
-
-          body: Column(
-            children: [
-              // ── Card de informações do cabeçalho ──────────────────
-              _buildHeaderCard(auth, isDark),
-
-              // ── Tabela de rubricas ─────────────────────────────────
-              _buildTableHeader(isDark),
-
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
-                  itemCount: contracheque.proventos.length,
-                  itemBuilder: (ctx, index) {
-                    return _buildItemRow(
-                        contracheque.proventos[index], isDark, index);
-                  },
-                ),
-              ),
-
-              // ── Resumo (proventos / descontos / líquido) ───────────
-              _buildSummaryBar(isDark),
-            ],
-          ),
-        ));
+        );
       },
     );
   }
 
-  // ── Header card com dados do militar ─────────────────────────────────
-  Widget _buildHeaderCard(Auth auth, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-      child: CartaoVidro(
-        raio: 16,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Column(
-          children: [
-            _headerRow(
-              icon: Icons.person_outline_rounded,
-              label: 'Nome',
-              value: auth.nomeCompleto ?? '-',
-              isDark: isDark,
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _headerRow(
-                    icon: Icons.badge_outlined,
-                    label: 'Matrícula',
-                    value: auth.matricula ?? '-',
-                    isDark: isDark,
-                  ),
-                ),
-                Expanded(
-                  child: _headerRow(
-                    icon: Icons.calendar_month_outlined,
-                    label: 'Mês/Ano',
-                    value:
-                        '${widget.mesSelecionado.mes}/${widget.mesSelecionado.ano}',
-                    isDark: isDark,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _headerRow(
-              icon: Icons.location_city_outlined,
-              label: 'Lotação',
-              value: widget.mesSelecionado.relacaoTrabalho,
-              isDark: isDark,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // ── Paleta da tela ────────────────────────────────────────────────────
+  // Tons contidos, não os primários saturados: é a leitura de um documento
+  // oficial, não um painel. O verde e o vermelho marcam a natureza da
+  // rubrica, mas quem informa de fato são o rótulo da seção e o sinal do
+  // valor — cor sozinha não carrega significado.
+  static const _verde = Color(0xFF34D399);
+  static const _vermelho = Color(0xFFF87171);
 
-  Widget _headerRow({
-    required IconData icon,
-    required String label,
-    required String value,
-    required bool isDark,
-  }) {
-    return Row(
+  Color _superficie(ThemeData theme) => theme.brightness == Brightness.dark
+      ? Colors.white.withValues(alpha: 0.04)
+      : AppColors.navy.withValues(alpha: 0.04);
+
+  Color _contorno(ThemeData theme) => theme.brightness == Brightness.dark
+      ? Colors.white.withValues(alpha: 0.08)
+      : AppColors.navy.withValues(alpha: 0.10);
+
+  Color _apagado(ThemeData theme) =>
+      theme.colorScheme.onSurface.withValues(alpha: 0.55);
+
+  String get _oculto => '••••••';
+
+  // ── Competência ───────────────────────────────────────────────────────
+  Widget _tituloCompetencia(ThemeData theme) {
+    final mes = widget.mesSelecionado.mesExtenso;
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 15, color: AppColors.blue),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        RichText(
+          text: TextSpan(
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontSize: 27,
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+              letterSpacing: -0.3,
+            ),
             children: [
-              Text(
-                label.toUpperCase(),
+              TextSpan(text: '$mes '),
+              TextSpan(
+                text: widget.mesSelecionado.ano,
                 style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.8,
-                  color: isDark ? Colors.white38 : Colors.black38,
-                ),
-              ),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1A1A2E),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                    fontWeight: FontWeight.w400, color: _apagado(theme)),
               ),
             ],
           ),
         ),
+        const SizedBox(height: 3),
+        Text('Demonstrativo de pagamento',
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: _apagado(theme), fontSize: 12.5)),
       ],
     );
   }
 
-  // ── Cabeçalho da tabela ───────────────────────────────────────────────
-  Widget _buildTableHeader(bool isDark) {
-    // Faixa de vidro tingida de azul no lugar da barra sólida: o rótulo das
-    // colunas não precisa competir com os valores. O texto usa a cor primária
-    // do tema (contraste alto nos dois modos), não branco sobre azul.
-    return Builder(builder: (context) {
-      final theme = Theme.of(context);
-      final estilo = TextStyle(
-        color: theme.colorScheme.primary,
-        fontSize: 10,
-        fontWeight: FontWeight.w800,
-        letterSpacing: 0.6,
-      );
-
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-        child: CartaoVidro(
-          raio: 12,
-          tingimento: theme.colorScheme.primary,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            children: [
-              // 30 + 8 acompanha o selo P/D das linhas, para o rótulo da
-              // coluna cair exatamente sobre o conteúdo dela.
-              SizedBox(width: 30, child: Text('TIPO', style: estilo)),
-              const SizedBox(width: 8),
-              Expanded(child: Text('DESCRIÇÃO', style: estilo)),
-              Text('VALOR', style: estilo),
-            ],
-          ),
-        ),
-      );
-    });
-  }
-
-  Widget _buildItemRow(TipoProvento item, bool isDark, int index) {
-    final isProvento = item.tipoRubrica == 'P';
-    final valor = isProvento ? item.provento : item.desconto;
-    final accentColor =
-        isProvento ? const Color(0xFF1B8A3C) : const Color(0xFFD32F2F);
-
-    // Linhas translúcidas, no padrão do resto do app: a cor fica como um
-    // tingimento leve, e quem comunica provento ou desconto é o selo P/D
-    // mais o sinal do valor — não só a cor de fundo.
-    final rowColor = accentColor.withValues(
-      alpha:
-          isDark ? (index.isEven ? 0.10 : 0.07) : (index.isEven ? 0.07 : 0.04),
-    );
+  // ── Cartão do servidor ────────────────────────────────────────────────
+  Widget _cartaoServidor(Auth auth, ThemeData theme) {
+    Widget par(String etiqueta, String valor) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(etiqueta,
+                style: TextStyle(
+                    fontSize: 11.5,
+                    color: _apagado(theme),
+                    fontWeight: FontWeight.w400)),
+            const SizedBox(height: 2),
+            Text(valor.isEmpty ? 'Não informado' : valor,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: valor.isEmpty
+                      ? _apagado(theme)
+                      : theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                )),
+          ],
+        );
 
     return Container(
-      margin: const EdgeInsets.only(top: 3),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: rowColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: accentColor.withValues(alpha: isDark ? 0.22 : 0.18),
-        ),
+        color: _superficie(theme),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _contorno(theme)),
       ),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(16, 15, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Badge P / D
-          Container(
-            width: 22,
-            height: 22,
-            decoration: BoxDecoration(
-              color: accentColor.withValues(alpha: 0.14),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                item.tipoRubrica,
-                style: TextStyle(
-                  color: accentColor,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.blue.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(Icons.person_outline_rounded,
+                    size: 21, color: AppColors.lightBlue),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('SERVIDOR',
+                        style: TextStyle(
+                            fontSize: 10,
+                            letterSpacing: 1.4,
+                            fontWeight: FontWeight.w600,
+                            color: _apagado(theme))),
+                    const SizedBox(height: 3),
+                    Text(auth.nomeCompleto ?? '—',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface)),
+                  ],
                 ),
               ),
-            ),
+            ],
           ),
-          const SizedBox(width: 8),
-
-          // Descrição — ocupa todo espaço disponível
-          Expanded(
-            child: Text(
-              item.descricaoRubrica,
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w500,
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.85)
-                    : const Color(0xFF2D3748),
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
+          const SizedBox(height: 14),
+          Divider(height: 1, thickness: 1, color: _contorno(theme)),
+          const SizedBox(height: 14),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                  child: par('Matrícula', widget.mesSelecionado.matricula)),
+              Expanded(
+                  child: par('Lotação',
+                      contracheque.UnidadeOrganizacional.isNotEmpty
+                          ? contracheque.UnidadeOrganizacional
+                          : widget.mesSelecionado.relacaoTrabalho)),
+            ],
           ),
-          const SizedBox(width: 6),
-
-          // Valor — largura fixa + AutoSizeText para shrink automático
-          SizedBox(
-            width: 82,
-            child: AutoSizeText(
-              'R\$\u2009$valor',
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w700,
-                color: accentColor,
-              ),
-              maxLines: 1,
-              minFontSize: 8,
-              textAlign: TextAlign.right,
-            ),
+          const SizedBox(height: 13),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                  child: par('Competência',
+                      '${widget.mesSelecionado.mesExtenso} / ${widget.mesSelecionado.ano}')),
+              Expanded(
+                  child: par(
+                      'Tipo de folha',
+                      contracheque.Folha.isNotEmpty
+                          ? contracheque.Folha
+                          : widget.mesSelecionado.folha)),
+            ],
           ),
         ],
       ),
     );
   }
 
-  // ── Barra de resumo (proventos / descontos / líquido) ─────────────────
-  Widget _buildSummaryBar(bool isDark) {
-    // Era um bloco sólido azul→navy. Agora é vidro tingido: continua sendo o
-    // elemento de mais peso da tela, mas deixa o fundo passar. As cores de
-    // provento/desconto mudam por modo para manter contraste de 4.5:1.
-    return Builder(builder: (context) {
-      final theme = Theme.of(context);
-      final verde = isDark ? const Color(0xFF6EE7A0) : const Color(0xFF14713B);
-      final vermelho =
-          isDark ? const Color(0xFFFF9E9E) : const Color(0xFFB3261E);
-
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-        child: CartaoVidro(
-          raio: 16,
-          tingimento: theme.colorScheme.primary,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
+  // ── Cartão do valor líquido ───────────────────────────────────────────
+  Widget _cartaoLiquido(ThemeData theme) {
+    final escuro = theme.brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: escuro
+              ? [
+                  AppColors.blue.withValues(alpha: 0.26),
+                  AppColors.navy.withValues(alpha: 0.22),
+                ]
+              : [
+                  AppColors.blue.withValues(alpha: 0.12),
+                  AppColors.navy.withValues(alpha: 0.07),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.blue.withValues(alpha: 0.22)),
+      ),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Valor líquido',
+              style: TextStyle(
+                  fontSize: 13,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.75))),
+          const SizedBox(height: 8),
+          _valorGrande(theme),
+          const SizedBox(height: 14),
+          Divider(
+              height: 1,
+              thickness: 1,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
+          const SizedBox(height: 13),
+          Row(
             children: [
-              _summaryCol(
-                label: 'Proventos',
-                value:
-                    'R\$\u2009${CurrencyFormatter.format(proventos, _realSettings)}',
-                color: verde,
-                isDark: isDark,
-              ),
+              Expanded(
+                  child: _resumoColuna(
+                      theme, 'Proventos', proventos, _verde)),
               Container(
-                width: 1,
-                height: 36,
-                color: theme.colorScheme.onSurface.withOpacity(0.12),
-              ),
-              _summaryCol(
-                label: 'Descontos',
-                value:
-                    'R\$\u2009${CurrencyFormatter.format(descontos, _realSettings)}',
-                color: vermelho,
-                isDark: isDark,
-              ),
-              Container(
-                width: 1,
-                height: 36,
-                color: theme.colorScheme.onSurface.withOpacity(0.12),
-              ),
-              _summaryCol(
-                label: 'Líquido',
-                value:
-                    'R\$\u2009${CurrencyFormatter.format(totalLiquido, _realSettings)}',
-                color: theme.colorScheme.onSurface,
-                isDark: isDark,
-                destaque: true,
-              ),
+                  width: 1,
+                  height: 32,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
+              const SizedBox(width: 16),
+              Expanded(
+                  child: _resumoColuna(
+                      theme, 'Descontos', descontos, _vermelho)),
             ],
           ),
-        ),
-      );
-    });
-  }
-
-  Widget _summaryCol({
-    required String label,
-    required String value,
-    required Color color,
-    required bool isDark,
-    bool destaque = false,
-  }) {
-    return Expanded(
-      child: Builder(builder: (context) {
-        final theme = Theme.of(context);
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label.toUpperCase(),
-              style: TextStyle(
-                fontSize: 9,
-                color: theme.colorScheme.onSurface.withOpacity(0.60),
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 3),
-            // AutoSizeText: shrink automático se o valor não couber
-            AutoSizeText(
-              value,
-              style: TextStyle(
-                fontSize: destaque ? 13 : 11.5,
-                color: color,
-                fontWeight: FontWeight.w800,
-              ),
-              maxLines: 1,
-              minFontSize: 7,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        );
-      }),
+        ],
+      ),
     );
   }
 
-  // ── Barra inferior de compartilhamento ────────────────────────────────
-  Widget _buildShareBar(Auth auth, bool isDark) {
-    // Sem superfície própria: os botões ficam direto sobre o fundo da tela.
+  Widget _valorGrande(ThemeData theme) {
+    if (!_valoresVisiveis) {
+      return Text(_oculto,
+          style: TextStyle(
+              fontSize: 34,
+              height: 1.0,
+              letterSpacing: 2,
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.45)));
+    }
+    return RichText(
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: 'R\$ ',
+            style: TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.72)),
+          ),
+          TextSpan(
+            text: CurrencyFormatter.format(totalLiquido, _realSettings),
+            style: TextStyle(
+                fontSize: 34,
+                height: 1.0,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.8,
+                color: theme.colorScheme.onSurface),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _resumoColuna(
+      ThemeData theme, String etiqueta, double valor, Color cor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(etiqueta,
+            style: TextStyle(fontSize: 12.5, color: _apagado(theme))),
+        const SizedBox(height: 3),
+        Text(
+          _valoresVisiveis
+              ? 'R\$ ${CurrencyFormatter.format(valor, _realSettings)}'
+              : _oculto,
+          style: TextStyle(
+              fontSize: 15.5,
+              fontWeight: FontWeight.w600,
+              color: _valoresVisiveis
+                  ? cor
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.45)),
+        ),
+      ],
+    );
+  }
+
+  // ── Cabeçalho de seção ────────────────────────────────────────────────
+  Widget _tituloSecao(ThemeData theme,
+      {required String rotulo, required Color cor, required int quantidade}) {
+    return Row(
+      children: [
+        Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(color: cor, shape: BoxShape.circle)),
+        const SizedBox(width: 9),
+        Text(rotulo,
+            style: TextStyle(
+                fontSize: 15, fontWeight: FontWeight.w600, color: cor)),
+        const Spacer(),
+        Text(
+            '$quantidade ${quantidade == 1 ? "lançamento" : "lançamentos"}',
+            style: TextStyle(fontSize: 12.5, color: _apagado(theme))),
+      ],
+    );
+  }
+
+  // ── Bloco de rubricas ─────────────────────────────────────────────────
+  Widget _blocoRubricas(
+      ThemeData theme, List<TipoProvento> itens, Color cor) {
+    return Container(
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: theme.brightness == Brightness.dark
+            ? 0.055
+            : 0.045),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cor.withValues(alpha: 0.18)),
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < itens.length; i++) ...[
+            if (i > 0)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: cor.withValues(alpha: 0.14)),
+              ),
+            _linhaRubrica(theme, itens[i], cor),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _linhaRubrica(ThemeData theme, TipoProvento item, Color cor) {
+    final partes = _partesRubrica(item.descricaoRubrica);
+    final bruto = item.tipoRubrica == 'P' ? item.provento : item.desconto;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(partes.$1,
+                    style: TextStyle(
+                        fontSize: 14.5,
+                        height: 1.25,
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurface)),
+                if (partes.$2 != null) ...[
+                  const SizedBox(height: 2),
+                  Text(partes.$2!,
+                      style:
+                          TextStyle(fontSize: 11.5, color: _apagado(theme))),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            _valoresVisiveis ? 'R\$ $bruto' : _oculto,
+            style: TextStyle(
+                fontSize: 14.5,
+                fontWeight: FontWeight.w600,
+                color: _valoresVisiveis
+                    ? cor
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.45)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Separa o código entre parênteses do nome da rubrica.
+  ///
+  /// "SUBSIDIO EFETIVO (MIG: 0002)" vira ("SUBSIDIO EFETIVO", "MIG · 0002").
+  /// O nome continua exatamente como vem do SIGRH: traduzi-lo para algo mais
+  /// amigável exigiria um dicionário de rubricas validado pela corporação, e
+  /// inventar nome em contracheque é pior que mostrar a sigla.
+  (String, String?) _partesRubrica(String bruto) {
+    final texto = bruto.trim();
+    final m = RegExp(r'^(.*?)\s*\(([^)]*)\)\s*$').firstMatch(texto);
+    if (m == null) return (texto, null);
+    final detalhe = m
+        .group(2)!
+        .replaceAll(':', ' ·')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    final nome = m.group(1)!.trim();
+    if (nome.isEmpty) return (texto, null);
+    return (nome, detalhe.isEmpty ? null : detalhe);
+  }
+
+  // ── Barra de compartilhar ─────────────────────────────────────────────
+  // Um botão só. O formato é escolhido na prévia, junto com a conferência do
+  // documento — era estranho decidir PDF ou imagem antes de ver o que seria
+  // enviado.
+  Widget _barraCompartilhar(Auth auth) {
+    final theme = Theme.of(context);
+    final ocupado = _sharingPdf || _sharingImage;
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: (_sharingImage || _sharingPdf)
-                        ? null
-                        : () => _compartilhar(auth, comoPdf: false),
-                    icon: _sharingImage
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.blue,
-                            ),
-                          )
-                        : const Icon(Icons.image_outlined, size: 18),
-                    label: const Text('Compartilhar\nImagem',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.primary,
-                      side: BorderSide(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.55)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: ocupado ? null : () => _compartilhar(auth),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.blue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: (_sharingPdf || _sharingImage)
-                        ? null
-                        : () => _compartilhar(auth, comoPdf: true),
-                    icon: _sharingPdf
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.picture_as_pdf_outlined, size: 18),
-                    label: const Text('Compartilhar\nPDF',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12)),
-                    style: FilledButton.styleFrom(
-                      // No escuro a primária é clara: texto branco em cima
-                      // dela fica em ~2:1. A cor do rótulo segue a luminância
-                      // do fundo para manter a leitura.
-                      foregroundColor: ThemeData.estimateBrightnessForColor(
-                                  Theme.of(context).colorScheme.primary) ==
-                              Brightness.dark
-                          ? Colors.white
-                          : Colors.black87,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        ocupado
+                            ? const SizedBox(
+                                width: 17,
+                                height: 17,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.ios_share_rounded, size: 18),
+                        const SizedBox(width: 10),
+                        Text(ocupado ? 'Gerando…' : 'Compartilhar',
+                            style: const TextStyle(
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w600)),
+                      ],
                     ),
-                  ),
+                    Text('PDF ou imagem',
+                        style: TextStyle(
+                            fontSize: 12.5,
+                            color: Colors.white.withValues(alpha: 0.78))),
+                  ],
                 ),
-              ],
+              ),
+            ),
+            const SizedBox(height: 9),
+            Text(
+              'Demonstrativo para visualização. Não substitui o documento oficial.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: _apagado(theme)),
             ),
           ],
         ),
@@ -1428,3 +1525,43 @@ class _PageContrachequeState extends State<PageContracheque> {
     );
   }
 }
+
+/// Botão de olho da barra superior, com o contorno discreto do mockup.
+class _BotaoOlho extends StatelessWidget {
+  const _BotaoOlho({required this.visivel, required this.aoTocar});
+
+  final bool visivel;
+  final VoidCallback aoTocar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: visivel ? 'Ocultar valores' : 'Mostrar valores',
+      child: InkWell(
+        onTap: aoTocar,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.blue.withValues(alpha: 0.16),
+            border:
+                Border.all(color: AppColors.lightBlue.withValues(alpha: 0.45)),
+          ),
+          child: Icon(
+            visivel
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
+            size: 19,
+            color: AppColors.lightBlue,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Formato escolhido na prévia de compartilhamento.
+enum _FormatoEnvio { pdf, imagem }
