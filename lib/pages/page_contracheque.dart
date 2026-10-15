@@ -1046,9 +1046,12 @@ class _PageContrachequeState extends State<PageContracheque> {
                 ),
               ],
             ),
-            bottomNavigationBar: _barraCompartilhar(auth),
+            floatingActionButton: _botaoCompartilhar(auth),
             body: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              // A folga embaixo precisa cobrir o botão flutuante inteiro —
+              // área segura, afastamento e altura dele — senão a última linha
+              // fica encoberta no fim da rolagem.
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 132),
               children: [
                 _tituloCompetencia(theme),
                 const SizedBox(height: 18),
@@ -1073,7 +1076,8 @@ class _PageContrachequeState extends State<PageContracheque> {
                   const SizedBox(height: 10),
                   _blocoRubricas(theme, descontosLista, _vermelho),
                 ],
-                const SizedBox(height: 8),
+                const SizedBox(height: 18),
+                _rodapeAviso(theme),
               ],
             ),
           ),
@@ -1464,67 +1468,48 @@ class _PageContrachequeState extends State<PageContracheque> {
     return (nome, detalhe.isEmpty ? null : detalhe);
   }
 
-  // ── Barra de compartilhar ─────────────────────────────────────────────
-  // Um botão só. O formato é escolhido na prévia, junto com a conferência do
-  // documento — era estranho decidir PDF ou imagem antes de ver o que seria
-  // enviado.
-  Widget _barraCompartilhar(Auth auth) {
-    final theme = Theme.of(context);
+  // ── Compartilhar ──────────────────────────────────────────────────────
+  // Botão flutuante no canto inferior direito: fica ao alcance do polegar e
+  // não rouba uma faixa fixa da tela, que numa lista longa de rubricas faz
+  // falta. O formato — PDF ou imagem — é escolhido na prévia, depois de o
+  // militar ver o documento.
+  Widget _botaoCompartilhar(Auth auth) {
     final ocupado = _sharingPdf || _sharingImage;
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: ocupado ? null : () => _compartilhar(auth),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(13)),
-                ),
-                // Centrado. Antes o rótulo ficava à esquerda e "PDF ou
-                // imagem" à direita, e os dois pesos disputavam a atenção
-                // dentro do mesmo botão. O formato é escolhido na prévia, e é
-                // lá que ele precisa aparecer.
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ocupado
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.ios_share_rounded, size: 17),
-                    const SizedBox(width: 9),
-                    Text(ocupado ? 'Gerando documento…' : 'Compartilhar',
-                        style: const TextStyle(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.1)),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 9),
-            Text(
-              'PDF ou imagem · não substitui o documento oficial',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 10.5, color: _apagado(theme)),
-            ),
-          ],
-        ),
+    return FloatingActionButton.extended(
+      onPressed: ocupado ? null : () => _compartilhar(auth),
+      backgroundColor: ocupado
+          ? AppColors.blue.withValues(alpha: 0.55)
+          : AppColors.blue,
+      foregroundColor: Colors.white,
+      elevation: 3,
+      highlightElevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      icon: ocupado
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child:
+                  CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+            )
+          : const Icon(Icons.ios_share_rounded, size: 18),
+      label: Text(
+        ocupado ? 'Gerando…' : 'Compartilhar',
+        style: const TextStyle(
+            fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.1),
       ),
     );
   }
+
+  Widget _rodapeAviso(ThemeData theme) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Text(
+          'Demonstrativo para visualização. Não substitui o documento oficial.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+              fontSize: 10.5, height: 1.45, color: _apagado(theme)),
+        ),
+      );
 }
 
 /// Botão de olho da barra superior, com o contorno discreto do mockup.
