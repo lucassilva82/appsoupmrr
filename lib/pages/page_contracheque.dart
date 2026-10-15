@@ -1,5 +1,6 @@
 // ignore_for_file: must_be_immutable
 import 'dart:io';
+import 'dart:ui' show ImageFilter;
 import 'dart:typed_data';
 
 import 'package:currency_formatter/currency_formatter.dart';
@@ -1474,29 +1475,72 @@ class _PageContrachequeState extends State<PageContracheque> {
   // falta. O formato — PDF ou imagem — é escolhido na prévia, depois de o
   // militar ver o documento.
   Widget _botaoCompartilhar(Auth auth) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaria = theme.colorScheme.primary;
     final ocupado = _sharingPdf || _sharingImage;
 
-    return FloatingActionButton.extended(
-      onPressed: ocupado ? null : () => _compartilhar(auth),
-      backgroundColor: ocupado
-          ? AppColors.blue.withValues(alpha: 0.55)
-          : AppColors.blue,
-      foregroundColor: Colors.white,
-      elevation: 3,
-      highlightElevation: 6,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      icon: ocupado
-          ? const SizedBox(
-              width: 16,
-              height: 16,
-              child:
-                  CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-            )
-          : const Icon(Icons.ios_share_rounded, size: 18),
-      label: Text(
-        ocupado ? 'Gerando…' : 'Compartilhar',
-        style: const TextStyle(
-            fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.1),
+    // Mesma receita da pílula do item ativo no menu inferior
+    // (barra_navegacao.dart): primária a 22% com borda a 35%, raio 18 e o
+    // mesmo desfoque de fundo. Assim o botão pertence ao app em vez de
+    // parecer um elemento colado por cima.
+    final conteudo = Container(
+      decoration: BoxDecoration(
+        color: primaria.withValues(alpha: isDark ? 0.22 : 0.12),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: primaria.withValues(alpha: isDark ? 0.35 : 0.22),
+          width: 0.8,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: ocupado ? null : () => _compartilhar(auth),
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 13, 20, 13),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ocupado
+                    ? SizedBox(
+                        width: 17,
+                        height: 17,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: primaria),
+                      )
+                    : Icon(Icons.ios_share_rounded, size: 18, color: primaria),
+                const SizedBox(width: 9),
+                Text(
+                  ocupado ? 'Gerando…' : 'Compartilhar',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.1,
+                    color: primaria,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    return Semantics(
+      button: true,
+      label: 'Compartilhar contracheque',
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        // Vidro só no iOS, como na barra de navegação: no Android o desfoque
+        // de fundo custa caro e a superfície do Material já resolve.
+        child: Platform.isAndroid
+            ? conteudo
+            : BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                child: conteudo,
+              ),
       ),
     );
   }
