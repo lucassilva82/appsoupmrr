@@ -42,6 +42,20 @@ class _PageContrachequeState extends State<PageContracheque> {
   bool _sharingPdf = false;
   bool _sharingImage = false;
 
+  // Arquivos guardados depois de gerados. Compartilhar o mesmo mês de novo
+  // não refaz o PDF nem a rasterização, que é a parte cara da operação.
+  File? _pdfPronto;
+  File? _imagemPronta;
+
+  // A consulta roda uma vez só, na primeira leitura.
+  //
+  // Antes o `future:` era montado dentro do build(): cada setState criava uma
+  // consulta nova, o FutureBuilder voltava para ConnectionState.waiting e a
+  // tela inteira era substituída pelo indicador de carregamento. Era essa a
+  // piscada ao tocar em compartilhar — e a segunda piscada ao cancelar a
+  // folha do sistema, quando o setState de encerramento rodava.
+  late final Future<ContrachequeModel> _dados = _buscaDadosSql();
+
   final CurrencyFormatterSettings _realSettings = CurrencyFormatterSettings(
     symbol: '',
     symbolSide: SymbolSide.right,
@@ -51,7 +65,6 @@ class _PageContrachequeState extends State<PageContracheque> {
   );
 
   Future<ContrachequeModel> _buscaDadosSql() async {
-    final auth = Provider.of<Auth>(context, listen: false);
     contracheque = await dadosSql.buscaContracheque(
       widget.mesSelecionado.cpf,
       widget.mesSelecionado.ano,
@@ -540,9 +553,16 @@ class _PageContrachequeState extends State<PageContracheque> {
     ));
 
     final output = await getTemporaryDirectory();
-    final file = File('${output.path}/contracheque.pdf');
+    final file = File('${output.path}/$_nomeArquivo.pdf');
     await file.writeAsBytes(await pdf.save());
     return file;
+  }
+
+  /// Nome do arquivo que chega a quem recebe. "contracheque.pdf" não diz de
+  /// qual mês é, e quem guarda vários acaba com um sobrescrevendo o outro.
+  String get _nomeArquivo {
+    final mes = widget.mesSelecionado.mes.padLeft(2, '0');
+    return 'contracheque_${widget.mesSelecionado.ano}-$mes';
   }
 
   // Origem do popover exigida pelo iOS/iPad (UIActivityViewController).
@@ -553,59 +573,97 @@ class _PageContrachequeState extends State<PageContracheque> {
     return box.localToGlobal(Offset.zero) & box.size;
   }
 
-  // ── Compartilhar PDF ──────────────────────────────────────────────────
-  Future<void> _sharePdf(Auth auth) async {
-    if (_sharingPdf || _sharingImage) return;
-    setState(() => _sharingPdf = true);
-    try {
-      final file = await _generatePdf(auth);
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject:
-            'Contracheque ${widget.mesSelecionado.mesExtenso}/${widget.mesSelecionado.ano}',
-        sharePositionOrigin: _sharePositionOrigin(),
-      );
-    } catch (e) {
-      debugPrint('Erro ao compartilhar PDF: $e');
-      if (!mounted) return;
-      alertaErro(context,
-          titulo: 'Erro',
-          texto: 'Não foi possível gerar o PDF.\n$e',
-          confirmar: 'OK');
-    } finally {
-      if (mounted) setState(() => _sharingPdf = false);
-    }
+  // ── Compartilhar ──────────────────────────────────────────────────────
+  //
+  // A sequência é sempre: gerar o arquivo primeiro, com o botão mostrando que
+  // está gerando, e só então abrir a folha de compartilhamento do sistema.
+  //
+  // Cancelar a folha não desfaz nem recarrega nada: o arquivo continua
+  // guardado e a próxima tentativa abre na hora. O usuário também não fica
+  // olhando para uma folha vazia enquanto o PDF ainda está sendo montado.
+
+  /// Gera o PDF, ou devolve o que já foi gerado para este mês.
+  Future<File> _arquivoPdf(Auth auth) async {
+    final pronto = _pdfPronto;
+    if (pronto != null && await pronto.exists()) return pronto;
+    final file = await _generatePdf(auth);
+    _pdfPronto = file;
+    return file;
   }
 
-  // ── Compartilhar Imagem (rasteriza o PDF) ─────────────────────────────
-  Future<void> _shareImage(Auth auth) async {
-    if (_sharingImage || _sharingPdf) return;
-    setState(() => _sharingImage = true);
+  /// Rasteriza a primeira página do PDF. É a operação mais cara das duas,
+  /// então vale ainda mais guardar o resultado.
+  Future<File> _arquivoImagem(Auth auth) async {
+    final pronta = _imagemPronta;
+    if (pronta != null && await pronta.exists()) return pronta;
+
+    final pdfBytes = await (await _arquivoPdf(auth)).readAsBytes();
+    final paginas =
+        await Printing.raster(pdfBytes, pages: [0], dpi: 180).toList();
+    if (paginas.isEmpty) {
+      throw Exception('O PDF não produziu nenhuma página para rasterizar.');
+    }
+    final pngBytes = await paginas.first.toPng();
+    final dir = await getTemporaryDirectory();
+    final imgFile = File('${dir.path}/$_nomeArquivo.png');
+    await imgFile.writeAsBytes(pngBytes);
+    _imagemPronta = imgFile;
+    return imgFile;
+  }
+
+  Future<void> _compartilhar(Auth auth, {required bool comoPdf}) async {
+    if (_sharingPdf || _sharingImage) return;
+    setState(() {
+      if (comoPdf) {
+        _sharingPdf = true;
+      } else {
+        _sharingImage = true;
+      }
+    });
+
     try {
-      final file = await _generatePdf(auth);
-      final pdfBytes = await file.readAsBytes();
-      final pages =
-          await Printing.raster(pdfBytes, pages: [0], dpi: 180).toList();
-      if (pages.isEmpty) throw Exception('Sem páginas');
-      final pngBytes = await pages.first.toPng();
-      final tempDir = await getTemporaryDirectory();
-      final imgFile = File('${tempDir.path}/contracheque.png');
-      await imgFile.writeAsBytes(pngBytes);
+      final arquivo =
+          comoPdf ? await _arquivoPdf(auth) : await _arquivoImagem(auth);
+
+      // A tela pode ter sido fechada enquanto o arquivo era gerado. Abrir a
+      // folha do sistema a partir de um widget morto quebra no iOS.
+      if (!mounted) return;
+
+      // O estado de "gerando" acaba aqui: o arquivo está pronto e o que vem
+      // a seguir é a folha do sistema, que tem o próprio retorno visual.
+      setState(() {
+        _sharingPdf = false;
+        _sharingImage = false;
+      });
+
       await Share.shareXFiles(
-        [XFile(imgFile.path)],
+        [XFile(arquivo.path)],
         subject:
             'Contracheque ${widget.mesSelecionado.mesExtenso}/${widget.mesSelecionado.ano}',
         sharePositionOrigin: _sharePositionOrigin(),
       );
+      // O resultado é deliberadamente ignorado: o Android não informa de forma
+      // confiável se o envio aconteceu, e exibir "enviado!" com base nisso
+      // mentiria para metade dos usuários. Cancelar simplesmente não faz nada.
     } catch (e) {
-      debugPrint('Erro ao compartilhar imagem: $e');
+      debugPrint('[CONTRACHEQUE] erro ao compartilhar '
+          '${comoPdf ? "PDF" : "imagem"}: $e');
       if (!mounted) return;
-      alertaErro(context,
-          titulo: 'Erro',
-          texto: 'Não foi possível gerar a imagem.\n$e',
-          confirmar: 'OK');
+      alertaErro(
+        context,
+        titulo: 'Erro',
+        texto: comoPdf
+            ? 'Não foi possível gerar o PDF do contracheque.'
+            : 'Não foi possível gerar a imagem do contracheque.',
+        confirmar: 'OK',
+      );
     } finally {
-      if (mounted) setState(() => _sharingImage = false);
+      if (mounted && (_sharingPdf || _sharingImage)) {
+        setState(() {
+          _sharingPdf = false;
+          _sharingImage = false;
+        });
+      }
     }
   }
 
@@ -616,7 +674,7 @@ class _PageContrachequeState extends State<PageContracheque> {
     final isDark = theme.brightness == Brightness.dark;
 
     return FutureBuilder<ContrachequeModel>(
-      future: _buscaDadosSql(),
+      future: _dados,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -1010,7 +1068,7 @@ class _PageContrachequeState extends State<PageContracheque> {
                   child: OutlinedButton.icon(
                     onPressed: (_sharingImage || _sharingPdf)
                         ? null
-                        : () => _shareImage(auth),
+                        : () => _compartilhar(auth, comoPdf: false),
                     icon: _sharingImage
                         ? const SizedBox(
                             width: 16,
@@ -1042,7 +1100,7 @@ class _PageContrachequeState extends State<PageContracheque> {
                   child: FilledButton.icon(
                     onPressed: (_sharingPdf || _sharingImage)
                         ? null
-                        : () => _sharePdf(auth),
+                        : () => _compartilhar(auth, comoPdf: true),
                     icon: _sharingPdf
                         ? const SizedBox(
                             width: 16,
