@@ -47,6 +47,10 @@ class _PageContrachequeState extends State<PageContracheque> {
   File? _pdfPronto;
   File? _imagemPronta;
 
+  // A página rasterizada. Serve para a prévia dos dois formatos e para o
+  // arquivo PNG, então é gerada uma vez só.
+  Uint8List? _paginaRasterizada;
+
   // A consulta roda uma vez só, na primeira leitura.
   //
   // Antes o `future:` era montado dentro do build(): cada setState criava uma
@@ -591,11 +595,12 @@ class _PageContrachequeState extends State<PageContracheque> {
     return file;
   }
 
-  /// Rasteriza a primeira página do PDF. É a operação mais cara das duas,
-  /// então vale ainda mais guardar o resultado.
-  Future<File> _arquivoImagem(Auth auth) async {
-    final pronta = _imagemPronta;
-    if (pronta != null && await pronta.exists()) return pronta;
+  /// Rasteriza a página do PDF. É a operação mais cara do fluxo, e agora os
+  /// dois formatos dependem dela — o PNG é o próprio raster, e a prévia do
+  /// PDF mostra esse mesmo desenho. Por isso roda uma vez e fica guardada.
+  Future<Uint8List> _rasterizar(Auth auth) async {
+    final pronta = _paginaRasterizada;
+    if (pronta != null) return pronta;
 
     final pdfBytes = await (await _arquivoPdf(auth)).readAsBytes();
     final paginas =
@@ -603,12 +608,144 @@ class _PageContrachequeState extends State<PageContracheque> {
     if (paginas.isEmpty) {
       throw Exception('O PDF não produziu nenhuma página para rasterizar.');
     }
-    final pngBytes = await paginas.first.toPng();
+    final bytes = await paginas.first.toPng();
+    _paginaRasterizada = bytes;
+    return bytes;
+  }
+
+  Future<File> _arquivoImagem(Auth auth) async {
+    final pronta = _imagemPronta;
+    if (pronta != null && await pronta.exists()) return pronta;
+
     final dir = await getTemporaryDirectory();
     final imgFile = File('${dir.path}/$_nomeArquivo.png');
-    await imgFile.writeAsBytes(pngBytes);
+    await imgFile.writeAsBytes(await _rasterizar(auth));
     _imagemPronta = imgFile;
     return imgFile;
+  }
+
+  /// Tamanho em KB decimal (1 KB = 1000 B), que é como o iOS e o Android
+  /// mostram na folha de compartilhamento. Usar KB binário aqui faria a
+  /// prévia dizer 194 KB e a folha do sistema dizer 199 KB para o mesmo
+  /// arquivo, logo em seguida.
+  static String _tamanhoLegivel(int bytes) {
+    if (bytes < 1000) return '$bytes B';
+    if (bytes < 1000000) return '${(bytes / 1000).round()} KB';
+    return '${(bytes / 1000000).toStringAsFixed(1)} MB';
+  }
+
+  /// Mostra o que será enviado antes de abrir a folha do sistema.
+  ///
+  /// O PDF é uma renderização própria, diferente da tela: cabeçalho, logos e
+  /// layout que o militar nunca viu. Como ele costuma mandar isso para banco,
+  /// locador ou RH, e mensagem enviada não volta, vale conferir antes. A
+  /// prévia mostra exatamente a página que vai no arquivo.
+  Future<bool> _confirmarEnvio({
+    required bool comoPdf,
+    required Uint8List pagina,
+    required int tamanhoBytes,
+  }) async {
+    final theme = Theme.of(context);
+    final confirmado = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: theme.colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final altura = MediaQuery.of(ctx).size.height;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Confira antes de enviar',
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${comoPdf ? "PDF" : "Imagem PNG"} · '
+                  '${_tamanhoLegivel(tamanhoBytes)} · '
+                  '${widget.mesSelecionado.mesExtenso}/${widget.mesSelecionado.ano}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // A página inteira, com zoom. Rubrica pequena num celular
+                // pequeno fica ilegível sem isso, e conferir é o objetivo.
+                Flexible(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: altura * 0.56),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        color: Colors.white,
+                        child: InteractiveViewer(
+                          maxScale: 4,
+                          child: Image.memory(pagina, fit: BoxFit.contain),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Cancelar'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        icon: const Icon(Icons.ios_share_rounded, size: 18),
+                        label: const Text('Compartilhar'),
+                        style: FilledButton.styleFrom(
+                          foregroundColor:
+                              ThemeData.estimateBrightnessForColor(
+                                          theme.colorScheme.primary) ==
+                                      Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black87,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    return confirmado ?? false;
   }
 
   Future<void> _compartilhar(Auth auth, {required bool comoPdf}) async {
@@ -622,19 +759,28 @@ class _PageContrachequeState extends State<PageContracheque> {
     });
 
     try {
+      // Gera o arquivo e a prévia. A rasterização é compartilhada, então o
+      // segundo formato não paga esse custo de novo.
       final arquivo =
           comoPdf ? await _arquivoPdf(auth) : await _arquivoImagem(auth);
+      final pagina = await _rasterizar(auth);
+      final tamanho = await arquivo.length();
 
-      // A tela pode ter sido fechada enquanto o arquivo era gerado. Abrir a
-      // folha do sistema a partir de um widget morto quebra no iOS.
+      // A tela pode ter sido fechada enquanto o arquivo era gerado.
       if (!mounted) return;
 
-      // O estado de "gerando" acaba aqui: o arquivo está pronto e o que vem
-      // a seguir é a folha do sistema, que tem o próprio retorno visual.
+      // O estado de "gerando" acaba aqui: o que vem a seguir já é visível.
       setState(() {
         _sharingPdf = false;
         _sharingImage = false;
       });
+
+      final enviar = await _confirmarEnvio(
+        comoPdf: comoPdf,
+        pagina: pagina,
+        tamanhoBytes: tamanho,
+      );
+      if (!enviar || !mounted) return;
 
       await Share.shareXFiles(
         [XFile(arquivo.path)],
@@ -644,7 +790,7 @@ class _PageContrachequeState extends State<PageContracheque> {
       );
       // O resultado é deliberadamente ignorado: o Android não informa de forma
       // confiável se o envio aconteceu, e exibir "enviado!" com base nisso
-      // mentiria para metade dos usuários. Cancelar simplesmente não faz nada.
+      // mentiria para metade dos usuários.
     } catch (e) {
       debugPrint('[CONTRACHEQUE] erro ao compartilhar '
           '${comoPdf ? "PDF" : "imagem"}: $e');
