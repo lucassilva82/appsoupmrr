@@ -135,3 +135,62 @@ que cai na isenção). A App Store Connect não pergunta mais.
   72dp centrais e ainda aplica zoom. Arte ocupando a camada inteira sai
   esticada. Sem `mipmap-anydpi-v26/ic_launcher.xml`, o Android 8+ aplica o
   tratamento legado e desenha a borda clara em volta.
+
+---
+
+## 10. Não monte o `future:` dentro do `build()`
+
+**O que aconteceu.** A tela do contracheque piscava ao tocar em compartilhar e
+piscava de novo ao cancelar a folha do sistema. A causa não era o
+compartilhamento: o `FutureBuilder` recebia `future: _buscaDadosSql()`, montado
+dentro do `build()`. Cada `setState` criava uma consulta nova, o FutureBuilder
+voltava para `ConnectionState.waiting` e a tela inteira virava indicador de
+carregamento. Os dois `setState` do fluxo davam as duas piscadas.
+
+O mesmo padrão estava em mais dois lugares. No card de tempo de serviço era
+pior: ele era `StatelessWidget` e o `build` observa o Auth com `listen: true`,
+então **toda notificação do Auth disparava uma requisição HTTP nova**.
+
+**O que fazer.** O Future vai num campo do State, criado uma vez e refeito só
+quando alguma entrada dele muda. Se a entrada muda (como o ano selecionado),
+recrie no `setState` que a altera.
+
+**Como medir.** Contar as execuções no log em vez de tentar flagrar a piscada
+numa captura. Se abrir a folha e cancelar mantém a contagem parada, acabou.
+
+---
+
+## 11. Toda página precisa pintar o próprio fundo
+
+**O que aconteceu.** Na navegação dava para ver a tela de saída **através** da
+tela de entrada, com os dois conteúdos legíveis ao mesmo tempo. Parecia
+navegação rápida demais ou falha de renderização.
+
+**Por quê.** O fundo do app era pintado uma vez só, atrás do Navigator, e o
+tema define `scaffoldBackgroundColor: Colors.transparent`. Ou seja, **toda**
+Scaffold do app é translúcida por padrão — não apenas as que declaram isso
+explicitamente. Durante o push, a rota que entra deixa ver a que sai.
+
+**O que fazer.** Toda página retorna `FundoSuave(child: Scaffold(...))`, como a
+home sempre fez. O `FundoSuave` é opaco, então o visual não muda e a rota passa
+a ser opaca. Página nova no app: envolva, ou o defeito volta.
+
+**Como medir.** `timeDilation = 25.0` (importando com
+`show timeDilation`, senão colide com o `Priority` do flutter_local_notifications)
+e capturar o meio da transição. Antes: dois conteúdos sobrepostos. Depois:
+borda nítida entre as telas.
+
+---
+
+## 12. Confirme a causa antes de culpar a tela
+
+**O que aconteceu.** Numa captura, a Ficha Individual apareceu em tema claro e
+eu concluí que a tela estava fora do padrão. Ao verificar, a barra inferior e a
+barra de status também estavam claras: era o app inteiro em tema claro naquele
+instante, não aquela tela. O arquivo não tem nenhuma cor clara fixa e já usa
+`CartaoVidro` e `theme.brightness`.
+
+**O que fazer.** Antes de redesenhar uma tela por "estar fora do padrão",
+conferir se o desvio é dela ou do app todo — olhar as barras do sistema, a
+configuração de tema e tentar reproduzir. Não foi possível reproduzir aquele
+render, e a tela ficou como estava.
