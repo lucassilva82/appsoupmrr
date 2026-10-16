@@ -24,6 +24,7 @@ import '../widgets/cartao_painel.dart';
 import '../widgets/custom_appbar.dart';
 import '../widgets/vidro.dart';
 import '../widgets/dados_situacao_funcional.dart';
+import '../widgets/aviso_rapido.dart';
 import '../models/auth_model.dart'; // fornece auth.matricula, auth.cpf
 import '../utils/app_theme.dart';
 import '../utils/protecao_tela.dart';
@@ -283,9 +284,7 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
     final uri = Uri(scheme: 'tel', path: clean);
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível abrir o discador')),
-      );
+      avisoErro(context, 'Não foi possível abrir o discador');
     }
   }
 

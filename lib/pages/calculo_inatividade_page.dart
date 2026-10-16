@@ -14,6 +14,7 @@ import '../utils/store.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/cartao_painel.dart';
 import '../widgets/vidro.dart';
+import '../widgets/aviso_rapido.dart';
 
 class CalculoInatividadePage extends StatefulWidget {
   const CalculoInatividadePage({Key? key}) : super(key: key);
@@ -119,12 +120,8 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
   /// uma parte real da conta.
   void _calcular() {
     if (_dataIncorporacao == null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text('Informe a data de incorporação para calcular.'),
-        ));
+      avisoAtencao(context, 'Informe a data de incorporação',
+          texto: 'Ela é necessária para calcular a inatividade.');
       return;
     }
 
@@ -242,12 +239,8 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
       _incapacidade = null;
     });
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text('Dados restaurados do sistema (SIGRH/IPER).'),
-      ));
+    avisoInfo(context, 'Dados restaurados',
+        texto: 'Os valores voltaram aos do SIGRH e do IPER.');
   }
 
   // ── Helpers de dados ───────────────────────────────────────────────────

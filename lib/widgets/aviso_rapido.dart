@@ -5,11 +5,78 @@ import '../utils/app_theme.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // avisoRapido
 //
-// Aviso curto que aparece embaixo e some sozinho, no mesmo desenho do
-// "Em desenvolvimento" do menu (grid_menu.dart): cartão flutuante com fundo
-// levemente tingido, borda fina, ícone num círculo, título e uma linha de
-// explicação. Use no lugar do SnackBar padrão do Flutter.
+// O aviso curto do app: aparece embaixo, some sozinho e tem sempre o mesmo
+// desenho (o do "Em desenvolvimento" do menu): cartão flutuante com fundo
+// levemente tingido, borda fina, ícone num círculo, título e, se precisar,
+// uma linha de explicação. Use sempre ele, nunca o SnackBar padrão do Flutter,
+// para todos os avisos terem a mesma cara (DESIGN §10).
+//
+// Os quatro tipos já trazem cor e ícone:
+//   avisoSucesso(context, 'Certidão removida do aparelho');
+//   avisoErro(context, 'Não foi possível abrir o PDF', texto: 'Tente de novo.');
+//   avisoAtencao(context, 'Preencha o número e o CEP');
+//   avisoInfo(context, 'Dados restaurados do sistema');
+// Cor ou ícone diferentes: avisoRapido(context, ..., icone:, cor:).
+// Sem BuildContext (callback de push): avisoRapidoGlobal(...).
 // ─────────────────────────────────────────────────────────────────────────────
+
+enum TipoAviso { sucesso, erro, atencao, info }
+
+/// Âmbar do "Em desenvolvimento" e dos avisos de atenção.
+const Color kCorAtencao = Color(0xFFC77800);
+
+/// Cor de cada tipo, lida do tema para servir aos modos claro e escuro.
+Color corDoAviso(ThemeData theme, TipoAviso tipo) {
+  final isDark = theme.brightness == Brightness.dark;
+  switch (tipo) {
+    case TipoAviso.sucesso:
+      return isDark ? AppColors.sucessoEscuro : AppColors.sucesso;
+    case TipoAviso.erro:
+      return theme.colorScheme.error;
+    case TipoAviso.atencao:
+      return kCorAtencao;
+    case TipoAviso.info:
+      return theme.colorScheme.primary;
+  }
+}
+
+IconData _iconeDoAviso(TipoAviso tipo) {
+  switch (tipo) {
+    case TipoAviso.sucesso:
+      return Icons.check_rounded;
+    case TipoAviso.erro:
+      return Icons.error_outline_rounded;
+    case TipoAviso.atencao:
+      return Icons.warning_amber_rounded;
+    case TipoAviso.info:
+      return Icons.info_outline_rounded;
+  }
+}
+
+void avisoSucesso(BuildContext context, String titulo, {String? texto}) =>
+    _porTipo(context, TipoAviso.sucesso, titulo, texto);
+
+void avisoErro(BuildContext context, String titulo, {String? texto}) =>
+    _porTipo(context, TipoAviso.erro, titulo, texto);
+
+void avisoAtencao(BuildContext context, String titulo, {String? texto}) =>
+    _porTipo(context, TipoAviso.atencao, titulo, texto);
+
+void avisoInfo(BuildContext context, String titulo, {String? texto}) =>
+    _porTipo(context, TipoAviso.info, titulo, texto);
+
+void _porTipo(
+    BuildContext context, TipoAviso tipo, String titulo, String? texto) {
+  avisoRapido(
+    context,
+    titulo: titulo,
+    texto: texto,
+    icone: _iconeDoAviso(tipo),
+    cor: corDoAviso(Theme.of(context), tipo),
+    // Erro fica um pouco mais na tela: costuma ter algo para ler.
+    duracao: Duration(seconds: tipo == TipoAviso.erro ? 4 : 3),
+  );
+}
 
 void avisoRapido(
   BuildContext context, {
@@ -19,11 +86,52 @@ void avisoRapido(
   required Color cor,
   Duration duracao = const Duration(seconds: 3),
 }) {
-  final theme = Theme.of(context);
+  _mostrar(
+    ScaffoldMessenger.of(context),
+    Theme.of(context),
+    titulo: titulo,
+    texto: texto,
+    icone: icone,
+    cor: cor,
+    duracao: duracao,
+  );
+}
+
+/// Para quando não há BuildContext à mão (ex.: push com o app aberto): usa o
+/// ScaffoldMessenger e o tema do app.
+void avisoRapidoGlobal(
+  ScaffoldMessengerState messenger,
+  ThemeData theme, {
+  required String titulo,
+  String? texto,
+  required TipoAviso tipo,
+  IconData? icone,
+  Color? cor,
+}) {
+  _mostrar(
+    messenger,
+    theme,
+    titulo: titulo,
+    texto: texto,
+    icone: icone ?? _iconeDoAviso(tipo),
+    cor: cor ?? corDoAviso(theme, tipo),
+    duracao: const Duration(seconds: 3),
+  );
+}
+
+void _mostrar(
+  ScaffoldMessengerState messenger,
+  ThemeData theme, {
+  required String titulo,
+  String? texto,
+  required IconData icone,
+  required Color cor,
+  required Duration duracao,
+}) {
   final isDark = theme.brightness == Brightness.dark;
   final textoCor = theme.colorScheme.onSurface;
 
-  ScaffoldMessenger.of(context)
+  messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(

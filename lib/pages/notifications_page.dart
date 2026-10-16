@@ -6,6 +6,7 @@ import 'package:projetonovo/utils/notification_provider.dart';
 import 'package:projetonovo/widgets/custom_appbar.dart';
 import 'package:provider/provider.dart';
 import '../widgets/vidro.dart';
+import '../widgets/aviso_rapido.dart';
 
 // ── Helpers de categoria / tempo ──────────────────────────────────────────────
 /// Mapeia a rota da notificação para um ícone + cor de categoria, dando o
@@ -132,14 +133,7 @@ class NotificationsBody extends StatelessWidget {
     if (confirmar != true) return;
     await provider.clearAll();
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Notificações removidas'),
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
+      avisoSucesso(context, 'Notificações removidas');
     }
   }
 
@@ -414,15 +408,7 @@ class _NotifTile extends StatelessWidget {
         direction: DismissDirection.endToStart,
         onDismissed: (_) {
           onDelete();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Notificação removida'),
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 2),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-          );
+          avisoSucesso(context, 'Notificação removida');
         },
         background: Container(
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),

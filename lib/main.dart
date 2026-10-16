@@ -62,6 +62,7 @@ import 'package:projetonovo/utils/app_routes.dart';
 
 import 'firebase_options.dart';
 import 'models/auth_model.dart';
+import 'widgets/aviso_rapido.dart';
 import 'widgets/dialogo_confirmacao.dart';
 import 'package:projetonovo/data/store.dart'; // Certifique-se de que Store está acessível
 
@@ -323,35 +324,20 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
-/// Exibe um toast (SnackBar) colorido no topo do app.
+/// Aviso de evento vindo por push com o app aberto, no padrão de avisos do
+/// app (avisoRapido), com a cor e o ícone do evento.
 void mostrarToastEvento(String mensagem, Color cor, {IconData? icone}) {
   final messenger = scaffoldMessengerKey.currentState;
   if (messenger == null) return;
-  messenger
-    ..clearSnackBars()
-    ..showSnackBar(
-      SnackBar(
-        backgroundColor: cor,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        content: Row(
-          children: [
-            if (icone != null) ...[
-              Icon(icone, color: Colors.white, size: 20),
-              const SizedBox(width: 10),
-            ],
-            Expanded(
-              child: Text(
-                mensagem,
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  final ctx = navigatorKey.currentContext;
+  avisoRapidoGlobal(
+    messenger,
+    ctx != null ? Theme.of(ctx) : ThemeData(),
+    titulo: mensagem,
+    tipo: TipoAviso.info,
+    icone: icone ?? Icons.notifications_rounded,
+    cor: cor,
+  );
 }
 
 /// Trata os valores do campo `tipo_evento` do payload de push (adição
@@ -682,15 +668,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       userData['notificationsChoice'] = 'denied';
       await Store.saveMap('userData', userData);
       if (!dialogContext.mounted) return;
-      ScaffoldMessenger.of(dialogContext).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Notificações desativadas. Você pode ativar nas configurações.',
-            style: TextStyle(fontSize: 12),
-          ),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      avisoInfo(dialogContext, 'Notificações desativadas',
+          texto: 'Você pode ativar nas configurações.');
     });
   }
 

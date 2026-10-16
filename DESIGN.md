@@ -368,6 +368,7 @@ cor. Use `Icons.*`.
 - [ ] Ícones só com `AppIconSize`
 - [ ] Cores lidas do `Theme.of(context)`; `Colors.white` só sobre fundo escuro
 - [ ] Um botão principal cheio; o resto discreto
+- [ ] Avisos curtos com `avisoSucesso/Erro/Atencao/Info`, nunca `SnackBar` (§10)
 - [ ] Alvos de toque ≥ 44/48
 - [ ] Testado nos dois modos (claro e escuro)
 - [ ] Testado no Android (lá o `CartaoVidro` vira Material, não vidro)
@@ -389,3 +390,25 @@ Os três cards de dado da Início foram refeitos na gramática do §2b. Os três
 fixavam `const primaryBlue = Color(0xFF1565C0)` no próprio arquivo — o azul
 não vinha do tema em nenhum deles.
 
+---
+
+## 10. Avisos curtos — um desenho só
+
+Todo aviso que aparece embaixo e some sozinho usa `lib/widgets/aviso_rapido.dart`
+(o desenho do "Em desenvolvimento" do menu): cartão flutuante com fundo levemente
+tingido, borda fina, ícone num círculo, título curto e, se precisar, uma linha
+de explicação. **Nunca `ScaffoldMessenger.showSnackBar(SnackBar(...))` direto**
+— eram 22 avisos, cada tela com cor, raio e ícone próprios.
+
+| Função | Quando | Cor / ícone |
+|---|---|---|
+| `avisoSucesso` | a ação deu certo | verde / visto |
+| `avisoErro` | falhou (fica 4 s) | `colorScheme.error` / alerta |
+| `avisoAtencao` | falta algo do usuário | âmbar / triângulo |
+| `avisoInfo` | informação neutra | primária / "i" |
+
+Título curto e sem ponto final ("Ciência registrada", não "Ciência registrada
+com sucesso!"). Explicação no `texto:`. Erro técnico (`$e`) vai para o
+`debugPrint`, nunca para a tela. Cor ou ícone fora dos quatro tipos:
+`avisoRapido(context, icone:, cor:)`; sem `BuildContext` (push com o app
+aberto): `avisoRapidoGlobal`.

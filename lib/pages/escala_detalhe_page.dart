@@ -5,6 +5,7 @@ import '../services/escala_service.dart';
 import '../utils/app_theme.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/vidro.dart';
+import '../widgets/aviso_rapido.dart';
 
 // ── EscalaDetalhePage ─────────────────────────────────────────────────────────
 class EscalaDetalhePage extends StatefulWidget {
@@ -138,32 +139,13 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
         _actionLoading = false;
       });
       _logUi('darCiencia success cienciaEm=${result['ciencia_em']}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(children: const [
-            Icon(Icons.check_circle_rounded, color: Colors.white, size: 16),
-            SizedBox(width: 8),
-            Text('Ciência registrada com sucesso!'),
-          ]),
-          backgroundColor: Colors.green.shade700,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
+      avisoSucesso(context, 'Ciência registrada');
     } on EscalaServiceException catch (e) {
       _logUi('darCiencia falhou code=${e.code} message=${e.message}');
       if (!mounted) return;
       setState(() => _actionLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
+      avisoErro(context, 'Não foi possível registrar',
+            texto: e.message);
     }
   }
 
@@ -198,32 +180,13 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
         _actionLoading = false;
       });
       _logUi('impossibilidade success');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(children: const [
-            Icon(Icons.info_rounded, color: Colors.white, size: 16),
-            SizedBox(width: 8),
-            Text('Impossibilidade registrada.'),
-          ]),
-          backgroundColor: Colors.orange.shade700,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
+      avisoAtencao(context, 'Impossibilidade registrada');
     } on EscalaServiceException catch (e) {
       _logUi('impossibilidade falhou code=${e.code} message=${e.message}');
       if (!mounted) return;
       setState(() => _actionLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
+      avisoErro(context, 'Não foi possível registrar',
+            texto: e.message);
     }
   }
 

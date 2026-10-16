@@ -9,6 +9,7 @@ import '../utils/app_routes.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/alerta.dart';
 import '../widgets/vidro.dart';
+import '../widgets/aviso_rapido.dart';
 
 // ignore: must_be_immutable
 class EdicaoEnderecoPage extends StatefulWidget {
@@ -418,13 +419,7 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
                       : () async {
                           if (widget.controllerNumero.text.isEmpty ||
                               widget.controllerCep.text.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content:
-                                    Text('Por favor preencha número e CEP'),
-                                backgroundColor: Colors.orange,
-                              ),
-                            );
+                            avisoAtencao(context, 'Preencha o número e o CEP');
                             return;
                           }
 

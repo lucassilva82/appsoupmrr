@@ -7,6 +7,7 @@ import 'package:projetonovo/utils/api_services.dart';
 import 'package:projetonovo/widgets/custom_appbar.dart';
 import 'package:share_plus/share_plus.dart';
 import '../widgets/vidro.dart';
+import '../widgets/aviso_rapido.dart';
 
 class PopPage extends StatefulWidget {
   const PopPage({Key? key}) : super(key: key);
@@ -192,9 +193,9 @@ class _PopPageState extends State<PopPage> {
       filePath = await ApiServices.baixarLegislacaoPdf(id: id, pdfApiUrl: url);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Falha ao abrir PDF: $e')),
-        );
+        debugPrint('[PDF] falha ao abrir: $e');
+        avisoErro(context, 'Não foi possível abrir o PDF',
+            texto: 'Verifique sua conexão e tente de novo.');
       }
     } finally {
       if (mounted) {
@@ -647,9 +648,9 @@ class _PdfViewerPop extends StatelessWidget {
           try {
             await Share.shareXFiles([XFile(filePath)], text: title);
           } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Falha ao compartilhar: $e')),
-            );
+            debugPrint('[PDF] falha ao compartilhar: $e');
+            avisoErro(context, 'Não foi possível compartilhar',
+                texto: 'Tente de novo em instantes.');
           }
         },
       ),

@@ -189,15 +189,12 @@ class _CertidoesPageState extends State<CertidoesPage> {
       _guardadas = guardadas;
       if (_recente?.certidao.codigo == c.codigo) _recente = null;
     });
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    avisoRapido(
+    avisoSucesso(
       context,
-      titulo: 'Certidão removida do aparelho',
+      'Certidão removida do aparelho',
       texto: c.emailMascarado != null
           ? 'Ela continua válida e disponível no seu e-mail.'
           : 'Ela continua válida para quem já a recebeu.',
-      icone: Icons.check_rounded,
-      cor: isDark ? AppColors.sucessoEscuro : AppColors.sucesso,
     );
   }
 

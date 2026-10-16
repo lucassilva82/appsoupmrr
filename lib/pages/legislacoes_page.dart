@@ -6,6 +6,7 @@ import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:projetonovo/utils/api_services.dart';
 import 'dart:async';
 import '../widgets/vidro.dart';
+import '../widgets/aviso_rapido.dart';
 // import 'package:pdf_text/pdf_text.dart'; // Removido por ora: usaremos ementa/palavras_chave para resumo
 
 class LegislacoesPage extends StatefulWidget {
@@ -199,9 +200,9 @@ class _LegislacoesPageState extends State<LegislacoesPage> {
       filePath = await ApiServices.baixarLegislacaoPdf(id: id, pdfApiUrl: url);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Falha ao abrir PDF: $e')),
-        );
+        debugPrint('[PDF] falha ao abrir: $e');
+        avisoErro(context, 'Não foi possível abrir o PDF',
+            texto: 'Verifique sua conexão e tente de novo.');
       }
     } finally {
       if (mounted) {
@@ -655,9 +656,9 @@ class _PdfViewerLegislacao extends StatelessWidget {
           try {
             await Share.shareXFiles([XFile(filePath)], text: title);
           } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Falha ao compartilhar: $e')),
-            );
+            debugPrint('[PDF] falha ao compartilhar: $e');
+            avisoErro(context, 'Não foi possível compartilhar',
+                texto: 'Tente de novo em instantes.');
           }
         },
       ),

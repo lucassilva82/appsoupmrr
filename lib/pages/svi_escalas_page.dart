@@ -6,6 +6,7 @@ import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/vidro.dart';
+import '../widgets/aviso_rapido.dart';
 
 // ── Vagas SVI ─────────────────────────────────────────────────────────────────
 /// Lista de escalas SVI com vagas disponíveis para o militar se candidatar.
@@ -608,22 +609,7 @@ class _SviEscalaDetalheSheetState extends State<_SviEscalaDetalheSheet> {
   }
 
   void _mostrarErro(String mensagem) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline_rounded,
-                color: Colors.white, size: 18),
-            const SizedBox(width: 10),
-            Expanded(child: Text(mensagem)),
-          ],
-        ),
-        backgroundColor: Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 5),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
+    avisoErro(context, 'Não foi possível concluir', texto: mensagem);
   }
 
   @override

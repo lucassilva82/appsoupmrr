@@ -8,6 +8,7 @@ import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/vidro.dart';
+import '../widgets/aviso_rapido.dart';
 
 // ── EscalasPage ───────────────────────────────────────────────────────────────
 class EscalasPage extends StatefulWidget {
@@ -354,15 +355,7 @@ class _EscalasPageState extends State<EscalasPage>
       _tfNovaSenha.clear();
       _tfConfirmarSenha.clear();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Senha atualizada com sucesso.'),
-          backgroundColor: Colors.green.shade700,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
+      avisoSucesso(context, 'Senha atualizada');
       _logUi('migrarSenha concluida com sucesso');
       await _load();
     } on EscalaServiceException catch (e) {
@@ -408,33 +401,12 @@ class _EscalasPageState extends State<EscalasPage>
         }
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: const [
-                Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-                SizedBox(width: 10),
-                Text('Ciência registrada com sucesso!'),
-              ],
-            ),
-            backgroundColor: Colors.green.shade700,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
+        avisoSucesso(context, 'Ciência registrada');
       }
     } on EscalaServiceException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
+      avisoErro(context, 'Não foi possível registrar',
+            texto: e.message);
     }
   }
 
@@ -469,33 +441,12 @@ class _EscalasPageState extends State<EscalasPage>
         }
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: const [
-                Icon(Icons.info_rounded, color: Colors.white, size: 18),
-                SizedBox(width: 10),
-                Text('Impossibilidade registrada.'),
-              ],
-            ),
-            backgroundColor: Colors.orange.shade700,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
+        avisoAtencao(context, 'Impossibilidade registrada');
       }
     } on EscalaServiceException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
+      avisoErro(context, 'Não foi possível registrar',
+            texto: e.message);
     }
   }
 

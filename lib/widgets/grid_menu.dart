@@ -6,6 +6,7 @@ import '../models/auth_model.dart';
 import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 import 'dialogo_confirmacao.dart';
+import 'aviso_rapido.dart';
 
 class Choice {
   final String title;
@@ -104,70 +105,13 @@ class _GridMenuItem extends StatelessWidget {
 
   Future<void> _onTap(BuildContext context) async {
     if (_isEmDesenvolvimento) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
-      final amber = const Color(0xFFC77800); // âmbar suave
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            elevation: 2,
-            duration: const Duration(seconds: 3),
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            backgroundColor:
-                isDark ? Color.alphaBlend(amber.withValues(alpha: 0.10), AppColors.darkCard)
-                    : const Color(0xFFFFF6E9),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: amber.withOpacity(0.25)),
-            ),
-            content: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(7),
-                  decoration: BoxDecoration(
-                    color: amber.withOpacity(0.14),
-                    shape: BoxShape.circle,
-                  ),
-                  child:
-                      Icon(Icons.hourglass_top_rounded,
-                          color: amber, size: AppIconSize.sm),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Em desenvolvimento',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13.5,
-                          color: isDark
-                              ? const Color(0xFFF3E6CE)
-                              : const Color(0xFF5A4416),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Este recurso estará disponível em breve.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          height: 1.2,
-                          color: isDark
-                              ? const Color(0xFFB9AD97)
-                              : const Color(0xFF8A7350),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+      avisoRapido(
+        context,
+        titulo: 'Em desenvolvimento',
+        texto: 'Este recurso estará disponível em breve.',
+        icone: Icons.hourglass_top_rounded,
+        cor: kCorAtencao,
+      );
       return;
     }
     switch (choice.id) {
