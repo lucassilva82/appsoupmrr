@@ -346,38 +346,15 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
           ),
           const SizedBox(height: 24),
 
-          SizedBox(
-            height: 50,
-            child: ElevatedButton.icon(
-              onPressed: _isLoading ? null : _submit,
-              icon: _isLoading
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Icon(Icons.send_rounded, size: 18),
-              label: Text(_isLoading
-                  ? 'Enviando...'
-                  : (_trocando
-                      ? 'Enviar link para o novo e-mail'
-                      : 'Enviar confirmação')),
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
+          _BotaoPrincipal(
+            texto: _isLoading
+                ? 'Enviando...'
+                : (_trocando
+                    ? 'Enviar link para o novo e-mail'
+                    : 'Enviar confirmação'),
+            icone: Icons.send_rounded,
+            carregando: _isLoading,
+            aoTocar: _isLoading ? null : _submit,
           ),
           if (_trocando) ...[
             const SizedBox(height: 6),
@@ -484,25 +461,20 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
 
         _Aviso(
           cor: AppColors.lightBlue,
-          icone: Icons.info_outline_rounded,
-          texto: 'É para este endereço que enviamos o código de '
-              '"Esqueci minha senha" e os avisos de alteração de senha.',
+          icone: Icons.campaign_outlined,
+          texto: 'É neste e-mail que você recebe os informativos da PMRR e '
+              'dos sistemas da corporação, o código de "Esqueci minha '
+              'senha" e os avisos de alteração de senha.',
         ),
         const SizedBox(height: 24),
 
-        OutlinedButton.icon(
-          onPressed: () => setState(() {
+        _BotaoPrincipal(
+          texto: 'Trocar e-mail',
+          icone: Icons.edit_rounded,
+          aoTocar: () => setState(() {
             _trocando = true;
             _erro = null;
           }),
-          icon: const Icon(Icons.edit_rounded, size: 18),
-          label: const Text('Trocar e-mail'),
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-          ),
         ),
         const SizedBox(height: 8),
         Text(
@@ -549,22 +521,10 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
               ),
         ),
         const SizedBox(height: 28),
-        SizedBox(
-          height: 50,
-          child: ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isDark ? AppColors.sucessoEscuro : AppColors.sucesso,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            child: const Text(
-              'Voltar ao app',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-            ),
-          ),
+        _BotaoPrincipal(
+          texto: 'Voltar ao app',
+          icone: Icons.check_rounded,
+          aoTocar: () => Navigator.of(context).pop(),
         ),
       ],
     );
@@ -629,24 +589,14 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
         ),
         const SizedBox(height: 24),
 
-        OutlinedButton.icon(
-          onPressed: podeReenviar
-              ? () {
-                  setState(() => _emailEnviado = null);
-                }
+        _BotaoPrincipal(
+          texto: podeReenviar
+              ? 'Reenviar ou corrigir o e-mail'
+              : 'Aguarde $_segundosParaReenviar s para reenviar',
+          icone: Icons.refresh_rounded,
+          aoTocar: podeReenviar
+              ? () => setState(() => _emailEnviado = null)
               : null,
-          icon: const Icon(Icons.refresh_rounded, size: 18),
-          label: Text(
-            podeReenviar
-                ? 'Reenviar ou corrigir o e-mail'
-                : 'Aguarde $_segundosParaReenviar s para reenviar',
-          ),
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-          ),
         ),
         const SizedBox(height: 10),
 
@@ -670,6 +620,56 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
       labelText: label,
       prefixIcon: Icon(icon, size: 20, color: theme.colorScheme.primary),
       // borda, preenchimento, foco e erro vêm do inputDecorationTheme
+    );
+  }
+}
+
+// ── Botão principal ─────────────────────────────────────────────────────────
+// Um por etapa, sempre igual: o mesmo botão da tela Alterar senha. Ações
+// secundárias ("Voltar", "Manter meu e-mail atual") ficam em TextButton.
+
+class _BotaoPrincipal extends StatelessWidget {
+  final String texto;
+  final IconData icone;
+  final VoidCallback? aoTocar;
+  final bool carregando;
+
+  const _BotaoPrincipal({
+    required this.texto,
+    required this.icone,
+    required this.aoTocar,
+    this.carregando = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 50,
+      child: ElevatedButton.icon(
+        onPressed: aoTocar,
+        icon: carregando
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Icon(icone, size: 18),
+        label: Text(texto),
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
     );
   }
 }

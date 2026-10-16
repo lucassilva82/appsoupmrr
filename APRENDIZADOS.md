@@ -383,3 +383,26 @@ tem que ser o novo. Sem isso, a tela continua aguardando.
 **O que fazer daqui em diante.** Quando a tela espera um estado mudar, conferir
 se esse estado não podia **já** ser verdadeiro antes da ação do usuário. Se
 podia, comparar o próprio dado que muda (aqui, o endereço), não só uma flag.
+
+---
+
+## 21. Regra de segurança tem que valer em todas as portas de entrada
+
+**O que aconteceu.** O Primeiro acesso já recusava e-mail de teste e e-mail de
+outra matrícula. A tela "Meu e-mail" usava outro endpoint, que só conferia o
+formato: `teste@gmail.com` passou e o link de confirmação foi parar na caixa de
+um desconhecido. Se ele clicasse, a recuperação de senha do militar passaria a
+ser dele.
+
+**A correção.** As regras foram para um arquivo comum da API
+(`validacao_email.php`), usado antes de enviar o link e de novo na confirmação:
+e-mail de teste ou descartável, domínio digitado errado, domínio sem servidor de
+e-mail, o próprio e-mail já verificado e e-mail que pertence a outra matrícula.
+Na confirmação, a checagem se repete porque, entre o envio e o clique, outro
+militar pode ter confirmado o mesmo endereço. Links antigos para e-mail de teste
+também passaram a ser recusados.
+
+**O que fazer daqui em diante.** Antes de criar ou mexer num caminho que grava
+um dado sensível (e-mail, senha, telefone), procurar **todos** os outros pontos
+da API que gravam o mesmo dado e conferir se seguem as mesmas regras. A regra
+nova fica no arquivo comum, nunca copiada para um só endpoint.
