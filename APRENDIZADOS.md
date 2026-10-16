@@ -537,3 +537,30 @@ Code abre (inclusive nas certidões já emitidas). Quando a verificação for pa
 SIGRH na intranet, `verificar.php` deve redirecionar para lá, nunca ser apagada
 enquanto houver certidão válida em circulação (30 dias depois da última emitida
 com este QR).
+
+---
+
+## 26. Certidão nova revoga a anterior; remover do aparelho não revoga nada
+
+**O caso.** O militar emite uma certidão, vê um dado errado, pede a correção à
+DRH e emite de novo. A nova sai certa, mas a antiga pode já estar com um banco
+ou outro órgão. Quem conferir a antiga pelo QR Code precisa saber que ela não
+vale mais.
+
+**Como ficou.**
+- Ao emitir, a API revoga as certidões ainda válidas **do mesmo tipo e da mesma
+  matrícula** (`certidaoRevogarAnteriores`), só **depois** de o PDF novo ficar
+  pronto: se a geração falhar, a anterior continua valendo. O QR da antiga
+  mostra "Documento revogado", com a data e o motivo ("Substituída por uma
+  certidão mais recente do mesmo tipo…").
+- O painel devolve `vigente_desde` por tipo, e a folha de emissão avisa antes:
+  "A certidão emitida em … deixará de valer."
+- "Remover do aparelho" (lixeira na tela da certidão) apaga só o arquivo local,
+  depois de confirmar. A mensagem diz que ela continua válida e que o PDF está
+  no e-mail enviado (o e-mail oculto fica guardado junto da certidão).
+- O botão "Emitir nova certidão" deixou de redefinir raio e fonte: usa o
+  `elevatedButtonTheme`, como manda o DESIGN §5.
+
+**Para o deploy.** Laço de arquivos em script de deploy roda em `bash -c`: no
+zsh, `for f in $F` não separa a lista, e o backup não foi feito na primeira
+tentativa (refeito a partir das cópias baixadas antes do envio).

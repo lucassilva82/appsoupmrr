@@ -26,11 +26,16 @@ class TipoCertidao {
   final bool disponivel;
   final String? motivo;
 
+  /// Quando foi emitida a certidão deste tipo que ainda vale. Emitir de novo
+  /// revoga essa no servidor, e o app avisa antes.
+  final DateTime? vigenteDesde;
+
   const TipoCertidao({
     required this.tipo,
     required this.titulo,
     required this.disponivel,
     this.motivo,
+    this.vigenteDesde,
   });
 
   factory TipoCertidao.fromJson(Map<String, dynamic> j) => TipoCertidao(
@@ -38,6 +43,9 @@ class TipoCertidao {
         titulo: j['titulo'].toString(),
         disponivel: j['disponivel'] == true,
         motivo: j['motivo']?.toString(),
+        vigenteDesde: j['vigente_desde'] == null
+            ? null
+            : CertidaoService._dataApi(j['vigente_desde'].toString()),
       );
 }
 
@@ -67,6 +75,9 @@ class CertidaoGuardada {
   final String nomeArquivo;
   final String caminho;
 
+  /// E-mail (oculto) que recebeu a cópia; nulo se não foi enviada.
+  final String? emailMascarado;
+
   const CertidaoGuardada({
     required this.tipo,
     required this.titulo,
@@ -76,6 +87,7 @@ class CertidaoGuardada {
     required this.urlVerificacao,
     required this.nomeArquivo,
     required this.caminho,
+    this.emailMascarado,
   });
 
   bool get valida => DateTime.now().isBefore(validoAte);
@@ -92,6 +104,7 @@ class CertidaoGuardada {
         'url_verificacao': urlVerificacao,
         'nome_arquivo': nomeArquivo,
         'caminho': caminho,
+        'email_mascarado': emailMascarado,
       };
 
   factory CertidaoGuardada.fromJson(Map<String, dynamic> j) => CertidaoGuardada(
@@ -103,6 +116,7 @@ class CertidaoGuardada {
         urlVerificacao: j['url_verificacao'].toString(),
         nomeArquivo: j['nome_arquivo'].toString(),
         caminho: j['caminho'].toString(),
+        emailMascarado: j['email_mascarado']?.toString(),
       );
 }
 
@@ -210,6 +224,9 @@ class CertidaoService {
     final arquivo = File('${(await _pasta(matricula)).path}/$codigo.pdf');
     await arquivo.writeAsBytes(bytes, flush: true);
 
+    final envio =
+        EnvioEmailCertidao.fromJson((r['email'] as Map?)?.cast<String, dynamic>());
+
     final certidao = CertidaoGuardada(
       tipo: r['tipo'].toString(),
       titulo: r['titulo'].toString(),
@@ -219,13 +236,11 @@ class CertidaoService {
       urlVerificacao: r['url_verificacao'].toString(),
       nomeArquivo: r['nome_arquivo'].toString(),
       caminho: arquivo.path,
+      emailMascarado: envio.enviado ? envio.emailMascarado : null,
     );
 
     await _salvarIndice(matricula, [certidao, ...lista]);
-    return EmissaoCertidao(
-      certidao: certidao,
-      email: EnvioEmailCertidao.fromJson((r['email'] as Map?)?.cast<String, dynamic>()),
-    );
+    return EmissaoCertidao(certidao: certidao, email: envio);
   }
 
   // ── Guardadas no aparelho ─────────────────────────────────────────────────
@@ -292,6 +307,23 @@ class CertidaoService {
       Store.saveMap(_chaveIndice(matricula), {
         'itens': lista.map((c) => c.toJson()).toList(),
       });
+
+  /// Tira uma certidão do aparelho (lista e arquivo). No servidor ela
+  /// continua registrada e válida para quem já a recebeu.
+  static Future<List<CertidaoGuardada>> remover(String matricula, String codigo) async {
+    final lista = await guardadas(matricula);
+    final resto = <CertidaoGuardada>[];
+    for (final c in lista) {
+      if (c.codigo == codigo) {
+        final arquivo = File(c.caminho);
+        if (await arquivo.exists()) await arquivo.delete();
+      } else {
+        resto.add(c);
+      }
+    }
+    await _salvarIndice(matricula, resto);
+    return resto;
+  }
 
   /// Apaga todas as certidões do aparelho (logout).
   static Future<void> apagarTudo() async {

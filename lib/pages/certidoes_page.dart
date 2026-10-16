@@ -154,9 +154,20 @@ class _CertidoesPageState extends State<CertidoesPage> {
     });
   }
 
-  void _abrir(CertidaoGuardada c) {
-    Navigator.of(context).push(MaterialPageRoute(
+  Future<void> _abrir(CertidaoGuardada c) async {
+    final removida = await Navigator.of(context).push<bool>(MaterialPageRoute(
       builder: (_) => CertidaoVisualizarPage(certidao: c),
+    ));
+    if (removida != true || !mounted) return;
+    final guardadas = await CertidaoService.guardadas(_matricula);
+    if (!mounted) return;
+    setState(() {
+      _guardadas = guardadas;
+      if (_recente?.certidao.codigo == c.codigo) _recente = null;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Certidão removida do aparelho'),
+      behavior: SnackBarBehavior.floating,
     ));
   }
 
@@ -225,30 +236,20 @@ class _CertidoesPageState extends State<CertidoesPage> {
       ];
     }
 
+    // A ação principal da tela: botão cheio com a cor, a altura e o raio do
+    // tema (DESIGN §5). A tela não redefine estilo.
     return [
-      SizedBox(
-        height: 52,
-        child: ElevatedButton.icon(
-          onPressed: _painel == null ? null : _novaCertidao,
-          icon: _painel == null
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.note_add_rounded, size: AppIconSize.sm),
-          label: const Text('Emitir nova certidão'),
-          style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            textStyle: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
+      ElevatedButton.icon(
+        onPressed: _painel == null ? null : _novaCertidao,
+        icon: _painel == null
+            ? const SizedBox(
+                width: AppIconSize.xs,
+                height: AppIconSize.xs,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white70),
+              )
+            : const Icon(Icons.add_rounded, size: AppIconSize.md),
+        label: const Text('Emitir nova certidão'),
       ),
     ];
   }
@@ -807,6 +808,17 @@ class _FolhaEmissaoState extends State<_FolhaEmissao> {
                   ],
                 ),
               ),
+              if (widget.tipo.vigenteDesde != null) ...[
+                const SizedBox(height: 10),
+                _Aviso(
+                  cor: theme.colorScheme.primary,
+                  icone: Icons.autorenew_rounded,
+                  texto: 'A certidão emitida em '
+                      '${_dataHora(widget.tipo.vigenteDesde!)} deixará de valer. '
+                      'Quem conferir a anterior pelo QR Code verá que ela foi '
+                      'substituída por esta.',
+                ),
+              ],
               const SizedBox(height: 6),
               CheckboxListTile(
                 value: _confirmado,
@@ -920,14 +932,6 @@ class _BotaoEmitir extends StatelessWidget {
             // Emitindo, o botão fica com a cor cheia mesmo desabilitado.
             disabledBackgroundColor: ocupado ? corBotao : null,
             disabledForegroundColor: ocupado ? noBotao : null,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            textStyle: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
           ),
           child: Stack(
             fit: StackFit.expand,
@@ -1040,6 +1044,27 @@ class CertidaoVisualizarPage extends StatefulWidget {
 class _CertidaoVisualizarPageState extends State<CertidaoVisualizarPage> {
   bool _compartilhando = false;
 
+  /// Tira só do aparelho, depois de confirmar. Volta true para a lista.
+  Future<void> _remover() async {
+    final c = widget.certidao;
+    final email = c.emailMascarado;
+    final ok = await dialogoConfirmacao(
+      context,
+      titulo: 'Remover do aparelho?',
+      mensagem: 'A certidão será removida apenas deste aparelho e continua '
+          'válida para quem já a recebeu. '
+          '${email != null ? 'Se precisar dela de novo, o PDF está no e-mail enviado para $email.' : 'Se precisar dela de novo, emita uma nova certidão.'}',
+      textoConfirmar: 'Remover',
+      icone: Icons.delete_outline_rounded,
+      cor: Theme.of(context).colorScheme.error,
+    );
+    if (!ok || !mounted) return;
+    final matricula = Provider.of<Auth>(context, listen: false).matricula ?? '';
+    await CertidaoService.remover(matricula, c.codigo);
+    HapticFeedback.mediumImpact();
+    if (mounted) Navigator.of(context).pop(true);
+  }
+
   // Origem do popover exigida pelo iPad (UIActivityViewController).
   Rect? _origemCompartilhar() {
     final box = context.findRenderObject() as RenderBox?;
@@ -1099,7 +1124,7 @@ class _CertidaoVisualizarPageState extends State<CertidaoVisualizarPage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
               child: CartaoVidro(
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
                 child: Row(
                   children: [
                     Icon(Icons.verified_rounded,
@@ -1117,6 +1142,18 @@ class _CertidaoVisualizarPageState extends State<CertidaoVisualizarPage> {
                                   color: theme.colorScheme.onSurface
                                       .withValues(alpha: 0.72))),
                         ],
+                      ),
+                    ),
+                    Semantics(
+                      button: true,
+                      label: 'Remover certidão do aparelho',
+                      excludeSemantics: true,
+                      child: IconButton(
+                        onPressed: _remover,
+                        tooltip: 'Remover do aparelho',
+                        icon: Icon(Icons.delete_outline_rounded,
+                            size: AppIconSize.md,
+                            color: theme.colorScheme.error),
                       ),
                     ),
                   ],
