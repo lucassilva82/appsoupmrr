@@ -12,6 +12,7 @@ import '../models/auth_model.dart';
 import '../services/certidao_service.dart';
 import '../utils/app_theme.dart';
 import '../widgets/alerta.dart';
+import '../widgets/aviso_rapido.dart';
 import '../widgets/cartao_painel.dart';
 import '../widgets/custom_appbar.dart';
 import '../widgets/dialogo_confirmacao.dart';
@@ -165,10 +166,16 @@ class _CertidoesPageState extends State<CertidoesPage> {
       _guardadas = guardadas;
       if (_recente?.certidao.codigo == c.codigo) _recente = null;
     });
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Certidão removida do aparelho'),
-      behavior: SnackBarBehavior.floating,
-    ));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    avisoRapido(
+      context,
+      titulo: 'Certidão removida do aparelho',
+      texto: c.emailMascarado != null
+          ? 'Ela continua válida e disponível no seu e-mail.'
+          : 'Ela continua válida para quem já a recebeu.',
+      icone: Icons.check_rounded,
+      cor: isDark ? AppColors.sucessoEscuro : AppColors.sucesso,
+    );
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
