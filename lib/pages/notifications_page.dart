@@ -41,7 +41,7 @@ _NotifCategoria _categoriaDe(NotificationModel n, ThemeData theme) {
   }
   if (r.contains('certid')) {
     return const _NotifCategoria(
-        Icons.edit_document, Color(0xFFEA580C), 'Certidões');
+        Icons.edit_document, Color(0xFF6366F1), 'Certidões');
   }
   if (r.contains('legisla')) {
     return const _NotifCategoria(
@@ -395,6 +395,10 @@ class _NotifTile extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final isUnread = !notif.clicked;
     final cat = _categoriaDe(notif, theme);
+    // Não lida: mesmo cartão das lidas, um tom mais claro, com uma barra fina
+    // na cor de destaque do app à esquerda. A cor da categoria fica só no
+    // ícone: pintar o cartão inteiro deixava a lista colorida demais.
+    final destaque = theme.colorScheme.primary;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
@@ -439,18 +443,14 @@ class _NotifTile extends StatelessWidget {
               onTap: onTap,
               borderRadius: BorderRadius.circular(16),
               child: Container(
-                padding: const EdgeInsets.all(14),
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
-                  color: isUnread
-                      ? cat.color.withOpacity(isDark ? 0.14 : 0.07)
-                      : (isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72)),
+                  color: isDark
+                      ? Colors.white.withValues(alpha: isUnread ? 0.085 : 0.055)
+                      : Colors.white.withValues(alpha: isUnread ? 0.95 : 0.72),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isUnread
-                        ? cat.color.withOpacity(0.35)
-                        : (isDark
-                            ? AppColors.darkBorder
-                            : const Color(0xFFE8EFFA)),
+                    color: isDark ? AppColors.darkBorder : const Color(0xFFE8EFFA),
                   ),
                   boxShadow: isDark
                       ? []
@@ -462,7 +462,19 @@ class _NotifTile extends StatelessWidget {
                           ),
                         ],
                 ),
-                child: Row(
+                child: IntrinsicHeight(
+                  child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      width: 3,
+                      color: isUnread ? destaque : Colors.transparent,
+                    ),
+                    Expanded(
+                      child: Padding(
+                      padding: const EdgeInsets.fromLTRB(11, 14, 14, 14),
+                      child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Avatar de categoria
@@ -511,7 +523,7 @@ class _NotifTile extends StatelessWidget {
                                     height: 8,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: cat.color,
+                                      color: destaque,
                                     ),
                                   ),
                                 ),
@@ -523,8 +535,8 @@ class _NotifTile extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.6),
+                              color: theme.colorScheme.onSurface
+                                  .withOpacity(isUnread ? 0.75 : 0.6),
                               height: 1.35,
                             ),
                           ),
@@ -532,6 +544,11 @@ class _NotifTile extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+                    ),
+                    ),
+                  ],
+                ),
                 ),
               ),
             ),
