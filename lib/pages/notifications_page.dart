@@ -577,9 +577,12 @@ class _NotifDetailSheet extends StatelessWidget {
       maxChildSize: 0.9,
       expand: false,
       builder: (context, scrollController) {
+        // Folha sobre a lista: superfície opaca, como a de emitir certidão.
+        // A cor de vidro dos cartões (translúcida) deixava a lista aparecer
+        // por trás do texto.
         return Container(
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
+            color: theme.colorScheme.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
