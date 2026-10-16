@@ -59,11 +59,16 @@ class PainelCertidoes {
   final String declaracaoTexto;
   final int validadeDias;
 
+  /// Certidões revogadas no servidor (código → motivo), para tirar do
+  /// aparelho a que não vale mais.
+  final Map<String, String?> revogadas;
+
   const PainelCertidoes({
     required this.tipos,
     required this.declaracaoVersao,
     required this.declaracaoTexto,
     required this.validadeDias,
+    this.revogadas = const {},
   });
 }
 
@@ -215,6 +220,11 @@ class CertidaoService {
         declaracaoVersao: (declaracao['versao'] as num).toInt(),
         declaracaoTexto: declaracao['texto'].toString(),
         validadeDias: (r['validade_dias'] as num?)?.toInt() ?? 30,
+        revogadas: {
+          for (final h in (r['historico'] as List? ?? const []))
+            if ((h as Map)['revogada'] == true)
+              h['codigo'].toString(): h['motivo']?.toString(),
+        },
       );
     } catch (e) {
       debugPrint('[CERTIDAO] painel incompleto: $e');
@@ -452,6 +462,30 @@ class CertidaoService {
       Store.saveMap(_chaveIndice(matricula), {
         'itens': lista.map((c) => c.toJson()).toList(),
       });
+
+  /// Tira do aparelho as certidões que o servidor revogou e devolve quais
+  /// foram, com o motivo, para a tela avisar o militar.
+  static Future<List<({CertidaoGuardada certidao, String? motivo})>>
+      sincronizar(String matricula, PainelCertidoes painel) =>
+          _emFila(() async {
+            final lista = await _lerGuardadas(matricula);
+            final saem = lista
+                .where((c) => painel.revogadas.containsKey(c.codigo))
+                .toList();
+            if (saem.isEmpty) return const [];
+            for (final c in saem) {
+              debugPrint(
+                  '[CERTIDAO] saiu do aparelho: ${c.tipo} ${c.codigo} (revogada)');
+              final f = File(c.caminho);
+              if (await f.exists()) await f.delete();
+            }
+            await _salvarIndice(
+                matricula, lista.where((c) => !saem.contains(c)).toList());
+            return [
+              for (final c in saem)
+                (certidao: c, motivo: painel.revogadas[c.codigo])
+            ];
+          });
 
   /// Tira uma certidão do aparelho (lista e arquivo). No servidor ela
   /// continua registrada e válida para quem já a recebeu.

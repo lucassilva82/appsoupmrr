@@ -166,6 +166,55 @@ exports.notificarEscala = onRequest({ invoker: "public", cors: true }, async (re
 });
 
 /**
+ * notificarMilitar
+ *
+ * Avisa UM militar de algo que ele mesmo fez no sistema (ex.: certidão
+ * emitida). Chamado pela API PHP do SouPMRR.
+ *
+ * POST body:
+ *   {
+ *     "matricula": "452955",
+ *     "titulo":    "Certidão emitida",
+ *     "mensagem":  "Sua Certidão de Tempo de Serviço ...",
+ *     "rota":      "/certidoes-page"   // opcional – abre a tela ao tocar
+ *   }
+ *
+ * Diferente da notificarEscala: exige o mesmo token secreto da notificarTodos
+ * (x-admin-token), porque é pública na internet, e NÃO passa pela lista de
+ * autorizados: o aviso é a resposta a uma ação do próprio militar, e vale
+ * para todos.
+ */
+exports.notificarMilitar = onRequest(
+  { invoker: "public", cors: false, secrets: ["NOTIFICAR_TODOS_TOKEN"] },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Método não permitido" });
+    }
+
+    const tokenEsperado = process.env.NOTIFICAR_TODOS_TOKEN;
+    const tokenRecebido = req.get("x-admin-token");
+    if (!tokenEsperado || tokenRecebido !== tokenEsperado) {
+      return res.status(403).json({ error: "Proibido: token inválido." });
+    }
+
+    const { matricula, titulo, mensagem, rota } = req.body;
+    if (!/^\d{1,20}$/.test(String(matricula ?? ""))) {
+      return res.status(400).json({ error: "Campo 'matricula' inválido." });
+    }
+    if (!titulo || !mensagem) {
+      return res.status(400).json({ error: "Campos 'titulo' e 'mensagem' são obrigatórios." });
+    }
+
+    const resultado = await enviarParaMatriculas([String(matricula)], {
+      titulo,
+      mensagem,
+      rota,
+    });
+    return res.status(200).json(resultado);
+  }
+);
+
+/**
  * notificarTodos
  *
  * Envia uma notificação para TODOS os militares.

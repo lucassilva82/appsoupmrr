@@ -104,7 +104,30 @@ class _CertidoesPageState extends State<CertidoesPage> {
     try {
       final painel = await CertidaoService.painel(
           matricula: _matricula, senhaMd5: _senhaMd5);
-      if (mounted) setState(() => _painel = painel);
+      // Certidão revogada no servidor (pela DRH, ou substituída em outro
+      // aparelho) não pode continuar aqui como se valesse.
+      final revogadas = await CertidaoService.sincronizar(_matricula, painel);
+      final atuais = revogadas.isEmpty
+          ? null
+          : await CertidaoService.guardadas(_matricula);
+      if (!mounted) return;
+      setState(() {
+        _painel = painel;
+        if (atuais != null) _guardadas = atuais;
+      });
+      if (revogadas.isNotEmpty) {
+        final r = revogadas.first;
+        avisoRapido(
+          context,
+          titulo: revogadas.length == 1
+              ? '${r.certidao.titulo} cancelada'
+              : '${revogadas.length} certidões foram canceladas',
+          texto: r.motivo ?? 'Ela não vale mais e saiu do aparelho.',
+          icone: Icons.block_rounded,
+          cor: Theme.of(context).colorScheme.error,
+          duracao: const Duration(seconds: 6),
+        );
+      }
     } on CertidaoErro catch (e) {
       if (mounted) setState(() => _erro = e.mensagem);
     } catch (e) {
