@@ -24,7 +24,7 @@ import '../widgets/vidro.dart';
 // O documento sai da API com QR Code de autenticidade e vale 30 dias; fica
 // guardado no aparelho enquanto vale (CertidaoService).
 //
-// Mesmos 3 tipos e mesmo texto legal da intranet. Sem internet, a tela
+// Os 3 tipos da intranet e a Certidão de Comportamento. Sem internet, a tela
 // ainda mostra e compartilha as certidões já guardadas.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -38,6 +38,11 @@ const _descricoes = <String, ({IconData icone, String texto})>{
     icone: Icons.verified_user_rounded,
     texto: 'Comprova que você é policial militar, com posto, quadro e data '
         'de inclusão.',
+  ),
+  'comportamento': (
+    icone: Icons.military_tech_rounded,
+    texto: 'Seu comportamento atual, o histórico de classificação e as '
+        'punições registradas.',
   ),
   'ficha_funcional': (
     icone: Icons.badge_rounded,

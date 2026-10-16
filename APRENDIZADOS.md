@@ -473,3 +473,30 @@ o que os testes não mostravam:
 se valida emitindo com uma matrícula real e lendo o PDF linha por linha. Número
 redondo e repetido (como 15 em todos os anos) é sinal de valor de exemplo, não
 de dado.
+
+---
+
+## 24. Documento oficial segue o padrão de documento oficial, não o do app
+
+**O que aconteceu.** A segunda versão do PDF tinha a cara do app: azul, cantos
+arredondados, faixas coloridas. Ficou bonita, mas não parecia documento de uma
+instituição. A terceira segue o padrão da administração pública (o mesmo da
+Declaração de Residência da intranet): brasão centralizado, "Estado de Roraima /
+Polícia Militar do Estado de Roraima / Diretoria de Pessoal" em Times, filete
+duplo, texto todo em preto, número do documento abaixo do título, tabelas com
+grade completa, texto de certificação justificado e quadro de autenticidade
+discreto no fim.
+
+Junto veio a **Certidão de Comportamento** (`Index_policial_comportamento` +
+`index_policial_punicao`), que oficial não emite porque não tem classificação, e
+a Certidão de Tempo de Serviço passou a listar os períodos não computados (LTIP,
+deserção, pena em regime fechado) ao lado do tempo averbado.
+
+**Detalhe que só apareceu com dado real.** Com seis anos de serviço e nada a
+deduzir, o quadro de autenticidade passava 2 mm do limite e ia sozinho para a
+página 2. Agora o texto de certificação, o local e data e a autenticidade andam
+juntos (`_certidaoManterFecho`): se não cabem, vão os três para a página seguinte.
+
+**O que fazer daqui em diante.** Documento que sai para fora da PMRR (banco,
+INSS, outro órgão) usa a identidade do Estado, não a do aplicativo. E todo layout
+se testa nos dois extremos: o caso mais curto e o mais longo.
