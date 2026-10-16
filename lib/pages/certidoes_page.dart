@@ -112,7 +112,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
       if (mounted) {
         setState(() => _erro =
             'Sem conexão com o servidor. Suas certidões guardadas continuam '
-            'disponíveis abaixo.');
+                'disponíveis abaixo.');
       }
     } finally {
       if (mounted) setState(() => _carregando = false);
@@ -300,9 +300,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
                 child: _CartaoGuardada(certidao: c, aoTocar: () => _abrir(c)),
               )
             : _CartaoGuardada(
-                key: ValueKey(c.codigo),
-                certidao: c,
-                aoTocar: () => _abrir(c)),
+                key: ValueKey(c.codigo), certidao: c, aoTocar: () => _abrir(c)),
         const SizedBox(height: 10),
       ],
     ];
@@ -561,7 +559,9 @@ class _CartaoTipo extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Icon(
-                apagado ? Icons.lock_outline_rounded : Icons.chevron_right_rounded,
+                apagado
+                    ? Icons.lock_outline_rounded
+                    : Icons.chevron_right_rounded,
                 size: AppIconSize.md,
                 color: corTexto.withValues(alpha: 0.5),
               ),
@@ -593,7 +593,8 @@ class _CartaoGuardada extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: 'Abrir ${certidao.titulo}, válida até ${_data(certidao.validoAte)}',
+      label:
+          'Abrir ${certidao.titulo}, válida até ${_data(certidao.validoAte)}',
       excludeSemantics: true,
       child: CartaoVidro(
         onTap: aoTocar,
@@ -614,7 +615,8 @@ class _CartaoGuardada extends StatelessWidget {
                   Text(
                     'Emitida em ${_dataHora(certidao.geradoEm)}',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.72),
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -665,15 +667,51 @@ class _FolhaEmissao extends StatefulWidget {
   State<_FolhaEmissao> createState() => _FolhaEmissaoState();
 }
 
-/// O que o servidor faz, na ordem, para o militar acompanhar no botão.
-const _etapas = [
-  'Consultando o SIGRH',
-  'Conferindo seus assentamentos',
-  'Alinhando os dados',
-  'Gerando o documento',
+/// O que o servidor faz, na ordem e na linguagem da caserna, para o militar
+/// acompanhar no botão. As duas últimas etapas são comuns a todas.
+const _etapasPorTipo = <String, List<String>>{
+  'tempo_servico': [
+    'Consultando o SIGRH',
+    'Levantando seus assentamentos funcionais',
+    'Conferindo a data de inclusão',
+    'Calculando seu tempo de serviço',
+    'Apurando licenças e afastamentos',
+    'Computando o tempo averbado',
+  ],
+  'vinculo_funcional': [
+    'Consultando o SIGRH',
+    'Levantando seus assentamentos funcionais',
+    'Verificando postos e graduações',
+    'Conferindo quadro e lotação',
+    'Confirmando a situação funcional',
+  ],
+  'comportamento': [
+    'Consultando o SIGRH',
+    'Levantando seus assentamentos disciplinares',
+    'Verificando publicações em BGI',
+    'Apurando punições disciplinares',
+    'Calculando seu comportamento',
+  ],
+  'ficha_funcional': [
+    'Consultando sua ficha funcional',
+    'Verificando postos e graduações',
+    'Conferindo documentos pessoais',
+    'Conferindo endereço e contatos',
+    'Conferindo dependentes e conta bancária',
+  ],
+};
+
+const _etapasFinais = [
+  'Validando os dados da certidão',
+  'Lavrando o documento',
   'Registrando a autenticação',
   'Enviando cópia por e-mail',
 ];
+
+List<String> _etapasDe(String tipo) => [
+      ...(_etapasPorTipo[tipo] ?? const ['Consultando o SIGRH']),
+      ..._etapasFinais
+    ];
 
 class _FolhaEmissaoState extends State<_FolhaEmissao> {
   bool _confirmado = false;
@@ -697,22 +735,25 @@ class _FolhaEmissaoState extends State<_FolhaEmissao> {
       _erro = null;
     });
     // Avança uma etapa por vez e para na última até a resposta chegar.
-    _relogio = Timer.periodic(const Duration(milliseconds: 1100), (_) {
-      if (mounted && _etapa < _etapas.length - 1) setState(() => _etapa++);
+    final total = _etapasDe(widget.tipo.tipo).length;
+    _relogio = Timer.periodic(const Duration(milliseconds: 650), (_) {
+      if (mounted && _etapa < total - 1) setState(() => _etapa++);
     });
 
     try {
       // Tempo mínimo para as etapas não passarem num piscar.
       final resultado = await Future.wait([
         widget.emitir(),
-        Future<void>.delayed(const Duration(milliseconds: 2600)),
+        Future<void>.delayed(const Duration(milliseconds: 3600)),
       ]);
       _relogio?.cancel();
       if (!mounted) return;
       setState(() => _pronto = true);
       HapticFeedback.lightImpact();
       await Future<void>.delayed(const Duration(milliseconds: 700));
-      if (mounted) Navigator.of(context).pop(resultado.first as EmissaoCertidao);
+      if (mounted) {
+        Navigator.of(context).pop(resultado.first as EmissaoCertidao);
+      }
     } on CertidaoErro catch (e) {
       HapticFeedback.heavyImpact();
       if (mounted) setState(() => _erro = e.mensagem);
@@ -853,6 +894,7 @@ class _FolhaEmissaoState extends State<_FolhaEmissao> {
                 emitindo: _emitindo,
                 pronto: _pronto,
                 etapa: _etapa,
+                etapas: _etapasDe(widget.tipo.tipo),
                 aoTocar: _emitir,
               ),
               const SizedBox(height: 10),
@@ -881,6 +923,7 @@ class _BotaoEmitir extends StatelessWidget {
   final bool emitindo;
   final bool pronto;
   final int etapa;
+  final List<String> etapas;
   final VoidCallback aoTocar;
 
   const _BotaoEmitir({
@@ -888,6 +931,7 @@ class _BotaoEmitir extends StatelessWidget {
     required this.emitindo,
     required this.pronto,
     required this.etapa,
+    required this.etapas,
     required this.aoTocar,
   });
 
@@ -909,7 +953,7 @@ class _BotaoEmitir extends StatelessWidget {
       icone = Icon(Icons.check_circle_rounded,
           key: const ValueKey('pronto'), size: AppIconSize.sm, color: noBotao);
     } else if (emitindo) {
-      texto = '${_etapas[etapa]}…';
+      texto = '${etapas[etapa]}…';
       icone = SizedBox(
         key: const ValueKey('girando'),
         width: 16,
@@ -923,7 +967,7 @@ class _BotaoEmitir extends StatelessWidget {
     }
 
     // Progresso aparente: cada etapa empurra a barra; termina ao ficar pronto.
-    final progresso = pronto ? 1.0 : (etapa + 1) / (_etapas.length + 1);
+    final progresso = pronto ? 1.0 : (etapa + 1) / (etapas.length + 1);
     final ocupado = emitindo || pronto;
 
     return Semantics(
@@ -943,37 +987,52 @@ class _BotaoEmitir extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 250),
-                      child: icone,
-                    ),
-                    const SizedBox(width: 10),
-                    ClipRect(
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 320),
-                        switchInCurve: Curves.easeOutCubic,
-                        switchOutCurve: Curves.easeInCubic,
-                        transitionBuilder: (child, anim) {
-                          final entrando =
-                              child.key == ValueKey<String>(texto);
-                          final inicio = Offset(0, entrando ? 0.6 : -0.6);
-                          return FadeTransition(
-                            opacity: anim,
-                            child: SlideTransition(
-                              position: Tween(begin: inicio, end: Offset.zero)
-                                  .animate(anim),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: Text(texto, key: ValueKey<String>(texto)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 250),
+                        child: icone,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: ClipRect(
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 320),
+                            switchInCurve: Curves.easeOutCubic,
+                            switchOutCurve: Curves.easeInCubic,
+                            transitionBuilder: (child, anim) {
+                              final entrando =
+                                  child.key == ValueKey<String>(texto);
+                              final inicio = Offset(0, entrando ? 0.6 : -0.6);
+                              return FadeTransition(
+                                opacity: anim,
+                                child: SlideTransition(
+                                  position:
+                                      Tween(begin: inicio, end: Offset.zero)
+                                          .animate(anim),
+                                  child: child,
+                                ),
+                              );
+                            },
+                            // As etapas são longas: um pouco menores e numa linha só.
+                            child: Text(
+                              texto,
+                              key: ValueKey<String>(texto),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: ocupado && !pronto
+                                  ? const TextStyle(fontSize: 14.5)
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               if (ocupado)

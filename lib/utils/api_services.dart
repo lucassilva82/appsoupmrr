@@ -83,20 +83,7 @@ class ApiServices {
     }
   }
 
-  // ================================
-  // Certidões de autoemissão
-  // ================================
-
-  /// POST em `certidoes/autoemissao.php` (acao 'painel' ou 'emitir').
-  /// Sempre com matrícula + MD5 da senha: a API não aceita só a matrícula.
-  /// O PDF vem em base64; a emissão ganha mais tempo porque o servidor gera
-  /// o documento na hora.
-  static Future<Map<String, dynamic>> certidoes(
-    Map<String, String> corpo, {
-    Duration limite = const Duration(seconds: 25),
-  }) {
-    return _post('certidoes/autoemissao.php', corpo, limite: limite);
-  }
+  // Certidões: a requisição fica em CertidaoService, que trata cada falha.
 
   // ================================
   // Recuperação de senha por e-mail

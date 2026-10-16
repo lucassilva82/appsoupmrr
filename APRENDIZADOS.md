@@ -581,3 +581,43 @@ não o caminho completo, que no iPhone muda quando o app é atualizado (todas as
 certidões teriam "perdido o arquivo" na primeira atualização).
 **Regra:** rotina que apaga arquivo "que não está na lista" precisa provar que
 leu a lista certa antes de apagar qualquer coisa.
+
+---
+
+## 27. Certidão só sai se os dados passarem na conferência
+
+**O que estava errado.** Cada consulta ao SIGRH ficava isolada num `try/catch`
+que, se falhasse, devolvia "vazio" em silêncio. Numa certidão oficial isso é
+afirmar o que não se sabe: se a consulta de punições caísse, a certidão dizia
+"não constam punições". E isso **acontecia em produção**: a consulta de
+dependentes usava a coluna `poli_depe_activo`, que vem de uma migração da
+intranet ainda não aplicada no banco. Falhou 34 vezes no log, e toda Ficha
+Funcional saiu dizendo "Nenhum dependente registrado" (a do usuário tem dois).
+
+**Como ficou (API).**
+- Falha de consulta fica registrada (`_falhas`) e não vira dado vazio. Cada tipo
+  lista as seções indispensáveis (`CERTIDAO_SECOES_OBRIGATORIAS`); se uma delas
+  falhou, a certidão não sai e o militar lê que o SIGRH não respondeu.
+- `certidao_validacao.php` barra dado faltante ou impossível: nome incompleto,
+  CPF inválido (dígito verificador), inclusão no futuro ou antes do nascimento
+  + 16 anos, ano com dedução maior que o bruto, soma dos anos diferente do
+  período, licença com fim antes do início, averbação com dias inválidos,
+  comportamento sem classificação, punição com data futura. O painel já mostra
+  o tipo bloqueado, com o motivo.
+- Depois de registrar o código, qualquer falha (PDF, hash, revogação) **cancela
+  a emissão**: o QR nunca mostra "válida" para um documento que não foi
+  entregue, e a certidão anterior continua valendo. O PDF é conferido antes de
+  sair (`%PDF-`, `%%EOF`, tamanho, número de páginas) e o hash vai na resposta.
+- A consulta de dependentes verifica se a coluna existe (`pg_attribute`).
+
+**Como ficou (app).** A requisição de certidões é própria e diferencia "sem
+internet, nada foi emitido" de "a conexão caiu esperando" (aí o servidor pode
+ter emitido e mandado por e-mail, e o app avisa para conferir o e-mail antes de
+emitir de novo). O PDF recebido é comparado com o SHA-256 do servidor, e nada é
+guardado se não bater. Falha ao gravar (aparelho cheio) também é explicada. As
+etapas do botão falam a língua da tropa ("Calculando seu tempo de serviço",
+"Verificando postos e graduações", "Apurando punições disciplinares",
+"Lavrando o documento").
+
+**Regra:** em documento com fé pública, "não consegui consultar" nunca pode ser
+impresso como "não existe". Falhou, não emite, e diz por quê.

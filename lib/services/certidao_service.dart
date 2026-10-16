@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 import '../data/store.dart';
@@ -194,24 +196,31 @@ class CertidaoService {
     required String matricula,
     required String senhaMd5,
   }) async {
-    final r = await ApiServices.certidoes({
+    final r = await _requisitar({
       'acao': 'painel',
       'matricula': matricula,
       'senha': senhaMd5,
-    });
+    }, emissao: false);
     if (r['code'] != 1) {
       throw CertidaoErro(
           (r['message'] ?? 'Não foi possível carregar.').toString());
     }
-    final declaracao = (r['declaracao'] as Map).cast<String, dynamic>();
-    return PainelCertidoes(
-      tipos: (r['tipos'] as List)
-          .map((t) => TipoCertidao.fromJson((t as Map).cast<String, dynamic>()))
-          .toList(),
-      declaracaoVersao: (declaracao['versao'] as num).toInt(),
-      declaracaoTexto: declaracao['texto'].toString(),
-      validadeDias: (r['validade_dias'] as num?)?.toInt() ?? 30,
-    );
+    try {
+      final declaracao = (r['declaracao'] as Map).cast<String, dynamic>();
+      return PainelCertidoes(
+        tipos: (r['tipos'] as List)
+            .map((t) =>
+                TipoCertidao.fromJson((t as Map).cast<String, dynamic>()))
+            .toList(),
+        declaracaoVersao: (declaracao['versao'] as num).toInt(),
+        declaracaoTexto: declaracao['texto'].toString(),
+        validadeDias: (r['validade_dias'] as num?)?.toInt() ?? 30,
+      );
+    } catch (e) {
+      debugPrint('[CERTIDAO] painel incompleto: $e');
+      throw const CertidaoErro(
+          'O servidor respondeu de forma inesperada. Tente de novo em alguns minutos.');
+    }
   }
 
   // ── Emissão ───────────────────────────────────────────────────────────────
@@ -224,30 +233,24 @@ class CertidaoService {
     required String tipo,
     required int declaracaoVersao,
   }) async {
-    final r = await ApiServices.certidoes({
+    final r = await _requisitar({
       'acao': 'emitir',
       'matricula': matricula,
       'senha': senhaMd5,
       'tipo': tipo,
       'declaracao_confirmada': '1',
       'declaracao_versao': '$declaracaoVersao',
-    }, limite: const Duration(seconds: 60));
+    }, emissao: true);
 
     if (r['code'] != 1) {
       throw CertidaoErro(
           (r['message'] ?? 'Não foi possível emitir.').toString());
     }
 
-    final bytes = base64Decode(r['pdf_base64'].toString());
-    // Um PDF começa sempre por "%PDF": se não, a resposta veio quebrada.
-    if (bytes.length < 5 ||
-        String.fromCharCodes(bytes.sublist(0, 4)) != '%PDF') {
-      throw const CertidaoErro(
-          'O arquivo recebido está incompleto. Tente de novo.');
-    }
-
     final envio = EnvioEmailCertidao.fromJson(
         (r['email'] as Map?)?.cast<String, dynamic>());
+    // Nada é guardado antes de a resposta e o PDF passarem na conferência.
+    final bytes = _conferirResposta(r, tipo, envio);
 
     final certidao = CertidaoGuardada(
       tipo: r['tipo'].toString(),
@@ -261,7 +264,7 @@ class CertidaoService {
       emailMascarado: envio.enviado ? envio.emailMascarado : null,
     );
 
-    final guardada = await _emFila(() async {
+    final Future<CertidaoGuardada> gravar = _emFila(() async {
       final lista = await _lerGuardadas(matricula);
       final arquivo =
           File('${(await _pasta(matricula)).path}/${certidao.codigo}.pdf');
@@ -277,7 +280,115 @@ class CertidaoService {
       }
       return nova;
     });
+    final CertidaoGuardada guardada;
+    try {
+      guardada = await gravar;
+    } catch (e) {
+      // Ex.: aparelho sem espaço. No servidor a certidão já existe.
+      debugPrint('[CERTIDAO] falha ao salvar: $e');
+      throw CertidaoErro('Não foi possível salvar a certidão no aparelho '
+          '(verifique o espaço livre). ${envio.enviado ? 'A cópia enviada para ${envio.emailMascarado ?? 'o seu e-mail'} é válida.' : 'Libere espaço e emita de novo.'}');
+    }
     return EmissaoCertidao(certidao: guardada, email: envio);
+  }
+
+  // ── Conferências ──────────────────────────────────────────────────────────
+
+  /// POST ao autoemissao.php. Toda falha vira CertidaoErro com uma mensagem
+  /// que diz ao militar o que aconteceu com a certidão. Na emissão, "sem
+  /// internet" (nada foi enviado) é diferente de "a conexão caiu esperando a
+  /// resposta" (o servidor pode ter emitido e mandado a cópia por e-mail).
+  static Future<Map<String, dynamic>> _requisitar(
+    Map<String, String> corpo, {
+    required bool emissao,
+  }) async {
+    final http.Response resposta;
+    try {
+      resposta = await http
+          .post(Uri.parse('${ApiServices.baseUrl}/certidoes/autoemissao.php'),
+              body: corpo)
+          .timeout(Duration(seconds: emissao ? 60 : 25));
+    } on SocketException catch (e) {
+      debugPrint('[CERTIDAO] sem conexão: $e');
+      throw CertidaoErro(emissao
+          ? 'Sem conexão com a internet. Nenhuma certidão foi emitida. '
+              'Verifique sua conexão e tente de novo.'
+          : 'Sem conexão com a internet. Suas certidões salvas continuam '
+              'disponíveis abaixo.');
+    } on TimeoutException {
+      throw CertidaoErro(emissao
+          ? _msgConexaoCaiu
+          : 'O SIGRH demorou para responder. Tente de novo em instantes.');
+    } catch (e) {
+      debugPrint('[CERTIDAO] falha de rede: $e');
+      throw CertidaoErro(emissao
+          ? _msgConexaoCaiu
+          : 'Não foi possível falar com o servidor agora. Tente de novo.');
+    }
+
+    final entregue = emissao ? 'Nenhuma certidão foi entregue. ' : '';
+    if (resposta.statusCode != 200) {
+      throw CertidaoErro('O servidor do SIGRH está com problemas '
+          '(erro ${resposta.statusCode}). ${entregue}Tente de novo em alguns minutos.');
+    }
+    try {
+      return (jsonDecode(resposta.body) as Map).cast<String, dynamic>();
+    } catch (e) {
+      debugPrint('[CERTIDAO] resposta inválida: $e');
+      throw CertidaoErro('O servidor respondeu de forma inesperada. '
+          '${entregue}Tente de novo em alguns minutos.');
+    }
+  }
+
+  static const _msgConexaoCaiu =
+      'A conexão caiu antes de a certidão chegar. Se ela tiver sido emitida, '
+      'a cópia chega no seu e-mail em instantes. Confira o e-mail antes de '
+      'emitir de novo, porque uma nova emissão substitui a anterior.';
+
+  /// Confere a resposta da emissão antes de guardar qualquer coisa: campos
+  /// completos, o tipo pedido e o PDF íntegro (bate com o hash que o
+  /// servidor calculou). Devolve os bytes do PDF.
+  static List<int> _conferirResposta(
+      Map<String, dynamic> r, String tipoPedido, EnvioEmailCertidao envio) {
+    final copia = envio.enviado
+        ? 'A cópia enviada para ${envio.emailMascarado ?? 'o seu e-mail'} é válida.'
+        : 'Tente emitir de novo.';
+    CertidaoErro corrompida() => CertidaoErro(
+        'A certidão chegou incompleta ao aparelho e foi descartada. $copia');
+
+    final codigo = r['codigo']?.toString() ?? '';
+    if (!RegExp(r'^[a-f0-9]{32}$').hasMatch(codigo) ||
+        r['tipo']?.toString() != tipoPedido ||
+        r['gerado_em'] == null ||
+        r['valido_ate'] == null) {
+      throw corrompida();
+    }
+    try {
+      _dataApi(r['gerado_em'].toString());
+      _dataApi(r['valido_ate'].toString());
+    } catch (_) {
+      throw corrompida();
+    }
+
+    final List<int> bytes;
+    try {
+      bytes = base64Decode(r['pdf_base64']?.toString() ?? '');
+    } catch (_) {
+      throw corrompida();
+    }
+    final inicio =
+        bytes.length >= 5 ? String.fromCharCodes(bytes.sublist(0, 5)) : '';
+    final fim = bytes.length >= 1024
+        ? String.fromCharCodes(bytes.sublist(bytes.length - 1024))
+        : '';
+    if (inicio != '%PDF-' || !fim.contains('%%EOF')) throw corrompida();
+
+    final hashServidor = r['pdf_sha256']?.toString();
+    if (hashServidor != null &&
+        sha256.convert(bytes).toString() != hashServidor) {
+      throw corrompida();
+    }
+    return bytes;
   }
 
   // ── Guardadas no aparelho ─────────────────────────────────────────────────
@@ -289,13 +400,11 @@ class CertidaoService {
 
   static Future<List<CertidaoGuardada>> _lerGuardadas(String matricula) async {
     final indice = await Store.getMap(_chaveIndice(matricula));
-    final listaLida = indice['itens'] is List;
     final itens = (indice['itens'] as List?) ?? const [];
     final pasta = (await _pasta(matricula)).path;
 
     final validas = <CertidaoGuardada>[];
     var mudou = false;
-    var itemRuim = false;
     for (final item in itens) {
       try {
         final c = CertidaoGuardada.fromJson(
@@ -305,12 +414,13 @@ class CertidaoService {
           validas.add(c);
         } else {
           mudou = true;
+          debugPrint('[CERTIDAO] saiu do aparelho: ${c.tipo} ${c.codigo} '
+              '(${c.valida ? 'arquivo ausente' : 'vencida'})');
           if (await arquivo.exists()) await arquivo.delete();
         }
       } catch (e) {
         debugPrint('[CERTIDAO] item inválido no índice: $e');
         mudou = true;
-        itemRuim = true;
       }
     }
 
@@ -325,6 +435,8 @@ class CertidaoService {
         ultimas.add(c);
       } else {
         mudou = true;
+        debugPrint('[CERTIDAO] saiu do aparelho: ${c.tipo} ${c.codigo} '
+            '(substituída por uma mais recente)');
         final arquivo = File(c.caminho);
         if (await arquivo.exists()) await arquivo.delete();
       }
@@ -332,25 +444,6 @@ class CertidaoService {
 
     if (mudou) await _salvarIndice(matricula, ultimas);
 
-    // PDF que ficou na pasta sem estar na lista (de versões anteriores do
-    // app, ou de uma gravação interrompida) também sai. Só com a lista lida
-    // por inteiro, comparando pelo nome do arquivo, e nunca um PDF recente.
-    if (listaLida && !itemRuim) {
-      try {
-        final manter = ultimas.map((c) => '${c.codigo}.pdf').toSet();
-        final limite = DateTime.now().subtract(const Duration(minutes: 10));
-        await for (final f in Directory(pasta).list()) {
-          if (f is! File || !f.path.endsWith('.pdf')) continue;
-          final nome = f.uri.pathSegments.last;
-          if (manter.contains(nome)) continue;
-          if ((await f.lastModified()).isAfter(limite)) continue;
-          debugPrint('[CERTIDAO] apagando PDF sem registro: $nome');
-          await f.delete();
-        }
-      } catch (e) {
-        debugPrint('[CERTIDAO] falha ao limpar a pasta: $e');
-      }
-    }
     return ultimas;
   }
 
