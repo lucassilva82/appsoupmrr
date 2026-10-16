@@ -84,6 +84,21 @@ class ApiServices {
   }
 
   // ================================
+  // Certidões de autoemissão
+  // ================================
+
+  /// POST em `certidoes/autoemissao.php` (acao 'painel' ou 'emitir').
+  /// Sempre com matrícula + MD5 da senha: a API não aceita só a matrícula.
+  /// O PDF vem em base64; a emissão ganha mais tempo porque o servidor gera
+  /// o documento na hora.
+  static Future<Map<String, dynamic>> certidoes(
+    Map<String, String> corpo, {
+    Duration limite = const Duration(seconds: 25),
+  }) {
+    return _post('certidoes/autoemissao.php', corpo, limite: limite);
+  }
+
+  // ================================
   // Recuperação de senha por e-mail
   // ================================
 
@@ -140,12 +155,13 @@ class ApiServices {
   /// POST comum aos endpoints de acesso, com tratamento de erro padronizado.
   static Future<Map<String, dynamic>> _post(
     String arquivo,
-    Map<String, String> corpo,
-  ) async {
+    Map<String, String> corpo, {
+    Duration limite = const Duration(seconds: 25),
+  }) async {
     try {
       final response = await http
           .post(Uri.parse('$baseUrl/$arquivo'), body: corpo)
-          .timeout(const Duration(seconds: 25));
+          .timeout(limite);
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;

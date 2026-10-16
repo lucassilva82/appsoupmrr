@@ -12,6 +12,7 @@ import 'package:supercharged/supercharged.dart';
 
 import '../data/store.dart';
 import '../models/militar.dart';
+import '../services/certidao_service.dart';
 import '../services/dados_sql.dart';
 import '../utils/auth_exception.dart';
 
@@ -486,6 +487,8 @@ class Auth with ChangeNotifier {
         if (await f.exists()) await f.delete();
       }
       await Store.remove('userData');
+      // Certidões têm dados pessoais (a Ficha traz conta e endereço).
+      await CertidaoService.apagarTudo();
     } catch (e) {
       debugPrint('[LOG] Erro ao limpar dados: $e');
     }

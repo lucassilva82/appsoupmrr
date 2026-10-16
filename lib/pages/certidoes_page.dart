@@ -1,1158 +1,427 @@
-import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
-import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
-import '../models/certidao_model.dart';
 import '../models/auth_model.dart';
-import '../widgets/custom_appbar.dart';
+import '../services/certidao_service.dart';
+import '../utils/app_theme.dart';
 import '../widgets/alerta.dart';
+import '../widgets/cartao_painel.dart';
+import '../widgets/custom_appbar.dart';
+import '../widgets/dialogo_confirmacao.dart';
 import '../widgets/vidro.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CertidoesPage
+//
+// Autoemissão: o militar escolhe a certidão, confirma a Declaração de
+// Conferência de Dados e recebe o PDF na hora, sem aprovação de ninguém.
+// O documento sai da API com QR Code de autenticidade e vale 30 dias; fica
+// guardado no aparelho enquanto vale (CertidaoService).
+//
+// Mesmos 3 tipos e mesmo texto legal da intranet. Sem internet, a tela
+// ainda mostra e compartilha as certidões já guardadas.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// O que cada certidão comprova, para o militar escolher sem abrir o PDF.
+const _descricoes = <String, ({IconData icone, String texto})>{
+  'tempo_servico': (
+    icone: Icons.timelapse_rounded,
+    texto: 'Tempo de efetivo serviço na PMRR, ano a ano, e tempo averbado.',
+  ),
+  'vinculo_funcional': (
+    icone: Icons.verified_user_rounded,
+    texto: 'Comprova que você é policial militar, com posto, quadro e data '
+        'de inclusão.',
+  ),
+  'ficha_funcional': (
+    icone: Icons.badge_rounded,
+    texto: 'Seus dados pessoais e funcionais, documentos, conta, endereço, '
+        'promoções e dependentes.',
+  ),
+};
+
+/// A Ficha traz dados que pedem cuidado antes de sair do aparelho.
+const _tipoSensivel = 'ficha_funcional';
+
+String _doisDigitos(int n) => n.toString().padLeft(2, '0');
+String _data(DateTime d) =>
+    '${_doisDigitos(d.day)}/${_doisDigitos(d.month)}/${d.year}';
+String _dataHora(DateTime d) =>
+    '${_data(d)} às ${_doisDigitos(d.hour)}:${_doisDigitos(d.minute)}';
+
 class CertidoesPage extends StatefulWidget {
-  const CertidoesPage({super.key});
+  const CertidoesPage({Key? key}) : super(key: key);
 
   @override
   State<CertidoesPage> createState() => _CertidoesPageState();
 }
 
 class _CertidoesPageState extends State<CertidoesPage> {
-  bool _loading = false;
-  String? _error;
-  List<CertidaoModel> _certidoes = [];
-  final Set<int> _expanded = {}; // controla expansão por certidão
-
-  ButtonStyle _compactActionStyle(ThemeData _) => ButtonStyle(
-        visualDensity: VisualDensity.compact,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        minimumSize: const WidgetStatePropertyAll(Size(0, 34)),
-        padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-        ),
-        textStyle: const WidgetStatePropertyAll(
-          TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
-        ),
-        // Cor vem do filledButtonTheme; aqui só o tamanho compacto. Usar a
-        // primária deixava este botão no azul claro de acento, diferente de
-        // todos os outros botões do app.
-      );
+  PainelCertidoes? _painel;
+  List<CertidaoGuardada> _guardadas = const [];
+  bool _carregando = true;
+  String? _erro;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadCertidoes());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _carregar());
   }
 
-  Future<void> _loadCertidoes() async {
+  Auth get _auth => Provider.of<Auth>(context, listen: false);
+  String get _matricula => _auth.matricula ?? '';
+  String get _senhaMd5 => _auth.generateMd5(_auth.password ?? '');
+
+  /// Guardadas primeiro (funcionam sem internet), depois o painel da API.
+  Future<void> _carregar() async {
     setState(() {
-      _loading = true;
-      _error = null;
+      _carregando = true;
+      _erro = null;
     });
 
+    final guardadas = await CertidaoService.guardadas(_matricula);
+    if (!mounted) return;
+    setState(() => _guardadas = guardadas);
+
     try {
-      final auth = Provider.of<Auth>(context, listen: false);
-      final matricula = auth.matricula;
-      if (matricula == null || matricula.isEmpty) {
-        setState(() {
-          _error = 'Matrícula do usuário não disponível.';
-          _certidoes = [];
-        });
-        return;
-      }
-
-      final uri = Uri.parse(
-          'https://pmrr.online/flutter/sigrh/certidoes/buscacertidoes.php?matricula=$matricula');
-      final resp = await http.get(uri).timeout(const Duration(seconds: 12));
-
-      if (resp.statusCode != 200) {
-        setState(() {
-          _error = 'Erro ao consultar o servidor (${resp.statusCode}).';
-          _certidoes = [];
-        });
-        return;
-      }
-
-      final Map<String, dynamic> body = jsonDecode(resp.body);
-      if (body['code'] == 1 && body['result'] is List) {
-        final list = CertidaoModel.listFromJson(body['result']);
-        setState(() {
-          _certidoes = list;
-        });
-      } else {
-        setState(() {
-          _certidoes = [];
-          _error = body['message'] ?? 'Nenhuma certidão encontrada.';
-        });
-      }
+      final painel = await CertidaoService.painel(
+          matricula: _matricula, senhaMd5: _senhaMd5);
+      if (mounted) setState(() => _painel = painel);
+    } on CertidaoErro catch (e) {
+      if (mounted) setState(() => _erro = e.mensagem);
     } catch (e) {
-      setState(() {
-        _error = 'Erro ao buscar certidões: $e';
-        _certidoes = [];
-      });
+      debugPrint('[CERTIDAO] painel: $e');
+      if (mounted) {
+        setState(() => _erro =
+            'Sem conexão com o servidor. Suas certidões guardadas continuam '
+            'disponíveis abaixo.');
+      }
     } finally {
-      setState(() {
-        _loading = false;
-      });
+      if (mounted) setState(() => _carregando = false);
     }
   }
 
-  Future<void> _onSolicitar() async {
-    final result = await showModalBottomSheet<bool>(
+  // ── Emitir ────────────────────────────────────────────────────────────────
+
+  Future<void> _escolher(TipoCertidao tipo) async {
+    final painel = _painel;
+    if (painel == null) return;
+
+    if (!tipo.disponivel) {
+      await alertaAviso(context,
+          titulo: tipo.titulo,
+          texto: tipo.motivo ?? 'Esta certidão não está disponível.');
+      return;
+    }
+
+    final emitida = await showModalBottomSheet<CertidaoGuardada>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (c) {
-        int? selectedType =
-            1; // 1 = tempo de serviço, 2 = ficha funcional, 3 = vínculo funcional
-        String justificativa = '';
-        bool submitting = false;
-        bool needsJustification =
-            false; // quando já existe uma solicitação ativa
-
-        // estado do progressinho
-        bool showProgress = false;
-        double? netProgress; // null = sem content-length (indeterminado)
-        double fakeProgress = 0.0; // fallback quando não há content-length
-        Timer? fakeTimer;
-        // controle de duração mínima (4s)
-        DateTime? progressStart;
-        double elapsedProgress = 0.0; // 0..1 baseado em minDurationMs
-        Timer? elapsedTimer;
-        int minDurationMs = 1200; // padrão mais rápido ~1.2s
-        // sinalização da resposta
-        bool requestDone = false;
-        bool requestSuccess = false;
-        String? requestErrorMessage;
-
-        String tipoNome(int? t) {
-          switch (t) {
-            case 1:
-              return 'Certidão de Tempo de Serviço';
-            case 2:
-              return 'Ficha Funcional';
-            case 3:
-              return 'Certidão de Vínculo Funcional';
-            default:
-              return '';
-          }
-        }
-
-        return StatefulBuilder(builder: (c2, setStateModal) {
-          final theme = Theme.of(c2);
-          final isDark = theme.brightness == Brightness.dark;
-          // layout sem altura fixa para não ser coberto pelo teclado
-
-          // Helpers de progresso precisam de c2 e setStateModal
-          Future<void> maybeFinish() async {
-            if (!requestDone) return;
-            if (elapsedProgress < 1.0) return;
-            // concluir animações e exibir resultado
-            elapsedTimer?.cancel();
-            elapsedTimer = null;
-            fakeTimer?.cancel();
-            fakeTimer = null;
-            setStateModal(() {
-              showProgress = false;
-              netProgress = 1.0;
-              fakeProgress = 1.0;
-              submitting = false;
-            });
-            if (requestSuccess) {
-              await alertaSucesso(c2,
-                  titulo: 'Solicitação enviada',
-                  texto: 'Seu pedido foi registrado com sucesso.');
-              Navigator.of(c2).pop(true);
-              await _loadCertidoes();
-            } else {
-              await alertaErro(c2,
-                  titulo: 'Erro',
-                  texto: requestErrorMessage ?? 'Erro ao inserir certidão.');
-            }
-          }
-
-          void startElapsed() {
-            progressStart = DateTime.now();
-            elapsedProgress = 0.0;
-            elapsedTimer?.cancel();
-            elapsedTimer =
-                Timer.periodic(const Duration(milliseconds: 50), (t) {
-              final started = progressStart;
-              if (started == null) return;
-              final ms = DateTime.now().difference(started).inMilliseconds;
-              final frac = (ms / minDurationMs).clamp(0.0, 1.0);
-              setStateModal(() {
-                elapsedProgress = frac;
-              });
-              if (elapsedProgress >= 1.0) {
-                t.cancel();
-                maybeFinish();
-              }
-            });
-          }
-
-          Future<void> _enviarSolicitacao() async {
-            try {
-              final auth = Provider.of<Auth>(context, listen: false);
-              final matricula = auth.matricula;
-              if (matricula == null || matricula.isEmpty) {
-                await alertaErro(c2,
-                    titulo: 'Matrícula não disponível',
-                    texto: 'Não foi possível identificar sua matrícula.');
-                Navigator.of(c2).pop(false);
-                return;
-              }
-
-              // Verifica se já existe certidão ativa do mesmo tipo
-              final uriCheck = Uri.parse(
-                  'https://pmrr.online/flutter/sigrh/certidoes/buscacertidoes.php?matricula=$matricula');
-              final respCheck =
-                  await http.get(uriCheck).timeout(const Duration(seconds: 12));
-
-              if (respCheck.statusCode != 200) {
-                await alertaErro(c2,
-                    titulo: 'Erro ao verificar',
-                    texto:
-                        'Falha ao verificar certidões existentes (${respCheck.statusCode}).');
-                setStateModal(() {
-                  submitting = false;
-                });
-                return;
-              }
-
-              final Map<String, dynamic> bodyCheck = jsonDecode(respCheck.body);
-              bool exists = false;
-              if (bodyCheck['code'] == 1 && bodyCheck['result'] is List) {
-                final list = CertidaoModel.listFromJson(bodyCheck['result']);
-                exists =
-                    list.any((c) => (c.fkTiceCod == selectedType) && c.ativo);
-              }
-
-              // se já existe e justificativa vazia: mostrar carregamento por 2s e então exigir justificativa
-              if (exists && justificativa.trim().isEmpty) {
-                // iniciar progressinho curto (2s)
-                setStateModal(() {
-                  showProgress = true;
-                  netProgress = 0.0;
-                  fakeProgress = 0.0;
-                  minDurationMs =
-                      800; // reduz para ~0.8s na exigência de justificativa
-                });
-                startElapsed();
-                fakeTimer?.cancel();
-                fakeTimer =
-                    Timer.periodic(const Duration(milliseconds: 50), (t) {
-                  setStateModal(() {
-                    fakeProgress = (fakeProgress + 0.09).clamp(0.0, 0.9);
-                  });
-                });
-                // aguarda 2s mínimos
-                await Future.delayed(Duration(milliseconds: minDurationMs));
-                fakeTimer?.cancel();
-                fakeTimer = null;
-                setStateModal(() {
-                  showProgress = false;
-                  submitting = false;
-                  needsJustification = true;
-                  // reset para próxima tentativa
-                  minDurationMs = 1200;
-                  netProgress = 0.0;
-                  fakeProgress = 0.0;
-                });
-                return;
-              }
-
-              // Iniciar progressinho e enviar com progresso real quando possível
-              setStateModal(() {
-                showProgress = true;
-                netProgress = 0.0;
-                fakeProgress = 0.0;
-                requestDone = false;
-                requestSuccess = false;
-                requestErrorMessage = null;
-              });
-              startElapsed();
-
-              final justificativaEncoded =
-                  Uri.encodeQueryComponent(justificativa);
-              final uriInsert = Uri.parse(
-                  'https://pmrr.online/flutter/sigrh/certidoes/insertcertidao.php?fk_poli_mili_matricula=$matricula&fk_tice_cod=${selectedType}&soce_justificativa=$justificativaEncoded');
-
-              final client = http.Client();
-              try {
-                final request = http.Request('GET', uriInsert);
-                final streamed = await client.send(request);
-
-                final total = streamed.contentLength ?? -1;
-                if (total > 0) {
-                  // content-length conhecido: atualiza preenchimento proporcional
-                  int received = 0;
-                  final bytes = <int>[];
-                  await for (final chunk in streamed.stream) {
-                    bytes.addAll(chunk);
-                    received += chunk.length;
-                    setStateModal(() {
-                      netProgress = (received / total).clamp(0.0, 1.0);
-                    });
-                  }
-                  final respBody = utf8.decode(bytes);
-                  final parsed = jsonDecode(respBody) as Map<String, dynamic>;
-
-                  // marcar conclusão, mas só finalizar após 4s
-                  requestDone = true;
-                  requestSuccess = parsed['code'] == 1;
-                  requestErrorMessage = parsed['message'];
-                  // garante 100% antes de finalizar
-                  setStateModal(() {
-                    netProgress = 1.0;
-                  });
-                  await maybeFinish();
-                } else {
-                  // sem content-length: animação de preenchimento indeterminada
-                  fakeTimer?.cancel();
-                  fakeTimer =
-                      Timer.periodic(const Duration(milliseconds: 50), (t) {
-                    setStateModal(() {
-                      // cresce até 90% enquanto aguarda resposta
-                      fakeProgress = (fakeProgress + 0.06).clamp(0.0, 0.9);
-                    });
-                  });
-
-                  final bodyBytes = await streamed.stream.toBytes();
-                  fakeTimer?.cancel();
-                  fakeTimer = null;
-
-                  final respBody = utf8.decode(bodyBytes);
-                  final parsed = jsonDecode(respBody) as Map<String, dynamic>;
-
-                  // marcar conclusão e avançar para 100%
-                  requestDone = true;
-                  requestSuccess = parsed['code'] == 1;
-                  requestErrorMessage = parsed['message'];
-                  setStateModal(() {
-                    fakeProgress = 1.0;
-                  });
-                  await maybeFinish();
-                }
-              } catch (e) {
-                // erro inesperado: também respeitar 4s
-                requestDone = true;
-                requestSuccess = false;
-                requestErrorMessage = '$e';
-                await maybeFinish();
-              } finally {
-                client.close();
-              }
-            } catch (e) {
-              setStateModal(() {
-                showProgress = false;
-                submitting = false;
-              });
-              await alertaErro(c2, titulo: 'Erro inesperado', texto: '$e');
-            }
-          }
-
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(c2).viewInsets.bottom + 12,
-              top: 16,
-              left: 16,
-              right: 16,
-            ),
-            child: SingleChildScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Solicitar nova certidão',
-                          style: TextStyle(
-                            fontSize: 16.5,
-                            fontWeight: FontWeight.w700,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () async {
-                          await alertaErro(c2,
-                              titulo: 'Solicitação cancelada',
-                              texto: 'Você fechou a janela sem enviar.');
-                          Navigator.of(c2).pop(false);
-                        },
-                        icon: const Icon(Icons.close),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Escolha o tipo de certidão e informe uma justificativa (opcional).',
-                    style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12.5),
-                  ),
-                  const SizedBox(height: 12),
-
-                  if (needsJustification)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      margin: const EdgeInsets.only(bottom: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade700.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.red.shade700.withValues(alpha: 0.25),
-                        ),
-                      ),
-                      child: Text(
-                        "Você já possui uma certidão '${tipoNome(selectedType)}' ativa. Justifique para solicitar outra.",
-                        style: TextStyle(
-                          color: Colors.red.shade700,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-
-                  // opções e justificativa
-                  RadioListTile<int>(
-                    dense: true,
-                    visualDensity: const VisualDensity(vertical: -2),
-                    activeColor: theme.colorScheme.primary,
-                    title: const Text('Certidão de Tempo de Serviço'),
-                    value: 1,
-                    groupValue: selectedType,
-                    onChanged: (v) {
-                      setStateModal(() {
-                        selectedType = v;
-                        needsJustification = false;
-                      });
-                    },
-                  ),
-                  RadioListTile<int>(
-                    dense: true,
-                    visualDensity: const VisualDensity(vertical: -2),
-                    activeColor: theme.colorScheme.primary,
-                    title: const Text('Ficha Funcional'),
-                    value: 2,
-                    groupValue: selectedType,
-                    onChanged: (v) {
-                      setStateModal(() {
-                        selectedType = v;
-                        needsJustification = false;
-                      });
-                    },
-                  ),
-                  RadioListTile<int>(
-                    dense: true,
-                    visualDensity: const VisualDensity(vertical: -2),
-                    activeColor: theme.colorScheme.primary,
-                    title: const Text('Certidão de Vínculo Funcional'),
-                    value: 3,
-                    groupValue: selectedType,
-                    onChanged: (v) {
-                      setStateModal(() {
-                        selectedType = v;
-                        needsJustification = false;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    maxLines: 4,
-                    onChanged: (v) {
-                      justificativa = v;
-                      if (needsJustification &&
-                          justificativa.trim().isNotEmpty) {
-                        setStateModal(() {
-                          needsJustification = false;
-                        });
-                      }
-                    },
-                    decoration: const InputDecoration(
-                      labelText: 'Justificativa (opcional)',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Botão customizado azul/branco com progressinho
-                  LayoutBuilder(builder: (ctxBtn, constraints) {
-                    final btnWidth = constraints.maxWidth;
-                    final double rawFill =
-                        (netProgress ?? fakeProgress).clamp(0.0, 1.0);
-                    final double displayFill = showProgress
-                        ? (rawFill > elapsedProgress
-                            ? rawFill
-                            : elapsedProgress)
-                        : 0.0;
-                    final double barWidth = showProgress
-                        ? btnWidth * (displayFill > 0.0 ? displayFill : 0.06)
-                        : 0.0; // largura mínima 6% quando iniciando
-                    return GestureDetector(
-                      onTap: submitting
-                          ? null
-                          : () async {
-                              setStateModal(() {
-                                submitting = true;
-                              });
-                              await _enviarSolicitacao();
-                            },
-                      child: Container(
-                        height: 44,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color:
-                              theme.colorScheme.primary.withValues(alpha: 0.12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: theme.colorScheme.primary
-                                  .withValues(alpha: isDark ? 0.0 : 0.12),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          children: [
-                            if (showProgress)
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 70),
-                                width: barWidth,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primary
-                                      .withValues(alpha: 0.35),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            Center(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.send_outlined,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    showProgress
-                                        ? 'Enviando solicitação...'
-                                        : 'Solicitar',
-                                    style: TextStyle(
-                                      color: theme.colorScheme.primary,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 12.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }),
-
-                  const SizedBox(height: 12),
-                ],
-              ),
-            ),
-          );
-        });
-      },
+      builder: (_) => _FolhaEmissao(
+        tipo: tipo,
+        painel: painel,
+        emitir: () => CertidaoService.emitir(
+          matricula: _matricula,
+          senhaMd5: _senhaMd5,
+          tipo: tipo.tipo,
+          declaracaoVersao: painel.declaracaoVersao,
+        ),
+      ),
     );
 
-    if (result == true) {
-      // já recarregado após sucesso dentro do fluxo
+    if (emitida == null || !mounted) return;
+    HapticFeedback.mediumImpact();
+    final guardadas = await CertidaoService.guardadas(_matricula);
+    if (!mounted) return;
+    setState(() => _guardadas = guardadas);
+    _abrir(emitida);
+  }
+
+  void _abrir(CertidaoGuardada c) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => CertidaoVisualizarPage(certidao: c),
+    ));
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return FundoSuave(
+      child: Scaffold(
+        appBar: const CustomAppBar(title: 'Certidões'),
+        body: RefreshIndicator(
+          onRefresh: _carregar,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics()),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+            children: [
+              Text(
+                'Emita na hora, sem esperar aprovação. Cada certidão vale '
+                '30 dias e traz um QR Code para conferir a autenticidade.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 18),
+              _Rotulo('Emitir certidão'),
+              const SizedBox(height: 10),
+              ..._tipos(),
+              const SizedBox(height: 22),
+              _Rotulo('Minhas certidões'),
+              const SizedBox(height: 10),
+              ..._listaGuardadas(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _tipos() {
+    final theme = Theme.of(context);
+
+    if (_carregando && _painel == null) {
+      return const [
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: 28),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ];
     }
-  }
 
-  Color _statusColor(int? fkStceCod) {
-    switch (fkStceCod) {
-      case 1:
-        return Colors.orange.shade700; // Solicitada
-      case 2:
-        return Colors.blue.shade900; // Certificada agora azul
-      case 3:
-        return Colors.green.shade700; // Homologada agora verde
-      default:
-        return Colors.grey.shade700;
+    if (_painel == null) {
+      return [
+        _Aviso(
+          cor: theme.colorScheme.error,
+          icone: Icons.cloud_off_rounded,
+          texto: _erro ?? 'Não foi possível carregar as certidões.',
+        ),
+        const SizedBox(height: 10),
+        Align(
+          child: OutlinedButton.icon(
+            onPressed: _carregar,
+            icon: const Icon(Icons.refresh_rounded, size: AppIconSize.sm),
+            label: const Text('Tentar de novo'),
+          ),
+        ),
+      ];
     }
+
+    return [
+      for (final tipo in _painel!.tipos) ...[
+        _CartaoTipo(tipo: tipo, aoTocar: () => _escolher(tipo)),
+        const SizedBox(height: 10),
+      ],
+    ];
   }
 
-  String _statusLabel(int? fkStceCod) {
-    switch (fkStceCod) {
-      case 1:
-        return 'Solicitada';
-      case 2:
-        return 'Certificada';
-      case 3:
-        return 'Homologada';
-      default:
-        return 'Desconhecido';
+  List<Widget> _listaGuardadas() {
+    final theme = Theme.of(context);
+
+    if (_guardadas.isEmpty) {
+      return [
+        CartaoVidro(
+          padding: kPaddingCartao,
+          child: Row(
+            children: [
+              Icon(Icons.folder_open_rounded,
+                  size: AppIconSize.md,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.55)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Nenhuma certidão válida no aparelho. As que você emitir '
+                  'ficam aqui por 30 dias.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ];
     }
+
+    return [
+      for (final c in _guardadas) ...[
+        _CartaoGuardada(certidao: c, aoTocar: () => _abrir(c)),
+        const SizedBox(height: 10),
+      ],
+    ];
   }
+}
 
-  String _statusMessage(int? fkStceCod) {
-    switch (fkStceCod) {
-      case 1:
-        return 'Aguardando certificação da chefia imediata...';
-      case 2:
-        return 'Aguardando homologação do DRH para liberação da certidão...';
-      case 3:
-        return 'Pronta! Você pode abrir sua certidão.';
-      default:
-        return '';
-    }
+// ── Rótulo de seção ─────────────────────────────────────────────────────────
+
+class _Rotulo extends StatelessWidget {
+  final String texto;
+  const _Rotulo(this.texto);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      header: true,
+      child: Text(
+        texto.toUpperCase(),
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.1,
+          color: theme.colorScheme.primary,
+        ),
+      ),
+    );
   }
+}
 
-  String _formatDate(DateTime? d) {
-    if (d == null) return '-';
-    final dd = d.day.toString().padLeft(2, '0');
-    final mm = d.month.toString().padLeft(2, '0');
-    final yyyy = d.year.toString();
-    return '$dd/$mm/$yyyy';
+// ── Cartão de um tipo de certidão ───────────────────────────────────────────
+
+class _CartaoTipo extends StatelessWidget {
+  final TipoCertidao tipo;
+  final VoidCallback aoTocar;
+  const _CartaoTipo({required this.tipo, required this.aoTocar});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final info = _descricoes[tipo.tipo];
+    final apagado = !tipo.disponivel;
+    final corTexto = theme.colorScheme.onSurface;
+
+    return Semantics(
+      button: true,
+      label: apagado ? '${tipo.titulo}, indisponível' : 'Emitir ${tipo.titulo}',
+      excludeSemantics: true,
+      child: Opacity(
+        opacity: apagado ? 0.6 : 1,
+        child: CartaoVidro(
+          onTap: aoTocar,
+          padding: kPaddingCartao,
+          child: Row(
+            children: [
+              Icon(info?.icone ?? Icons.description_rounded,
+                  size: AppIconSize.lg, color: theme.colorScheme.primary),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(tipo.titulo,
+                        style: theme.textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text(
+                      apagado
+                          ? (tipo.motivo ?? 'Indisponível.')
+                          : (info?.texto ?? ''),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: corTexto.withValues(alpha: 0.72),
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                apagado ? Icons.lock_outline_rounded : Icons.chevron_right_rounded,
+                size: AppIconSize.md,
+                color: corTexto.withValues(alpha: 0.5),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
+}
 
-  // Nome exibido na listagem e no viewer: força o nome do tipo 3
-  String _tipoNomeListagem(CertidaoModel c) {
-    if (c.fkTiceCod == 3) return 'Certidão de Vínculo Funcional';
-    final nome = c.nomeTipoCertidao;
-    return nome.trim().isEmpty ? 'Certidão' : nome;
-  }
+// ── Cartão de uma certidão guardada ─────────────────────────────────────────
 
-  // Prepara o PDF da certidão: busca os bytes (base64 ou URL), salva no cache e retorna o caminho
-  Future<String?> _prepareCertidaoPdf(CertidaoModel c) async {
-    try {
-      Uint8List? bytes;
-
-      // Preferir base64 vindo da API
-      final b64 = c.soceArquivoBase64; // campo do model
-      if (b64 != null && b64.isNotEmpty) {
-        try {
-          bytes = base64Decode(b64);
-        } catch (_) {
-          bytes = null;
-        }
-      }
-
-      // Se não houver base64, tentar baixar via URL se disponível
-      if (bytes == null && c.soceArquivo != null && c.soceArquivo!.isNotEmpty) {
-        final src = c.soceArquivo!;
-        if (src.startsWith('http')) {
-          final resp = await http
-              .get(Uri.parse(src))
-              .timeout(const Duration(seconds: 20));
-          if (resp.statusCode == 200) {
-            bytes = resp.bodyBytes;
-          }
-        } else {
-          // Caso seja um caminho local
-          try {
-            final file = File(src);
-            if (await file.exists()) {
-              bytes = await file.readAsBytes();
-            }
-          } catch (_) {}
-        }
-      }
-
-      if (bytes == null) {
-        await alertaErro(context,
-            titulo: 'Arquivo indisponível',
-            texto: 'Não foi possível localizar o PDF desta certidão.');
-        return null;
-      }
-
-      final dir = await getTemporaryDirectory();
-      final filePath = p.join(dir.path, 'certidao_${c.soceCod}.pdf');
-      final f = File(filePath);
-      await f.writeAsBytes(bytes, flush: true);
-      return filePath;
-    } catch (e) {
-      await alertaErro(context, titulo: 'Erro ao abrir', texto: '$e');
-      return null;
-    }
-  }
+class _CartaoGuardada extends StatelessWidget {
+  final CertidaoGuardada certidao;
+  final VoidCallback aoTocar;
+  const _CartaoGuardada({required this.certidao, required this.aoTocar});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final verde = isDark ? AppColors.sucessoEscuro : AppColors.sucesso;
+    final dias = certidao.diasRestantes;
+    final prazo = dias <= 0
+        ? 'Vence hoje'
+        : (dias == 1 ? 'Falta 1 dia' : 'Faltam $dias dias');
 
-    final titleStyle = theme.textTheme.titleSmall?.copyWith(
-      fontSize: 14,
-      fontWeight: FontWeight.w700,
-      color: theme.colorScheme.onSurface,
-      letterSpacing: 0.1,
-    );
-    final sectionStyle = theme.textTheme.titleSmall?.copyWith(
-      fontSize: 13.5,
-      fontWeight: FontWeight.w700,
-      color: theme.colorScheme.onSurface,
-      letterSpacing: 0.1,
-      height: 1.1,
-    );
-    final smallStyle = theme.textTheme.bodyMedium?.copyWith(
-      fontSize: 12.5,
-      color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
-    );
-
-    return FundoSuave(child: Scaffold(
-      appBar: CustomAppBar(title: 'Certidões'),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Card(
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                  child: Row(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color:
-                              theme.colorScheme.primary.withValues(alpha: 0.10),
-                          borderRadius: BorderRadius.circular(9),
-                        ),
-                        padding: const EdgeInsets.all(9),
-                        child: Icon(Icons.how_to_reg_outlined,
-                            color: theme.colorScheme.primary, size: 20),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Solicitar nova certidão', style: titleStyle),
-                            const SizedBox(height: 4),
-                            Text('Abra um pedido para emissão de certidão.',
-                                style: smallStyle),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      FilledButton.icon(
-                        style: _compactActionStyle(theme),
-                        onPressed: _onSolicitar,
-                        icon: const Icon(Icons.add, size: 16),
-                        label: const Text('Solicitar'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Minhas Certidões',
-                      style: sectionStyle,
-                    ),
-                  ),
-                  if (!_loading && _certidoes.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color:
-                            theme.colorScheme.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '${_certidoes.length}',
-                        style: TextStyle(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
-                        ),
-                      ),
-                    )
-                ],
-              ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _loadCertidoes,
-                  child: Builder(builder: (context) {
-                    if (_loading && _certidoes.isEmpty) {
-                      return ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: [
-                          SizedBox(
-                            height: 120,
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                color: theme.colorScheme.primary,
-                              ),
-                            ),
-                          )
-                        ],
-                      );
-                    }
-
-                    if (_error != null && _certidoes.isEmpty) {
-                      return ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.only(top: 8),
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.error
-                                  .withValues(alpha: 0.10),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: theme.colorScheme.error
-                                    .withValues(alpha: 0.20),
-                              ),
-                            ),
-                            child: Text(
-                              "Você ainda não solicitou nenhuma certidão.\nPara solicitar, clique no botão 'Solicitar' acima.",
-                              style: TextStyle(
-                                color: theme.colorScheme.error,
-                                fontSize: 12.5,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-
-                    return ListView.separated(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.only(top: 8, bottom: 20),
-                      itemCount: _certidoes.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final c = _certidoes[index];
-                        return _buildCard(c, theme, smallStyle);
-                      },
-                    );
-                  }),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-          ),
-        ),
-      ),
-    ));
-  }
-
-  Widget _statusStepper(int currentStatus, Color activeColor, ThemeData theme) {
-    Widget step(String label, bool active) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 350),
-            width: active ? 28 : 22,
-            height: active ? 28 : 22,
-            decoration: BoxDecoration(
-              color: active ? activeColor : theme.cardColor,
-              border:
-                  Border.all(color: active ? activeColor : theme.dividerColor),
-              boxShadow: active
-                  ? [
-                      BoxShadow(
-                        color: activeColor.withValues(alpha: 0.18),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      )
-                    ]
-                  : null,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Center(
-              child: Icon(
-                Icons.check,
-                size: active ? 16 : 14,
-                color: active ? Colors.white : Colors.grey.shade400,
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 10.5,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      );
-    }
-
-    final bool s1 = currentStatus >= 1;
-    final bool s2 = currentStatus >= 2;
-    final bool s3 = currentStatus >= 3;
-
-    return SizedBox(
-      height: 70,
-      child: Row(
-        children: [
-          Flexible(flex: 2, child: step('Solicitada', s1)),
-          Expanded(
-            flex: 3,
-            child: Center(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 350),
-                height: 3,
-                color: s2 ? activeColor : theme.dividerColor,
-                margin: const EdgeInsets.symmetric(horizontal: 8),
-              ),
-            ),
-          ),
-          Flexible(flex: 2, child: step('Certificada', s2)),
-          Expanded(
-            flex: 3,
-            child: Center(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 350),
-                height: 3,
-                color: s3 ? activeColor : theme.dividerColor,
-                margin: const EdgeInsets.symmetric(horizontal: 8),
-              ),
-            ),
-          ),
-          Flexible(flex: 2, child: step('Homologada', s3)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCard(
-    CertidaoModel c,
-    ThemeData theme,
-    TextStyle? smallStyle,
-  ) {
-    final borderRadius = BorderRadius.circular(12);
-    final statusColor = _statusColor(c.fkStceCod);
-    final isExpanded = _expanded.contains(c.soceCod);
-
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: borderRadius),
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      child: ClipRRect(
-        borderRadius: borderRadius,
-        child: ExpansionTile(
-          onExpansionChanged: (v) {
-            setState(() {
-              if (v) {
-                _expanded.add(c.soceCod);
-              } else {
-                _expanded.remove(c.soceCod);
-              }
-            });
-          },
-          initiallyExpanded: isExpanded,
-          tilePadding:
-              const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
-          childrenPadding:
-              const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
-          leading: CircleAvatar(
-            radius: 18,
-            backgroundColor: statusColor.withValues(alpha: 0.12),
-            child: Icon(
-              Icons.insert_drive_file_outlined,
-              color: statusColor,
-              size: 18,
-            ),
-          ),
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _tipoNomeListagem(c),
-                style: smallStyle?.copyWith(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: statusColor.withValues(alpha: 0.20)),
-                    ),
-                    child: Text(
-                      _statusLabel(c.fkStceCod),
-                      style: TextStyle(
-                        color: statusColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 6,
-                  children: [
-                    Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.event, size: 14, color: Colors.grey),
-                      const SizedBox(width: 6),
-                      Text('Data Solicitação: ${_formatDate(c.soceData)}',
-                          style: smallStyle),
-                    ]),
-                    Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.event_note,
-                          size: 14, color: Colors.grey),
-                      const SizedBox(width: 6),
-                      Text(
-                          'Data Vencimento: ${_formatDate(c.soceDataVencimento)}',
-                          style: smallStyle),
-                    ]),
-                  ],
-                ),
-              ],
-            ),
-          ),
+    return Semantics(
+      button: true,
+      label: 'Abrir ${certidao.titulo}, válida até ${_data(certidao.validoAte)}',
+      excludeSemantics: true,
+      child: CartaoVidro(
+        onTap: aoTocar,
+        padding: kPaddingCartao,
+        child: Row(
           children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+            Icon(Icons.picture_as_pdf_rounded,
+                size: AppIconSize.lg, color: theme.colorScheme.primary),
+            const SizedBox(width: 14),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _statusStepper(c.fkStceCod ?? 0, statusColor, theme),
-                  const SizedBox(height: 6),
+                  Text(certidao.titulo,
+                      style: theme.textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 3),
                   Text(
-                    _statusMessage(c.fkStceCod),
-                    style: smallStyle?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: statusColor,
+                    'Emitida em ${_dataHora(certidao.geradoEm)}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
                     ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(Icons.verified_rounded,
+                          size: AppIconSize.xs, color: verde),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          'Válida até ${_data(certidao.validoAte)} · $prazo',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: 12,
+                            color: verde,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            if (c.soceArquivo != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    const Icon(Icons.link, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text('Arquivo: ${c.soceArquivo}')),
-                  ],
-                ),
-              ),
-            if (c.soceObs != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    const Icon(Icons.note, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text('Obs: ${c.soceObs}')),
-                  ],
-                ),
-              ),
-            if (c.soceJustificativa != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    const Icon(Icons.history_edu, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text('Justificativa: ${c.soceJustificativa}'),
-                    ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (c.fkStceCod == 3)
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      final path = await _prepareCertidaoPdf(c);
-                      if (path == null) return;
-                      // Abre o visualizador com opção de compartilhar
-                      // ignore: use_build_context_synchronously
-                      await Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => PdfViewerScreen(
-                            filePath: path,
-                            title: _tipoNomeListagem(c),
-                          ),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.open_in_new_outlined, size: 18),
-                    label: const Text('Abrir Certidão'),
-                    style: ElevatedButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      minimumSize: const Size(0, 34),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 9,
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      backgroundColor: Colors.green.shade700,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  )
-              ],
-            )
+            Icon(Icons.chevron_right_rounded,
+                size: AppIconSize.md,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
           ],
         ),
       ),
@@ -1160,46 +429,444 @@ class _CertidoesPageState extends State<CertidoesPage> {
   }
 }
 
-// Tela simples de visualização de PDF com opção de compartilhar
-class PdfViewerScreen extends StatelessWidget {
-  final String filePath;
-  final String? title;
+// ── Folha de emissão: declaração + botão ────────────────────────────────────
 
-  const PdfViewerScreen({super.key, required this.filePath, this.title});
+class _FolhaEmissao extends StatefulWidget {
+  final TipoCertidao tipo;
+  final PainelCertidoes painel;
+  final Future<CertidaoGuardada> Function() emitir;
+
+  const _FolhaEmissao({
+    required this.tipo,
+    required this.painel,
+    required this.emitir,
+  });
+
+  @override
+  State<_FolhaEmissao> createState() => _FolhaEmissaoState();
+}
+
+class _FolhaEmissaoState extends State<_FolhaEmissao> {
+  bool _confirmado = false;
+  bool _emitindo = false;
+  String? _erro;
+
+  Future<void> _emitir() async {
+    setState(() {
+      _emitindo = true;
+      _erro = null;
+    });
+    try {
+      final c = await widget.emitir();
+      if (mounted) Navigator.of(context).pop(c);
+    } on CertidaoErro catch (e) {
+      HapticFeedback.heavyImpact();
+      if (mounted) setState(() => _erro = e.mensagem);
+    } catch (e) {
+      debugPrint('[CERTIDAO] emitir: $e');
+      HapticFeedback.heavyImpact();
+      if (mounted) {
+        setState(() => _erro =
+            'Sem conexão com o servidor. Verifique sua internet e tente de novo.');
+      }
+    } finally {
+      if (mounted) setState(() => _emitindo = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return FundoSuave(child: Scaffold(
-      appBar: CustomAppBar(title: title ?? 'Certidão'),
-      body: PDFView(
-        filePath: filePath,
-        enableSwipe: true,
-        swipeHorizontal: false, // rolagem vertical (de cima para baixo)
-        autoSpacing: true,
-        pageFling: true,
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        foregroundColor: theme.colorScheme.onPrimary,
-        icon: const Icon(Icons.share_outlined),
-        label: const Text(
-          'Compartilhar',
-          style: TextStyle(fontWeight: FontWeight.w700),
+    final isDark = theme.brightness == Brightness.dark;
+    final info = _descricoes[widget.tipo.tipo];
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+          20, 10, 20, 20 + MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Icon(info?.icone ?? Icons.description_rounded,
+                    size: AppIconSize.xl, color: theme.colorScheme.primary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(widget.tipo.titulo,
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w700)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              info?.texto ?? '',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Declaração em caixa de nível 1 (DESIGN §3b).
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary
+                    .withValues(alpha: isDark ? 0.10 : 0.06),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'DECLARAÇÃO DE CONFERÊNCIA DE DADOS',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.painel.declaracaoTexto,
+                    style: theme.textTheme.bodySmall?.copyWith(height: 1.45),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            CheckboxListTile(
+              value: _confirmado,
+              onChanged: _emitindo
+                  ? null
+                  : (v) => setState(() => _confirmado = v ?? false),
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: Text('Li e confirmo a declaração',
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w600)),
+            ),
+
+            if (_erro != null) ...[
+              _Aviso(
+                cor: theme.colorScheme.error,
+                icone: Icons.error_outline_rounded,
+                texto: _erro!,
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            SizedBox(
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: _confirmado && !_emitindo ? _emitir : null,
+                icon: _emitindo
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Icon(Icons.picture_as_pdf_rounded,
+                        size: AppIconSize.sm),
+                label: Text(_emitindo ? 'Emitindo…' : 'Emitir certidão'),
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Válida por ${widget.painel.validadeDias} dias, com QR Code de '
+              'verificação. Fica guardada neste aparelho até vencer.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
         ),
-        onPressed: () async {
-          try {
-            await Share.shareXFiles(
-              [XFile(filePath)],
-              text: title ?? 'Certidão',
-            );
-          } catch (e) {
-            // ignore: use_build_context_synchronously
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Falha ao compartilhar: $e')),
-            );
-          }
-        },
       ),
+    );
+  }
+}
+
+// ── Caixa de aviso ──────────────────────────────────────────────────────────
+
+class _Aviso extends StatelessWidget {
+  final Color cor;
+  final IconData icone;
+  final String texto;
+  const _Aviso({required this.cor, required this.icone, required this.texto});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cor.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icone, color: cor, size: AppIconSize.sm),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(texto,
+                style: theme.textTheme.bodySmall?.copyWith(height: 1.4)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CertidaoVisualizarPage — o PDF, os dados de validade e o compartilhar.
+// ─────────────────────────────────────────────────────────────────────────────
+
+class CertidaoVisualizarPage extends StatefulWidget {
+  final CertidaoGuardada certidao;
+  const CertidaoVisualizarPage({Key? key, required this.certidao})
+      : super(key: key);
+
+  @override
+  State<CertidaoVisualizarPage> createState() => _CertidaoVisualizarPageState();
+}
+
+class _CertidaoVisualizarPageState extends State<CertidaoVisualizarPage> {
+  bool _compartilhando = false;
+
+  // Origem do popover exigida pelo iPad (UIActivityViewController).
+  Rect? _origemCompartilhar() {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return null;
+    return box.localToGlobal(Offset.zero) & box.size;
+  }
+
+  Future<void> _compartilhar() async {
+    final c = widget.certidao;
+
+    if (c.tipo == _tipoSensivel) {
+      final seguir = await dialogoConfirmacao(
+        context,
+        titulo: 'Dados sensíveis',
+        mensagem: 'A Ficha Funcional contém sua conta bancária, endereço e '
+            'dependentes. Envie apenas para quem realmente precisa.',
+        textoConfirmar: 'Compartilhar',
+        icone: Icons.shield_outlined,
+      );
+      if (!seguir || !mounted) return;
+    }
+
+    setState(() => _compartilhando = true);
+    try {
+      // Cópia com nome legível: o arquivo guardado se chama pelo código.
+      final copia = File('${Directory.systemTemp.path}/${c.nomeArquivo}');
+      await File(c.caminho).copy(copia.path);
+      await Share.shareXFiles(
+        [XFile(copia.path, mimeType: 'application/pdf', name: c.nomeArquivo)],
+        subject: c.titulo,
+        sharePositionOrigin: _origemCompartilhar(),
+      );
+    } catch (e) {
+      debugPrint('[CERTIDAO] compartilhar: $e');
+      if (mounted) {
+        await alertaErro(context,
+            titulo: 'Não foi possível compartilhar',
+            texto: 'Tente de novo em instantes.');
+      }
+    } finally {
+      if (mounted) setState(() => _compartilhando = false);
+    }
+  }
+
+  Future<void> _copiarLink() async {
+    await Clipboard.setData(ClipboardData(text: widget.certidao.urlVerificacao));
+    if (!mounted) return;
+    HapticFeedback.lightImpact();
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Link de verificação copiado'),
+      behavior: SnackBarBehavior.floating,
     ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.certidao;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final verde = isDark ? AppColors.sucessoEscuro : AppColors.sucesso;
+
+    return FundoSuave(
+      child: Scaffold(
+        appBar: CustomAppBar(title: c.titulo),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+              child: CartaoVidro(
+                padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+                child: Row(
+                  children: [
+                    Icon(Icons.verified_rounded,
+                        size: AppIconSize.md, color: verde),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Válida até ${_data(c.validoAte)}',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w700, color: verde)),
+                          Text('Emitida em ${_dataHora(c.geradoEm)}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.72))),
+                        ],
+                      ),
+                    ),
+                    Semantics(
+                      button: true,
+                      label: 'Copiar link de verificação',
+                      child: IconButton(
+                        onPressed: _copiarLink,
+                        tooltip: 'Copiar link de verificação',
+                        icon: Icon(Icons.qr_code_2_rounded,
+                            size: AppIconSize.md,
+                            color: theme.colorScheme.primary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: PDFView(
+                    filePath: c.caminho,
+                    enableSwipe: true,
+                    autoSpacing: true,
+                    pageFling: true,
+                    fitEachPage: true,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 96),
+          ],
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        floatingActionButton: _BotaoCompartilhar(
+          ocupado: _compartilhando,
+          aoTocar: _compartilhar,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Botão de compartilhar de vidro ──────────────────────────────────────────
+// Mesma receita do botão do contracheque e da pílula do menu inferior.
+
+class _BotaoCompartilhar extends StatelessWidget {
+  final bool ocupado;
+  final VoidCallback aoTocar;
+  const _BotaoCompartilhar({required this.ocupado, required this.aoTocar});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaria = theme.colorScheme.primary;
+
+    final conteudo = Container(
+      decoration: BoxDecoration(
+        color: primaria.withValues(alpha: isDark ? 0.22 : 0.12),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: primaria.withValues(alpha: isDark ? 0.35 : 0.22),
+          width: 0.8,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: ocupado ? null : aoTocar,
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 13, 20, 13),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ocupado
+                    ? SizedBox(
+                        width: AppIconSize.xs,
+                        height: AppIconSize.xs,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: primaria),
+                      )
+                    : Icon(Icons.ios_share_rounded,
+                        size: AppIconSize.xs, color: primaria),
+                const SizedBox(width: 9),
+                Text(
+                  ocupado ? 'Preparando…' : 'Compartilhar',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.1,
+                    color: primaria,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    return Semantics(
+      button: true,
+      label: 'Compartilhar certidão',
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Platform.isAndroid
+            ? conteudo
+            : BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                child: conteudo,
+              ),
+      ),
+    );
   }
 }
