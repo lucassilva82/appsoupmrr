@@ -88,15 +88,20 @@ class ApiServices {
   // ================================
 
   /// acao: 'solicitar' | 'validar' | 'redefinir'
+  ///
+  /// Informe o [email] (tela de login) ou a [matricula] (militar já logado,
+  /// "Não lembro minha senha atual"): pela matrícula o código vai para o
+  /// e-mail confirmado do cadastro.
   static Future<Map<String, dynamic>> recuperarSenha({
     required String acao,
-    required String email,
+    String? email,
+    String? matricula,
     String? codigo,
     String? senhaNovaMd5,
   }) async {
     return _post('recuperar_senha.php', {
       'acao': acao,
-      'email': email,
+      if (matricula != null) 'matricula': matricula else 'email': email ?? '',
       if (codigo != null) 'codigo': codigo,
       if (senhaNovaMd5 != null) 'senha_nova': senhaNovaMd5,
     });
