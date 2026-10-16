@@ -55,3 +55,6 @@ app.*.map.json
 # Chaves de build — copie o env.example.json para env.json e preencha.
 # Nunca versione o env.json: este repositório é público.
 env.json
+
+# Prints do simulador (tecla "s" no flutter run): podem ter dados pessoais
+flutter_*.png

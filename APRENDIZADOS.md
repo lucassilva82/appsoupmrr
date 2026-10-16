@@ -658,3 +658,36 @@ do ar. Plano completo e operações de hoje: `docs/PAINEL_ADMIN.md`.
   usuário próprio.
 - Testado em produção desligando um tipo e depois o serviço, por poucos
   minutos, e religando.
+
+---
+
+## 29. Lançamento 2.1.4 (16/10/2026)
+
+**O que saiu.** Certidões automáticas (4 tipos, PDF oficial, QR Code, e-mail,
+push, revogação, validação dos dados, configuração pela API), avisos curtos
+padronizados, notificações não lidas com barra de destaque e o detalhe da
+notificação opaco.
+
+- **Android:** 2.1.4, `versionCode` 54, gerado em
+  `build/app/outputs/bundle/release/app-release.aab` e assinado com a chave de
+  upload (SHA-1 `64:4C:9C:A6:…:9F:92`). O 53 foi gerado antes das últimas
+  mudanças e não foi usado.
+- **iOS:** 2.1.4 (build 2.1.4), enviado pelo Organizer ao App Store Connect,
+  aguardando aprovação da Apple.
+- **APK de teste** para o chefe: `build/app/outputs/flutter-apk/SouPMRR-2.1.4-teste.apk`.
+
+**Como lançar.** A versão está fixa em três lugares, e os três mudam juntos:
+`pubspec.yaml`, `android/app/build.gradle.kts` (`versionCode` e `versionName`)
+e `ios/Runner/Info.plist` (os dois campos). As chaves do Android estão no Google
+Drive, em "Arquivos SouPMRR", e são copiadas para `android/key.properties` e
+`android/app/upload-keystore.jks`. Os dois arquivos são ignorados pelo git.
+
+**Senha pedida a cada arquivo no build do iOS.** O Keychain perguntava a cada
+`codesign`. Resolve-se uma vez por Mac, no terminal do usuário (ele digita a
+senha de login):
+`security set-key-partition-list -S apple-tool:,apple:,codesign: -s ~/Library/Keychains/login.keychain-db`.
+Depois disso, `flutter build ipa --release` roda sem perguntar e
+`open build/ios/archive/Runner.xcarchive` abre o Organizer para o Distribute.
+
+**Pendência visual do iOS (não bloqueou o envio):** a tela de abertura ainda é
+o placeholder do Flutter e um ícone está com tamanho fora do padrão.
