@@ -366,3 +366,20 @@ redigitar exigia apagar os seis dígitos. Agora ele limpa sozinho.
 **Detalhes que custaram tempo.** O PostgreSQL recusa socket em caminho com mais
 de 103 bytes (usar TCP em 127.0.0.1) e precisa de `LC_ALL=en_US.UTF-8` para
 subir no macOS.
+
+---
+
+## 20. "Já confirmado" precisa provar que é o dado novo
+
+**O que aconteceu.** A tela de e-mail decidia que a confirmação tinha chegado
+quando o servidor respondia `verificado = true` e `aguardando = false`. Para
+quem já tinha e-mail verificado e pedia a troca, isso também acontecia sem
+clique nenhum: bastava o link de 15 minutos vencer. A tela diria "E-mail
+confirmado!" com o endereço antigo ainda no cadastro.
+
+**A correção.** Além dos dois sinais, o e-mail que o servidor devolve (mascarado)
+tem que ser o novo. Sem isso, a tela continua aguardando.
+
+**O que fazer daqui em diante.** Quando a tela espera um estado mudar, conferir
+se esse estado não podia **já** ser verdadeiro antes da ação do usuário. Se
+podia, comparar o próprio dado que muda (aqui, o endereço), não só uma flag.

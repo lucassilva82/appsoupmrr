@@ -16,6 +16,10 @@ import '../widgets/vidro.dart';
 // Cadastro e verificação do e-mail do militar. O usuário informa o e-mail,
 // recebe um link de confirmação e clica nele para validar a conta.
 //
+// Quem já tem e-mail verificado vê primeiro essa situação ("Seu e-mail está
+// verificado") e, se quiser, troca o endereço. O atual continua valendo até
+// o novo ser confirmado pelo link: a API só grava o e-mail na confirmação.
+//
 // Não bloqueia mais o acesso ao app: a tela é aberta a partir de
 // Configurações → Conta, e pode ser fechada a qualquer momento.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -52,13 +56,43 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
   Timer? _timerStatus;
   bool _confirmado = false;
 
+  /// E-mail do cadastro e se ele já foi verificado.
+  String _emailAtual = '';
+  bool _verificado = false;
+
+  /// O militar verificado escolheu trocar de e-mail.
+  bool _trocando = false;
+
+  static const _codigoVerificado = 'pmrr190!@';
+
   @override
   void initState() {
     super.initState();
     final auth = Provider.of<Auth>(context, listen: false);
-    final atual = auth.emailUser ?? '';
-    if (atual.isNotEmpty && atual.contains('@')) {
-      _emailCtrl.text = atual;
+    _emailAtual = (auth.emailUser ?? '').trim();
+    _verificado = auth.activationCode == _codigoVerificado &&
+        _emailAtual.contains('@');
+
+    // Só pré-preenche quando o e-mail ainda falta confirmar; na troca, o
+    // campo começa vazio para o endereço novo.
+    if (!_verificado && _emailAtual.contains('@')) {
+      _emailCtrl.text = _emailAtual;
+    }
+    _conferirSituacao(auth.matricula ?? '');
+  }
+
+  /// O dado guardado no app pode estar velho (confirmado em outro aparelho,
+  /// por exemplo): confere no servidor e ajusta a tela.
+  Future<void> _conferirSituacao(String matricula) async {
+    if (matricula.isEmpty) return;
+    final status = await ApiServices.checkEmailStatus(matricula);
+    if (!mounted || status['code'] != 1) return;
+
+    final verificado = status['verificado'] == true;
+    if (verificado != _verificado) {
+      await Provider.of<Auth>(context, listen: false)
+          .atualizarStatusEmail(verificado: verificado);
+      if (mounted) setState(() => _verificado = verificado);
     }
   }
 
@@ -122,15 +156,26 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
       if (!mounted) return t.cancel();
 
       // Só considera confirmado quando o link pendente deixa de existir
-      // (`aguardando` falso): quem já era verificado antes continuaria
-      // com `verificado` true e a tela mudaria sem o militar clicar.
+      // (`aguardando` falso) E o cadastro já mostra o endereço novo. Na
+      // troca, o e-mail antigo já era verificado: se o link vencesse sem
+      // clique, `aguardando` também cairia e a tela mentiria "confirmado".
+      final emailServidor = (status['email'] ?? '').toString().toLowerCase();
+      final emailNovo = _mascarar(_emailEnviado ?? '').toLowerCase();
+
       if (status['code'] == 1 &&
           status['verificado'] == true &&
-          status['aguardando'] == false) {
+          status['aguardando'] == false &&
+          emailServidor == emailNovo) {
         t.cancel();
         await Provider.of<Auth>(context, listen: false)
             .atualizarStatusEmail(verificado: true, email: _emailEnviado);
-        if (mounted) setState(() => _confirmado = true);
+        if (mounted) {
+          setState(() {
+            _confirmado = true;
+            _verificado = true;
+            _emailAtual = _emailEnviado ?? _emailAtual;
+          });
+        }
       }
     });
   }
@@ -205,13 +250,17 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
   @override
   Widget build(BuildContext context) {
     return FundoSuave(child: Scaffold(
-      appBar: const CustomAppBar(title: 'Verificar e-mail'),
+      appBar: const CustomAppBar(title: 'Meu e-mail'),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
         child: _confirmado
             ? _confirmadoView()
-            : (_emailEnviado == null ? _formulario() : _enviado()),
+            : _emailEnviado != null
+                ? _enviado()
+                : (_verificado && !_trocando
+                    ? _verificadoView()
+                    : _formulario()),
       ),
     ));
   }
@@ -227,12 +276,19 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _CabecalhoIcone(
-            icone: Icons.mark_email_unread_rounded,
-            titulo: 'Confirme seu e-mail',
-            descricao: 'Usamos seu e-mail para recuperar a senha e enviar '
-                'avisos importantes da corporação.',
-          ),
+          _trocando
+              ? _CabecalhoIcone(
+                  icone: Icons.edit_rounded,
+                  titulo: 'Trocar e-mail',
+                  descricao: 'Informe o novo endereço. Vamos enviar um link '
+                      'para confirmar que ele é seu.',
+                )
+              : _CabecalhoIcone(
+                  icone: Icons.mark_email_unread_rounded,
+                  titulo: 'Confirme seu e-mail',
+                  descricao: 'Usamos seu e-mail para recuperar a senha e '
+                      'enviar avisos importantes da corporação.',
+                ),
           const SizedBox(height: 24),
 
           if (_erro != null) ...[
@@ -250,7 +306,7 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
             autocorrect: false,
             textInputAction: TextInputAction.next,
             decoration: _deco(
-              label: 'Seu e-mail',
+              label: _trocando ? 'Novo e-mail' : 'Seu e-mail',
               icon: Icons.alternate_email_rounded,
               isDark: isDark,
             ),
@@ -259,6 +315,10 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
               if (valor.isEmpty) return 'Informe seu e-mail';
               final valido = RegExp(r'^[\w.+-]+@[\w-]+\.[\w.-]+$');
               if (!valido.hasMatch(valor)) return 'E-mail inválido';
+              if (_trocando &&
+                  valor.toLowerCase() == _emailAtual.toLowerCase()) {
+                return 'Este já é o seu e-mail atual';
+              }
               return null;
             },
           ),
@@ -301,7 +361,11 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
                       ),
                     )
                   : const Icon(Icons.send_rounded, size: 18),
-              label: Text(_isLoading ? 'Enviando...' : 'Enviar confirmação'),
+              label: Text(_isLoading
+                  ? 'Enviando...'
+                  : (_trocando
+                      ? 'Enviar link para o novo e-mail'
+                      : 'Enviar confirmação')),
               style: ElevatedButton.styleFrom(
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
@@ -315,17 +379,147 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
               ),
             ),
           ),
+          if (_trocando) ...[
+            const SizedBox(height: 6),
+            TextButton(
+              onPressed: _isLoading
+                  ? null
+                  : () => setState(() {
+                        _trocando = false;
+                        _erro = null;
+                        _emailCtrl.clear();
+                        _emailConfirmCtrl.clear();
+                      }),
+              child: const Text('Manter meu e-mail atual'),
+            ),
+          ],
           const SizedBox(height: 16),
 
           _Aviso(
             cor: AppColors.lightBlue,
             icone: Icons.info_outline_rounded,
-            texto: 'Você pode continuar usando o app normalmente. '
-                'A verificação fica pendente em Configurações até ser '
-                'concluída.',
+            texto: _trocando
+                ? 'Até você confirmar o novo endereço, o atual '
+                    '($_emailAtual) continua valendo para recuperar a senha.'
+                : 'Você pode continuar usando o app normalmente. '
+                    'A verificação fica pendente em Configurações até ser '
+                    'concluída.',
           ),
         ],
       ),
+    );
+  }
+
+  // ── Estado 0: e-mail já verificado ────────────────────────────────────────
+
+  Widget _verificadoView() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final verde = isDark ? AppColors.sucessoEscuro : AppColors.sucesso;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _CabecalhoIcone(
+          icone: Icons.verified_rounded,
+          titulo: 'Seu e-mail está verificado',
+          descricao: 'Está tudo certo. Não é preciso fazer mais nada.',
+          cor: verde,
+        ),
+        const SizedBox(height: 22),
+
+        CartaoVidro(
+          raio: 14,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Icon(Icons.alternate_email_rounded,
+                  size: 20, color: theme.colorScheme.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'E-mail cadastrado',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.65),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _emailAtual,
+                      style: theme.textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: verde.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_rounded, size: 14, color: verde),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Verificado',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: verde,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        _Aviso(
+          cor: AppColors.lightBlue,
+          icone: Icons.info_outline_rounded,
+          texto: 'É para este endereço que enviamos o código de '
+              '"Esqueci minha senha" e os avisos de alteração de senha.',
+        ),
+        const SizedBox(height: 24),
+
+        OutlinedButton.icon(
+          onPressed: () => setState(() {
+            _trocando = true;
+            _erro = null;
+          }),
+          icon: const Icon(Icons.edit_rounded, size: 18),
+          label: const Text('Trocar e-mail'),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'O novo e-mail precisa ser confirmado por um link. '
+          'Até lá, o atual continua valendo.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withOpacity(0.60),
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 10),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Voltar'),
+        ),
+      ],
     );
   }
 
