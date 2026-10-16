@@ -519,7 +519,9 @@ instante, e um aviso diz para qual e-mail foi a cópia.
   envio nunca desfaz a emissão.
 - **E-mail oculto com tamanho fixo** (`lu*****6@gmail.com`): asteriscos na
   quantidade real revelariam o tamanho do nome.
-- **PDF todo em preto e branco**: brasão e foto em tons de cinza. QR Code de 20 mm
+- **PDF sem cor de marca**: textos, linhas e tabelas em preto; só o brasão e a
+  foto ficam em cores (uma versão em tons de cinza foi testada e descartada: o
+  que incomodava era o azul do app, não a cor do brasão). QR Code de 20 mm
   e quadro de autenticidade mais baixo; sem averbação, uma linha substitui a
   tabela vazia. Com isso, a Certidão de Tempo de Serviço com LTIP cabe numa
   página.
