@@ -19,8 +19,8 @@ import '../widgets/vidro.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // CertidoesPage
 //
-// Autoemissão: o militar escolhe a certidão, confirma a Declaração de
-// Conferência de Dados e recebe o PDF na hora, sem aprovação de ninguém.
+// O militar escolhe a certidão, confirma a Declaração de Conferência de
+// Dados e recebe o PDF na hora.
 // O documento sai da API com QR Code de autenticidade e vale 30 dias; fica
 // guardado no aparelho enquanto vale (CertidaoService).
 //
@@ -171,8 +171,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
               Text(
-                'Emita na hora, sem esperar aprovação. Cada certidão vale '
-                '30 dias e traz um QR Code para conferir a autenticidade.',
+                'Escolha a certidão que você precisa.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
                   height: 1.4,
@@ -246,8 +245,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Nenhuma certidão válida no aparelho. As que você emitir '
-                  'ficam aqui por 30 dias.',
+                  'As certidões que você emitir ficam aqui por 30 dias.',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
                     height: 1.4,
@@ -601,8 +599,7 @@ class _FolhaEmissaoState extends State<_FolhaEmissao> {
             ),
             const SizedBox(height: 10),
             Text(
-              'Válida por ${widget.painel.validadeDias} dias, com QR Code de '
-              'verificação. Fica guardada neste aparelho até vencer.',
+              'A certidão vale por ${widget.painel.validadeDias} dias.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -759,7 +756,7 @@ class _CertidaoVisualizarPageState extends State<CertidaoVisualizarPage> {
                       child: IconButton(
                         onPressed: _copiarLink,
                         tooltip: 'Copiar link de verificação',
-                        icon: Icon(Icons.qr_code_2_rounded,
+                        icon: Icon(Icons.link_rounded,
                             size: AppIconSize.md,
                             color: theme.colorScheme.primary),
                       ),

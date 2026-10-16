@@ -222,9 +222,24 @@ class CertidaoService {
       }
     }
 
+    // Só a mais recente de cada tipo fica no aparelho: emitir de novo
+    // substitui a anterior na lista (que continua válida na verificação,
+    // caso já tenha sido enviada a alguém).
     validas.sort((a, b) => b.geradoEm.compareTo(a.geradoEm));
-    if (mudou) await _salvarIndice(matricula, validas);
-    return validas;
+    final tipos = <String>{};
+    final ultimas = <CertidaoGuardada>[];
+    for (final c in validas) {
+      if (tipos.add(c.tipo)) {
+        ultimas.add(c);
+      } else {
+        mudou = true;
+        final arquivo = File(c.caminho);
+        if (await arquivo.exists()) await arquivo.delete();
+      }
+    }
+
+    if (mudou) await _salvarIndice(matricula, ultimas);
+    return ultimas;
   }
 
   static Future<void> _salvarIndice(String matricula, List<CertidaoGuardada> lista) =>
