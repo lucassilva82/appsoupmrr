@@ -621,3 +621,13 @@ etapas do botão falam a língua da tropa ("Calculando seu tempo de serviço",
 
 **Regra:** em documento com fé pública, "não consegui consultar" nunca pode ser
 impresso como "não existe". Falhou, não emite, e diz por quê.
+
+**Push e revogação (16/10/2026).** A certidão emitida agora gera uma notificação
+push só para o militar que a emitiu, pela Cloud Function `notificarMilitar`
+(publicada em `us-central1-minhapm-5ff71`). Ela exige o mesmo token secreto da
+`notificarTodos`, que o servidor já tem em `/private/config_notificacao.php`, e
+não passa pela lista de autorizados da `notificarEscala`, que é de teste e tem
+7 matrículas. A API responde ao app primeiro e só depois chama a função, então a
+emissão não fica mais lenta. Ao abrir a tela, o app tira do aparelho a certidão
+que o servidor revogou e mostra o motivo. O quadro de autenticidade do PDF ficou
+com contorno cinza de 0,1 mm.
