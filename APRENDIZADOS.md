@@ -712,3 +712,95 @@ Diretoria de Recursos Humanos - PMRR" (inclusive a que antes dizia só "DRH"). "
 - **Mensagens de bloqueio:** "Procure a Diretoria de Recursos Humanos".
 - O rodapé dos e-mails continua "Departamento de Tecnologia da Informação —
   DTI/PMRR", que é quem dá o suporte.
+
+---
+
+## 30. A senha se confere no servidor, nunca no aparelho
+
+**O que aconteceu.** Investigando a rejeição da Apple de 16/10/2026 (o revisor
+viu a mensagem genérica no login), vimos que o `sigrh/loginrh.php` devolvia, a
+qualquer um e sem autenticação, o MD5 da senha (`pswd`), o e-mail e o
+`activation_code` de qualquer matrícula: bastava
+`GET loginrh.php?matricula=X`. O app comparava o MD5 no próprio aparelho. Com o
+hash na mão, quem quisesse entrava como outra pessoa em qualquer endpoint que
+autentica por MD5 (certidões, troca de senha), sem nem descobrir a senha. A
+consulta ainda montava o SQL concatenando a matrícula.
+
+E a mensagem genérica tinha outra causa: o app lançava `AuthException('sql')`,
+e a tabela de mensagens só tinha a chave `'SQL'`. Qualquer falha virava
+"Ocorreu um erro no processo de autenticação, contate o suporte DTIPMRR".
+
+**Como ficou (2.1.5).**
+- `sigrh/login.php`, por POST: recebe `matricula` e `senha` (MD5), compara com
+  `hash_equals` e devolve só `email` e `email_confirmado`. Erros com código:
+  `SENHA_INVALIDA`, `MATRICULA_NAO_ENCONTRADA`, `MUITAS_TENTATIVAS`,
+  `DADOS_INVALIDOS`, `ERRO_SERVIDOR`.
+- Limite de tentativas na tabela `public.soupm_login_tentativa`
+  (`sql/2026-10-16_login_tentativas.sql`): em 15 minutos, 5 erros da mesma
+  matrícula no mesmo IP, 20 da mesma matrícula em qualquer IP ou 30 do mesmo IP.
+  Um acerto zera a contagem da matrícula. Sem a tabela, o login funciona sem
+  limite e o `error_log` avisa — rodar o SQL antes de subir o PHP.
+- No app, `DadosSql.autenticar` substitui o `getLoginData`. "Sem conexão",
+  "erro no servidor", "senha incorreta" e "matrícula não encontrada" têm
+  mensagens próprias, e `AuthException` passou a ignorar maiúsculas na chave.
+
+**Mensagens de erro do login (2.1.5).** A rejeição da 2.1.4 (guideline 2.1(a))
+foi justamente o revisor ver "Ocorreu um erro no processo de autenticação" sem
+saber o porquê. Agora cada causa abre um cartão próprio
+(`lib/widgets/erro_login.dart`, mesmo desenho do `dialogoConfirmacao`) com
+título, explicação, "O que fazer", um código curto e o botão da ação certa
+(Tentar de novo, Recuperar senha ou Primeiro acesso). O detalhe técnico vai
+para o log com o mesmo código (`[LOGIN] LG-...`), nunca para a tela.
+
+| Código | Causa |
+|---|---|
+| LG-REDE | aparelho sem internet (a checagem de outro endereço também falha) |
+| LG-FORA | tem internet, mas o servidor não atendeu |
+| LG-LENTO | servidor não respondeu em 20 s |
+| LG-SSL | conexão segura recusada (data/hora errada, Wi-Fi com cadastro) |
+| LG-SRV-nnn | servidor respondeu HTTP diferente de 200, ou ERRO_SERVIDOR |
+| LG-RESP | resposta que não é JSON (portal de Wi-Fi, PHP quebrado) |
+| LG-SENHA | senha incorreta |
+| LG-MATR | matrícula sem login |
+| LG-BLOQ | limite de tentativas; o cartão diz a hora em que libera |
+| LG-INAT | conta com `active = 'N'` (só com `BLOQUEAR_INATIVA`) |
+| LG-FUNC | senha certa, mas `buscapormatricula.php` não trouxe a ficha |
+| LG-DADOS | matrícula com caracteres não aceitos |
+| LG-X-... | qualquer outra coisa; o sufixo é o tipo do erro |
+
+`qra.sec_users.active` nunca foi conferido pelo app e o usuário do cPanel não
+lê o esquema `qra`, então não se sabe quantas contas em uso estão com 'N'. O
+`login.php` só registra no error_log ("conta inativa (não bloqueada)") até
+alguém olhar esses números e ligar `BLOQUEAR_INATIVA`.
+
+Para fotografar os casos no simulador sem mexer no servidor: API local com
+um roteador que simula lentidão, HTTP 503, HTML e ficha vazia;
+`--dart-define=SIGRH_URL=...` aponta o app para ela, e
+`--dart-define=HOST_TESTE_INTERNET=nao-existe.invalid` simula "sem internet"
+(o simulador usa a rede do Mac).
+
+**Quando desligar o `loginrh.php`.** Ele continua no ar porque as versões até
+2.1.4 só sabem entrar por ele. Não dá para "devolver menos": a versão antiga
+precisa justamente do hash para comparar. Então é manter ou desligar.
+- Desligar quando a 2.1.5 estiver publicada nas duas lojas **e** os logs de
+  acesso (`/logs/pmrr.online-ssl_log-<Mes>-<Ano>.gz`) passarem 30 dias sem
+  `GET /flutter/sigrh/loginrh.php` vindo do app — ou, no máximo, 60 dias depois
+  da publicação. Contar com
+  `zgrep -c 'sigrh/loginrh.php' pmrr.online-ssl_log-*.gz`.
+- Antes de desligar, subir `min_version` para `2.1.5` no Firestore
+  (coleção `appConfig`, documento `versions`; lido em
+  `lib/pages/auth_or_home.dart`). As versões antigas passam a pedir
+  atualização na abertura, em vez de cair num erro de login.
+- Para desligar, trocar o conteúdo por
+  `{"code":0,"message":"Atualize o SouPMRR na loja para entrar."}` (guardar o
+  original em `/backups_api/`). Quem ainda estiver na versão antiga e escapar
+  do aviso de atualização verá a mensagem genérica de erro.
+- Até lá, o `loginrh.php` ganhou consulta preparada: antes, a matrícula
+  `' or '1'='1` devolvia o hash de todos os usuários de uma vez.
+- Conferir antes se nenhum outro sistema (painel, intranet) chama o
+  `loginrh.php` ou o `consulta_user.php`, que também devolve hash.
+
+**Limite que continua.** O MD5 da senha ainda viaja (por POST e HTTPS) e é
+guardado pelo app; quem o tiver entra sem saber a senha. Resolver isso exige
+token de sessão emitido pelo servidor no lugar do MD5 em todos os endpoints —
+trabalho maior, fica registrado aqui.

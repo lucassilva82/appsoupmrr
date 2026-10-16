@@ -57,6 +57,10 @@ class Auth with ChangeNotifier {
 
   final DadosSql dadosSql = DadosSql();
 
+  // Valor de activation_code de quem confirmou o e-mail; as telas de
+  // Configurações e Confirmar e-mail comparam com ele.
+  static const _codigoVerificado = 'pmrr190!@';
+
   /* ===============================================================
    *  Getters
    * ============================================================= */
@@ -90,16 +94,10 @@ class Auth with ChangeNotifier {
     debugPrint('[LOG] _authenticateLocalNoNotify iniciado');
 
     /* ------------------------------------------------------------
-     * 1) Dados de login
+     * 1) Senha conferida no servidor (sigrh/login.php)
      * ---------------------------------------------------------- */
-    final loginData = await dadosSql.getLoginData(matricula);
-    if (loginData['error'] == true) throw AuthException('sql');
-
-    final pswServer = loginData['pswd'] ?? '';
-    final passwordMd5 = generateMd5(password);
-
-    if (pswServer.isEmpty) throw AuthException('sql');
-    if (pswServer != passwordMd5) throw AuthException('INVALID_PASSWORD');
+    final loginData =
+        await dadosSql.autenticar(matricula, generateMd5(password));
 
     /* ------------------------------------------------------------
      * Credenciais OK
@@ -110,14 +108,29 @@ class Auth with ChangeNotifier {
     _expireDate = DateTime.now().add(const Duration(seconds: 86000));
 
     emailUser = loginData['email'];
-    activationCode = loginData['activation_code'];
+    activationCode =
+        loginData['email_confirmado'] == true ? _codigoVerificado : '';
 
     /* ------------------------------------------------------------
      * 2) Dados completos do militar
      * ---------------------------------------------------------- */
-    final Militar? militarTemp =
-        await dadosSql.buscarMilitarBancoByMatricula(matricula);
-    if (militarTemp == null) throw AuthException('sql');
+    // A senha já passou no servidor, então a internet funciona: falha de
+    // rede aqui é o servidor que não atendeu.
+    final Militar? militarTemp;
+    try {
+      militarTemp = await dadosSql
+          .buscarMilitarBancoByMatricula(matricula)
+          .timeout(const Duration(seconds: 20));
+    } on TimeoutException catch (e) {
+      throw _falhaFicha('SERVIDOR_LENTO', e);
+    } on SocketException catch (e) {
+      throw _falhaFicha('SERVIDOR_INACESSIVEL', e);
+    } on http.ClientException catch (e) {
+      throw _falhaFicha('SERVIDOR_INACESSIVEL', e);
+    }
+    if (militarTemp == null) {
+      throw _falhaFicha('SQL', 'buscapormatricula sem dados');
+    }
 
     // Campos básicos
     cpf = militarTemp.cpf;
@@ -164,6 +177,16 @@ class Auth with ChangeNotifier {
     debugPrint('[LOG] _authenticateLocalNoNotify finalizado');
   }
 
+  /// Falha ao carregar a ficha depois da senha certa. Desfaz a autorização,
+  /// para o app não ficar meio logado.
+  AuthException _falhaFicha(String causa, Object detalhe) {
+    autorizado = false;
+    _expireDate = null;
+    final falha = AuthException.completa(causa, detalhe: 'ficha: $detalhe');
+    debugPrint('[LOGIN] ${falha.codigo} ${falha.detalhe}');
+    return falha;
+  }
+
   /* ===============================================================
    *  Métodos de arquivo/imagem e armazenamento local
    * ============================================================= */
@@ -204,7 +227,7 @@ class Auth with ChangeNotifier {
     required bool verificado,
     String? email,
   }) async {
-    activationCode = verificado ? 'pmrr190!@' : '';
+    activationCode = verificado ? _codigoVerificado : '';
     if (email != null && email.isNotEmpty) emailUser = email;
     notifyListeners();
     await saveUserData();
@@ -417,17 +440,13 @@ class Auth with ChangeNotifier {
    * ============================================================= */
   Future<void> checkCredentialsWithoutLogin(
       String matricula, String password) async {
-    final loginData = await dadosSql.getLoginData(matricula);
-
-    if (loginData['error'] == true) throw AuthException('sql');
-
-    final pswServer = loginData['pswd'] ?? '';
-    if (pswServer.isEmpty || pswServer != generateMd5(password))
-      throw AuthException('INVALID_PASSWORD');
+    final loginData =
+        await dadosSql.autenticar(matricula, generateMd5(password));
 
     this.matricula = matricula;
     this.password = password;
-    activationCode = loginData['activation_code'] ?? '';
+    activationCode =
+        loginData['email_confirmado'] == true ? _codigoVerificado : '';
     emailUser = loginData['email'] ?? '';
   }
 

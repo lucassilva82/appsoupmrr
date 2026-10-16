@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 import 'package:projetonovo/models/ficha_funcional.dart';
 
 import '../models/contracheque_model.dart';
@@ -8,46 +11,98 @@ import '../models/endereco.dart';
 import '../models/meses_contracheque_model.dart';
 import '../models/militar.dart';
 import '../models/telefone.dart';
+import '../utils/auth_exception.dart';
 
 class DadosSql {
   //URL DO BANCO SQL TROCAR URL AQUI E NA API PARA CONECTAR NO BANCO DE PRODUCAO
-  final _Url = 'https://pmrr.online/flutter/sigrh';
+  // Para testar com a API local: --dart-define=SIGRH_URL=http://127.0.0.1:8089/sigrh
+  final _Url = const String.fromEnvironment('SIGRH_URL',
+      defaultValue: 'https://pmrr.online/flutter/sigrh');
   // final _Url = 'http://192.168.190.250/flutter/sigrh';
 
-  /// Busca dados de login a partir de `matricula`.
-  /// Retorna um Map com:
-  /// { "error": bool, "pswd": String, "email": String?, "activation_code": String? }
-  Future<Map<String, dynamic>> getLoginData(String matricula) async {
-    final String url = '$_Url/loginrh.php?matricula=$matricula';
-
+  /// Confere matrícula e senha no servidor (sigrh/login.php). A senha vai
+  /// em MD5, formato do banco, e por POST; o servidor nunca devolve o hash.
+  ///
+  /// Retorna { "email": String?, "email_confirmado": bool }.
+  /// Lança [AuthException] com a causa: as do servidor (SENHA_INVALIDA,
+  /// MATRICULA_NAO_ENCONTRADA, MUITAS_TENTATIVAS, CONTA_INATIVA,
+  /// DADOS_INVALIDOS, ERRO_SERVIDOR) ou as da conexão (SEM_INTERNET,
+  /// SERVIDOR_INACESSIVEL, SERVIDOR_LENTO, CONEXAO_SEGURA,
+  /// RESPOSTA_INVALIDA).
+  Future<Map<String, dynamic>> autenticar(
+      String matricula, String senhaMd5) async {
+    final http.Response response;
     try {
-      final response = await http.get(Uri.parse(Uri.encodeFull(url)));
+      response = await http.post(
+        Uri.parse('$_Url/login.php'),
+        body: {'matricula': matricula, 'senha': senhaMd5},
+      ).timeout(const Duration(seconds: 20));
+    } on TimeoutException catch (e) {
+      throw _falhaLogin('SERVIDOR_LENTO', e);
+    } on HandshakeException catch (e) {
+      throw _falhaLogin('CONEXAO_SEGURA', e);
+    } on SocketException catch (e) {
+      throw _falhaLogin(
+          await _temInternet() ? 'SERVIDOR_INACESSIVEL' : 'SEM_INTERNET', e);
+    } on http.ClientException catch (e) {
+      throw _falhaLogin(
+          await _temInternet() ? 'SERVIDOR_INACESSIVEL' : 'SEM_INTERNET', e);
+    }
 
-      final map = _safeJsonDecode(response);
-      // Verifica se a estrutura do JSON está como esperado
-      if (map['code'] != 1 || map['result'] == null) {
-        return {"error": true};
-      }
+    if (response.statusCode != 200) {
+      throw _falhaLogin('ERRO_SERVIDOR', 'HTTP ${response.statusCode}');
+    }
 
-      final dados = map['result'][0];
-      final pswServer = dados['pswd'] ?? '';
-      final emailServer = dados['email'] ?? '';
-      final activationCodeServer = dados['activation_code'] ?? '';
+    final dynamic map;
+    try {
+      map = json.decode(utf8.decode(response.bodyBytes));
+    } catch (e) {
+      throw _falhaLogin('RESPOSTA_INVALIDA', e);
+    }
+    if (map is! Map) throw _falhaLogin('RESPOSTA_INVALIDA', 'não é objeto');
 
-      // Se vier vazio ou nulo, convertemos para null
-      final emailFinal = emailServer.isEmpty ? null : emailServer;
-      final activationCodeFinal =
-          activationCodeServer.isEmpty ? null : activationCodeServer;
+    if (map['code'] != 1) {
+      final erro = (map['erro'] ?? '').toString();
+      final falha = AuthException.completa(
+        erro.isEmpty ? 'RESPOSTA_INVALIDA' : erro,
+        mensagemServidor: map['message']?.toString(),
+        detalhe: 'servidor: ${map['message']}',
+        liberaEmSeg: int.tryParse('${map['libera_em_seg'] ?? ''}'),
+        matricula: matricula,
+      );
+      debugPrint('[LOGIN] ${falha.codigo} ${falha.detalhe}');
+      throw falha;
+    }
 
-      return {
-        "error": false,
-        "pswd": pswServer,
-        "email": emailFinal,
-        "activation_code": activationCodeFinal,
-      };
-    } catch (error) {
-      // Em caso de exceção, retorna error
-      return {"error": true};
+    final email = (map['email'] ?? '').toString().trim();
+    return {
+      'email': email.isEmpty ? null : email,
+      'email_confirmado': map['email_confirmado'] == true,
+    };
+  }
+
+  /// Monta a falha e registra o motivo técnico no log (nunca na tela).
+  AuthException _falhaLogin(String causa, Object detalhe) {
+    final falha = AuthException.completa(causa, detalhe: '$detalhe');
+    debugPrint('[LOGIN] ${falha.codigo} $detalhe');
+    return falha;
+  }
+
+  // Só para testar a mensagem de "sem internet" no simulador, que usa a rede
+  // do Mac: --dart-define=HOST_TESTE_INTERNET=nao-existe.invalid
+  static const _hostTesteInternet = String.fromEnvironment(
+      'HOST_TESTE_INTERNET',
+      defaultValue: 'google.com');
+
+  /// Distingue "aparelho sem internet" de "nosso servidor fora do ar":
+  /// se outro endereço conhecido resolve, a internet está funcionando.
+  Future<bool> _temInternet() async {
+    try {
+      final r = await InternetAddress.lookup(_hostTesteInternet)
+          .timeout(const Duration(seconds: 4));
+      return r.isNotEmpty && r.first.rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
     }
   }
 

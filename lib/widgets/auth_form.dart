@@ -8,6 +8,7 @@ import '../models/auth_model.dart';
 import '../utils/auth_exception.dart';
 import '../utils/app_theme.dart';
 import 'convite_biometria.dart';
+import 'erro_login.dart';
 
 class AuthForm extends StatefulWidget {
   bool exibeSenha = true;
@@ -51,23 +52,6 @@ class _AuthFormState extends State<AuthForm> {
     }
   }
 
-  void _showErrorDialog(String msg) {
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Ocorreu um erro'),
-        content: Text(msg),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// Pergunta, uma vez, se a pessoa quer entrar por biometria nas próximas
   /// vezes. O convite só aparece se o aparelho tiver sensor configurado, e só
   /// liga depois de a biometria ser confirmada — ligar sem testar deixaria a
@@ -86,6 +70,7 @@ class _AuthFormState extends State<AuthForm> {
     final auth = Provider.of<Auth>(context, listen: false);
     _formKey.currentState?.save();
 
+    AuthException? falha;
     try {
       // O e-mail não verificado NÃO bloqueia mais o acesso: muitos militares
       // ficavam presos na tela de confirmação sem conseguir entrar. A pendência
@@ -114,11 +99,38 @@ class _AuthFormState extends State<AuthForm> {
       // Finaliza -> vai Home
       auth.finalizarLogin();
     } on AuthException catch (error) {
-      _showErrorDialog(error.toString());
-    } catch (error) {
-      _showErrorDialog('Ocorreu um erro inesperado.');
+      falha = error;
+    } catch (error, stack) {
+      // Nada pode cair numa mensagem genérica sem rastro: o código leva o
+      // tipo do erro, e o detalhe vai para o log.
+      falha = AuthException.completa(
+        error.runtimeType.toString().toUpperCase(),
+        detalhe: '$error',
+      );
+      debugPrint('[LOGIN] ${falha.codigo} $error\n$stack');
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+
+    if (falha != null && mounted) await _mostrarFalha(falha);
+  }
+
+  Future<void> _mostrarFalha(AuthException falha) async {
+    final acao = await mostrarErroLogin(context, falha);
+    if (!mounted || acao == null) return;
+    switch (acao) {
+      case AcaoErroLogin.tentarDeNovo:
+        await _submit();
+      case AcaoErroLogin.recuperarSenha:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const RecuperarSenhaPage()),
+        );
+      case AcaoErroLogin.primeiroAcesso:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const PrimeiroAcessoPage()),
+        );
+      case AcaoErroLogin.fechar:
+        break;
     }
   }
 
