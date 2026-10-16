@@ -693,7 +693,10 @@ Depois disso, `flutter build ipa --release` roda sem perguntar e
 o placeholder do Flutter e um ícone está com tamanho fora do padrão.
 
 **Identificação da unidade (16/10/2026).** O padrão oficial é **"Polícia
-Militar / Diretoria de Recursos Humanos"**. "Diretoria de Pessoal" e
+Militar / Diretoria de Recursos Humanos - PMRR"**. No PDF, o cabeçalho é
+"GOVERNO DO ESTADO DE RORAIMA / POLÍCIA MILITAR DO ESTADO DE RORAIMA /
+DIRETORIA DE RECURSOS HUMANOS - PMRR", e o rodapé começa com "Diretoria de
+Recursos Humanos - PMRR". "Diretoria de Pessoal" e
 "Departamento de Pessoal" não se usam mais.
 - **E-mails:** confirmação, troca e recuperação de senha, senha alterada,
   primeiro acesso (dois) e certidão trazem essas duas linhas no cabeçalho, no
