@@ -564,3 +564,20 @@ vale mais.
 **Para o deploy.** Laço de arquivos em script de deploy roda em `bash -c`: no
 zsh, `for f in $F` não separa a lista, e o backup não foi feito na primeira
 tentativa (refeito a partir das cópias baixadas antes do envio).
+
+**E-mail e nome do arquivo (16/10/2026).** No Gmail do celular a coluna de
+rótulo (`width:42%`) é ignorada e o rótulo encosta no valor ("DocumentoCertidão
+de…"): agora o rótulo fica em cima do valor. O cabeçalho ganhou o logo do
+SouPMRR à direita, como nos outros e-mails. O PDF passa a se chamar
+"Certidão de Tempo de Serviço - NOME DO MILITAR.pdf" (`certidaoNomeArquivo`).
+
+**Bug que apagava certidões do aparelho.** Depois de remover uma certidão e
+emitir outra, as demais sumiram (arquivo e lista). A limpeza de "PDF sem
+registro" confiava numa leitura da lista que podia estar vazia ou cruzada com
+outra gravação. Corrigido em três frentes: leitura, gravação e limpeza passam
+por uma fila (`_emFila`), uma de cada vez; a limpeza só roda se a lista foi lida
+inteira e nunca apaga PDF de menos de 10 minutos; e o índice guarda só o código,
+não o caminho completo, que no iPhone muda quando o app é atualizado (todas as
+certidões teriam "perdido o arquivo" na primeira atualização).
+**Regra:** rotina que apaga arquivo "que não está na lista" precisa provar que
+leu a lista certa antes de apagar qualquer coisa.

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -73,6 +74,10 @@ class CertidaoGuardada {
   final DateTime validoAte;
   final String urlVerificacao;
   final String nomeArquivo;
+
+  /// Caminho do PDF, montado a cada leitura a partir da pasta atual do app:
+  /// no iPhone a pasta muda de nome quando o app é atualizado, então o
+  /// caminho completo nunca é gravado.
   final String caminho;
 
   /// E-mail (oculto) que recebeu a cópia; nulo se não foi enviada.
@@ -103,11 +108,11 @@ class CertidaoGuardada {
         'valido_ate': validoAte.toIso8601String(),
         'url_verificacao': urlVerificacao,
         'nome_arquivo': nomeArquivo,
-        'caminho': caminho,
         'email_mascarado': emailMascarado,
       };
 
-  factory CertidaoGuardada.fromJson(Map<String, dynamic> j) => CertidaoGuardada(
+  factory CertidaoGuardada.fromJson(Map<String, dynamic> j, String pasta) =>
+      CertidaoGuardada(
         tipo: j['tipo'].toString(),
         titulo: j['titulo'].toString(),
         codigo: j['codigo'].toString(),
@@ -115,7 +120,7 @@ class CertidaoGuardada {
         validoAte: DateTime.parse(j['valido_ate'].toString()),
         urlVerificacao: j['url_verificacao'].toString(),
         nomeArquivo: j['nome_arquivo'].toString(),
-        caminho: j['caminho'].toString(),
+        caminho: '$pasta/${j['codigo']}.pdf',
         emailMascarado: j['email_mascarado']?.toString(),
       );
 }
@@ -130,9 +135,11 @@ class EnvioEmailCertidao {
   /// Explicação quando não foi enviado.
   final String? aviso;
 
-  const EnvioEmailCertidao({required this.enviado, this.emailMascarado, this.aviso});
+  const EnvioEmailCertidao(
+      {required this.enviado, this.emailMascarado, this.aviso});
 
-  factory EnvioEmailCertidao.fromJson(Map<String, dynamic>? j) => EnvioEmailCertidao(
+  factory EnvioEmailCertidao.fromJson(Map<String, dynamic>? j) =>
+      EnvioEmailCertidao(
         enviado: j?['enviado'] == true,
         emailMascarado: j?['email']?.toString(),
         aviso: j?['aviso']?.toString(),
@@ -147,6 +154,23 @@ class EmissaoCertidao {
 }
 
 class CertidaoService {
+  // Ler, gravar e limpar a lista nunca acontecem ao mesmo tempo: com duas
+  // operações cruzadas, a limpeza da pasta via uma lista desatualizada e
+  // apagava PDFs válidos.
+  static Future<void> _fila = Future<void>.value();
+
+  static Future<T> _emFila<T>(Future<T> Function() operacao) async {
+    final anterior = _fila;
+    final vez = Completer<void>();
+    _fila = vez.future;
+    try {
+      await anterior;
+      return await operacao();
+    } finally {
+      vez.complete();
+    }
+  }
+
   static String _chaveIndice(String matricula) => 'certidoes_$matricula';
 
   static Future<Directory> _pasta(String matricula) async {
@@ -159,7 +183,8 @@ class CertidaoService {
   /// A API manda "2026-10-16 10:38:22.07" no horário de Boa Vista (UTC-4).
   static DateTime _dataApi(String valor) {
     final iso = valor.trim().replaceFirst(' ', 'T');
-    final semFracao = iso.contains('.') ? iso.substring(0, iso.indexOf('.')) : iso;
+    final semFracao =
+        iso.contains('.') ? iso.substring(0, iso.indexOf('.')) : iso;
     return DateTime.parse('$semFracao-04:00').toLocal();
   }
 
@@ -175,7 +200,8 @@ class CertidaoService {
       'senha': senhaMd5,
     });
     if (r['code'] != 1) {
-      throw CertidaoErro((r['message'] ?? 'Não foi possível carregar.').toString());
+      throw CertidaoErro(
+          (r['message'] ?? 'Não foi possível carregar.').toString());
     }
     final declaracao = (r['declaracao'] as Map).cast<String, dynamic>();
     return PainelCertidoes(
@@ -208,54 +234,72 @@ class CertidaoService {
     }, limite: const Duration(seconds: 60));
 
     if (r['code'] != 1) {
-      throw CertidaoErro((r['message'] ?? 'Não foi possível emitir.').toString());
+      throw CertidaoErro(
+          (r['message'] ?? 'Não foi possível emitir.').toString());
     }
 
     final bytes = base64Decode(r['pdf_base64'].toString());
     // Um PDF começa sempre por "%PDF": se não, a resposta veio quebrada.
-    if (bytes.length < 5 || String.fromCharCodes(bytes.sublist(0, 4)) != '%PDF') {
-      throw const CertidaoErro('O arquivo recebido está incompleto. Tente de novo.');
+    if (bytes.length < 5 ||
+        String.fromCharCodes(bytes.sublist(0, 4)) != '%PDF') {
+      throw const CertidaoErro(
+          'O arquivo recebido está incompleto. Tente de novo.');
     }
 
-    // A lista vem antes de gravar: guardadas() apaga PDF que não está nela.
-    final lista = await guardadas(matricula);
-
-    final codigo = r['codigo'].toString();
-    final arquivo = File('${(await _pasta(matricula)).path}/$codigo.pdf');
-    await arquivo.writeAsBytes(bytes, flush: true);
-
-    final envio =
-        EnvioEmailCertidao.fromJson((r['email'] as Map?)?.cast<String, dynamic>());
+    final envio = EnvioEmailCertidao.fromJson(
+        (r['email'] as Map?)?.cast<String, dynamic>());
 
     final certidao = CertidaoGuardada(
       tipo: r['tipo'].toString(),
       titulo: r['titulo'].toString(),
-      codigo: codigo,
+      codigo: r['codigo'].toString(),
       geradoEm: _dataApi(r['gerado_em'].toString()),
       validoAte: _dataApi(r['valido_ate'].toString()),
       urlVerificacao: r['url_verificacao'].toString(),
       nomeArquivo: r['nome_arquivo'].toString(),
-      caminho: arquivo.path,
+      caminho: '',
       emailMascarado: envio.enviado ? envio.emailMascarado : null,
     );
 
-    await _salvarIndice(matricula, [certidao, ...lista]);
-    return EmissaoCertidao(certidao: certidao, email: envio);
+    final guardada = await _emFila(() async {
+      final lista = await _lerGuardadas(matricula);
+      final arquivo =
+          File('${(await _pasta(matricula)).path}/${certidao.codigo}.pdf');
+      await arquivo.writeAsBytes(bytes, flush: true);
+      final nova = CertidaoGuardada.fromJson(
+          certidao.toJson(), (await _pasta(matricula)).path);
+      await _salvarIndice(
+          matricula, [nova, ...lista.where((c) => c.tipo != nova.tipo)]);
+      // A anterior do mesmo tipo sai do aparelho (no servidor, foi revogada).
+      for (final c in lista.where((c) => c.tipo == nova.tipo)) {
+        final f = File(c.caminho);
+        if (await f.exists()) await f.delete();
+      }
+      return nova;
+    });
+    return EmissaoCertidao(certidao: guardada, email: envio);
   }
 
   // ── Guardadas no aparelho ─────────────────────────────────────────────────
 
   /// Certidões ainda válidas, mais recentes primeiro. Remove as vencidas e
   /// as que perderam o arquivo.
-  static Future<List<CertidaoGuardada>> guardadas(String matricula) async {
+  static Future<List<CertidaoGuardada>> guardadas(String matricula) =>
+      _emFila(() => _lerGuardadas(matricula));
+
+  static Future<List<CertidaoGuardada>> _lerGuardadas(String matricula) async {
     final indice = await Store.getMap(_chaveIndice(matricula));
+    final listaLida = indice['itens'] is List;
     final itens = (indice['itens'] as List?) ?? const [];
+    final pasta = (await _pasta(matricula)).path;
 
     final validas = <CertidaoGuardada>[];
     var mudou = false;
+    var itemRuim = false;
     for (final item in itens) {
       try {
-        final c = CertidaoGuardada.fromJson((item as Map).cast<String, dynamic>());
+        final c = CertidaoGuardada.fromJson(
+            (item as Map).cast<String, dynamic>(), pasta);
         final arquivo = File(c.caminho);
         if (c.valida && await arquivo.exists()) {
           validas.add(c);
@@ -266,6 +310,7 @@ class CertidaoService {
       } catch (e) {
         debugPrint('[CERTIDAO] item inválido no índice: $e');
         mudou = true;
+        itemRuim = true;
       }
     }
 
@@ -288,42 +333,51 @@ class CertidaoService {
     if (mudou) await _salvarIndice(matricula, ultimas);
 
     // PDF que ficou na pasta sem estar na lista (de versões anteriores do
-    // app, ou de uma gravação interrompida) também sai.
-    try {
-      final manter = ultimas.map((c) => c.caminho).toSet();
-      final pasta = await _pasta(matricula);
-      await for (final f in pasta.list()) {
-        if (f is File && f.path.endsWith('.pdf') && !manter.contains(f.path)) {
+    // app, ou de uma gravação interrompida) também sai. Só com a lista lida
+    // por inteiro, comparando pelo nome do arquivo, e nunca um PDF recente.
+    if (listaLida && !itemRuim) {
+      try {
+        final manter = ultimas.map((c) => '${c.codigo}.pdf').toSet();
+        final limite = DateTime.now().subtract(const Duration(minutes: 10));
+        await for (final f in Directory(pasta).list()) {
+          if (f is! File || !f.path.endsWith('.pdf')) continue;
+          final nome = f.uri.pathSegments.last;
+          if (manter.contains(nome)) continue;
+          if ((await f.lastModified()).isAfter(limite)) continue;
+          debugPrint('[CERTIDAO] apagando PDF sem registro: $nome');
           await f.delete();
         }
+      } catch (e) {
+        debugPrint('[CERTIDAO] falha ao limpar a pasta: $e');
       }
-    } catch (e) {
-      debugPrint('[CERTIDAO] falha ao limpar a pasta: $e');
     }
     return ultimas;
   }
 
-  static Future<void> _salvarIndice(String matricula, List<CertidaoGuardada> lista) =>
+  static Future<void> _salvarIndice(
+          String matricula, List<CertidaoGuardada> lista) =>
       Store.saveMap(_chaveIndice(matricula), {
         'itens': lista.map((c) => c.toJson()).toList(),
       });
 
   /// Tira uma certidão do aparelho (lista e arquivo). No servidor ela
   /// continua registrada e válida para quem já a recebeu.
-  static Future<List<CertidaoGuardada>> remover(String matricula, String codigo) async {
-    final lista = await guardadas(matricula);
-    final resto = <CertidaoGuardada>[];
-    for (final c in lista) {
-      if (c.codigo == codigo) {
-        final arquivo = File(c.caminho);
-        if (await arquivo.exists()) await arquivo.delete();
-      } else {
-        resto.add(c);
-      }
-    }
-    await _salvarIndice(matricula, resto);
-    return resto;
-  }
+  static Future<List<CertidaoGuardada>> remover(
+          String matricula, String codigo) =>
+      _emFila(() async {
+        final lista = await _lerGuardadas(matricula);
+        final resto = <CertidaoGuardada>[];
+        for (final c in lista) {
+          if (c.codigo == codigo) {
+            final arquivo = File(c.caminho);
+            if (await arquivo.exists()) await arquivo.delete();
+          } else {
+            resto.add(c);
+          }
+        }
+        await _salvarIndice(matricula, resto);
+        return resto;
+      });
 
   /// Apaga todas as certidões do aparelho (logout).
   static Future<void> apagarTudo() async {
@@ -332,7 +386,8 @@ class CertidaoService {
       final dir = Directory('${base.path}/certidoes');
       if (await dir.exists()) {
         for (final sub in dir.listSync().whereType<Directory>()) {
-          await Store.remove(_chaveIndice(sub.uri.pathSegments.where((s) => s.isNotEmpty).last));
+          await Store.remove(_chaveIndice(
+              sub.uri.pathSegments.where((s) => s.isNotEmpty).last));
         }
         await dir.delete(recursive: true);
       }
