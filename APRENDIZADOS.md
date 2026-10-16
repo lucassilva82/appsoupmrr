@@ -443,3 +443,33 @@ validade de 30 dias. O PDF é gerado no servidor e entregue na hora.
   redirecionamento para a verificação nova.
 - Ler o `error_log` de cada pasta da API de tempos em tempos. Um endpoint que
   falha sempre não aparece em lugar nenhum além dele.
+
+---
+
+## 23. Certidão se revisa com dados reais, e valor de exemplo não é dado
+
+**O que aconteceu.** A primeira versão das certidões copiava a intranet fielmente
+e passou em todos os testes com dados fictícios. Emitida com dados reais, mostrou
+o que os testes não mostravam:
+
+- **Tempo de serviço incoerente.** A view `vw_certidao_pm` deduz **15 dias fixos
+  por ano** (um valor de exemplo que ficou no SQL), e o "Total de Tempo Líquido"
+  vinha de outra view sem dedução nenhuma. O mesmo documento trazia três números
+  diferentes. O próprio banco tem a regra certa em `vw_certidao_pm_regras`: só
+  não contam LTIP (situação 9), deserção (22) e pena em regime fechado (51). A
+  conta agora é feita assim em `certidao_dados.php`, e tabela, total e frase de
+  certificação usam o mesmo número.
+- **Dado no lugar errado.** O endereço que o militar edita pelo app fica em
+  `policial_militar` (`atualizaendereco.php`), não em `index_policial_endereco`,
+  que é a tabela que a intranet lê. A foto do perfil está em
+  `rh.pmrr.online/_lib/file/img/wc2/pix_db/`, com nome que pode ter espaço.
+- **Campo que é flag.** `policial_contato.poli_cont_whats` é "sim/não", e aparecia
+  como "1" no lugar do celular.
+- **Lixo de cadastro.** "acrescentar", "NÃO INFORMADO", caixa alta misturada com
+  caixa baixa, "SSPRR" sem barra. Agora tudo passa por normalização e o vazio vira
+  um "Não informado" uniforme.
+
+**O que fazer daqui em diante.** Todo documento oficial gerado a partir do banco
+se valida emitindo com uma matrícula real e lendo o PDF linha por linha. Número
+redondo e repetido (como 15 em todos os anos) é sinal de valor de exemplo, não
+de dado.
