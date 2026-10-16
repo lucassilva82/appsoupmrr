@@ -153,6 +153,19 @@ class _DrawerPersonalizadoState extends State<DrawerPersonalizado> {
                   onTap: () =>
                       Navigator.pushNamed(context, AppRoutes.PAGE_MILITAR),
                 ),
+                // Mesma ordem do menu da tela inicial (grid_menu.dart).
+                _buildTile(
+                  icon: Icons.insert_drive_file_outlined,
+                  label: 'Certidões',
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.CERTIDOES_PAGE),
+                ),
+                _buildTile(
+                  icon: Icons.request_quote,
+                  label: 'Contracheques',
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.CONTRACHEQUE_PAGE),
+                ),
                 _buildTile(
                   icon: Icons.beach_access,
                   label: 'Plano de Férias',
@@ -168,12 +181,6 @@ class _DrawerPersonalizadoState extends State<DrawerPersonalizado> {
                       Navigator.pushNamed(context, AppRoutes.DECLARACOES_PAGE),
                 ),
                 _buildTile(
-                  icon: Icons.request_quote,
-                  label: 'Contracheques',
-                  onTap: () =>
-                      Navigator.pushNamed(context, AppRoutes.CONTRACHEQUE_PAGE),
-                ),
-                _buildTile(
                   icon: Icons.library_books,
                   label: 'Legislações',
                   onTap: () =>
@@ -183,12 +190,6 @@ class _DrawerPersonalizadoState extends State<DrawerPersonalizado> {
                   icon: Icons.gavel,
                   label: 'POPS',
                   onTap: () => Navigator.pushNamed(context, AppRoutes.POP_PAGE),
-                ),
-                _buildTile(
-                  icon: Icons.insert_drive_file_outlined,
-                  label: 'Certidões',
-                  onTap: () =>
-                      Navigator.pushNamed(context, AppRoutes.CERTIDOES_PAGE),
                 ),
                 _buildTile(
                   icon: Icons.help_center_rounded,

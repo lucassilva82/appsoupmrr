@@ -17,22 +17,25 @@ class Choice {
 class HorizontalMenu extends StatelessWidget {
   HorizontalMenu({Key? key}) : super(key: key);
 
+  // Ordem: os módulos mais completos e mais usados primeiro (Ficha,
+  // Certidões, Contracheques e, para gestores, Mapa da Força). Escalas e
+  // SVI ainda estão em desenvolvimento ("Em breve") e ficam no fim.
   final List<Choice> allChoices = <Choice>[
     Choice(
         title: 'Ficha Individual', icon: Icons.account_circle_rounded, id: 1),
-    Choice(title: 'Escalas', icon: Icons.assignment_rounded, id: 2),
-    Choice(title: 'SVI', icon: Icons.more_time_rounded, id: 11),
-    Choice(title: 'Plano de Férias', icon: Icons.beach_access_rounded, id: 9),
-    Choice(title: 'Declarações', icon: Icons.attach_money_rounded, id: 3),
+    Choice(title: 'Certidões', icon: Icons.edit_document, id: 6),
     Choice(title: 'Contracheques', icon: Icons.request_quote_rounded, id: 4),
     Choice(title: 'Mapa da Força', icon: Icons.groups_2_rounded, id: 5),
-    Choice(title: 'Certidões', icon: Icons.edit_document, id: 6),
+    Choice(title: 'Plano de Férias', icon: Icons.beach_access_rounded, id: 9),
+    Choice(title: 'Declarações', icon: Icons.attach_money_rounded, id: 3),
     Choice(
         title: 'Cálculo Inatividade',
         icon: Icons.hourglass_bottom_rounded,
         id: 12),
     Choice(title: 'Legislações', icon: Icons.library_books_rounded, id: 8),
     Choice(title: 'POPS', icon: Icons.gavel_rounded, id: 10),
+    Choice(title: 'Escalas', icon: Icons.assignment_rounded, id: 2),
+    Choice(title: 'SVI', icon: Icons.more_time_rounded, id: 11),
     Choice(title: 'Sair', icon: Icons.logout_rounded, id: 7),
   ];
 
