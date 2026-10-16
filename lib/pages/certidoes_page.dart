@@ -1084,16 +1084,6 @@ class _CertidaoVisualizarPageState extends State<CertidaoVisualizarPage> {
     }
   }
 
-  Future<void> _copiarLink() async {
-    await Clipboard.setData(ClipboardData(text: widget.certidao.urlVerificacao));
-    if (!mounted) return;
-    HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Link de verificação copiado'),
-      behavior: SnackBarBehavior.floating,
-    ));
-  }
-
   @override
   Widget build(BuildContext context) {
     final c = widget.certidao;
@@ -1109,7 +1099,7 @@ class _CertidaoVisualizarPageState extends State<CertidaoVisualizarPage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
               child: CartaoVidro(
-                padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                 child: Row(
                   children: [
                     Icon(Icons.verified_rounded,
@@ -1127,17 +1117,6 @@ class _CertidaoVisualizarPageState extends State<CertidaoVisualizarPage> {
                                   color: theme.colorScheme.onSurface
                                       .withValues(alpha: 0.72))),
                         ],
-                      ),
-                    ),
-                    Semantics(
-                      button: true,
-                      label: 'Copiar link de verificação',
-                      child: IconButton(
-                        onPressed: _copiarLink,
-                        tooltip: 'Copiar link de verificação',
-                        icon: Icon(Icons.link_rounded,
-                            size: AppIconSize.md,
-                            color: theme.colorScheme.primary),
                       ),
                     ),
                   ],

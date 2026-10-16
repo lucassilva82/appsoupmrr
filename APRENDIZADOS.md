@@ -529,3 +529,11 @@ instante, e um aviso diz para qual e-mail foi a cópia.
 **O que fazer daqui em diante.** Espera de mais de 2 segundos mostra o que está
 acontecendo, não só um círculo girando. E o tempo mínimo das etapas (2,6 s)
 existe para elas não passarem num piscar quando o servidor responde rápido.
+
+**Ajuste (16/10/2026): verificação só pelo QR Code.** O endereço de verificação
+saiu do PDF, o botão "Verificar autenticidade" saiu do e-mail e o "copiar link"
+saiu do app. A página `verificar.php` **continua no ar**, porque é ela que o QR
+Code abre (inclusive nas certidões já emitidas). Quando a verificação for para o
+SIGRH na intranet, `verificar.php` deve redirecionar para lá, nunca ser apagada
+enquanto houver certidão válida em circulação (30 dias depois da última emitida
+com este QR).
