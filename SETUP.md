@@ -97,25 +97,53 @@ storeFile=../app/upload-keystore.jks
 # Homebrew (se ainda não tiver)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# Java 17, Ruby, CocoaPods
-brew install openjdk@17 ruby cocoapods
+# Java 17, Ruby, CocoaPods, Node 20 (Cloud Functions), Watchman, Android Studio
+brew install openjdk@17 ruby cocoapods node@20 watchman
+brew install --cask android-studio
 
-# Xcode 26.5+ pela App Store, e depois:
+# Xcode 27+ pela App Store, e depois:
+sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
 sudo xcodebuild -license accept
-xcode-select --install
+sudo xcodebuild -runFirstLaunch
+xcodebuild -downloadPlatform iOS     # baixa o iOS Simulator
 ```
 
-### 4.2 Flutter 3.29.1
+### 4.2 Flutter 3.47.6
 
 ```bash
 mkdir -p ~/Development && cd ~/Development
 git clone https://github.com/flutter/flutter.git -b stable
-cd flutter && git checkout 3.29.1
+cd flutter && git checkout -B stable 3.47.6   # -B evita o "channel [user-branch]"
 
-# adicionar ao ~/.zshrc:
-export PATH="$PATH:$HOME/Development/flutter/bin"
-
+flutter config --no-enable-swift-package-manager   # ver seção 7
+flutter precache --ios                             # sem isso o pod install falha
 flutter doctor -v    # resolver o que aparecer em vermelho
+```
+
+Variáveis no `~/.zprofile` (configuração usada no MacBook em out/2026):
+
+```bash
+export PATH="$HOME/Development/flutter/bin:$PATH"
+export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
+export PATH="$JAVA_HOME/bin:/opt/homebrew/opt/ruby/bin:/opt/homebrew/opt/node@20/bin:$PATH"
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$ANDROID_HOME/cmdline-tools/latest/bin"
+export LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8   # o CocoaPods falha sem UTF-8
+```
+
+### 4.2.1 Android SDK sem passar pelo assistente do Android Studio
+
+```bash
+# command-line tools em $ANDROID_HOME/cmdline-tools/latest, depois:
+yes | sdkmanager --licenses
+sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" \
+  "ndk;27.0.12077973" "emulator" \
+  "system-images;android-36;google_apis_playstore;arm64-v8a"
+avdmanager create avd -n Pixel_9_API_36 \
+  -k "system-images;android-36;google_apis_playstore;arm64-v8a" -d pixel_9
+
+# O Android Studio traz um Java 25 que o Gradle 8.14 recusa. Apontar para o 17:
+flutter config --jdk-dir="$JAVA_HOME"
 ```
 
 ### 4.3 Clonar e rodar
@@ -230,7 +258,7 @@ menos ~20 GB livres antes de um Archive.
 - [ ] Repositório clonado
 - [ ] `android/app/upload-keystore.jks` copiado (**backup em local seguro!**)
 - [ ] `android/key.properties` copiado
-- [ ] Flutter 3.29.1 instalado e no PATH
+- [ ] Flutter 3.47.6 instalado e no PATH
 - [ ] `flutter doctor` sem erros bloqueantes
 - [ ] Xcode instalado + licença aceita + conta Apple (Team `2364NP776X`) logada
 - [ ] `flutter pub get` OK
@@ -238,3 +266,13 @@ menos ~20 GB livres antes de um Archive.
 - [ ] `flutter run` rodando em dispositivo/simulador
 - [ ] `flutter build appbundle --release` assinando corretamente
 - [ ] Archive no Xcode concluindo
+
+---
+
+## 9. API PHP (fora deste repositório)
+
+A API que o app consome (`baseUrl` em `lib/utils/api_services.dart`) fica no
+servidor da hospedagem e **não está no Git**: ela contém credenciais de banco.
+Trabalhe numa cópia local separada (no MacBook: `~/code/api-soupmrr`), nunca
+dentro desta pasta, e siga o roteiro de deploy do item 18 do `APRENDIZADOS.md`.
+As credenciais de FTP ficam só na máquina (`~/.netrc`, permissão 600).

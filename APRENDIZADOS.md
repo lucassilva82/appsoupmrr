@@ -295,3 +295,74 @@ Manager. Era a causa raiz, em texto claro, na saída de todo build.
 - Testar em iPad, não só em iPhone. A Apple revisa no aparelho que quiser, e
   escolheu iPad nas duas vezes.
 
+
+---
+
+## 17. Link de uso único: reabrir o e-mail não pode parecer erro
+
+**O que aconteceu.** Um militar relatou "Link inválido ou expirado" ao confirmar
+o e-mail. O log de acesso do servidor mostrou que ele **confirmou no primeiro
+clique** e depois reabriu o mesmo e-mail oito vezes. Como o token é apagado na
+confirmação, todas as aberturas seguintes caíam na página de erro. Ele ainda
+pediu mais cinco links, e cada pedido invalida o anterior, então abriu um link
+que já tinha sido substituído.
+
+**O que não era.** A primeira suspeita foi fuso horário (quem cria o link não
+ajusta o fuso da conexão; quem valida, sim). Uma consulta ao tipo da coluna
+derrubou a hipótese: `timestamp without time zone` com os dois lados no mesmo
+fuso. Conferir antes de corrigir economizou uma mudança desnecessária.
+
+**A correção.** O `confirm_email.php`, quando não acha o token mas o cadastro já
+está verificado com o mesmo endereço, mostra uma página **informativa** (ícone
+azul): "Seu e-mail já foi confirmado". O erro vermelho ficou só para quando o
+e-mail realmente não foi confirmado, com o texto avisando que um envio mais
+recente substitui o anterior.
+
+**O que fazer daqui em diante.**
+
+- Antes de mexer em código por relato de usuário, olhar o **log de acesso**: ele
+  mostra a sequência real de cliques e quem abriu primeiro (pessoa ou robô).
+- O robô **Google-Read-Aloud** aparece abrindo links de e-mail. Hoje chegou
+  depois da pessoa, mas se chegar antes, gasta o link sozinho. Se voltar a
+  acontecer, a saída é a página do link pedir um clique de confirmação (POST).
+
+---
+
+## 18. Deploy na API: backup fora da pasta pública, envio com lftp, conferir
+
+**O que aconteceu.** Um envio por FTP com `curl -T` falhou no meio e deixou o
+`confirm_email.php` de produção com **0 bytes**. A página ficou em branco por
+cerca de dois minutos, até o reenvio. Além disso, o primeiro backup foi feito
+como `.bak` dentro da pasta pública, onde qualquer um baixaria o código-fonte.
+
+**O que fazer, sempre, nesta ordem.**
+
+1. Baixar o arquivo do servidor e comparar com a cópia local (`cmp`): se alguém
+   mexeu direto no servidor, não sobrescrever às cegas.
+2. Backup na pasta de backups **fora** da pasta pública.
+3. Enviar com `lftp` (`set ftp:ssl-force true; put ...`), nunca `curl -T`.
+4. Baixar de novo e `cmp` com o local; depois um teste HTTP que não envie e-mail
+   nem grave nada.
+5. Arquivo novo que outro inclui (`require_once`) sobe **antes** de quem o inclui.
+
+---
+
+## 19. API PHP se testa localmente antes de subir
+
+**O que aconteceu.** O fluxo "Não lembro minha senha atual" mexeu no
+`recuperar_senha.php`, que atende a tela de login de todo mundo. Subir sem
+testar seria testar em produção.
+
+**Como foi testado.** PostgreSQL local (Homebrew) com as mesmas tabelas e
+colunas usadas pela API, `php -S` servindo uma cópia da pasta da API, e o
+PHPMailer trocado por um stub que grava o e-mail em arquivo (assim dá para ler o
+código de 6 dígitos sem enviar nada). O app rodou no simulador apontando **só**
+esse endpoint para o servidor local, por um `--dart-define` temporário, removido
+depois do teste.
+
+**O que o teste pegou.** Depois de um código errado o campo continuava cheio, e
+redigitar exigia apagar os seis dígitos. Agora ele limpa sozinho.
+
+**Detalhes que custaram tempo.** O PostgreSQL recusa socket em caminho com mais
+de 103 bytes (usar TCP em 127.0.0.1) e precisa de `LC_ALL=en_US.UTF-8` para
+subir no macOS.
