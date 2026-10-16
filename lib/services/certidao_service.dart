@@ -176,6 +176,9 @@ class CertidaoService {
       throw const CertidaoErro('O arquivo recebido está incompleto. Tente de novo.');
     }
 
+    // A lista vem antes de gravar: guardadas() apaga PDF que não está nela.
+    final lista = await guardadas(matricula);
+
     final codigo = r['codigo'].toString();
     final arquivo = File('${(await _pasta(matricula)).path}/$codigo.pdf');
     await arquivo.writeAsBytes(bytes, flush: true);
@@ -191,7 +194,6 @@ class CertidaoService {
       caminho: arquivo.path,
     );
 
-    final lista = await guardadas(matricula);
     await _salvarIndice(matricula, [certidao, ...lista]);
     return certidao;
   }
@@ -239,6 +241,20 @@ class CertidaoService {
     }
 
     if (mudou) await _salvarIndice(matricula, ultimas);
+
+    // PDF que ficou na pasta sem estar na lista (de versões anteriores do
+    // app, ou de uma gravação interrompida) também sai.
+    try {
+      final manter = ultimas.map((c) => c.caminho).toSet();
+      final pasta = await _pasta(matricula);
+      await for (final f in pasta.list()) {
+        if (f is File && f.path.endsWith('.pdf') && !manter.contains(f.path)) {
+          await f.delete();
+        }
+      }
+    } catch (e) {
+      debugPrint('[CERTIDAO] falha ao limpar a pasta: $e');
+    }
     return ultimas;
   }
 
