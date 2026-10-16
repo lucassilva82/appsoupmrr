@@ -500,3 +500,30 @@ juntos (`_certidaoManterFecho`): se não cabem, vão os três para a página seg
 **O que fazer daqui em diante.** Documento que sai para fora da PMRR (banco,
 INSS, outro órgão) usa a identidade do Estado, não a do aplicativo. E todo layout
 se testa nos dois extremos: o caso mais curto e o mais longo.
+
+---
+
+## 25. Certidões: uma ação por tela, e o usuário vê o servidor trabalhando
+
+**O que mudou.** A tela de certidões tinha a lista de tipos e a lista de emitidas
+juntas. Agora tem um só botão, "Emitir nova certidão", que abre a escolha do
+tipo. Na emissão, o botão mostra as etapas (consultando o SIGRH, conferindo os
+assentamentos, alinhando os dados, gerando o documento, registrando a
+autenticação, enviando por e-mail), com uma barra fina no pé. Ao terminar, volta
+para a lista, onde a certidão nova entra subindo, com a borda acesa por um
+instante, e um aviso diz para qual e-mail foi a cópia.
+
+- **E-mail só para o endereço confirmado** (`certidao_email.php`), o mesmo
+  critério da recuperação de senha: a Ficha tem conta bancária. Sem e-mail
+  confirmado, a certidão sai normalmente e o aviso pede para confirmar. Falha no
+  envio nunca desfaz a emissão.
+- **E-mail oculto com tamanho fixo** (`lu*****6@gmail.com`): asteriscos na
+  quantidade real revelariam o tamanho do nome.
+- **PDF todo em preto e branco**: brasão e foto em tons de cinza. QR Code de 20 mm
+  e quadro de autenticidade mais baixo; sem averbação, uma linha substitui a
+  tabela vazia. Com isso, a Certidão de Tempo de Serviço com LTIP cabe numa
+  página.
+
+**O que fazer daqui em diante.** Espera de mais de 2 segundos mostra o que está
+acontecendo, não só um círculo girando. E o tempo mínimo das etapas (2,6 s)
+existe para elas não passarem num piscar quando o servidor responde rápido.

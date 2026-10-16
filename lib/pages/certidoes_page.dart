@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
@@ -19,8 +20,10 @@ import '../widgets/vidro.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // CertidoesPage
 //
-// O militar escolhe a certidão, confirma a Declaração de Conferência de
-// Dados e recebe o PDF na hora.
+// Um botão "Emitir nova certidão" leva à escolha do tipo; o militar confirma
+// a Declaração de Conferência de Dados e acompanha as etapas no botão. Ao
+// terminar volta para cá, onde a certidão nova entra na lista com destaque e
+// o aviso diz para qual e-mail (oculto) foi a cópia em PDF.
 // O documento sai da API com QR Code de autenticidade e vale 30 dias; fica
 // guardado no aparelho enquanto vale (CertidaoService).
 //
@@ -73,6 +76,9 @@ class _CertidoesPageState extends State<CertidoesPage> {
   bool _carregando = true;
   String? _erro;
 
+  /// Última emissão desta visita: destaca o cartão e mostra o aviso do e-mail.
+  EmissaoCertidao? _recente;
+
   @override
   void initState() {
     super.initState();
@@ -114,43 +120,38 @@ class _CertidoesPageState extends State<CertidoesPage> {
 
   // ── Emitir ────────────────────────────────────────────────────────────────
 
-  Future<void> _escolher(TipoCertidao tipo) async {
+  Future<void> _novaCertidao() async {
     final painel = _painel;
-    if (painel == null) return;
-
-    if (!tipo.disponivel) {
-      await alertaAviso(context,
-          titulo: tipo.titulo,
-          texto: tipo.motivo ?? 'Esta certidão não está disponível.');
+    if (painel == null) {
+      await _carregar();
       return;
     }
 
-    final emitida = await showModalBottomSheet<CertidaoGuardada>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (_) => _FolhaEmissao(
-        tipo: tipo,
-        painel: painel,
-        emitir: () => CertidaoService.emitir(
-          matricula: _matricula,
-          senhaMd5: _senhaMd5,
-          tipo: tipo.tipo,
-          declaracaoVersao: painel.declaracaoVersao,
+    final emitida = await Navigator.of(context).push<EmissaoCertidao>(
+      MaterialPageRoute(
+        builder: (_) => _EscolherCertidaoPage(
+          painel: painel,
+          emitir: (tipo) => CertidaoService.emitir(
+            matricula: _matricula,
+            senhaMd5: _senhaMd5,
+            tipo: tipo.tipo,
+            declaracaoVersao: painel.declaracaoVersao,
+          ),
         ),
       ),
     );
 
     if (emitida == null || !mounted) return;
-    HapticFeedback.mediumImpact();
     final guardadas = await CertidaoService.guardadas(_matricula);
     if (!mounted) return;
-    setState(() => _guardadas = guardadas);
-    _abrir(emitida);
+    // A troca de página termina antes de o cartão novo entrar na lista.
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    if (!mounted) return;
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _guardadas = guardadas;
+      _recente = emitida;
+    });
   }
 
   void _abrir(CertidaoGuardada c) {
@@ -176,19 +177,25 @@ class _CertidoesPageState extends State<CertidoesPage> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
               Text(
-                'Escolha a certidão que você precisa.',
+                'Emita suas certidões na hora. Elas ficam salvas aqui por '
+                '30 dias e também chegam no seu e-mail.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
                   height: 1.4,
                 ),
               ),
-              const SizedBox(height: 18),
-              _Rotulo('Emitir certidão'),
-              const SizedBox(height: 10),
-              ..._tipos(),
-              const SizedBox(height: 22),
+              const SizedBox(height: 16),
+              ..._botaoNova(),
+              const SizedBox(height: 24),
               _Rotulo('Minhas certidões'),
               const SizedBox(height: 10),
+              if (_recente != null) ...[
+                _EntradaAnimada(
+                  key: ValueKey('aviso-${_recente!.certidao.codigo}'),
+                  child: _AvisoEmail(envio: _recente!.email),
+                ),
+                const SizedBox(height: 10),
+              ],
               ..._listaGuardadas(),
             ],
           ),
@@ -197,19 +204,10 @@ class _CertidoesPageState extends State<CertidoesPage> {
     );
   }
 
-  List<Widget> _tipos() {
+  List<Widget> _botaoNova() {
     final theme = Theme.of(context);
 
-    if (_carregando && _painel == null) {
-      return const [
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: 28),
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      ];
-    }
-
-    if (_painel == null) {
+    if (_painel == null && !_carregando) {
       return [
         _Aviso(
           cor: theme.colorScheme.error,
@@ -228,10 +226,30 @@ class _CertidoesPageState extends State<CertidoesPage> {
     }
 
     return [
-      for (final tipo in _painel!.tipos) ...[
-        _CartaoTipo(tipo: tipo, aoTocar: () => _escolher(tipo)),
-        const SizedBox(height: 10),
-      ],
+      SizedBox(
+        height: 52,
+        child: ElevatedButton.icon(
+          onPressed: _painel == null ? null : _novaCertidao,
+          icon: _painel == null
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.note_add_rounded, size: AppIconSize.sm),
+          label: const Text('Emitir nova certidão'),
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+      ),
     ];
   }
 
@@ -263,12 +281,201 @@ class _CertidoesPageState extends State<CertidoesPage> {
       ];
     }
 
+    final codigoNovo = _recente?.certidao.codigo;
     return [
       for (final c in _guardadas) ...[
-        _CartaoGuardada(certidao: c, aoTocar: () => _abrir(c)),
+        c.codigo == codigoNovo
+            ? _EntradaAnimada(
+                key: ValueKey('nova-${c.codigo}'),
+                atraso: const Duration(milliseconds: 120),
+                destacar: true,
+                child: _CartaoGuardada(certidao: c, aoTocar: () => _abrir(c)),
+              )
+            : _CartaoGuardada(
+                key: ValueKey(c.codigo),
+                certidao: c,
+                aoTocar: () => _abrir(c)),
         const SizedBox(height: 10),
       ],
     ];
+  }
+}
+
+// ── Escolha do tipo ─────────────────────────────────────────────────────────
+
+class _EscolherCertidaoPage extends StatelessWidget {
+  final PainelCertidoes painel;
+  final Future<EmissaoCertidao> Function(TipoCertidao tipo) emitir;
+
+  const _EscolherCertidaoPage({required this.painel, required this.emitir});
+
+  Future<void> _escolher(BuildContext context, TipoCertidao tipo) async {
+    if (!tipo.disponivel) {
+      await alertaAviso(context,
+          titulo: tipo.titulo,
+          texto: tipo.motivo ?? 'Esta certidão não está disponível.');
+      return;
+    }
+
+    final emitida = await showModalBottomSheet<EmissaoCertidao>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      // Durante a emissão a folha não fecha por toque fora nem por arrasto.
+      isDismissible: false,
+      enableDrag: false,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (_) => _FolhaEmissao(
+        tipo: tipo,
+        painel: painel,
+        emitir: () => emitir(tipo),
+      ),
+    );
+
+    if (emitida != null && context.mounted) Navigator.of(context).pop(emitida);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return FundoSuave(
+      child: Scaffold(
+        appBar: const CustomAppBar(title: 'Emitir certidão'),
+        body: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          children: [
+            Text(
+              'Escolha a certidão que você precisa.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 16),
+            for (final tipo in painel.tipos) ...[
+              _CartaoTipo(tipo: tipo, aoTocar: () => _escolher(context, tipo)),
+              const SizedBox(height: 10),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Entrada animada ─────────────────────────────────────────────────────────
+// Sobe e aparece; com destacar, a borda acende e apaga devagar, para o olho
+// achar a certidão que acabou de chegar.
+
+class _EntradaAnimada extends StatefulWidget {
+  final Widget child;
+  final Duration atraso;
+  final bool destacar;
+
+  const _EntradaAnimada({
+    super.key,
+    required this.child,
+    this.atraso = Duration.zero,
+    this.destacar = false,
+  });
+
+  @override
+  State<_EntradaAnimada> createState() => _EntradaAnimadaState();
+}
+
+class _EntradaAnimadaState extends State<_EntradaAnimada>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: Duration(milliseconds: widget.destacar ? 2400 : 450),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(widget.atraso, () {
+      if (mounted) _c.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final primaria = Theme.of(context).colorScheme.primary;
+    final total = _c.duration!.inMilliseconds;
+    // A entrada ocupa os primeiros 450 ms; o resto é o brilho apagando.
+    final fimEntrada = (450 / total).clamp(0.0, 1.0);
+    final entrada = CurvedAnimation(
+        parent: _c, curve: Interval(0, fimEntrada, curve: Curves.easeOutCubic));
+    final brilho = CurvedAnimation(
+        parent: _c, curve: Interval(fimEntrada, 1, curve: Curves.easeIn));
+
+    return AnimatedBuilder(
+      animation: _c,
+      child: widget.child,
+      builder: (context, child) {
+        final t = entrada.value;
+        Widget w = child!;
+        if (widget.destacar) {
+          final a = (1 - brilho.value) * (t);
+          w = DecoratedBox(
+            position: DecorationPosition.foreground,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                  color: primaria.withValues(alpha: 0.85 * a), width: 1.4),
+            ),
+            child: w,
+          );
+        }
+        return Opacity(
+          opacity: t,
+          child: Transform.translate(
+            offset: Offset(0, 28 * (1 - t)),
+            child: Transform.scale(scale: 0.97 + 0.03 * t, child: w),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ── Aviso do e-mail depois da emissão ───────────────────────────────────────
+
+class _AvisoEmail extends StatelessWidget {
+  final EnvioEmailCertidao envio;
+  const _AvisoEmail({required this.envio});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final verde = isDark ? AppColors.sucessoEscuro : AppColors.sucesso;
+
+    if (envio.enviado) {
+      return _Aviso(
+        cor: verde,
+        icone: Icons.mark_email_read_rounded,
+        texto: 'Certidão emitida. Enviamos uma cópia em PDF para '
+            '${envio.emailMascarado ?? 'o seu e-mail'}.',
+      );
+    }
+    return _Aviso(
+      cor: theme.colorScheme.primary,
+      icone: Icons.info_outline_rounded,
+      texto: 'Certidão emitida e salva no app. '
+          '${envio.aviso ?? 'Não foi possível enviar a cópia por e-mail.'}',
+    );
   }
 }
 
@@ -363,7 +570,8 @@ class _CartaoTipo extends StatelessWidget {
 class _CartaoGuardada extends StatelessWidget {
   final CertidaoGuardada certidao;
   final VoidCallback aoTocar;
-  const _CartaoGuardada({required this.certidao, required this.aoTocar});
+  const _CartaoGuardada(
+      {super.key, required this.certidao, required this.aoTocar});
 
   @override
   Widget build(BuildContext context) {
@@ -437,7 +645,7 @@ class _CartaoGuardada extends StatelessWidget {
 class _FolhaEmissao extends StatefulWidget {
   final TipoCertidao tipo;
   final PainelCertidoes painel;
-  final Future<CertidaoGuardada> Function() emitir;
+  final Future<EmissaoCertidao> Function() emitir;
 
   const _FolhaEmissao({
     required this.tipo,
@@ -449,19 +657,54 @@ class _FolhaEmissao extends StatefulWidget {
   State<_FolhaEmissao> createState() => _FolhaEmissaoState();
 }
 
+/// O que o servidor faz, na ordem, para o militar acompanhar no botão.
+const _etapas = [
+  'Consultando o SIGRH',
+  'Conferindo seus assentamentos',
+  'Alinhando os dados',
+  'Gerando o documento',
+  'Registrando a autenticação',
+  'Enviando cópia por e-mail',
+];
+
 class _FolhaEmissaoState extends State<_FolhaEmissao> {
   bool _confirmado = false;
   bool _emitindo = false;
+  bool _pronto = false;
+  int _etapa = 0;
+  Timer? _relogio;
   String? _erro;
+
+  @override
+  void dispose() {
+    _relogio?.cancel();
+    super.dispose();
+  }
 
   Future<void> _emitir() async {
     setState(() {
       _emitindo = true;
+      _pronto = false;
+      _etapa = 0;
       _erro = null;
     });
+    // Avança uma etapa por vez e para na última até a resposta chegar.
+    _relogio = Timer.periodic(const Duration(milliseconds: 1100), (_) {
+      if (mounted && _etapa < _etapas.length - 1) setState(() => _etapa++);
+    });
+
     try {
-      final c = await widget.emitir();
-      if (mounted) Navigator.of(context).pop(c);
+      // Tempo mínimo para as etapas não passarem num piscar.
+      final resultado = await Future.wait([
+        widget.emitir(),
+        Future<void>.delayed(const Duration(milliseconds: 2600)),
+      ]);
+      _relogio?.cancel();
+      if (!mounted) return;
+      setState(() => _pronto = true);
+      HapticFeedback.lightImpact();
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      if (mounted) Navigator.of(context).pop(resultado.first as EmissaoCertidao);
     } on CertidaoErro catch (e) {
       HapticFeedback.heavyImpact();
       if (mounted) setState(() => _erro = e.mensagem);
@@ -473,7 +716,8 @@ class _FolhaEmissaoState extends State<_FolhaEmissao> {
             'Sem conexão com o servidor. Verifique sua internet e tente de novo.');
       }
     } finally {
-      if (mounted) setState(() => _emitindo = false);
+      _relogio?.cancel();
+      if (mounted && !_pronto) setState(() => _emitindo = false);
     }
   }
 
@@ -483,134 +727,264 @@ class _FolhaEmissaoState extends State<_FolhaEmissao> {
     final isDark = theme.brightness == Brightness.dark;
     final info = _descricoes[widget.tipo.tipo];
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-          20, 10, 20, 20 + MediaQuery.of(context).viewInsets.bottom),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(2),
+    return PopScope(
+      canPop: !_emitindo,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+            20, 10, 20, 20 + MediaQuery.of(context).viewInsets.bottom),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Icon(info?.icone ?? Icons.description_rounded,
-                    size: AppIconSize.xl, color: theme.colorScheme.primary),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(widget.tipo.titulo,
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              info?.texto ?? '',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Declaração em caixa de nível 1 (DESIGN §3b).
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary
-                    .withValues(alpha: isDark ? 0.10 : 0.06),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 18),
+              Row(
                 children: [
-                  Text(
-                    'DECLARAÇÃO DE CONFERÊNCIA DE DADOS',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8,
-                      color: theme.colorScheme.primary,
+                  Icon(info?.icone ?? Icons.description_rounded,
+                      size: AppIconSize.xl, color: theme.colorScheme.primary),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(widget.tipo.titulo,
+                        style: theme.textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700)),
+                  ),
+                  if (!_emitindo)
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      tooltip: 'Fechar',
+                      icon: Icon(Icons.close_rounded,
+                          size: AppIconSize.md,
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.6)),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.painel.declaracaoTexto,
-                    style: theme.textTheme.bodySmall?.copyWith(height: 1.45),
-                  ),
                 ],
               ),
-            ),
-            const SizedBox(height: 6),
-            CheckboxListTile(
-              value: _confirmado,
-              onChanged: _emitindo
-                  ? null
-                  : (v) => setState(() => _confirmado = v ?? false),
-              contentPadding: EdgeInsets.zero,
-              controlAffinity: ListTileControlAffinity.leading,
-              title: Text('Li e confirmo a declaração',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w600)),
-            ),
-
-            if (_erro != null) ...[
-              _Aviso(
-                cor: theme.colorScheme.error,
-                icone: Icons.error_outline_rounded,
-                texto: _erro!,
-              ),
-              const SizedBox(height: 12),
-            ],
-
-            SizedBox(
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: _confirmado && !_emitindo ? _emitir : null,
-                icon: _emitindo
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : const Icon(Icons.picture_as_pdf_rounded,
-                        size: AppIconSize.sm),
-                label: Text(_emitindo ? 'Emitindo…' : 'Emitir certidão'),
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
+              const SizedBox(height: 8),
+              Text(
+                info?.texto ?? '',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+                  height: 1.4,
                 ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'A certidão vale por ${widget.painel.validadeDias} dias.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              const SizedBox(height: 16),
+
+              // Declaração em caixa de nível 1 (DESIGN §3b).
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary
+                      .withValues(alpha: isDark ? 0.10 : 0.06),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'DECLARAÇÃO DE CONFERÊNCIA DE DADOS',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.painel.declaracaoTexto,
+                      style: theme.textTheme.bodySmall?.copyWith(height: 1.45),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(height: 6),
+              CheckboxListTile(
+                value: _confirmado,
+                onChanged: _emitindo
+                    ? null
+                    : (v) => setState(() => _confirmado = v ?? false),
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: Text('Li e confirmo a declaração',
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w600)),
+              ),
+
+              if (_erro != null) ...[
+                _Aviso(
+                  cor: theme.colorScheme.error,
+                  icone: Icons.error_outline_rounded,
+                  texto: _erro!,
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              _BotaoEmitir(
+                habilitado: _confirmado,
+                emitindo: _emitindo,
+                pronto: _pronto,
+                etapa: _etapa,
+                aoTocar: _emitir,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'A certidão vale por ${widget.painel.validadeDias} dias.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Botão de emitir com as etapas ───────────────────────────────────────────
+// Parado: "Emitir certidão". Emitindo: a etapa atual troca de baixo para
+// cima, com uma barra fina avançando no pé do botão. Pronto: "Certidão
+// emitida" com o visto.
+
+class _BotaoEmitir extends StatelessWidget {
+  final bool habilitado;
+  final bool emitindo;
+  final bool pronto;
+  final int etapa;
+  final VoidCallback aoTocar;
+
+  const _BotaoEmitir({
+    required this.habilitado,
+    required this.emitindo,
+    required this.pronto,
+    required this.etapa,
+    required this.aoTocar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // A mesma cor do botão habilitado (tema), para não "apagar" ao emitir.
+    final corBotao = theme.elevatedButtonTheme.style?.backgroundColor
+            ?.resolve(const <WidgetState>{}) ??
+        theme.colorScheme.primary;
+    final noBotao = theme.elevatedButtonTheme.style?.foregroundColor
+            ?.resolve(const <WidgetState>{}) ??
+        theme.colorScheme.onPrimary;
+
+    final String texto;
+    final Widget icone;
+    if (pronto) {
+      texto = 'Certidão emitida';
+      icone = Icon(Icons.check_circle_rounded,
+          key: const ValueKey('pronto'), size: AppIconSize.sm, color: noBotao);
+    } else if (emitindo) {
+      texto = '${_etapas[etapa]}…';
+      icone = SizedBox(
+        key: const ValueKey('girando'),
+        width: 16,
+        height: 16,
+        child: CircularProgressIndicator(strokeWidth: 2, color: noBotao),
+      );
+    } else {
+      texto = 'Emitir certidão';
+      icone = const Icon(Icons.picture_as_pdf_rounded,
+          key: ValueKey('pdf'), size: AppIconSize.sm);
+    }
+
+    // Progresso aparente: cada etapa empurra a barra; termina ao ficar pronto.
+    final progresso = pronto ? 1.0 : (etapa + 1) / (_etapas.length + 1);
+    final ocupado = emitindo || pronto;
+
+    return Semantics(
+      liveRegion: ocupado,
+      label: ocupado ? texto : null,
+      child: SizedBox(
+        height: 52,
+        child: ElevatedButton(
+          onPressed: habilitado && !ocupado ? aoTocar : null,
+          clipBehavior: Clip.antiAlias,
+          style: ElevatedButton.styleFrom(
+            padding: EdgeInsets.zero,
+            // Emitindo, o botão fica com a cor cheia mesmo desabilitado.
+            disabledBackgroundColor: ocupado ? corBotao : null,
+            disabledForegroundColor: ocupado ? noBotao : null,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
             ),
-          ],
+            textStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      child: icone,
+                    ),
+                    const SizedBox(width: 10),
+                    ClipRect(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 320),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        transitionBuilder: (child, anim) {
+                          final entrando =
+                              child.key == ValueKey<String>(texto);
+                          final inicio = Offset(0, entrando ? 0.6 : -0.6);
+                          return FadeTransition(
+                            opacity: anim,
+                            child: SlideTransition(
+                              position: Tween(begin: inicio, end: Offset.zero)
+                                  .animate(anim),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: Text(texto, key: ValueKey<String>(texto)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (ocupado)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(end: progresso),
+                    duration: const Duration(milliseconds: 900),
+                    curve: Curves.easeOutCubic,
+                    builder: (_, v, __) => LinearProgressIndicator(
+                      value: v,
+                      minHeight: 3,
+                      backgroundColor: noBotao.withValues(alpha: 0.18),
+                      valueColor: AlwaysStoppedAnimation(
+                          noBotao.withValues(alpha: 0.85)),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

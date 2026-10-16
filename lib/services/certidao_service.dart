@@ -106,6 +106,32 @@ class CertidaoGuardada {
       );
 }
 
+/// Cópia por e-mail feita pela API logo depois da emissão.
+class EnvioEmailCertidao {
+  final bool enviado;
+
+  /// E-mail com o meio oculto ("l***s@gmail.com"); nulo se não há confirmado.
+  final String? emailMascarado;
+
+  /// Explicação quando não foi enviado.
+  final String? aviso;
+
+  const EnvioEmailCertidao({required this.enviado, this.emailMascarado, this.aviso});
+
+  factory EnvioEmailCertidao.fromJson(Map<String, dynamic>? j) => EnvioEmailCertidao(
+        enviado: j?['enviado'] == true,
+        emailMascarado: j?['email']?.toString(),
+        aviso: j?['aviso']?.toString(),
+      );
+}
+
+/// Resultado da emissão: a certidão guardada e o envio por e-mail.
+class EmissaoCertidao {
+  final CertidaoGuardada certidao;
+  final EnvioEmailCertidao email;
+  const EmissaoCertidao({required this.certidao, required this.email});
+}
+
 class CertidaoService {
   static String _chaveIndice(String matricula) => 'certidoes_$matricula';
 
@@ -150,8 +176,9 @@ class CertidaoService {
 
   // ── Emissão ───────────────────────────────────────────────────────────────
 
-  /// Emite, grava o PDF e devolve a certidão já guardada.
-  static Future<CertidaoGuardada> emitir({
+  /// Emite, grava o PDF e devolve a certidão já guardada, com o resultado
+  /// do envio da cópia por e-mail.
+  static Future<EmissaoCertidao> emitir({
     required String matricula,
     required String senhaMd5,
     required String tipo,
@@ -164,7 +191,7 @@ class CertidaoService {
       'tipo': tipo,
       'declaracao_confirmada': '1',
       'declaracao_versao': '$declaracaoVersao',
-    }, limite: const Duration(seconds: 45));
+    }, limite: const Duration(seconds: 60));
 
     if (r['code'] != 1) {
       throw CertidaoErro((r['message'] ?? 'Não foi possível emitir.').toString());
@@ -195,7 +222,10 @@ class CertidaoService {
     );
 
     await _salvarIndice(matricula, [certidao, ...lista]);
-    return certidao;
+    return EmissaoCertidao(
+      certidao: certidao,
+      email: EnvioEmailCertidao.fromJson((r['email'] as Map?)?.cast<String, dynamic>()),
+    );
   }
 
   // ── Guardadas no aparelho ─────────────────────────────────────────────────
