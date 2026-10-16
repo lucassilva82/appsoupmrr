@@ -120,7 +120,51 @@ atualizar). Na emissão vale na hora.
 - Começar pelo essencial: liga/desliga de serviço e de tipo, com motivo, e
   revogação de certidão pelo código.
 
-### 2.4 Próximos módulos no mesmo modelo
+### 2.4 Modelos de certidão editáveis (PDF sem código)
+
+**Hoje.** O PDF já é todo montado na API (`certidao_pdf.php`), e o app só
+recebe o arquivo pronto. Corrigir ou mudar o layout é só alterar a API, sem
+publicar versão nova do app. Mas cada modelo é desenhado em código PHP: mudar o
+PDF ou criar um tipo novo exige editar esse arquivo no servidor.
+
+**Objetivo.** Ajustar o desenho ou criar um tipo novo pelo painel, sem mexer em
+código.
+
+**Como.**
+- Tabela `soupm_certidao_modelo`: `tipo`, `versao`, `conteudo` (HTML do modelo,
+  que o TCPDF já sabe renderizar), `status` (`rascunho` | `publicado` |
+  `arquivado`), `criado_por`, `publicado_por`, `publicado_em`.
+- Campos no modelo: `{nome}`, `{matricula}`, `{cpf}`, `{posto}`,
+  `{data_inclusao}`, `{tempo_total}`. Para listas, blocos prontos, como
+  `{tabela_anos}`, `{tabela_nao_computados}`, `{tabela_averbado}`,
+  `{tabela_punicoes}`, `{tabela_dependentes}` e `{foto}`. Os dados continuam
+  vindo de `certidao_dados.php` e passando por `certidao_validacao.php`. O
+  modelo decide só como aparece, nunca o que é verdade.
+- Ficam fora do modelo e são sempre impressos pelo código: o cabeçalho oficial
+  (brasão, Estado, PMRR, unidade), o quadro de autenticidade com o QR Code e o
+  código, e o rodapé com a paginação. Assim nenhum modelo editado sai sem
+  autenticação.
+- Tipo novo = cadastrar o tipo em `soupm_certidao_tipo`, escolher as seções
+  obrigatórias da validação e publicar um modelo. Sem PHP novo.
+- Os 4 modelos atuais são convertidos primeiro, comparando o PDF novo com o
+  atual página por página antes de trocar.
+
+**Cuidados (documento com fé pública).**
+- **Pré-visualização obrigatória:** o painel gera o PDF com dados de teste e
+  com uma matrícula real escolhida pelo administrador. Só se publica o que foi
+  visto.
+- **Versões:** cada publicação vira uma versão nova. Voltar para a anterior é
+  um clique. A emissão grava `modelo_versao` em `soupm_certidao_emissao`, para
+  saber com qual modelo cada certidão saiu.
+- **Validação do modelo antes de publicar:** campo desconhecido, bloco
+  obrigatório faltando ou HTML que quebra o PDF impedem a publicação.
+- **Quem pode:** só o perfil de administrador de certidões publica. Tudo vai
+  para `soupm_admin_log`.
+- **Proteção:** se o modelo publicado falhar ao gerar, a emissão é cancelada
+  como hoje (`certidaoCancelarEmissao`) e o militar recebe a mensagem. Nunca
+  sai PDF pela metade.
+
+### 2.5 Próximos módulos no mesmo modelo
 
 Contracheque, Escalas, SVI, Mapa da Força, Avisos: cada um ganha uma chave em
 `soupm_config` com `servico.ativo` e textos, e a tela do app passa a respeitar.
