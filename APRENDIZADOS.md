@@ -696,7 +696,12 @@ o placeholder do Flutter e um ícone está com tamanho fora do padrão.
 Militar / Diretoria de Recursos Humanos - PMRR"**. No PDF, o cabeçalho é
 "GOVERNO DO ESTADO DE RORAIMA / POLÍCIA MILITAR DO ESTADO DE RORAIMA /
 DIRETORIA DE RECURSOS HUMANOS - PMRR", e o rodapé começa com "Diretoria de
-Recursos Humanos - PMRR". "Diretoria de Pessoal" e
+Recursos Humanos - PMRR". Nos e-mails, o cabeçalho tem "Governo do Estado de
+Roraima" (linha pequena), "Polícia Militar" e "Diretoria de Recursos Humanos -
+PMRR". "Humanos - PMRR" fica num `<span style='white-space:nowrap'>`: no
+celular, o navegador quebrava a linha logo depois do hífen e o "PMRR" ficava
+sozinho, mesmo com `&nbsp;`. As mensagens para o militar dizem "Procure a
+Diretoria de Recursos Humanos - PMRR" (inclusive a que antes dizia só "DRH"). "Diretoria de Pessoal" e
 "Departamento de Pessoal" não se usam mais.
 - **E-mails:** confirmação, troca e recuperação de senha, senha alterada,
   primeiro acesso (dois) e certidão trazem essas duas linhas no cabeçalho, no
