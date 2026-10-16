@@ -691,3 +691,16 @@ Depois disso, `flutter build ipa --release` roda sem perguntar e
 
 **Pendência visual do iOS (não bloqueou o envio):** a tela de abertura ainda é
 o placeholder do Flutter e um ícone está com tamanho fora do padrão.
+
+**Identificação da unidade (16/10/2026).** O padrão oficial é **"Polícia
+Militar / Diretoria de Recursos Humanos"**. "Diretoria de Pessoal" e
+"Departamento de Pessoal" não se usam mais.
+- **E-mails:** confirmação, troca e recuperação de senha, senha alterada,
+  primeiro acesso (dois) e certidão trazem essas duas linhas no cabeçalho, no
+  lugar de "POLÍCIA MILITAR DE RORAIMA / Aplicativo SouPMRR".
+- **PDF:** a unidade no cabeçalho é "DIRETORIA DE RECURSOS HUMANOS"
+  (`CertidaoPdf::ORGAO`). O rodapé passou a começar com "PMRR", porque o nome
+  por extenso encostava na numeração de páginas.
+- **Mensagens de bloqueio:** "Procure a Diretoria de Recursos Humanos".
+- O rodapé dos e-mails continua "Departamento de Tecnologia da Informação —
+  DTI/PMRR", que é quem dá o suporte.
