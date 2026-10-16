@@ -406,3 +406,40 @@ também passaram a ser recusados.
 um dado sensível (e-mail, senha, telefone), procurar **todos** os outros pontos
 da API que gravam o mesmo dado e conferir se seguem as mesmas regras. A regra
 nova fica no arquivo comum, nunca copiada para um só endpoint.
+
+---
+
+## 22. Certidões: o módulo antigo falhava em silêncio havia dois meses
+
+**O que aconteceu.** A tela de Certidões pedia a certidão e esperava duas
+aprovações (chefia e DRH). O `error_log` da pasta `certidoes/` da API tinha
+**2.577 linhas** desde agosto com `relation "recursoshumanos.solicitacao_certidao"
+does not exist`: a tabela só existia no banco da intranet. Ninguém conseguia
+pedir certidão pelo app, e a tela só mostrava "erro".
+
+**A substituição (16/10/2026).** Autoemissão, porta fiel da intranet (branch
+`feature/sigrh-modulo`): Tempo de Serviço, Vínculo Funcional e Ficha Funcional,
+com a mesma Declaração de Conferência (v2), o mesmo layout TCPDF, o QR Code e a
+validade de 30 dias. O PDF é gerado no servidor e entregue na hora.
+
+- **API:** `sigrh/certidoes/autoemissao.php` (painel e emitir, sempre com
+  matrícula + MD5 da senha), `verificar.php` (página pública do QR) e as
+  bibliotecas `certidao_lib.php`, `certidao_dados.php` (somente leitura) e
+  `certidao_pdf.php`. O TCPDF fica em `~/private/vendor/tcpdf`, fora da pasta
+  pública.
+- **Banco:** `public.soupm_certidao_emissao` e
+  `public.soupm_certidao_verificacao_log`, com as mesmas colunas da tabela da
+  intranet (para migrar linha a linha) + `pdf_sha256` e `canal`. SQL guardado na
+  cópia da API, em `sql/2026-10-16_certidoes_autoemissao.sql`.
+- **Diferença da intranet, decidida:** o Vínculo só sai para "SERVIÇO ATIVO",
+  porque o texto afirma que o militar não foi demitido nem teve aposentadoria
+  cassada.
+
+**O que fazer daqui em diante.**
+
+- O endereço `https://pmrr.online/flutter/sigrh/certidoes/verificar.php` está
+  impresso em QR Codes. **Nunca pode ser removido nem mudar de lugar**, mesmo
+  quando o app passar a usar a API da intranet: no máximo vira um
+  redirecionamento para a verificação nova.
+- Ler o `error_log` de cada pasta da API de tempos em tempos. Um endpoint que
+  falha sempre não aparece em lugar nenhum além dele.

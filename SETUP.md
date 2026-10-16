@@ -276,3 +276,7 @@ servidor da hospedagem e **não está no Git**: ela contém credenciais de banco
 Trabalhe numa cópia local separada (no MacBook: `~/code/api-soupmrr`), nunca
 dentro desta pasta, e siga o roteiro de deploy do item 18 do `APRENDIZADOS.md`.
 As credenciais de FTP ficam só na máquina (`~/.netrc`, permissão 600).
+
+O TCPDF usado pelas certidões fica no servidor em `~/private/vendor/tcpdf`
+(6.7.5, só fontes core), fora da pasta pública. Uma cópia local fica em
+`~/code/api-soupmrr-private/vendor/tcpdf`.
