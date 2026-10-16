@@ -22,12 +22,26 @@ import '../utils/api_services.dart';
 // endereço e dependentes. No logout tudo é apagado (Auth.logout).
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Tipo que o militar pode emitir, como a API devolve no painel.
+/// Situação de um tipo no painel: emite, foi tirado do ar pelo
+/// administrador, ou os dados deste militar não permitem.
+enum SituacaoCertidao { disponivel, desativado, bloqueado }
+
+/// Tipo que o militar pode emitir, como a API devolve no painel. Nome,
+/// descrição, ícone e etapas vêm da API (certidao_config.php): mudam lá, sem
+/// atualizar o app. Os campos opcionais caem nos padrões da tela.
 class TipoCertidao {
   final String tipo;
   final String titulo;
   final bool disponivel;
   final String? motivo;
+  final String? descricao;
+
+  /// Chave do ícone ("tempo", "escudo", "medalha", "ficha"...).
+  final String? icone;
+
+  /// Etapas mostradas no botão durante a emissão, já com as finais.
+  final List<String>? etapas;
+  final SituacaoCertidao situacao;
 
   /// Quando foi emitida a certidão deste tipo que ainda vale. Emitir de novo
   /// revoga essa no servidor, e o app avisa antes.
@@ -38,18 +52,45 @@ class TipoCertidao {
     required this.titulo,
     required this.disponivel,
     this.motivo,
+    this.descricao,
+    this.icone,
+    this.etapas,
+    this.situacao = SituacaoCertidao.disponivel,
     this.vigenteDesde,
   });
 
-  factory TipoCertidao.fromJson(Map<String, dynamic> j) => TipoCertidao(
-        tipo: j['tipo'].toString(),
-        titulo: j['titulo'].toString(),
-        disponivel: j['disponivel'] == true,
-        motivo: j['motivo']?.toString(),
-        vigenteDesde: j['vigente_desde'] == null
-            ? null
-            : CertidaoService._dataApi(j['vigente_desde'].toString()),
-      );
+  factory TipoCertidao.fromJson(Map<String, dynamic> j) {
+    final disponivel = j['disponivel'] == true;
+    final situacao = switch (j['situacao']?.toString()) {
+      'desativado' => SituacaoCertidao.desativado,
+      'bloqueado' => SituacaoCertidao.bloqueado,
+      'disponivel' => SituacaoCertidao.disponivel,
+      // API anterior, sem o campo: deduz pelo disponivel.
+      _ => disponivel ? SituacaoCertidao.disponivel : SituacaoCertidao.bloqueado,
+    };
+    final etapas = (j['etapas'] as List?)
+        ?.map((e) => e.toString())
+        .where((e) => e.trim().isNotEmpty)
+        .toList();
+    String? texto(String chave) {
+      final v = j[chave]?.toString().trim();
+      return v == null || v.isEmpty ? null : v;
+    }
+
+    return TipoCertidao(
+      tipo: j['tipo'].toString(),
+      titulo: j['titulo'].toString(),
+      disponivel: disponivel && situacao == SituacaoCertidao.disponivel,
+      motivo: texto('motivo'),
+      descricao: texto('descricao'),
+      icone: texto('icone'),
+      etapas: etapas == null || etapas.isEmpty ? null : etapas,
+      situacao: situacao,
+      vigenteDesde: j['vigente_desde'] == null
+          ? null
+          : CertidaoService._dataApi(j['vigente_desde'].toString()),
+    );
+  }
 }
 
 /// Painel: tipos, declaração vigente e validade.
@@ -63,12 +104,25 @@ class PainelCertidoes {
   /// aparelho a que não vale mais.
   final Map<String, String?> revogadas;
 
+  /// Liga/desliga do serviço inteiro (administrador). Desligado, a tela
+  /// mostra o aviso e não deixa emitir; as guardadas continuam abrindo.
+  final bool servicoAtivo;
+  final String? servicoTitulo;
+  final String? servicoMensagem;
+
+  /// Textos da tela vindos da API (topo, escolha, lista_vazia, botao).
+  final Map<String, String> textos;
+
   const PainelCertidoes({
     required this.tipos,
     required this.declaracaoVersao,
     required this.declaracaoTexto,
     required this.validadeDias,
     this.revogadas = const {},
+    this.servicoAtivo = true,
+    this.servicoTitulo,
+    this.servicoMensagem,
+    this.textos = const {},
   });
 }
 
@@ -220,6 +274,14 @@ class CertidaoService {
         declaracaoVersao: (declaracao['versao'] as num).toInt(),
         declaracaoTexto: declaracao['texto'].toString(),
         validadeDias: (r['validade_dias'] as num?)?.toInt() ?? 30,
+        servicoAtivo: (r['servico'] as Map?)?['ativo'] != false,
+        servicoTitulo: (r['servico'] as Map?)?['titulo']?.toString(),
+        servicoMensagem: (r['servico'] as Map?)?['mensagem']?.toString(),
+        textos: {
+          for (final e in ((r['textos'] as Map?) ?? const {}).entries)
+            if (e.value != null && e.value.toString().trim().isNotEmpty)
+              e.key.toString(): e.value.toString(),
+        },
         revogadas: {
           for (final h in (r['historico'] as List? ?? const []))
             if ((h as Map)['revogada'] == true)

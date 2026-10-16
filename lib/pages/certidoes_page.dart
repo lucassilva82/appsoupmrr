@@ -55,6 +55,33 @@ const _descricoes = <String, ({IconData icone, String texto})>{
   ),
 };
 
+/// Ícones que a API pode pedir (campo "icone" de soupm_certidao_tipo).
+/// Chave desconhecida cai no ícone do tipo e, por fim, num documento.
+const _icones = <String, IconData>{
+  'tempo': Icons.timelapse_rounded,
+  'escudo': Icons.verified_user_rounded,
+  'medalha': Icons.military_tech_rounded,
+  'ficha': Icons.badge_rounded,
+  'documento': Icons.description_rounded,
+  'relogio': Icons.schedule_rounded,
+  'calendario': Icons.event_rounded,
+  'diploma': Icons.workspace_premium_rounded,
+  'balanca': Icons.balance_rounded,
+  'casa': Icons.home_rounded,
+  'saude': Icons.medical_services_rounded,
+  'arma': Icons.gpp_good_rounded,
+};
+
+IconData _iconeDe(TipoCertidao t) =>
+    _icones[t.icone] ?? _descricoes[t.tipo]?.icone ?? Icons.description_rounded;
+
+String _descricaoDe(TipoCertidao t) =>
+    t.descricao ?? _descricoes[t.tipo]?.texto ?? '';
+
+/// Texto da tela vindo da API, ou o padrão local (sem internet / API antiga).
+String _texto(PainelCertidoes? p, String chave, String padrao) =>
+    p?.textos[chave] ?? padrao;
+
 /// A Ficha traz dados que pedem cuidado antes de sair do aparelho.
 const _tipoSensivel = 'ficha_funcional';
 
@@ -215,8 +242,11 @@ class _CertidoesPageState extends State<CertidoesPage> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
               Text(
-                'Emita suas certidões na hora. Elas ficam salvas aqui por '
-                '30 dias e também chegam no seu e-mail.',
+                _texto(
+                    _painel,
+                    'topo',
+                    'Emita suas certidões na hora. Elas ficam salvas aqui '
+                        'por 30 dias e também chegam no seu e-mail.'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
                   height: 1.4,
@@ -263,6 +293,21 @@ class _CertidoesPageState extends State<CertidoesPage> {
       ];
     }
 
+    // Serviço tirado do ar pelo administrador: aviso no lugar do botão. As
+    // certidões já emitidas continuam abrindo e compartilhando.
+    final painel = _painel;
+    if (painel != null && !painel.servicoAtivo) {
+      return [
+        _Aviso(
+          cor: kCorAtencao,
+          icone: Icons.pause_circle_outline_rounded,
+          titulo: painel.servicoTitulo ?? 'Emissão de certidões indisponível',
+          texto: painel.servicoMensagem ??
+              'A emissão de certidões está temporariamente suspensa.',
+        ),
+      ];
+    }
+
     // A ação principal da tela: botão cheio com a cor, a altura e o raio do
     // tema (DESIGN §5). A tela não redefine estilo.
     return [
@@ -276,7 +321,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
                     strokeWidth: 2, color: Colors.white70),
               )
             : const Icon(Icons.add_rounded, size: AppIconSize.md),
-        label: const Text('Emitir nova certidão'),
+        label: Text(_texto(_painel, 'botao', 'Emitir nova certidão')),
       ),
     ];
   }
@@ -296,7 +341,8 @@ class _CertidoesPageState extends State<CertidoesPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'As certidões que você emitir ficam aqui por 30 dias.',
+                  _texto(_painel, 'lista_vazia',
+                      'As certidões que você emitir ficam aqui por 30 dias.'),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
                     height: 1.4,
@@ -338,7 +384,9 @@ class _EscolherCertidaoPage extends StatelessWidget {
   Future<void> _escolher(BuildContext context, TipoCertidao tipo) async {
     if (!tipo.disponivel) {
       await alertaAviso(context,
-          titulo: tipo.titulo,
+          titulo: tipo.situacao == SituacaoCertidao.desativado
+              ? 'Temporariamente indisponível'
+              : tipo.titulo,
           texto: tipo.motivo ?? 'Esta certidão não está disponível.');
       return;
     }
@@ -376,7 +424,7 @@ class _EscolherCertidaoPage extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: [
             Text(
-              'Escolha a certidão que você precisa.',
+              _texto(painel, 'escolha', 'Escolha a certidão que você precisa.'),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
                 height: 1.4,
@@ -539,13 +587,15 @@ class _CartaoTipo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final info = _descricoes[tipo.tipo];
     final apagado = !tipo.disponivel;
+    final foraDoAr = tipo.situacao == SituacaoCertidao.desativado;
     final corTexto = theme.colorScheme.onSurface;
 
     return Semantics(
       button: true,
-      label: apagado ? '${tipo.titulo}, indisponível' : 'Emitir ${tipo.titulo}',
+      label: apagado
+          ? '${tipo.titulo}, ${foraDoAr ? 'temporariamente indisponível' : 'indisponível'}'
+          : 'Emitir ${tipo.titulo}',
       excludeSemantics: true,
       child: Opacity(
         opacity: apagado ? 0.6 : 1,
@@ -554,7 +604,7 @@ class _CartaoTipo extends StatelessWidget {
           padding: kPaddingCartao,
           child: Row(
             children: [
-              Icon(info?.icone ?? Icons.description_rounded,
+              Icon(_iconeDe(tipo),
                   size: AppIconSize.lg, color: theme.colorScheme.primary),
               const SizedBox(width: 14),
               Expanded(
@@ -564,11 +614,15 @@ class _CartaoTipo extends StatelessWidget {
                     Text(tipo.titulo,
                         style: theme.textTheme.titleSmall
                             ?.copyWith(fontWeight: FontWeight.w700)),
+                    if (foraDoAr) ...[
+                      const SizedBox(height: 6),
+                      _SeloForaDoAr(),
+                    ],
                     const SizedBox(height: 4),
                     Text(
                       apagado
                           ? (tipo.motivo ?? 'Indisponível.')
-                          : (info?.texto ?? ''),
+                          : _descricaoDe(tipo),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: corTexto.withValues(alpha: 0.72),
                         height: 1.35,
@@ -579,14 +633,39 @@ class _CartaoTipo extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Icon(
-                apagado
-                    ? Icons.lock_outline_rounded
-                    : Icons.chevron_right_rounded,
+                foraDoAr
+                    ? Icons.pause_circle_outline_rounded
+                    : (apagado
+                        ? Icons.lock_outline_rounded
+                        : Icons.chevron_right_rounded),
                 size: AppIconSize.md,
                 color: corTexto.withValues(alpha: 0.5),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Selo âmbar do tipo tirado do ar pelo administrador (soupm_certidao_tipo).
+class _SeloForaDoAr extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: kCorAtencao.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: kCorAtencao.withValues(alpha: 0.35)),
+      ),
+      child: const Text(
+        'Temporariamente indisponível',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: kCorAtencao,
         ),
       ),
     );
@@ -755,7 +834,7 @@ class _FolhaEmissaoState extends State<_FolhaEmissao> {
       _erro = null;
     });
     // Avança uma etapa por vez e para na última até a resposta chegar.
-    final total = _etapasDe(widget.tipo.tipo).length;
+    final total = (widget.tipo.etapas ?? _etapasDe(widget.tipo.tipo)).length;
     _relogio = Timer.periodic(const Duration(milliseconds: 650), (_) {
       if (mounted && _etapa < total - 1) setState(() => _etapa++);
     });
@@ -794,8 +873,6 @@ class _FolhaEmissaoState extends State<_FolhaEmissao> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final info = _descricoes[widget.tipo.tipo];
-
     return PopScope(
       canPop: !_emitindo,
       child: Padding(
@@ -819,7 +896,7 @@ class _FolhaEmissaoState extends State<_FolhaEmissao> {
               const SizedBox(height: 18),
               Row(
                 children: [
-                  Icon(info?.icone ?? Icons.description_rounded,
+                  Icon(_iconeDe(widget.tipo),
                       size: AppIconSize.xl, color: theme.colorScheme.primary),
                   const SizedBox(width: 12),
                   Expanded(
@@ -840,7 +917,7 @@ class _FolhaEmissaoState extends State<_FolhaEmissao> {
               ),
               const SizedBox(height: 8),
               Text(
-                info?.texto ?? '',
+                _descricaoDe(widget.tipo),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
                   height: 1.4,
@@ -914,7 +991,7 @@ class _FolhaEmissaoState extends State<_FolhaEmissao> {
                 emitindo: _emitindo,
                 pronto: _pronto,
                 etapa: _etapa,
-                etapas: _etapasDe(widget.tipo.tipo),
+                etapas: widget.tipo.etapas ?? _etapasDe(widget.tipo.tipo),
                 aoTocar: _emitir,
               ),
               const SizedBox(height: 10),
@@ -1087,7 +1164,12 @@ class _Aviso extends StatelessWidget {
   final Color cor;
   final IconData icone;
   final String texto;
-  const _Aviso({required this.cor, required this.icone, required this.texto});
+  final String? titulo;
+  const _Aviso(
+      {required this.cor,
+      required this.icone,
+      required this.texto,
+      this.titulo});
 
   @override
   Widget build(BuildContext context) {
@@ -1105,8 +1187,19 @@ class _Aviso extends StatelessWidget {
           Icon(icone, color: cor, size: AppIconSize.sm),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(texto,
-                style: theme.textTheme.bodySmall?.copyWith(height: 1.4)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (titulo != null) ...[
+                  Text(titulo!,
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 3),
+                ],
+                Text(texto,
+                    style: theme.textTheme.bodySmall?.copyWith(height: 1.4)),
+              ],
+            ),
           ),
         ],
       ),

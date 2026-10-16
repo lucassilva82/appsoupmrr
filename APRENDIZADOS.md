@@ -631,3 +631,30 @@ não passa pela lista de autorizados da `notificarEscala`, que é de teste e tem
 emissão não fica mais lenta. Ao abrir a tela, o app tira do aparelho a certidão
 que o servidor revogou e mostra o motivo. O quadro de autenticidade do PDF ficou
 com contorno cinza de 0,1 mm.
+
+---
+
+## 28. O app desenha, a API decide, o banco guarda
+
+**O pedido.** Mudar textos, ligar e desligar certidões ou tirar o serviço do ar
+sem publicar versão nova, preparando o terreno para um painel de administração
+(web e dentro do app).
+
+**Como ficou.** Duas tabelas novas: `soupm_config` (um JSON por módulo) e
+`soupm_certidao_tipo` (uma linha por certidão). `certidao_config.php` lê as duas
+por cima dos padrões do código, e se a leitura falhar valem os padrões. O painel
+devolve ao app nome, descrição, ícone, ordem, etapas do botão, textos da tela,
+validade, declaração e a situação de cada tipo (`disponivel`, `desativado` ou
+`bloqueado`). O app só desenha: selo "Temporariamente indisponível" no tipo
+desligado e aviso no lugar do botão com o serviço fora do ar. A emissão confere
+os interruptores de novo, para um app aberto há horas não emitir o que já saiu
+do ar. Plano completo e operações de hoje: `docs/PAINEL_ADMIN.md`.
+
+**Cuidados.**
+- A versão da declaração é gravada em cada emissão e impressa no PDF; mudou o
+  texto, aumente a versão.
+- Tipo novo de certidão ainda exige código: o PDF de cada tipo é escrito à mão.
+- O usuário da API só tem `SELECT` nessas tabelas. Quem altera é o painel, com
+  usuário próprio.
+- Testado em produção desligando um tipo e depois o serviço, por poucos
+  minutos, e religando.
