@@ -268,7 +268,7 @@ menos ~20 GB livres antes de um Archive.
 - [ ] Archive no Xcode concluindo
 - [ ] Cópia local da API e `~/.netrc` com o FTP (§9), se for mexer na API
 - [ ] Vídeos: `tools/video-tutorial/scripts/instalar-skills.sh` e `preparar.sh` (§10)
-- [ ] Skill `ui-ux-pro-max` no Claude Code (base do DESIGN.md; comandos no CLAUDE.md)
+- [ ] Abrir o projeto no Claude Code: a skill `ui-ux-pro-max` já vem no clone e as do Remotion são baixadas sozinhas na primeira sessão (ver CLAUDE.md)
 
 ---
 
@@ -297,7 +297,7 @@ Projeto em `tools/video-tutorial/`. Receita completa no APRENDIZADOS.md §33.
 | Remotion | 4.0.531 | vem do `package-lock.json` (`npm install`) |
 | edge-tts, OpenCV, numpy | ver `requirements.txt` | `.venv` criado pelo `preparar.sh` |
 | Xcode + iOS Simulator | ver §2 | gravação da tela (`xcrun simctl io ... recordVideo`) |
-| Skills do Remotion | commit fixado no script | `scripts/instalar-skills.sh` (baixa para `.claude/skills/`, fora do git) |
+| Skills do Remotion | commit fixado no script | baixadas sozinhas no início da sessão do Claude Code, ou `scripts/instalar-skills.sh` (para `.claude/skills/`, fora do git) |
 
 ```bash
 cd tools/video-tutorial

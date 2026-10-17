@@ -1,0 +1,5 @@
+Origem: https://github.com/nextlevelbuilder/ui-ux-pro-max-skill
+Commit: 56ea9cf174ed86786187daa9de0e6247cb0747e4 (17/10/2026)
+Licença: MIT (LICENSE nesta pasta)
+Copiada para o repositório para vir no git clone. Para atualizar: repetir a cópia
+de .claude/skills/ui-ux-pro-max de um commit novo, sem scripts/tests.

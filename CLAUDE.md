@@ -33,8 +33,8 @@ Siga o SETUP.md do começo ao fim (checklist no §8). Além do que está lá:
 
 | O quê | Para quê | Como |
 |---|---|---|
-| Skill `ui-ux-pro-max` | Base do DESIGN.md (acessibilidade, alvos de toque, hierarquia) | No Claude Code: `/plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill` e `/plugin install ui-ux-pro-max@ui-ux-pro-max-skill` |
-| Skills do Remotion | Vídeos tutoriais | `tools/video-tutorial/scripts/instalar-skills.sh` |
+| Skill `ui-ux-pro-max` | Base do DESIGN.md (acessibilidade, alvos de toque, hierarquia) | **Já vem no clone** (`.claude/skills/ui-ux-pro-max`, MIT; origem em `ORIGEM.txt`) |
+| Skills do Remotion | Vídeos tutoriais | **Automático:** o gancho de início de sessão (`.claude/settings.json`) roda `tools/video-tutorial/scripts/instalar-skills.sh` se faltarem. Ficam fora do git porque o repositório delas não declara licença |
 | Ferramentas de vídeo | Node, Python, edge-tts, OpenCV | SETUP.md §10 |
 | Catálogo pessoal de ferramentas de IA | Claude Desktop, VS Code, Chrome etc. | https://github.com/lucassilva82/minhas-skills-ia (`instalar-mac.sh`) |
 
