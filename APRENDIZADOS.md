@@ -804,3 +804,84 @@ precisa justamente do hash para comparar. Então é manter ou desligar.
 guardado pelo app; quem o tiver entra sem saber a senha. Resolver isso exige
 token de sessão emitido pelo servidor no lugar do MD5 em todos os endpoints —
 trabalho maior, fica registrado aqui.
+
+## 31. Apple rejeitou a 2.1.4: plataformas isoladas e erro que se explica
+
+**O que aconteceu (16/10/2026).** A Apple rejeitou a 2.1.4 por dois motivos:
+- **2.3.10 (metadados):** o "O que há de novo" falava em Android.
+- **2.1(a) (app incompleto):** o revisor entrou com a conta de teste e viu só
+  "Ocorreu um erro no processo de autenticação". A Apple informou "Internet
+  Connection: Active".
+
+Primeiro corrigimos o texto, respondemos e reenviamos o **mesmo binário**. Foi
+um erro, e cancelamos o envio. O revisor tinha visto uma mensagem que não
+explicava nada. Reenviar o mesmo app era apostar que, da próxima vez, ia dar
+certo. O certo foi corrigir a mensagem (item 30), lançar a 2.1.5 e enviar
+essa.
+
+**Regra 1: cada loja só fala de si.** Na App Store não existe Android, Google
+Play, APK nem "outras plataformas". Na Google Play não existe iPhone, iOS nem
+App Store. Isso vale para:
+- o texto, a descrição, o "O que há de novo" e as palavras-chave;
+- as capturas de tela (iPhone com a barra do iOS, nunca print do Android);
+- os links de suporte, marketing e privacidade (a página aberta também conta);
+- as notas para a revisão;
+- os textos que o próprio app mostra. Um aviso "atualize na Play Store" não
+  pode aparecer no iPhone. Use `Platform.isIOS` e mande o nome da loja certa.
+
+O "O que há de novo" se escreve **separado para cada loja**, nunca copiado de
+uma para a outra.
+
+**Checagem antes de cada envio à Apple** (feita em 16/10 na 2.1.5, tudo limpo):
+1. Página da versão: rodar no console do navegador uma busca por
+   `/android|google play|play store|\bapk\b|huawei|windows/i` em todos os
+   `textarea` e `input` (texto promocional, descrição, novidades, palavras-chave,
+   URLs, copyright, notas).
+2. Informações do app (nome, subtítulo) e Privacidade do app (URL da política).
+3. Abrir os links de suporte e privacidade e procurar as mesmas palavras.
+4. Olhar as capturas de tela de cada tamanho.
+5. `grep -rniE "android|play ?store|google play|apk" lib` só por strings visíveis
+   ao usuário (ignorar `Platform.isAndroid`, configuração de notificação,
+   `firebase_options.dart`).
+
+**Regra 2: nenhum erro genérico.** "Ocorreu um erro" é um bug para a Apple,
+porque o usuário fica sem saber o que fazer. Toda falha precisa dizer:
+- o que aconteceu, em português simples;
+- se o problema é do aparelho, do servidor ou da conta;
+- o que fazer agora, com o botão da ação certa;
+- um código curto (`LG-...`, `CT-...`), que também vai para o log.
+
+Vale para o login e para todo o app: certidões, contracheque, e-mail, senha.
+Cada exceção nova ganha sua própria mensagem antes de ir para a loja. O
+`catch` que só mostra "erro" é proibido.
+
+**Regra 3: não contradizer o revisor.** A primeira resposta dizia que o
+aparelho deles parecia estar sem internet, porque o print mostrava "SOS".
+Mas a Apple tinha escrito "Internet Connection: Active". Tiramos isso do
+texto antes de enviar. Responda com fatos verificados por nós (conta ativa,
+login testado hoje, servidor respondendo de vários países) e com o que
+mudamos.
+
+**Firewall descartado.** Conferido no cPanel em 16/10:
+- o Bloqueador de IP está vazio;
+- o `.htaccess` da raiz só protege arquivos sensíveis e não filtra IP nem país;
+- a conta não tem ModSecurity nem plugin de firewall (Imunify, CSF);
+- o `login.php` respondeu de servidores nos EUA, na Espanha, em Israel e na
+  Rússia (check-host.net).
+
+O log de acesso (`/logs/pmrr.online-ssl_log-<Mes>-<Ano>.gz`) só é atualizado
+uma vez por dia. Ele não mostra uma revisão que aconteceu no mesmo dia.
+
+**Como trocar a versão em revisão na App Store Connect.**
+1. Na página do envio, usar "Cancelar envio". A versão fica "Rejeitado pelo
+   desenvolvedor".
+2. Na página da versão, trocar o campo Versão (2.1.4 → 2.1.5). Em Compilação,
+   apagar o build antigo (só tira da versão, não exclui o build) e usar
+   "Adicionar compilação" com o novo.
+3. Atualizar o "O que há de novo" e as notas para a revisão, explicando o que
+   mudou desde a rejeição.
+4. Clicar em Salvar, depois em "Adicionar para revisão" e, no painel lateral,
+   em "Enviar para revisão".
+
+A resposta à equipe de revisão fica primeiro como rascunho. Ela só aparece em
+"Mensagens" depois de enviada, e "Mensagens (2)" confirma o envio.
