@@ -13,7 +13,7 @@ Flutter (Android e iOS). O acesso é restrito aos militares da PMRR.
 | [SETUP.md](SETUP.md) | Montar o projeto numa máquina nova, versões validadas das ferramentas, arquivos que não vêm no clone e comandos de build |
 | [APRENDIZADOS.md](APRENDIZADOS.md) | Erros que já custaram caro e como evitá-los. **Leia antes de publicar uma versão.** |
 | [DESIGN.md](DESIGN.md) | Padrão visual: cores, tipografia, espaçamentos e a gramática dos cartões |
-| [CLAUDE.md](CLAUDE.md) | Regras de trabalho do projeto, lidas pelo Claude Code em qualquer máquina |
+| [CLAUDE.md](CLAUDE.md) | **Arquivo geral de regras.** O Claude Code lê sozinho e carrega todos os outros documentos |
 | [tools/video-tutorial](tools/video-tutorial) | Modelo dos vídeos tutoriais do app (Remotion); instalação no SETUP.md §10 |
 
 ## Build

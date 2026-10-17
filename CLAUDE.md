@@ -3,17 +3,43 @@
 App Flutter (Android e iOS) da Polícia Militar de Roraima. Fale sempre em
 **português do Brasil** com o usuário.
 
-Este arquivo é a memória do projeto que viaja com o `git clone`. O que se
-aprende numa máquina e vale para todas entra aqui ou no APRENDIZADOS.md, não só
-na memória local do Claude.
+Este é o arquivo geral de regras de desenvolvimento. O Claude Code o carrega
+sozinho ao abrir o projeto em qualquer máquina, e ele traz junto (pelas linhas
+`@` abaixo) todos os documentos do projeto. Nenhum deles é opcional.
 
-## Leia antes de mexer
+O que se aprende numa máquina e vale para todas entra aqui ou no
+APRENDIZADOS.md, nunca só na memória local do Claude (ela não vem no clone).
+Documento novo? Acrescente na lista abaixo com `@`.
 
-| Documento | Quando |
+## Documentos do projeto (carregados automaticamente)
+
+| Documento | Para quê |
 |---|---|
 | [SETUP.md](SETUP.md) | Montar a máquina: versões, arquivos fora do git, builds, API (§9), vídeos (§10) |
-| [APRENDIZADOS.md](APRENDIZADOS.md) | Antes de publicar versão, mexer na API, no login ou fazer vídeo |
+| [APRENDIZADOS.md](APRENDIZADOS.md) | Erros que já custaram caro: publicar versão, API, login, certidões, capturas, vídeos |
 | [DESIGN.md](DESIGN.md) | Qualquer tela nova: cores, tipografia, cartões |
+| [docs/PAINEL_ADMIN.md](docs/PAINEL_ADMIN.md) | Plano do painel de administração (configuração vinda do banco) |
+| [README.md](README.md) | Visão geral do app |
+
+@SETUP.md
+@APRENDIZADOS.md
+@DESIGN.md
+@docs/PAINEL_ADMIN.md
+@README.md
+
+## Máquina nova: o que instalar
+
+Siga o SETUP.md do começo ao fim (checklist no §8). Além do que está lá:
+
+| O quê | Para quê | Como |
+|---|---|---|
+| Skill `ui-ux-pro-max` | Base do DESIGN.md (acessibilidade, alvos de toque, hierarquia) | No Claude Code: `/plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill` e `/plugin install ui-ux-pro-max@ui-ux-pro-max-skill` |
+| Skills do Remotion | Vídeos tutoriais | `tools/video-tutorial/scripts/instalar-skills.sh` |
+| Ferramentas de vídeo | Node, Python, edge-tts, OpenCV | SETUP.md §10 |
+| Catálogo pessoal de ferramentas de IA | Claude Desktop, VS Code, Chrome etc. | https://github.com/lucassilva82/minhas-skills-ia (`instalar-mac.sh`) |
+
+Se faltar alguma dessas, avise o usuário e instale antes de começar a tarefa
+que depende dela.
 
 ## Regras que valem sempre
 
