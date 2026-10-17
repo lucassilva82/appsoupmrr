@@ -1,0 +1,4 @@
+# Python do projeto de vídeo (o scripts/preparar.sh instala em .venv)
+edge-tts==7.3.1                 # voz pt-BR (Thalita) com o tempo de cada palavra
+opencv-python-headless==5.0.0.93  # análise de quadros (movimento.py, folha.py)
+numpy==2.5.4

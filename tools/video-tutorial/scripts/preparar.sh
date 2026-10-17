@@ -13,4 +13,4 @@ done
 ln -sfn ../../../videos-tutoriais/gravacoes public/gravacoes
 # Python: OpenCV (análise de quadros) e edge-tts (voz) num venv próprio.
 [ -d .venv ] || python3 -m venv .venv
-.venv/bin/pip install -q opencv-python-headless numpy edge-tts
+.venv/bin/pip install -q -r requirements.txt

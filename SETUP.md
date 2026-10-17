@@ -266,6 +266,8 @@ menos ~20 GB livres antes de um Archive.
 - [ ] `flutter run` rodando em dispositivo/simulador
 - [ ] `flutter build appbundle --release` assinando corretamente
 - [ ] Archive no Xcode concluindo
+- [ ] Cópia local da API e `~/.netrc` com o FTP (§9), se for mexer na API
+- [ ] Vídeos: `tools/video-tutorial/scripts/instalar-skills.sh` e `preparar.sh` (§10)
 
 ---
 
@@ -280,3 +282,33 @@ As credenciais de FTP ficam só na máquina (`~/.netrc`, permissão 600).
 O TCPDF usado pelas certidões fica no servidor em `~/private/vendor/tcpdf`
 (6.7.5, só fontes core), fora da pasta pública. Uma cópia local fica em
 `~/code/api-soupmrr-private/vendor/tcpdf`.
+
+---
+
+## 10. Vídeos tutoriais (Remotion)
+
+Projeto em `tools/video-tutorial/`. Receita completa no APRENDIZADOS.md §33.
+
+| Ferramenta | Versão | Instalação |
+|---|---|---|
+| Node.js | 20.x | `brew install node@20` (o mesmo das Cloud Functions) |
+| Python | 3.x | `brew install python` |
+| Remotion | 4.0.531 | vem do `package-lock.json` (`npm install`) |
+| edge-tts, OpenCV, numpy | ver `requirements.txt` | `.venv` criado pelo `preparar.sh` |
+| Xcode + iOS Simulator | ver §2 | gravação da tela (`xcrun simctl io ... recordVideo`) |
+| Skills do Remotion | commit fixado no script | `scripts/instalar-skills.sh` (baixa para `.claude/skills/`, fora do git) |
+
+```bash
+cd tools/video-tutorial
+./scripts/instalar-skills.sh   # skills oficiais do Remotion para o Claude Code
+./scripts/preparar.sh          # npm install, .venv, logos, fontes e efeitos sonoros
+npm run voz                    # narração (narracao.json → public/audio, src/audio.json)
+npm run studio                 # prévia no navegador
+npm run render                 # out/tutorial.mp4
+```
+
+As gravações (`videos-tutoriais/gravacoes/`) e os vídeos prontos não vão para o
+git: copie a pasta `videos-tutoriais/` da máquina antiga se precisar reeditar o
+vídeo de acesso, ou grave de novo no modo vitrine. O instalador oficial de
+skills (`npx skills add remotion-dev/skills`) exige Node 22+, por isso o script.
+

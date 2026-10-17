@@ -64,3 +64,8 @@ flutter_*.png
 
 # Vídeos tutoriais (projeto Remotion, gravações e vídeo final)
 /videos-tutoriais/
+
+# Skills baixadas por tools/video-tutorial/scripts/instalar-skills.sh (não versionadas)
+/.claude/skills/remotion-*/
+# Permissões locais do Claude Code (cada máquina tem as suas)
+/.claude/settings.local.json
