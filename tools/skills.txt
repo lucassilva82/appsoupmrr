@@ -1,0 +1,7 @@
+# Skills do Claude Code usadas neste projeto. Não são versionadas aqui: o
+# tools/instalar-skills.sh baixa sempre a versão mais recente de cada uma para
+# .claude/skills/ (fora do git). Para incluir outra, acrescente uma linha.
+#
+# repositório no GitHub                                 pasta da skill dentro dele
+https://github.com/nextlevelbuilder/ui-ux-pro-max-skill  .claude/skills/ui-ux-pro-max
+https://github.com/remotion-dev/skills                   skills/remotion-*

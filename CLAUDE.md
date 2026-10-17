@@ -33,8 +33,7 @@ Siga o SETUP.md do começo ao fim (checklist no §8). Além do que está lá:
 
 | O quê | Para quê | Como |
 |---|---|---|
-| Skill `ui-ux-pro-max` | Base do DESIGN.md (acessibilidade, alvos de toque, hierarquia) | **Já vem no clone** (`.claude/skills/ui-ux-pro-max`, MIT; origem em `ORIGEM.txt`) |
-| Skills do Remotion | Vídeos tutoriais | **Automático:** o gancho de início de sessão (`.claude/settings.json`) roda `tools/video-tutorial/scripts/instalar-skills.sh` se faltarem. Ficam fora do git porque o repositório delas não declara licença |
+| Skills do Claude Code | `ui-ux-pro-max` (base do DESIGN.md) e as do Remotion (vídeos) | **Automático.** Os links ficam em `tools/skills.txt`; o gancho de início de sessão (`.claude/settings.json`) roda `tools/instalar-skills.sh`, que instala o que falta e atualiza para a versão mais recente uma vez por semana (`--agora` força). As skills ficam em `.claude/skills/`, fora do git |
 | Ferramentas de vídeo | Node, Python, edge-tts, OpenCV | SETUP.md §10 |
 | Catálogo pessoal de ferramentas de IA | Claude Desktop, VS Code, Chrome etc. | https://github.com/lucassilva82/minhas-skills-ia (`instalar-mac.sh`) |
 
@@ -117,7 +116,7 @@ antes de fazer um vídeo novo. Decisões do usuário:
 - **Estilo de rede social:** abertura animada ("Novidades no app SouPM"), barra
   de passos, legenda grande palavra a palavra, efeitos sonoros discretos.
   Animações seguem as skills oficiais do Remotion
-  (`tools/video-tutorial/scripts/instalar-skills.sh`).
+  (instaladas por `tools/instalar-skills.sh`).
 - **Entrega:** 1080×1920, H.264 + AAC, abaixo de 16 MB (WhatsApp), em
   `videos-tutoriais/` (fora do git). Mandar prévia, ajustar; quem envia é o
   usuário.

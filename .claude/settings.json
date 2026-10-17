@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && { [ -d .claude/skills/remotion-best-practices ] || tools/video-tutorial/scripts/instalar-skills.sh >/dev/null 2>&1 || echo 'Aviso: não consegui baixar as skills do Remotion (rode tools/video-tutorial/scripts/instalar-skills.sh).'; }"
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && { tools/instalar-skills.sh >/dev/null 2>&1 || echo \"Aviso: não consegui instalar ou atualizar as skills de tools/skills.txt. Rode tools/instalar-skills.sh --agora e veja o erro.\"; }"
           }
         ]
       }

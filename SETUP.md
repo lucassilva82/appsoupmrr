@@ -267,8 +267,8 @@ menos ~20 GB livres antes de um Archive.
 - [ ] `flutter build appbundle --release` assinando corretamente
 - [ ] Archive no Xcode concluindo
 - [ ] Cópia local da API e `~/.netrc` com o FTP (§9), se for mexer na API
-- [ ] Vídeos: `tools/video-tutorial/scripts/instalar-skills.sh` e `preparar.sh` (§10)
-- [ ] Abrir o projeto no Claude Code: a skill `ui-ux-pro-max` já vem no clone e as do Remotion são baixadas sozinhas na primeira sessão (ver CLAUDE.md)
+- [ ] Vídeos: `tools/video-tutorial/scripts/preparar.sh` (§10)
+- [ ] Abrir o projeto no Claude Code: as skills de `tools/skills.txt` (ui-ux-pro-max e Remotion) são baixadas sozinhas na primeira sessão, na versão mais recente (ver CLAUDE.md)
 
 ---
 
@@ -297,11 +297,11 @@ Projeto em `tools/video-tutorial/`. Receita completa no APRENDIZADOS.md §33.
 | Remotion | 4.0.531 | vem do `package-lock.json` (`npm install`) |
 | edge-tts, OpenCV, numpy | ver `requirements.txt` | `.venv` criado pelo `preparar.sh` |
 | Xcode + iOS Simulator | ver §2 | gravação da tela (`xcrun simctl io ... recordVideo`) |
-| Skills do Remotion | commit fixado no script | baixadas sozinhas no início da sessão do Claude Code, ou `scripts/instalar-skills.sh` (para `.claude/skills/`, fora do git) |
+| Skills do Remotion | sempre a mais recente | baixadas sozinhas no início da sessão do Claude Code (`tools/instalar-skills.sh`, links em `tools/skills.txt`) |
 
 ```bash
 cd tools/video-tutorial
-./scripts/instalar-skills.sh   # skills oficiais do Remotion para o Claude Code
+../instalar-skills.sh --agora  # (opcional) atualiza as skills agora; o Claude Code já faz isso sozinho
 ./scripts/preparar.sh          # npm install, .venv, logos, fontes e efeitos sonoros
 npm run voz                    # narração (narracao.json → public/audio, src/audio.json)
 npm run studio                 # prévia no navegador

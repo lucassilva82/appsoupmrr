@@ -1045,9 +1045,9 @@ skills oficiais do Remotion (`remotion-dev/skills`):
    um endpoint novo, responder em memória no `lib/vitrine/vitrine.dart`. Nada
    de conta real, e-mail real nem servidor. Pessoas reais que aparecerem (os
    comandantes na tela inicial) são borradas com `borrar: true` na peça.
-3. **Preparar.** `tools/video-tutorial/scripts/instalar-skills.sh` baixa as
-   skills oficiais do Remotion para o Claude Code, e `scripts/preparar.sh`
-   instala o resto (SETUP.md §10) e liga `public/gravacoes` a
+3. **Preparar.** As skills do Remotion chegam sozinhas no início da sessão
+   (`tools/instalar-skills.sh`, links em `tools/skills.txt`), e
+   `tools/video-tutorial/scripts/preparar.sh` instala o resto (SETUP.md §10) e liga `public/gravacoes` a
    `videos-tutoriais/gravacoes`. Usar um simulador próprio
    com teclado de software, tema escuro e barra de status 9:41 (ver acima).
 4. **Ensaiar e gravar.** Um ensaio completo para mapear as coordenadas (pontos
