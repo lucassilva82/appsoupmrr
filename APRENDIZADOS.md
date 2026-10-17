@@ -940,3 +940,22 @@ da loja. No login, qualquer matrícula e senha servem.
 principalmente os das dicas da tela inicial (carrossel "DICA"), passam do
 tamanho do card. Revisar o layout do tablet antes da próxima rodada de
 capturas. As capturas da 2.1.5 foram aprovadas assim mesmo.
+
+**Subida das capturas (17/10/2026).** Na App Store Connect de 2026, o tamanho
+**obrigatório de iPhone é o 6,1"/6,3" (1206×2622 ou 1179×2556)**, e não o 6,9".
+Ele foi gerado redimensionando o 6,9", que tem a mesma proporção. No
+Gerenciador de mídia ficaram 6 capturas em cada espaço:
+- iPhone 6,3" (obrigatório), iPhone 6,9", iPhone 6,5" e iPhone 5,5";
+- iPad 13" (obrigatório) e iPad Pro de 2ª geração (12,9").
+
+As capturas antigas dos espaços opcionais mostravam a conta real ("CB LUCAS
+SILVA") e foram trocadas.
+
+Como subir:
+- Converter os PNG para JPEG com qualidade 92
+  (`sips -s format jpeg -s formatOptions 92`), na pasta
+  `appstore-capturas/jpg/`. O envio pelo navegador aceita no máximo 10 MB por
+  vez, e assim cada tamanho cabe num envio só.
+- Em cada espaço, usar "Remover tudo" antes de enviar as novas. Um espaço
+  vazio fica recolhido e passa a "usar ativos existentes" de outro tamanho, então
+  é preciso abri-lo de novo para enviar.
