@@ -959,3 +959,122 @@ Como subir:
 - Em cada espaço, usar "Remover tudo" antes de enviar as novas. Um espaço
   vazio fica recolhido e passa a "usar ativos existentes" de outro tamanho, então
   é preciso abri-lo de novo para enviar.
+
+---
+
+## 33. Vídeo tutorial de acesso (primeiro acesso e esqueci a senha)
+
+**O que é (17/10/2026).** Um vídeo vertical (1080×1920, cerca de 1 min 41 s)
+para mandar pelo WhatsApp a quem não consegue entrar. São dois caminhos:
+- **Primeiro acesso:** para quem nunca entrou ou não lembra de nada (nem
+  matrícula, nem senha, nem e-mail). Confirma pelo CPF e pelas perguntas e
+  grava uma senha nova; serve também como "reset total".
+- **Esqueci a senha:** para quem só esqueceu a senha. O código chega no e-mail
+  cadastrado.
+
+O "Não lembro minha senha atual" fica em Configurações → Conta → Alterar
+senha, ou seja, só para quem já entrou. Não serve para quem está preso no
+login, por isso ficou fora do vídeo.
+
+**Onde está.** `videos-tutoriais/` (ignorada pelo git): `roteiro.md`,
+`gravacoes/` (gravações do simulador e as marcas de tempo dos toques),
+`projeto/` (Remotion) e o vídeo final aprovado,
+`videos-tutoriais/SouPM - Como entrar no app.mp4` (v7, 1 min 41 s, 11,4 MB).
+
+**Como foi gravado.**
+- Simulador próprio ("Tutorial SouPMRR", iPhone 18 Pro), tema escuro e barra de
+  status 9:41, com o teclado de software ligado (`ConnectHardwareKeyboard`
+  falso nas preferências do Simulator para esse UDID). Assim o teclado aparece
+  no vídeo.
+- App em modo vitrine (§32). O `lib/vitrine/vitrine.dart` passou a responder
+  também `primeiro_acesso.php` e `recuperar_senha.php` em memória: perguntas
+  fictícias do SD STIVES DA SILVA, CPF 123.456.789-09, e-mail
+  `stives.silva@exemplo.com.br`, qualquer código de 6 dígitos. Nenhum e-mail
+  sai e nada vai ao servidor. Na primeira vez o militar não tem e-mail (mostra
+  a tela "Cadastre seu e-mail"); depois de confirmar, um novo Primeiro acesso
+  pula direto para a senha, como no servidor.
+- `xcrun simctl io <udid> recordVideo --codec=h264`, um arquivo por caminho.
+  Os toques foram dados pela ferramenta do simulador e anotados com a hora; o
+  momento exato de cada toque saiu da análise de movimento dos quadros
+  (OpenCV), com diferença de uns 0,3 s para a anotação.
+- Antes de gravar, um ensaio completo para mapear as coordenadas (em pontos,
+  402×874). Digitar e tocar no botão em seguida, sem pausa, fez o toque chegar
+  antes do texto ("Informe um e-mail válido"): deixar 1 s entre os dois.
+- O "Enter" do teclado no campo Senha do login já faz o login. Para mostrar o
+  toque no botão Entrar, ele foi regravado à parte (`gravacoes/parte2-entrar.mp4`,
+  depois de "Sair da conta", com "Lembrar meus dados" preenchendo os campos).
+  O `recordVideo` interrompido pode sair sem índice: remuxar com
+  `npx remotion ffmpeg -i x.mp4 -c copy -movflags +faststart`.
+
+**Como foi montado.** Remotion 4 (`videos-tutoriais/projeto`), seguindo as
+skills oficiais do Remotion (`remotion-dev/skills`):
+- Abertura em três cenas: "Novidades no app SouPM!" (ícone com anel de luz e
+  selo NOVIDADE), "Está com dificuldades para acessar o aplicativo?" (cadeado
+  e palavras entrando uma a uma) e "Existem dois caminhos" (um traço que se
+  divide em dois cartões). Entre os caminhos, cartão revelado em círculo.
+- Cada toque ganha um círculo desenhado à mão, em tempo real, em volta do
+  botão ou campo (`@remotion/rough-notation`), mais um clique. Barra de passos
+  no topo, legenda grande palavra a palavra, partículas nas telas de sucesso e
+  efeitos sonoros curtos de `remotion.media` (whoosh, clique, ding).
+- A voz fala **"SouPM"**, nunca "SouPMRR" (pedido do usuário).
+- Voz: `pt-BR-ThalitaMultilingualNeural` (Microsoft, pelo pacote `edge-tts`,
+  sem conta). Ela devolve o tempo de cada palavra, e a legenda sai
+  sincronizada. Testados e recusados pelo usuário: as vozes do macOS e o
+  Voicebox 0.5.0 (`/Applications/Voicebox.app`, local). As vozes do Kokoro, do
+  Qwen3-TTS, a criada por descrição e a clonada soaram robóticas e com sotaque
+  de Portugal. O servidor do Voicebox também caiu algumas vezes (erro do MLX
+  "no Stream in current thread", travou ao baixar dois modelos ao mesmo tempo).
+- `narracao.json` tem as falas; `npm run voz` (`scripts/narrar.py edge`) gera o
+  áudio e `src/audio.json`.
+- `src/roteiro.ts` diz que pedaço da gravação aparece em cada fala, onde dar
+  zoom e onde marcar os toques. Peças paradas esticam para caber a fala.
+- Na tela inicial, os cartões dos comandantes ficam borrados (pessoas reais).
+- Renderizar: `npx remotion render src/index.ts Tutorial out/tutorial.mp4
+  --codec=h264 --crf=30 --x264-preset=slow --audio-codec=aac` (cerca de
+  11 MB para 1 min 41 s; com crf 26 passou de 16 MB, o limite do WhatsApp).
+- A ffmpeg que vem com o Remotion não tem os filtros `fps`/`select`; para
+  analisar quadros, usar OpenCV num venv.
+
+**Receita para o próximo vídeo.** O modelo do projeto está versionado em
+`tools/video-tutorial/` (código, roteiro de exemplo e scripts). Gravações,
+áudios e vídeos prontos ficam em `videos-tutoriais/`, fora do git.
+1. **Roteiro primeiro.** Ler o código das telas e escrever cada passo como o
+   app faz hoje. Mostrar o roteiro ao usuário antes de gravar (ele corrige o
+   que o app de fato oferece; aqui, os "dois caminhos").
+2. **Dados fictícios.** Gravar sempre no modo vitrine (§32); se a tela chama
+   um endpoint novo, responder em memória no `lib/vitrine/vitrine.dart`. Nada
+   de conta real, e-mail real nem servidor. Pessoas reais que aparecerem (os
+   comandantes na tela inicial) são borradas com `borrar: true` na peça.
+3. **Preparar.** `tools/video-tutorial/scripts/preparar.sh` instala tudo e liga
+   `public/gravacoes` a `videos-tutoriais/gravacoes`. Usar um simulador próprio
+   com teclado de software, tema escuro e barra de status 9:41 (ver acima).
+4. **Ensaiar e gravar.** Um ensaio completo para mapear as coordenadas (pontos
+   402×874), depois `scripts/gravar.sh <udid> <arquivo>` por caminho. Deixar
+   1 s entre digitar e tocar. Tocar de verdade em cada botão que a narração
+   cita: o círculo só pode ser desenhado onde houve o toque.
+5. **Achar os toques.** `scripts/movimento.py` lista os instantes em que a
+   tela reagiu; `scripts/folha.py` monta uma folha de quadros para conferir.
+6. **Narração.** Falas em `narracao.json` (o app se fala "SouPM"); gerar com
+   `npm run voz` (Thalita, pt-BR, com o tempo de cada palavra).
+7. **Montar.** Em `src/roteiro.ts`, cada fala recebe as peças da gravação
+   (`de`/`ate` tocam, `congela` segura um quadro e estica para caber a fala),
+   os toques (centro e tamanho do elemento), o passo da barra de progresso e,
+   se houver, o e-mail com o código e a tela de sucesso. Cenas fixas
+   (abertura, cartão de caminho, encerramento) ficam no `src/Tutorial.tsx`.
+8. **Conferir e entregar.** `npm run studio` para olhar; `npm run render` gera
+   o MP4 (H.264 + AAC, crf 30, abaixo de 16 MB). Mandar prévias ao usuário,
+   ajustar e salvar o aprovado em `videos-tutoriais/`. Quem envia é o usuário.
+
+**O que o usuário aprovou e o que recusou.**
+- Aprovou: voz Thalita pt-BR; círculo desenhado à mão em volta do elemento;
+  abertura "Novidades no app SouPM" com animações; legenda grande; ritmo de
+  rede social; efeitos sonoros discretos.
+- Recusou: vozes robóticas ou com sotaque de Portugal; a marcação de toque
+  com bolinha e onda ("grotesca"); círculo em volta de texto do encerramento
+  (o DTI fica só em dourado); zoom que corta o texto da tela.
+
+**Pendências vistas na gravação.**
+- No simulador do iPhone 18 Pro (que tem Face ID), o convite de biometria diz
+  "Touch ID". Conferir num aparelho de verdade.
+- O botão "Ir para o login" (verde claro com texto branco) tem pouco contraste
+  no tema escuro.

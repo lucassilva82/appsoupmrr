@@ -1,0 +1,22 @@
+{
+  "name": "tutorial-acesso-soupmrr",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "voz": ".venv/bin/python scripts/narrar.py edge",
+    "render": "remotion render src/index.ts Tutorial out/tutorial.mp4 --codec=h264 --crf=30 --x264-preset=slow --audio-codec=aac --audio-bitrate=128k"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.531",
+    "@remotion/media": "^4.0.531",
+    "@remotion/rough-notation": "^4.0.531",
+    "@remotion/transitions": "4.0.531",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.531"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "typescript": "5.6.3"
+  }
+}

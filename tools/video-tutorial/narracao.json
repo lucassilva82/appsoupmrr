@@ -1,0 +1,66 @@
+[
+ {
+  "id": "intro1",
+  "texto": "Novidades no app SouPM!"
+ },
+ {
+  "id": "intro2",
+  "texto": "Está com dificuldades para acessar o aplicativo?"
+ },
+ {
+  "id": "intro3",
+  "texto": "Existem dois caminhos. Veja qual é o seu."
+ },
+ {
+  "id": "1a",
+  "texto": "Primeiro acesso: para quem nunca entrou, ou não lembra de nada, nem a matrícula, nem a senha. Na tela de entrada, toque em Primeiro acesso."
+ },
+ {
+  "id": "1b",
+  "texto": "Digite o seu CPF e toque em Continuar."
+ },
+ {
+  "id": "1c",
+  "texto": "Responda às perguntas sobre o seu cadastro. Cuidado: uma resposta errada encerra a verificação."
+ },
+ {
+  "id": "1d",
+  "texto": "Não sabe alguma? Toque em \"Não sei responder\" para trocar a pergunta."
+ },
+ {
+  "id": "1e",
+  "texto": "Se ainda não tiver e-mail no cadastro, informe um, e digite o código de seis dígitos que chegar nele."
+ },
+ {
+  "id": "1f",
+  "texto": "Agora crie a sua senha. Cada requisito fica verde quando é cumprido. Repita a senha e confirme."
+ },
+ {
+  "id": "1g",
+  "texto": "Pronto! A tela mostra a sua matrícula. Anote a matrícula e a senha: é com elas que você entra."
+ },
+ {
+  "id": "2a",
+  "texto": "Esqueci a senha: para quem só esqueceu a senha, mas lembra o e-mail. Toque em Esqueci a senha."
+ },
+ {
+  "id": "2b",
+  "texto": "Digite o e-mail cadastrado e toque em Enviar código."
+ },
+ {
+  "id": "2c",
+  "texto": "O código de seis dígitos chega no seu e-mail. Não chegou? Olhe também a caixa de spam."
+ },
+ {
+  "id": "2d",
+  "texto": "Crie a nova senha, repita e confirme. Ela vale para o SouPM e para o SIGRH."
+ },
+ {
+  "id": "2e",
+  "texto": "Depois, volte para a tela de entrada e entre com a matrícula e a nova senha."
+ },
+ {
+  "id": "fim",
+  "texto": "Se ainda tiver problemas, procure o DTI, Departamento de Tecnologia da Informação. Tecnologia ao seu dispor."
+ }
+]

@@ -83,9 +83,85 @@ Object? _responder(Uri url, http.Request req) {
       return {'code': 1, 'result': _ferias};
     case 'autoemissao.php':
       return req.bodyFields['acao'] == 'painel' ? _painelCertidoes : null;
+    case 'primeiro_acesso.php':
+      return _primeiroAcesso(req.bodyFields['acao']);
+    case 'recuperar_senha.php':
+      // Qualquer código de 6 dígitos serve: nenhum e-mail é enviado.
+      return switch (req.bodyFields['acao']) {
+        'solicitar' => {'code': 1, 'email': _emailMascarado},
+        'validar' || 'redefinir' => {'code': 1},
+        _ => null,
+      };
   }
   return null;
 }
+
+// ── Primeiro acesso e recuperação de senha (vídeo tutorial) ─────────────────
+// Mesmo formato das respostas do primeiro_acesso.php e do recuperar_senha.php.
+// Na primeira vez o militar não tem e-mail e cadastra um; depois disso, um
+// novo Primeiro acesso já pula direto para a senha, como no servidor.
+
+const _emailMascarado = 's**********a@exemplo.com.br';
+var _temEmail = false;
+
+Object? _primeiroAcesso(String? acao) => switch (acao) {
+      'iniciar' => {
+          'code': 1,
+          'sessao': 'vitrine',
+          'perguntas': _perguntas,
+        },
+      'trocar_pergunta' => {
+          'code': 1,
+          'pergunta': {
+            'id': 'nascimento',
+            'pergunta': 'Qual é a sua data de nascimento?',
+            'opcoes': ['02/08/1994', '17/01/1990', '25/11/1996', '09/05/1992'],
+          },
+        },
+      'responder' => {
+          'code': 1,
+          'tem_email': _temEmail,
+          'email': _temEmail ? _emailMascarado : '',
+        },
+      'enviar_codigo_email' => {'code': 1, 'email': _emailMascarado},
+      'validar_codigo_email' => () {
+          _temEmail = true;
+          return {'code': 1};
+        }(),
+      'definir_senha' => {
+          'code': 1,
+          'matricula': vitrineMatricula,
+          'matriculas': {'segad_nova': '1234567-8-01', 'segad_antiga': ''},
+          'email_enviado': _temEmail,
+        },
+      _ => null,
+    };
+
+const _perguntas = [
+  {
+    'id': 'nome',
+    'pergunta': 'Qual é o seu nome?',
+    'opcoes': ['MARCOS OLIVEIRA', 'STIVES SILVA', 'RAFAEL COSTA', 'JOÃO PEREIRA'],
+  },
+  {
+    'id': 'matricula',
+    'pergunta': 'Qual é a sua matrícula PMRR?',
+    'ajuda': 'É o antigo cadastro PM, o mesmo número que você usa para '
+        'entrar no aplicativo.',
+    'opcoes': ['1198432', '1305577', vitrineMatricula, '1089213'],
+  },
+  {
+    'id': 'nome_mae',
+    'pergunta': 'Qual é o nome da sua mãe?',
+    'opcoes': ['ANA SOUZA', 'MARIA DA SILVA', 'JOANA LIMA', 'RITA ALVES'],
+  },
+  {
+    'id': 'incorporacao',
+    'pergunta': 'Qual é a sua data de incorporação?',
+    'ajuda': 'A data em que você entrou na corporação.',
+    'opcoes': ['04/02/2015', '20/07/2021', '11/03/2019', '30/09/2017'],
+  },
+];
 
 // ── Militar ─────────────────────────────────────────────────────────────────
 

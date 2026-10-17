@@ -61,3 +61,6 @@ flutter_*.png
 
 # Capturas da App Store (podem ter dados pessoais; sobem pelo App Store Connect)
 /appstore-capturas/
+
+# Vídeos tutoriais (projeto Remotion, gravações e vídeo final)
+/videos-tutoriais/
