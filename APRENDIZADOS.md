@@ -885,3 +885,18 @@ uma vez por dia. Ele não mostra uma revisão que aconteceu no mesmo dia.
 
 A resposta à equipe de revisão fica primeiro como rascunho. Ela só aparece em
 "Mensagens" depois de enviada, e "Mensagens (2)" confirma o envio.
+
+**Atualização (17/10/2026): a 2.1.5 passou no login e parou nas capturas.**
+A Apple não reclamou mais do login. Ela devolveu a 2.1.5 pela guideline
+2.3.3: as capturas do iPhone 6,7", do iPhone 5,5", do iPad Pro (2ª geração) e
+do iPad 13" mostravam versões antigas do app. A revisão foi feita num iPad Air
+11" (M3). Como a pendência era só nas capturas, a Apple ofereceu aprovar agora
+se respondêssemos que a versão traz correções. Respondemos assim e prometemos
+capturas novas na próxima atualização.
+
+Lição: **atualizar as capturas de TODOS os tamanhos**, não só o que aparece
+primeiro na página da versão. Os outros tamanhos ficam escondidos em "Ver
+todos os tamanhos no Gerenciador de mídia" (View All Sizes in Media Manager),
+dentro de "Prévias e capturas de tela". Tela de abertura e tela de login não
+contam como "app em uso". Mostrar a tela inicial, o contracheque, as certidões
+e o tempo de serviço da versão atual. Entra na checagem antes de cada envio.
