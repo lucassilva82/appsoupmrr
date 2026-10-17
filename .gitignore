@@ -58,3 +58,6 @@ env.json
 
 # Prints do simulador (tecla "s" no flutter run): podem ter dados pessoais
 flutter_*.png
+
+# Capturas da App Store (podem ter dados pessoais; sobem pelo App Store Connect)
+/appstore-capturas/

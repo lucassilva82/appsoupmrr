@@ -15,6 +15,7 @@ import '../models/militar.dart';
 import '../services/certidao_service.dart';
 import '../services/dados_sql.dart';
 import '../utils/auth_exception.dart';
+import '../vitrine/vitrine.dart';
 
 class Auth with ChangeNotifier {
   /* ===============================================================
@@ -258,6 +259,8 @@ class Auth with ChangeNotifier {
   /// Salva (ou atualiza) o FCM token do dispositivo no Firestore,
   /// usando a matrícula como ID do documento em /militares/{matricula}.
   Future<void> _saveFcmToken() async {
+    // Matrícula fictícia: nada vai para o Firestore.
+    if (modoVitrine) return;
     debugPrint('[FCM] ── _saveFcmToken() iniciado ──');
     if (matricula == null) {
       debugPrint('[FCM] ❌ Matrícula nula — token NÃO salvo.');

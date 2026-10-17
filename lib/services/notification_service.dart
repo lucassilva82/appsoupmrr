@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/notification_model.dart';
 import '../data/store.dart';
+import '../vitrine/vitrine.dart';
 
 /// Serviço de notificações.
 ///
@@ -34,6 +35,7 @@ class NotificationService {
   /// Stream em tempo real das notificações do militar (mais antigas primeiro,
   /// para compatibilidade com a ordenação da UI existente).
   Stream<List<NotificationModel>> watchNotifications(String matricula) {
+    if (modoVitrine) return Stream.value(notificacoesVitrine());
     return _col(matricula)
         .orderBy('timestamp', descending: false)
         .snapshots()
@@ -44,16 +46,19 @@ class NotificationService {
 
   /// Leitura única (usada em refresh manual / contagens).
   Future<List<NotificationModel>> fetchNotifications(String matricula) async {
+    if (modoVitrine) return notificacoesVitrine();
     final snap =
         await _col(matricula).orderBy('timestamp', descending: false).get();
     return snap.docs.map((d) => _fromDoc(d.id, d.data())).toList();
   }
 
   Future<void> markAsClicked(String matricula, String id) async {
+    if (modoVitrine) return;
     await _col(matricula).doc(id).update({'read': true});
   }
 
   Future<void> markAllAsClicked(String matricula) async {
+    if (modoVitrine) return;
     final snap = await _col(matricula).where('read', isEqualTo: false).get();
     final batch = FirebaseFirestore.instance.batch();
     for (final d in snap.docs) {
@@ -63,11 +68,13 @@ class NotificationService {
   }
 
   Future<void> removeNotification(String matricula, String id) async {
+    if (modoVitrine) return;
     await _col(matricula).doc(id).delete();
   }
 
   /// Remove TODAS as notificações do militar (usado no "Limpar tudo").
   Future<void> clearAll(String matricula) async {
+    if (modoVitrine) return;
     final snap = await _col(matricula).get();
     if (snap.docs.isEmpty) return;
     // Firestore limita cada batch a 500 operações.
@@ -86,6 +93,7 @@ class NotificationService {
   /// Stream dos avisos globais (mais antigos primeiro). O estado de lido/removido
   /// é aplicado pelo provider a partir de [watchAvisosStatus].
   Stream<List<NotificationModel>> watchAvisosGerais() {
+    if (modoVitrine) return Stream.value(const []);
     return _avisosCol().orderBy('timestamp', descending: false).snapshots().map(
         (snap) => snap.docs
             .map((d) => _fromDoc(d.id, d.data(), isGlobal: true))
@@ -94,6 +102,7 @@ class NotificationService {
 
   /// Estado por usuário dos avisos globais: { avisoId: {read, deleted} }.
   Stream<Map<String, Map<String, bool>>> watchAvisosStatus(String matricula) {
+    if (modoVitrine) return Stream.value(const {});
     return _statusCol(matricula).snapshots().map((snap) {
       final m = <String, Map<String, bool>>{};
       for (final d in snap.docs) {
@@ -108,6 +117,7 @@ class NotificationService {
   }
 
   Future<List<NotificationModel>> fetchAvisosGerais() async {
+    if (modoVitrine) return [];
     final snap =
         await _avisosCol().orderBy('timestamp', descending: false).get();
     return snap.docs
@@ -117,6 +127,7 @@ class NotificationService {
 
   Future<Map<String, Map<String, bool>>> fetchAvisosStatus(
       String matricula) async {
+    if (modoVitrine) return {};
     final snap = await _statusCol(matricula).get();
     final m = <String, Map<String, bool>>{};
     for (final d in snap.docs) {
@@ -131,6 +142,7 @@ class NotificationService {
 
   /// Marca um aviso global como lido para este militar.
   Future<void> markAvisoGeralAsRead(String matricula, String avisoId) async {
+    if (modoVitrine) return;
     await _statusCol(matricula)
         .doc(avisoId)
         .set({'read': true}, SetOptions(merge: true));
@@ -138,6 +150,7 @@ class NotificationService {
 
   /// Oculta (remove da lista deste militar) um aviso global.
   Future<void> hideAvisoGeral(String matricula, String avisoId) async {
+    if (modoVitrine) return;
     await _statusCol(matricula)
         .doc(avisoId)
         .set({'deleted': true, 'read': true}, SetOptions(merge: true));
@@ -146,6 +159,7 @@ class NotificationService {
   /// Marca vários avisos globais como lidos (em lote).
   Future<void> markAvisosGeraisAsRead(
       String matricula, List<String> avisoIds) async {
+    if (modoVitrine) return;
     if (avisoIds.isEmpty) return;
     for (var i = 0; i < avisoIds.length; i += 450) {
       final batch = FirebaseFirestore.instance.batch();
@@ -160,6 +174,7 @@ class NotificationService {
 
   /// Oculta vários avisos globais (em lote) — usado no "Limpar tudo".
   Future<void> hideAvisosGerais(String matricula, List<String> avisoIds) async {
+    if (modoVitrine) return;
     if (avisoIds.isEmpty) return;
     for (var i = 0; i < avisoIds.length; i += 450) {
       final batch = FirebaseFirestore.instance.batch();

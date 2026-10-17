@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../data/store.dart';
 import '../utils/api_services.dart';
+import '../vitrine/vitrine.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CertidaoService
@@ -471,6 +472,11 @@ class CertidaoService {
       _emFila(() => _lerGuardadas(matricula));
 
   static Future<List<CertidaoGuardada>> _lerGuardadas(String matricula) async {
+    if (modoVitrine) {
+      return [
+        for (final c in certidoesVitrine()) CertidaoGuardada.fromJson(c, '')
+      ];
+    }
     final indice = await Store.getMap(_chaveIndice(matricula));
     final itens = (indice['itens'] as List?) ?? const [];
     final pasta = (await _pasta(matricula)).path;

@@ -63,7 +63,9 @@ import 'package:projetonovo/utils/app_routes.dart';
 import 'firebase_options.dart';
 import 'models/auth_model.dart';
 import 'widgets/aviso_rapido.dart';
+import 'package:http/http.dart' as http;
 import 'widgets/dialogo_confirmacao.dart';
+import 'vitrine/vitrine.dart';
 import 'package:projetonovo/data/store.dart'; // Certifique-se de que Store está acessível
 
 // Instância global de notificações locais
@@ -123,7 +125,12 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // aqui — o app sincroniza o stream do Firestore ao abrir.
 }
 
-Future<void> main() async {
+Future<void> main() => modoVitrine
+    // Capturas das lojas: o SIGRH responde com o militar fictício (lib/vitrine).
+    ? http.runWithClient(_iniciar, clienteVitrine)
+    : _iniciar();
+
+Future<void> _iniciar() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // ── Por que o runApp vem cedo ───────────────────────────────────────────
@@ -253,7 +260,8 @@ Future<void> _prepararServicos() async {
       try {
         final userData = await Store.getMap('userData');
         final matricula = userData['matricula'];
-        if (matricula != null && matricula.toString().isNotEmpty) {
+        if (matricula != null && matricula.toString().isNotEmpty &&
+            !modoVitrine) {
           await FirebaseFirestore.instance
               .collection('militares')
               .doc(matricula.toString())

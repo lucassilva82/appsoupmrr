@@ -900,3 +900,43 @@ todos os tamanhos no Gerenciador de mídia" (View All Sizes in Media Manager),
 dentro de "Prévias e capturas de tela". Tela de abertura e tela de login não
 contam como "app em uso". Mostrar a tela inicial, o contracheque, as certidões
 e o tempo de serviço da versão atual. Entra na checagem antes de cada envio.
+
+---
+
+## 32. Capturas da loja com militar fictício (modo vitrine)
+
+**O que aconteceu (17/10/2026).** Para atender à guideline 2.3.3, refizemos as
+capturas de todos os tamanhos com a 2.1.5. O primeiro conjunto saiu com a conta
+de um militar de verdade: nome completo, matrícula, salário e consignado. Foi
+descartado. Capturas da loja nunca mostram dados reais.
+
+**Como fazer.** O modo vitrine (`lib/vitrine/vitrine.dart`) responde ao app,
+em memória, com o militar fictício **SD STIVES DA SILVA**: contracheque,
+tempo de serviço, plano de férias, certidões e notificações. Nada vai para o
+SIGRH nem para o Firestore. Só liga na compilação:
+
+```bash
+flutter build ios --simulator --debug --dart-define=VITRINE=true
+```
+
+Sem a flag, `modoVitrine` é uma constante falsa e nada disso entra no binário
+da loja. No login, qualquer matrícula e senha servem.
+
+- O Flutter não roda profile nem release no simulador. Use debug: a faixa
+  DEBUG já está desligada (`debugShowCheckedModeBanner: false`).
+- Barra de status limpa: `xcrun simctl status_bar <id> override --time 9:41
+  --batteryState charged --batteryLevel 100 ...`, e tema escuro com
+  `xcrun simctl ui <id> appearance dark`.
+- O iOS 27 não aceita os simuladores antigos (iPhone 8 Plus, 11 Pro Max e
+  iPad Pro 12,9" de 2ª geração). Capturar no iPhone 18 Pro Max (1320x2868) e
+  no iPad Pro 13" (2064x2752). O 6,5" (1284x2778) e o iPad de 12,9"
+  (2048x2732) saem redimensionados. O 5,5" (1242x2208) tem outra proporção e
+  ganha faixas laterais.
+- A App Store Connect recusa PNG com canal alfa. Tirar o alfa antes de subir
+  (por exemplo, `sips` para JPEG e de volta para PNG).
+- As capturas ficam em `appstore-capturas/`, que o git ignora.
+
+**Pendência: dicas da tela inicial no tablet.** No iPad, alguns ícones,
+principalmente os das dicas da tela inicial (carrossel "DICA"), passam do
+tamanho do card. Revisar o layout do tablet antes da próxima rodada de
+capturas. As capturas da 2.1.5 foram aprovadas assim mesmo.
