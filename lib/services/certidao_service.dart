@@ -33,6 +33,9 @@ enum SituacaoCertidao { disponivel, desativado, bloqueado }
 class TipoCertidao {
   final String tipo;
   final String titulo;
+
+  /// Nome curto da barra do topo (API: titulo_curto). Sem ele, o titulo.
+  final String tituloCurto;
   final bool disponivel;
   final String? motivo;
   final String? descricao;
@@ -51,6 +54,7 @@ class TipoCertidao {
   const TipoCertidao({
     required this.tipo,
     required this.titulo,
+    required this.tituloCurto,
     required this.disponivel,
     this.motivo,
     this.descricao,
@@ -81,6 +85,7 @@ class TipoCertidao {
     return TipoCertidao(
       tipo: j['tipo'].toString(),
       titulo: j['titulo'].toString(),
+      tituloCurto: texto('titulo_curto') ?? j['titulo'].toString(),
       disponivel: disponivel && situacao == SituacaoCertidao.disponivel,
       motivo: texto('motivo'),
       descricao: texto('descricao'),
@@ -131,6 +136,10 @@ class PainelCertidoes {
 class CertidaoGuardada {
   final String tipo;
   final String titulo;
+
+  /// Nome curto da barra do topo, vindo da API na emissão. Nulo nas
+  /// certidões guardadas antes de a API mandar o campo.
+  final String? tituloCurto;
   final String codigo;
   final DateTime geradoEm;
   final DateTime validoAte;
@@ -148,6 +157,7 @@ class CertidaoGuardada {
   const CertidaoGuardada({
     required this.tipo,
     required this.titulo,
+    this.tituloCurto,
     required this.codigo,
     required this.geradoEm,
     required this.validoAte,
@@ -165,6 +175,7 @@ class CertidaoGuardada {
   Map<String, dynamic> toJson() => {
         'tipo': tipo,
         'titulo': titulo,
+        'titulo_curto': tituloCurto,
         'codigo': codigo,
         'gerado_em': geradoEm.toIso8601String(),
         'valido_ate': validoAte.toIso8601String(),
@@ -177,6 +188,7 @@ class CertidaoGuardada {
       CertidaoGuardada(
         tipo: j['tipo'].toString(),
         titulo: j['titulo'].toString(),
+        tituloCurto: _textoOuNulo(j['titulo_curto']),
         codigo: j['codigo'].toString(),
         geradoEm: DateTime.parse(j['gerado_em'].toString()),
         validoAte: DateTime.parse(j['valido_ate'].toString()),
@@ -185,6 +197,11 @@ class CertidaoGuardada {
         caminho: '$pasta/${j['codigo']}.pdf',
         emailMascarado: j['email_mascarado']?.toString(),
       );
+}
+
+String? _textoOuNulo(Object? v) {
+  final t = v?.toString().trim();
+  return t == null || t.isEmpty || t == 'null' ? null : t;
 }
 
 /// Cópia por e-mail feita pela API logo depois da emissão.
@@ -328,6 +345,7 @@ class CertidaoService {
     final certidao = CertidaoGuardada(
       tipo: r['tipo'].toString(),
       titulo: r['titulo'].toString(),
+      tituloCurto: _textoOuNulo(r['titulo_curto']),
       codigo: r['codigo'].toString(),
       geradoEm: _dataApi(r['gerado_em'].toString()),
       validoAte: _dataApi(r['valido_ate'].toString()),

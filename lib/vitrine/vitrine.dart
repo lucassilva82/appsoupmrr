@@ -272,7 +272,8 @@ const _painelCertidoes = {
   'tipos': [
     {
       'tipo': 'tempo_servico',
-      'titulo': 'Certidão de Tempo de Serviço',
+      'titulo': 'Certidão Administrativa de Tempo de Serviço Militar Estadual',
+      'titulo_curto': 'Tempo de Serviço',
       'descricao':
           'Tempo de efetivo serviço na PMRR, ano a ano, e tempo averbado.',
       'icone': 'tempo',
@@ -283,6 +284,7 @@ const _painelCertidoes = {
     {
       'tipo': 'vinculo_funcional',
       'titulo': 'Certidão de Vínculo Funcional',
+      'titulo_curto': 'Vínculo Funcional',
       'descricao': 'Comprova que você é policial militar, com posto, quadro '
           'e data de inclusão.',
       'icone': 'escudo',
@@ -293,6 +295,7 @@ const _painelCertidoes = {
     {
       'tipo': 'comportamento',
       'titulo': 'Certidão de Comportamento',
+      'titulo_curto': 'Comportamento',
       'descricao': 'Seu comportamento atual, o histórico de classificação e '
           'as punições registradas.',
       'icone': 'medalha',
@@ -314,11 +317,13 @@ const _painelCertidoes = {
 /// Certidões já emitidas que aparecem em "Minhas certidões".
 List<Map<String, String>> certidoesVitrine() {
   final hoje = DateTime.now();
-  Map<String, String> c(String tipo, String titulo, String codigo, int dias) {
+  Map<String, String> c(
+      String tipo, String titulo, String curto, String codigo, int dias) {
     final gerada = hoje.subtract(Duration(days: dias));
     return {
       'tipo': tipo,
       'titulo': titulo,
+      'titulo_curto': curto,
       'codigo': codigo,
       'gerado_em': gerada.toIso8601String(),
       'valido_ate': gerada.add(const Duration(days: 30)).toIso8601String(),
@@ -329,8 +334,11 @@ List<Map<String, String>> certidoesVitrine() {
   }
 
   return [
-    c('tempo_servico', 'Certidão de Tempo de Serviço', 'CTS-7K2M9Q', 0),
-    c('vinculo_funcional', 'Certidão de Vínculo Funcional', 'CVF-3H8T4P', 6),
+    c('tempo_servico',
+        'Certidão Administrativa de Tempo de Serviço Militar Estadual',
+        'Tempo de Serviço', 'CTS-7K2M9Q', 0),
+    c('vinculo_funcional', 'Certidão de Vínculo Funcional',
+        'Vínculo Funcional', 'CVF-3H8T4P', 6),
   ];
 }
 

@@ -207,7 +207,15 @@ class _CertidoesPageState extends State<CertidoesPage> {
 
   Future<void> _abrir(CertidaoGuardada c) async {
     final removida = await Navigator.of(context).push<bool>(MaterialPageRoute(
-      builder: (_) => CertidaoVisualizarPage(certidao: c),
+      builder: (_) => CertidaoVisualizarPage(
+        certidao: c,
+        // Guardada antes de a API mandar o nome curto: usa o do painel.
+        tituloBarra: c.tituloCurto ??
+            _painel?.tipos
+                .where((t) => t.tipo == c.tipo)
+                .map((t) => t.tituloCurto)
+                .firstOrNull,
+      ),
     ));
     if (removida != true || !mounted) return;
     final guardadas = await CertidaoService.guardadas(_matricula);
@@ -1211,19 +1219,14 @@ class _Aviso extends StatelessWidget {
 // CertidaoVisualizarPage — o PDF, os dados de validade e o compartilhar.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Nome curto para a barra do topo: o nome oficial (por exemplo, "Certidão
-/// Administrativa de Tempo de Serviço Militar Estadual") não cabe nela.
-String _tituloCurto(CertidaoGuardada c) => switch (c.tipo) {
-      'tempo_servico' => 'Tempo de Serviço',
-      'vinculo_funcional' => 'Vínculo Funcional',
-      'comportamento' => 'Comportamento',
-      'ficha_funcional' => 'Ficha Funcional',
-      _ => 'Certidão',
-    };
-
 class CertidaoVisualizarPage extends StatefulWidget {
   final CertidaoGuardada certidao;
-  const CertidaoVisualizarPage({Key? key, required this.certidao})
+
+  /// Nome curto vindo da API (titulo_curto) para a barra do topo: o nome
+  /// oficial é longo demais para ela. Sem ele, o nome oficial.
+  final String? tituloBarra;
+  const CertidaoVisualizarPage(
+      {Key? key, required this.certidao, this.tituloBarra})
       : super(key: key);
 
   @override
@@ -1307,7 +1310,7 @@ class _CertidaoVisualizarPageState extends State<CertidaoVisualizarPage> {
 
     return FundoSuave(
       child: Scaffold(
-        appBar: CustomAppBar(title: _tituloCurto(c)),
+        appBar: CustomAppBar(title: widget.tituloBarra ?? c.titulo),
         body: Column(
           children: [
             Padding(

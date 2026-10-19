@@ -1112,3 +1112,28 @@ páginas, com o fecho junto). Postgres local só para o `certidaoAnoMesDia`.
 - Sem conexão, o app ainda mostra o nome antigo, que é o padrão local dele.
   Trocar na próxima versão do app.
 - Backup dos dois arquivos em `/backups_api/certidoes/*.bak-20261019-v1`.
+
+**Nome curto vindo da API (19/10/2026).** A barra do topo da certidão aberta
+cortava o nome oficial. A primeira correção pôs os nomes curtos fixos no app,
+e o usuário pediu o contrário: tudo vem da API, porque o painel de
+administração vai editar (regra no CLAUDE.md).
+- **API:** `titulo_curto` por tipo, com padrão em `certidaoConfigPadrao()` e
+  coluna `titulo_curto` em `soupm_certidao_tipo`
+  (`sql/2026-10-19_certidao_titulo_curto.sql`). A consulta só pede a coluna se
+  ela existir (`pg_attribute`), então a API pode subir antes do SQL. O painel e
+  a emissão devolvem `titulo_curto`.
+- **Um nome oficial só:** o PDF, o nome do arquivo e o e-mail passaram a usar
+  `certidaoTitulo()` (banco por cima do código), o mesmo da lista do app.
+  Antes, o PDF lia a constante do código e ignorava o banco. Efeito colateral:
+  o título da Ficha Funcional no PDF passou de "FICHA FUNCIONAL" para "FICHA
+  FUNCIONAL POLICIAL MILITAR", sem o subtítulo repetido.
+- **App:** `TipoCertidao.tituloCurto` e `CertidaoGuardada.tituloCurto`
+  (gravado no índice). A certidão guardada antes disso usa o nome curto do
+  painel e, sem ele, o nome oficial.
+- **Teste:** Postgres local com as tabelas de `2026-10-16_soupm_config.sql`
+  (criar antes os usuários `pmrronline_usr_erp_prod` e `pmrronline_erp_prod`,
+  senão o GRANT aborta o script). Conferido sem a tabela, sem a coluna, com a
+  coluna nula e com valor no banco. O app foi conferido no simulador, em modo
+  vitrine.
+- Backup do deploy: `/backups_api/certidoes/*.bak-20261019-v2`.
+

@@ -62,6 +62,13 @@ que depende dela.
   "Diretoria de Recursos Humanos - PMRR". PDF: "GOVERNO DO ESTADO DE RORAIMA" /
   "POLÍCIA MILITAR DO ESTADO DE RORAIMA" / "DIRETORIA DE RECURSOS HUMANOS - PMRR".
   Nunca "Diretoria/Departamento de Pessoal". Suporte técnico é o DTI.
+- **Nada de texto ou configuração fixa no app.** Nomes, descrições, títulos,
+  textos de tela e liga/desliga vêm da API, que lê do banco (`soupm_*`) por cima
+  dos padrões do código, porque tudo isso vai ser gerenciado pelo painel de
+  administração (docs/PAINEL_ADMIN.md). O app só guarda um padrão de reserva
+  para quando está sem internet. Campo novo na API não pode quebrar versão
+  antiga do app nem depender da ordem do deploy (conferir a coluna em
+  `pg_attribute`, como no `titulo_curto`).
 - **Trabalho independente vai para sessão separada** (o usuário prefere assim);
   ajustes rápidos ficam na sessão atual.
 

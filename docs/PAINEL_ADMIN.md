@@ -20,7 +20,7 @@ Módulo **Certidões**, primeiro a seguir o modelo:
 | `public.soupm_config` | Uma linha por módulo (`chave`), com um JSON (`valor`). |
 | `public.soupm_certidao_tipo` | Uma linha por tipo de certidão. |
 | `sigrh/certidoes/certidao_config.php` | Lê as duas tabelas por cima dos padrões do código. Se a leitura falhar, valem os padrões e nada para. |
-| `autoemissao.php` (painel) | Devolve tudo ao app: `servico`, `textos`, `declaracao`, `validade_dias` e, por tipo, `titulo`, `descricao`, `icone`, `etapas`, `situacao`. |
+| `autoemissao.php` (painel) | Devolve tudo ao app: `servico`, `textos`, `declaracao`, `validade_dias` e, por tipo, `titulo`, `titulo_curto`, `descricao`, `icone`, `etapas`, `situacao`. O `titulo` é também o do PDF, do nome do arquivo e do e-mail. |
 | `autoemissao.php` (emitir) | Recusa a emissão com o serviço ou o tipo desligados, mesmo que o app esteja aberto há horas. |
 | App (`certidoes_page.dart`) | Usa os textos e ícones da API, mostra o aviso de serviço fora do ar e o selo "Temporariamente indisponível". Sem API (offline), usa os padrões locais. |
 
@@ -62,6 +62,7 @@ Campo ausente usa o padrão de `certidaoConfigPadrao()`.
 |---|---|
 | `tipo` | Chave fixa (`tempo_servico`, `vinculo_funcional`, `comportamento`, `ficha_funcional`). Tipo novo precisa de código: o PDF de cada um é escrito em `certidao_pdf.php`. |
 | `titulo`, `descricao` | O que o militar lê na lista. Nulo = padrão. |
+| `titulo_curto` | Nome curto da barra do topo quando o militar abre a certidão ("Tempo de Serviço"). Nulo = padrão do código. Coluna criada pelo SQL `2026-10-19_certidao_titulo_curto.sql`; a API funciona sem ela. |
 | `icone` | Chave: `tempo`, `escudo`, `medalha`, `ficha`, `documento`, `relogio`, `calendario`, `diploma`, `balanca`, `casa`, `saude`, `arma`. Chave nova exige incluir no mapa `_icones` do app. |
 | `ordem` | Posição na lista. |
 | `ativo`, `motivo_inativo` | Liga/desliga. Desligado, o app mostra o selo "Temporariamente indisponível" com o motivo e a API recusa a emissão. |
