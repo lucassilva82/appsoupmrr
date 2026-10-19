@@ -1090,19 +1090,29 @@ skills oficiais do Remotion (`remotion-dev/skills`):
   Estadual"** (`CERTIDAO_TIPOS['tempo_servico']` em `certidao_lib.php`). O nome
   vale para todos os lugares de uma vez: título do PDF, lista do app (o app lê
   o título da API), assunto do e-mail, nome do arquivo e página do QR Code.
-- Abaixo da data, no fim do documento, sai a ressalva
-  (`CERTIDAO_RESSALVA_TEMPO_SERVICO`): "Esta Certidão não possui validade para
-  fins previdenciários ou averbação/contagem recíproca perante o INSS ou outros
-  regimes de previdência, nem substitui a Certidão de Tempo de Serviço Militar
-  (CTSM) (Portaria MTP nº 1.467/2022, art. 182, 183 e 186)."
+- Abaixo da data, no fim do documento, sai a seção **"DA FINALIDADE
+  ADMINISTRATIVA"**: a certidão é só administrativa, não serve para fins
+  previdenciários, averbação ou contagem recíproca no INSS e em outros regimes, e
+  não substitui a CTSM (arts. 182, 183 e 186 da Portaria MTP nº 1.467/2022, DOU
+  de 6/6/2022). O texto em vigor vem de `certidaoConfig()['ressalvas']`, que o
+  banco (`soupm_config`, chave `certidoes`) pode sobrescrever e o painel vai
+  editar. O padrão fica em `CERTIDAO_RESSALVA_TEMPO_SERVICO` (e `_TITULO`), em
+  `certidao_lib.php`. Tipo sem ressalva não imprime nada.
+- A ressalva sai em Times 9, justificada, com entrelinha de 1,3
+  (`_certidaoParagrafo` ganhou o parâmetro `$entrelinha`). Em 10 pt com
+  entrelinha de 1,5, a certidão de 6 anos sem averbação passava para 2 páginas.
+  O `_certidaoAlturaRessalva` mede o texto para o fecho (certificação, data,
+  ressalva e quadro de autenticidade) ir junto para a página seguinte quando
+  não couber.
 - O `_certidaoTitulo` reduz a fonte até 11 pt quando o título não cabe numa
   linha, e quebra a linha se ainda assim não couber. O `_certidaoManterFecho`
   aceita uma altura extra, para a ressalva acompanhar a data e o quadro de
   autenticidade quando eles vão para a página seguinte.
 
-**Detalhes que o teste pegou.** Com alinhamento justificado (`'J'`), o TCPDF
-esticou a última linha da ressalva ("182,     183     e     186)."). Por
-isso ela é alinhada à esquerda. Testado com dados fictícios nos dois extremos:
+**Detalhes que o teste pegou.** Com `MultiCell` justificado (`'J'`), o TCPDF
+esticou a última linha da ressalva ("182,     183     e     186)."). Para
+justificar sem esse defeito, use o `_certidaoParagrafo` (`writeHTML` com
+`text-align:justify`). Testado com dados fictícios nos dois extremos:
 6 anos sem averbação (cabe numa página) e 25 anos com LTIP e averbação (2
 páginas, com o fecho junto). Postgres local só para o `certidaoAnoMesDia`.
 
@@ -1111,7 +1121,8 @@ páginas, com o fecho junto). Postgres local só para o `certidaoAnoMesDia`.
   antes da mudança, que trazem o nome antigo impresso.
 - Sem conexão, o app ainda mostra o nome antigo, que é o padrão local dele.
   Trocar na próxima versão do app.
-- Backup dos dois arquivos em `/backups_api/certidoes/*.bak-20261019-v1`.
+- Backups em `/backups_api/certidoes/*.bak-20261019-v1` (primeira versão da
+  ressalva) e `*-v3` (texto atual).
 
 **Nome curto vindo da API (19/10/2026).** A barra do topo da certidão aberta
 cortava o nome oficial. A primeira correção pôs os nomes curtos fixos no app,
