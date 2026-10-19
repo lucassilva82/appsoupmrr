@@ -1080,3 +1080,35 @@ skills oficiais do Remotion (`remotion-dev/skills`):
   "Touch ID". Conferir num aparelho de verdade.
 - O botão "Ir para o login" (verde claro com texto branco) tem pouco contraste
   no tema escuro.
+
+---
+
+## 34. Certidão de tempo de serviço é administrativa, não previdenciária
+
+**O que mudou (19/10/2026, só na API, sem versão nova do app).**
+- O nome passou a ser **"Certidão Administrativa de Tempo de Serviço Militar
+  Estadual"** (`CERTIDAO_TIPOS['tempo_servico']` em `certidao_lib.php`). O nome
+  vale para todos os lugares de uma vez: título do PDF, lista do app (o app lê
+  o título da API), assunto do e-mail, nome do arquivo e página do QR Code.
+- Abaixo da data, no fim do documento, sai a ressalva
+  (`CERTIDAO_RESSALVA_TEMPO_SERVICO`): "Esta Certidão não possui validade para
+  fins previdenciários ou averbação/contagem recíproca perante o INSS ou outros
+  regimes de previdência, nem substitui a Certidão de Tempo de Serviço Militar
+  (CTSM) (Portaria MTP nº 1.467/2022, art. 182, 183 e 186)."
+- O `_certidaoTitulo` reduz a fonte até 11 pt quando o título não cabe numa
+  linha, e quebra a linha se ainda assim não couber. O `_certidaoManterFecho`
+  aceita uma altura extra, para a ressalva acompanhar a data e o quadro de
+  autenticidade quando eles vão para a página seguinte.
+
+**Detalhes que o teste pegou.** Com alinhamento justificado (`'J'`), o TCPDF
+esticou a última linha da ressalva ("182,     183     e     186)."). Por
+isso ela é alinhada à esquerda. Testado com dados fictícios nos dois extremos:
+6 anos sem averbação (cabe numa página) e 25 anos com LTIP e averbação (2
+páginas, com o fecho junto). Postgres local só para o `certidaoAnoMesDia`.
+
+**Ressalvas.**
+- A página do QR Code mostra o nome novo também para as certidões emitidas
+  antes da mudança, que trazem o nome antigo impresso.
+- Sem conexão, o app ainda mostra o nome antigo, que é o padrão local dele.
+  Trocar na próxima versão do app.
+- Backup dos dois arquivos em `/backups_api/certidoes/*.bak-20261019-v1`.
