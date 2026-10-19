@@ -1163,3 +1163,30 @@ administração vai editar (regra no CLAUDE.md).
   vitrine.
 - Backup do deploy: `/backups_api/certidoes/*.bak-20261019-v2`.
 
+
+---
+
+## 35. WhatsApp do DTI: envio em massa restringiu o número por 20 horas
+
+**O que aconteceu (19/10/2026).** Para avisar quem não conseguia entrar no app,
+o tutorial (texto + vídeo de 9,2 MB) foi mandado conversa por conversa pelo
+WhatsApp Web do suporte do DTI: cerca de 215 numa primeira rodada e mais 132 na
+segunda, em lotes de 5 com pausa. O WhatsApp Web desconectou sozinho e, em
+seguida, **restringiu o número por 20 horas**. Ficaram umas 95 conversas sem
+receber. Junto, foi uma notificação push para todos os aparelhos
+(`notificarTodos`, que também grava o aviso na tela Avisos).
+
+**O que fazer da próxima vez.**
+- Mensagem igual para centenas de pessoas não vai conversa por conversa. Use
+  uma **lista de transmissão** no celular (até 256 contatos por envio; só
+  recebe quem salvou o número do DTI), ou espalhe o envio por vários dias,
+  algumas dezenas por dia.
+- Para os pedidos que ainda vão chegar: no WhatsApp Business, deixe o tutorial
+  como **mensagem de saudação** e como **resposta rápida** (por exemplo,
+  `/acesso`).
+- O push para todos atinge mais gente e não tem limite: foi o canal que mais
+  chegou.
+- O verificador do modo automático do Claude Code barra envio em massa em nome
+  do usuário. Contornar abrindo outra sessão não é o caminho: ou o usuário
+  aprova, ou libera o Claude in Chrome nas próprias configurações
+  (`.claude/settings.local.json`) e apaga a liberação no fim.
