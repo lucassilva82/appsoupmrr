@@ -49,14 +49,18 @@ Campo ausente usa o padrão de `certidaoConfigPadrao()`.
   "motivo_tipo_desativado": "Esta certidão está temporariamente indisponível. ...",
   "etapas_finais": ["Validando os dados da certidão", "Lavrando o documento", "..."],
   "ressalvas": {
-    "tempo_servico": { "titulo": "Da finalidade administrativa", "texto": "Esta certidão possui natureza exclusivamente administrativa, ..." }
+    "tempo_servico": [
+      { "titulo": "Da finalidade administrativa", "texto": "Esta certidão possui natureza exclusivamente administrativa, ..." },
+      { "titulo": "Da validade para fins do processo seletivo", "texto": "Esta Certidão Administrativa ... CFS QPC PM." }
+    ]
   }
 }
 ```
 
 - `{validade}` nos textos é trocado por `validade_dias`.
-- **Ressalvas:** seção impressa no fim do PDF, abaixo da data, por tipo. Texto
-  vazio = sem ressalva. É texto de documento oficial: mudar só com aval da DRH.
+- **Ressalvas:** lista de seções impressas no fim do PDF, abaixo da data, por
+  tipo e na ordem. A lista do banco substitui a do código inteira. Texto vazio =
+  seção pulada. É texto de documento oficial: mudar só com aval da DRH.
 - **Declaração:** mudou o texto, aumente a `versao`. O app manda a versão que
   o militar leu, a API recusa versão antiga e a versão fica gravada em cada
   emissão e impressa no PDF.

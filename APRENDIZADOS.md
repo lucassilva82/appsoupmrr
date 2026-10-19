@@ -1098,6 +1098,21 @@ skills oficiais do Remotion (`remotion-dev/skills`):
   banco (`soupm_config`, chave `certidoes`) pode sobrescrever e o painel vai
   editar. O padrão fica em `CERTIDAO_RESSALVA_TEMPO_SERVICO` (e `_TITULO`), em
   `certidao_lib.php`. Tipo sem ressalva não imprime nada.
+- Logo abaixo vem a seção **"DA VALIDADE PARA FINS DO PROCESSO SELETIVO"**:
+  esta certidão substitui a Certidão de Tempo de Efetivo Serviço na Corporação
+  exigida no item 8.3.4.3 do Edital nº 001/2026/DEP/PMRR (Processo Seletivo
+  Interno do CFS QPC PM). O texto é do usuário e cita o "Departamento de Pessoal
+  – DP" de propósito, porque é o nome da certidão antiga no edital. Padrão em
+  `CERTIDAO_RESSALVA_PROCESSO_SELETIVO` (e `_TITULO`). Quando o edital acabar,
+  basta tirar a seção da lista (pelo banco, sem código).
+- `ressalvas` é uma **lista por tipo** (`[{titulo, texto}, ...]`), impressa na
+  ordem. No banco, a lista de um tipo substitui a do código inteira, para dar
+  para remover ou reordenar seções. Uma seção só (`{titulo, texto}`) também é
+  aceita.
+- Com as duas seções, a certidão curta (6 anos, sem averbação) passou a ter 2
+  páginas: a certificação, a data, as seções e o quadro de autenticidade vão
+  juntos para a segunda. O travessão (–) sai como hífen (-), porque o PDF usa
+  fontes core em ISO-8859-1.
 - A ressalva sai em Times 9, justificada, com entrelinha de 1,3
   (`_certidaoParagrafo` ganhou o parâmetro `$entrelinha`). Em 10 pt com
   entrelinha de 1,5, a certidão de 6 anos sem averbação passava para 2 páginas.
@@ -1122,7 +1137,7 @@ páginas, com o fecho junto). Postgres local só para o `certidaoAnoMesDia`.
 - Sem conexão, o app ainda mostra o nome antigo, que é o padrão local dele.
   Trocar na próxima versão do app.
 - Backups em `/backups_api/certidoes/*.bak-20261019-v1` (primeira versão da
-  ressalva) e `*-v3` (texto atual).
+  ressalva), `*-v3` (finalidade administrativa) e `*-v4` (processo seletivo).
 
 **Nome curto vindo da API (19/10/2026).** A barra do topo da certidão aberta
 cortava o nome oficial. A primeira correção pôs os nomes curtos fixos no app,
