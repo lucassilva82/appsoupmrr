@@ -1211,7 +1211,7 @@ aprovou a troca:
 | Pedida | Instalada |
 |---|---|
 | animate | `flutter-animating-apps` |
-| modern-uikit, declarative-styling | `flutter-theming-apps`, `flutter-build-responsive-layout`, `flutter-fix-layout-issues` |
+| modern-uikit, declarative-styling | `flutter-build-responsive-layout`, `flutter-fix-layout-issues` e `material-3` (no começo, `flutter-theming-apps`; ver "Uma por função") |
 | lint-analyzer | `dart-run-static-analysis` |
 
 O usuário pediu também padrões de design por plataforma: entraram as
@@ -1272,7 +1272,25 @@ atualização é uma decisão: ler o diff e trocar o commit.
 de planejamento grava `tasks/plan.md`. O CLAUDE.md diz que as regras do
 projeto vêm antes, e a seção "Skills" de lá diz quando usar cada uma.
 
-**Nome repetido.** A `security-review` do `github/awesome-copilot` tem o mesmo
-nome do `/security-review` que já vem no Claude Code (revisão do branch). A
-skill só lê e faz relatório; se um dia o comando nativo fizer falta, mudar o
-`name:` não resolve (o instalador lê o nome do SKILL.md): trocar de skill.
+**Uma por função (20/10/2026, mesma sessão).** A primeira lista tinha 28
+skills, e o usuário pediu que nenhuma se repetisse. Não havia nome repetido entre
+projeto, usuário e plugins; a repetição era de função:
+
+| Saiu | Por quê | Fica |
+|---|---|---|
+| 11 `remotion-*` avulsas | o `remotion-best-practices` já traz todas dentro dele, com os links entre elas (o README do Remotion diz que ele "engloba todas") | `remotion-best-practices` |
+| `security-review` (awesome-copilot) | mesmo nome e função do `/security-review` nativo | `/security-review` |
+| `code-review-and-quality` | mesma função do `/code-review` nativo | `/code-review` |
+| `frontend-design` | direção visual, que o `ui-ux-pro-max` já cobre | `ui-ux-pro-max` |
+| `flutter-theming-apps` | `ThemeData` e Material 3, que a `material-3` cobre com exemplos em Flutter mais completos | `material-3` |
+| `dart-fix-runtime-errors` | depende de ferramentas MCP do Dart que o projeto não usa; a depuração já é da `diagnosing-bugs` | `diagnosing-bugs` |
+
+Não são repetidas, porque se completam: `ios-design-guidelines` e
+`ipados-design-guidelines` (aparelhos diferentes), `flutter-animating-apps`
+(implementar) e `review-animations` (revisar), `tdd` (método) e
+`flutter-add-widget-test` (como escrever no Flutter), `ui-ux-pro-max` (base) e
+as de plataforma.
+
+**Regra:** antes de incluir uma skill, conferir se outra da lista ou um comando
+nativo do Claude Code já faz o mesmo. Duas skills para a mesma coisa dão
+orientações diferentes, e o agente escolhe uma sem critério.

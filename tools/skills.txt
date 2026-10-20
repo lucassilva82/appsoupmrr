@@ -7,11 +7,15 @@
 # aberta ficam sempre com commit: atualizar = ler a versão nova inteira (regras
 # no APRENDIZADOS §36) e trocar o commit aqui. Quando usar cada uma: CLAUDE.md.
 #
+# Uma skill por função: antes de incluir, ver se outra da lista (ou um comando
+# nativo do Claude Code, como /code-review e /security-review) já faz o mesmo.
+#
 # repositório no GitHub                                 pasta da skill                    commit conferido
 
-# Design e vídeo (já em uso)
+# Design e vídeo (já em uso). O remotion-best-practices já traz as outras 11
+# skills do Remotion dentro dele; instalar as avulsas repetiria tudo.
 https://github.com/nextlevelbuilder/ui-ux-pro-max-skill  .claude/skills/ui-ux-pro-max
-https://github.com/remotion-dev/skills                   skills/remotion-*
+https://github.com/remotion-dev/skills                   skills/remotion-best-practices
 
 # Procurar skills novas (só a busca; instalar é por este arquivo)
 https://github.com/vercel-labs/skills                    skills/find-skills
@@ -23,25 +27,20 @@ https://github.com/flutter/agent-plugins                 skills/flutter-add-widg
 https://github.com/flutter/agent-plugins                 skills/flutter-add-integration-test
 https://github.com/flutter/agent-plugins                 skills/flutter-apply-architecture-best-practices
 https://github.com/dart-lang/skills                      skills/dart-run-static-analysis
-https://github.com/dart-lang/skills                      skills/dart-fix-runtime-errors
-# Oficiais retiradas do repositório em 21/04/2026: presas no último commit em que existiam
+# Oficial retirada do repositório em 21/04/2026: presa no último commit em que existia
 https://github.com/flutter/agent-plugins                 skills/flutter-animating-apps     430687774a92ab84e4fdf96de6415ee407dd4beb
-https://github.com/flutter/agent-plugins                 skills/flutter-theming-apps       430687774a92ab84e4fdf96de6415ee407dd4beb
 
 # Processo: depuração, revisão, planejamento, verificação e testes
 https://github.com/mattpocock/skills                     skills/engineering/diagnosing-bugs   5beb35b040e3de97e54fa9e386d7e42d15c295c2
 https://github.com/mattpocock/skills                     skills/engineering/tdd               5beb35b040e3de97e54fa9e386d7e42d15c295c2
-https://github.com/addyosmani/agent-skills               skills/code-review-and-quality       aeac41d4d005999432bb7312f7ff06383a91d59d
 https://github.com/addyosmani/agent-skills               skills/planning-and-task-breakdown   aeac41d4d005999432bb7312f7ff06383a91d59d
 https://github.com/obra/superpowers                      skills/receiving-code-review         bb92a77741419a4ab5f06e711a283343f1ada0c3
 https://github.com/obra/superpowers                      skills/verification-before-completion bb92a77741419a4ab5f06e711a283343f1ada0c3
 
 # Web, PHP e banco (API do app e painel da intranet)
-https://github.com/github/awesome-copilot                skills/security-review               613efc8c21d9b3ce642dff361d17006cd9967e28
 https://github.com/github/awesome-copilot                skills/postgresql-code-review        613efc8c21d9b3ce642dff361d17006cd9967e28
 https://github.com/jeffallan/claude-skills               skills/php-pro                       36f3fe8052da7c57083783268c6ea3265d075265
 https://github.com/anthropics/skills                     skills/webapp-testing
-https://github.com/anthropics/skills                     skills/frontend-design
 
 # Animação
 https://github.com/emilkowalski/skills                   skills/review-animations             2d228630ba1446365f614a108cb8252f1feda202

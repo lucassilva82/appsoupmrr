@@ -297,7 +297,7 @@ Projeto em `tools/video-tutorial/`. Receita completa no APRENDIZADOS.md §33.
 | Remotion | 4.0.531 | vem do `package-lock.json` (`npm install`) |
 | edge-tts, OpenCV, numpy | ver `requirements.txt` | `.venv` criado pelo `preparar.sh` |
 | Xcode + iOS Simulator | ver §2 | gravação da tela (`xcrun simctl io ... recordVideo`) |
-| Skills do Remotion | sempre a mais recente | baixadas sozinhas no início da sessão do Claude Code (`tools/instalar-skills.sh`, links em `tools/skills.txt`) |
+| Skill do Remotion (`remotion-best-practices`) | sempre a mais recente | baixadas sozinhas no início da sessão do Claude Code (`tools/instalar-skills.sh`, links em `tools/skills.txt`) |
 
 ```bash
 cd tools/video-tutorial
@@ -336,7 +336,8 @@ tools/instalar-skills.sh --agora   # instala e atualiza tudo agora, mostrando ca
   versão que foi lida e aprovada). Sem commit, vem a mais recente; isso fica só
   para organizações oficiais (Flutter, Dart, Anthropic, Vercel, Remotion).
 - Se uma pasta sumir do repositório de origem, o script avisa
-  (`⚠ ... não existe mais`). Foi o que aconteceu com `flutter-animating-apps`
-  e `flutter-theming-apps`, que por isso estão presas a um commit antigo.
+  (`⚠ ... não existe mais`). Foi o que aconteceu com `flutter-animating-apps`,
+  que por isso está presa a um commit antigo.
+- Skill que sai da lista é apagada de `.claude/skills/` na execução seguinte.
 - Skill nova ou commit novo: ler tudo antes, seguindo o APRENDIZADOS §36.
 
