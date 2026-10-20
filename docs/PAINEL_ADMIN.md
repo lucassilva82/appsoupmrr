@@ -1,5 +1,12 @@
 # Painel web do SouPMRR — planejamento
 
+> **Situação (20/10/2026): PAUSADO.** Antes do painel, o usuário vai
+> reformular a organização do app (menus e submenus no lugar dos cards, para os
+> módulos que vêm da intranet: boletins, patrimônio, escala, para gestores e
+> para quem só tira serviço). O plano dessa reformulação vem de fora. Quando
+> chegar, atualizar as seções 2 (inventário e chaves) e 9 (contrato, `grid` e
+> `abas` viram uma árvore de menu) antes de mandar este documento à intranet.
+
 > **Para quem é este documento.** A sessão que cuida do desenvolvimento web na
 > intranet vai construir o painel. Este plano diz **o que** o painel controla,
 > **como o app obedece** e **em que ordem** fazer. Foi escrito em 20/10/2026, a
