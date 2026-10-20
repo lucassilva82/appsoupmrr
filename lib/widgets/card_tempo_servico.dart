@@ -282,8 +282,6 @@ class _CardTempoServicoState extends State<CardTempoServico> {
         final String origem;
         if (isLoading) {
           origem = 'Fonte: SIGRH  •  consultando IPER…';
-        } else if (falhaIper) {
-          origem = 'Fonte: SIGRH  •  tempo averbado não consultado';
         } else if (diasAgregados == 0) {
           origem = 'Fonte: SIGRH  •  sem tempo agregado do IPER';
         } else {
@@ -380,16 +378,14 @@ class _CardTempoServicoState extends State<CardTempoServico> {
                         ),
                       ],
 
-                      if (falhaIper) ...[
-                        const SizedBox(height: 10),
-                        _AvisoFalhaIper(
+                      const SizedBox(height: 6),
+                      if (falhaIper)
+                        _FalhaIper(
                           codigo: consulta.codigo!,
                           aoTentarDeNovo: _tentarDeNovo,
-                        ),
-                      ],
-
-                      const SizedBox(height: 6),
-                      RodapeCartao(texto: origem),
+                        )
+                      else
+                        RodapeCartao(texto: origem),
                     ]),
               ),
             ],
@@ -400,82 +396,59 @@ class _CardTempoServicoState extends State<CardTempoServico> {
   }
 }
 
-/// Aviso dentro do card quando o IPER não respondeu: o total mostrado é só o
-/// tempo na PMRR e pode estar incompleto. Diz o que houve, o que fazer e o
-/// código (que também foi para o log).
-class _AvisoFalhaIper extends StatelessWidget {
-  const _AvisoFalhaIper({required this.codigo, required this.aoTentarDeNovo});
+/// Uma linha no lugar do rodapé quando o IPER não respondeu: diz que o
+/// averbado ficou de fora e o código (que também foi para o log, com o
+/// detalhe), com o botão de tentar de novo.
+class _FalhaIper extends StatelessWidget {
+  const _FalhaIper({required this.codigo, required this.aoTentarDeNovo});
 
   final String codigo;
   final VoidCallback aoTentarDeNovo;
 
-  String get _motivo {
-    if (codigo == 'TS-IPER-REDE') return 'Sem conexão com o servidor.';
-    if (codigo == 'TS-IPER-LENTO') return 'O servidor demorou a responder.';
-    if (codigo == 'TS-IPER-SSL') return 'A conexão segura foi recusada.';
-    if (codigo == 'TS-IPER-MATR') return 'Sua sessão está sem a matrícula. Saia e entre de novo.';
-    return 'O servidor não conseguiu consultar o seu tempo averbado agora.';
-  }
+  String get _motivo => switch (codigo) {
+        'TS-IPER-REDE' => 'sem conexão',
+        'TS-IPER-LENTO' => 'servidor lento',
+        'TS-IPER-SSL' => 'conexão recusada',
+        'TS-IPER-MATR' => 'saia e entre de novo',
+        _ => 'erro no servidor',
+      };
 
   @override
   Widget build(BuildContext context) {
     final cor = Theme.of(context).colorScheme.error;
-    return Semantics(
-      container: true,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(10, 8, 6, 2),
-        decoration: BoxDecoration(
-          color: cor.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cor.withValues(alpha: 0.35)),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 1),
-              child: Icon(Icons.error_outline, size: AppIconSize.xs, color: cor),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Não foi possível consultar o tempo averbado (IPER). '
-                    'O total acima mostra só o tempo na PMRR.',
-                    style: TextStyle(
-                        fontSize: 12.5,
-                        height: 1.35,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurface),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$_motivo\nCódigo $codigo',
-                    style: TextStyle(
-                        fontSize: 12, height: 1.35, color: TomCartao.medio(context)),
-                  ),
-                  // Embaixo do texto, e não ao lado: ao lado ele espremia a
-                  // explicação em quatro linhas.
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      onPressed: aoTentarDeNovo,
-                      icon: const Icon(Icons.refresh_rounded, size: AppIconSize.xs),
-                      label: const Text('Tentar de novo'),
-                      style: TextButton.styleFrom(
-                        minimumSize: const Size(44, 44),
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      ),
-                    ),
-                  ),
-                ],
+    return Row(
+      children: [
+        Icon(Icons.error_outline, size: AppIconSize.xs, color: cor),
+        const SizedBox(width: 6),
+        // Uma linha só: em tela estreita a frase encolhe em vez de quebrar
+        // (o código partido em duas linhas ficava ilegível). O motivo vai
+        // para o leitor de tela.
+        Expanded(
+          child: Semantics(
+            label: 'Tempo averbado não consultado: $_motivo. Código $codigo',
+            excludeSemantics: true,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Averbado indisponível · $codigo',
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(fontSize: 12, color: cor),
               ),
             ),
-          ],
+          ),
         ),
-      ),
+        // Alvo de 44 pt, desenho pequeno (DESIGN §6).
+        IconButton(
+          onPressed: aoTentarDeNovo,
+          tooltip: 'Tentar de novo',
+          icon: Icon(Icons.refresh_rounded, size: AppIconSize.sm, color: cor),
+          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+          padding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+        ),
+      ],
     );
   }
 }

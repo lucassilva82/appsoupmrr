@@ -58,9 +58,9 @@ void main() {
     await tester.pumpWidget(_montar(cliente));
     await tester.pumpAndSettle();
     expect(find.textContaining('sem tempo agregado'), findsNothing);
-    expect(find.textContaining('Não foi possível consultar o tempo averbado'), findsOneWidget);
+    expect(find.textContaining('Averbado indisponível'), findsOneWidget);
     expect(find.textContaining('TS-IPER-REDE'), findsOneWidget);
-    expect(find.text('Tentar de novo'), findsOneWidget);
+    expect(find.byTooltip('Tentar de novo'), findsOneWidget);
   });
 
   testWidgets('erro do banco na API também é avisado', (tester) async {
@@ -88,7 +88,7 @@ void main() {
     });
     await tester.pumpWidget(_montar(cliente));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Tentar de novo'));
+    await tester.tap(find.byTooltip('Tentar de novo'));
     await tester.pumpAndSettle();
     expect(chamadas, 2);
     expect(find.textContaining('IPER: 16 anos, 5 meses e 3 dias'), findsOneWidget);

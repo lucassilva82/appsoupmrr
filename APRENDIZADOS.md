@@ -1319,10 +1319,12 @@ um print do card; o defeito de esconder a falha foi corrigido de qualquer forma.
   com "Nenhum dado encontrado" para quem não tem registro no IPER, e o card
   mostra "sem tempo agregado do IPER". Se a API mudar esse texto, o card passa a
   tratar como erro: o certo seria a API devolver `code: 1` com lista vazia.
-- Na falha, o card mostra um aviso dentro dele: "Não foi possível consultar o
-  tempo averbado (IPER). O total acima mostra só o tempo na PMRR.", o motivo,
-  o código e o botão **Tentar de novo**. O rodapé diz "tempo averbado não
-  consultado".
+- Na falha, o rodapé do card vira **uma linha só**, em vermelho: "Averbado
+  indisponível · TS-IPER-REDE", com um botão de recarregar (alvo de 44 pt,
+  dica "Tentar de novo"). O motivo por extenso fica no log e no leitor de tela.
+  Uma primeira versão, com caixa de aviso e frase longa, foi recusada pelo
+  usuário por ser grande demais: **aviso de falha dentro de card é curto**. A
+  linha encolhe (`FittedBox`) em vez de quebrar, para o código não se partir.
 - Testes em `test/widgets/card_tempo_servico_test.dart` (o card ganhou o
   parâmetro `cliente`, um `http.Client` falso nos testes). Três deles falhavam
   antes da correção. Conferido no simulador com o endereço do IPER trocado só
