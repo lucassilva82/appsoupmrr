@@ -71,6 +71,15 @@ que depende dela.
   `pg_attribute`, como no `titulo_curto`).
 - **Trabalho independente vai para sessão separada** (o usuário prefere assim);
   ajustes rápidos ficam na sessão atual.
+- **Nada se faz sem consultar as skills.** Antes de começar qualquer tarefa
+  (código, tela, API, SQL, painel, teste, plano, vídeo, revisão), olhar a
+  tabela "Skills: quando usar cada uma" logo abaixo e **carregar todas as que
+  se aplicam** (ferramenta Skill) antes do primeiro passo. Ao entregar, dizer
+  ao usuário quais skills foram usadas. Se nenhuma servir, dizer isso, e, se a
+  falta for recorrente, procurar uma com a `find-skills` (regras abaixo).
+  Se `.claude/skills/` estiver vazia (máquina nova, sem internet na abertura),
+  rodar `tools/instalar-skills.sh --agora` antes de seguir. As regras do
+  projeto continuam valendo mais que as das skills.
 
 ## Skills: quando usar cada uma
 
