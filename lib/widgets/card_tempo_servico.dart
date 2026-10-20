@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'cartao_painel.dart';
@@ -11,14 +13,31 @@ import 'package:provider/provider.dart';
 import '../models/auth_model.dart';
 import '../models/inatividade_model.dart';
 import '../utils/app_routes.dart';
+import '../utils/app_theme.dart';
 
 class CardTempoServico extends StatefulWidget {
-  const CardTempoServico({Key? key, this.diasAgregadosTeste}) : super(key: key);
+  const CardTempoServico({Key? key, this.diasAgregadosTeste, this.cliente})
+      : super(key: key);
 
   final int? diasAgregadosTeste;
 
+  /// Cliente HTTP dos testes (respostas e falhas simuladas). Nulo = o padrão.
+  final http.Client? cliente;
+
   @override
   State<CardTempoServico> createState() => _CardTempoServicoState();
+}
+
+/// Resultado da consulta ao IPER: os dias averbados ou o motivo da falha.
+/// "Não tem averbado" (dias 0, sem código) é diferente de "não consegui
+/// consultar" (código preenchido): o card nunca pode confundir os dois.
+class _ConsultaIper {
+  const _ConsultaIper.ok(this.dias) : codigo = null;
+  const _ConsultaIper.falha(this.codigo) : dias = 0;
+
+  final int dias;
+  final String? codigo;
+  bool get falhou => codigo != null;
 }
 
 class _CardTempoServicoState extends State<CardTempoServico> {
@@ -29,36 +48,74 @@ class _CardTempoServicoState extends State<CardTempoServico> {
   // voltava junto. Agora a consulta é guardada e só refeita se a matrícula
   // mudar, que é a única entrada dela.
   String? _matriculaConsultada;
-  Future<int>? _diasAgregados;
+  Future<_ConsultaIper>? _consulta;
 
-  Future<int> _futurePara(String matricula) {
-    if (_matriculaConsultada != matricula || _diasAgregados == null) {
+  Future<_ConsultaIper> _futurePara(String matricula) {
+    if (_matriculaConsultada != matricula || _consulta == null) {
       _matriculaConsultada = matricula;
-      _diasAgregados = _buscarDiasAgregados(matricula);
+      _consulta = _buscarDiasAgregados(matricula);
     }
-    return _diasAgregados!;
+    return _consulta!;
   }
 
-  Future<int> _buscarDiasAgregados(String matricula) async {
-    if (widget.diasAgregadosTeste != null) return widget.diasAgregadosTeste!;
+  void _tentarDeNovo() => setState(() => _consulta = null);
+
+  /// Consulta o tempo averbado. Toda falha volta com um código curto, que
+  /// também vai para o log, em vez de virar "0 dias" (regra do CLAUDE.md:
+  /// erro sempre explicado).
+  Future<_ConsultaIper> _buscarDiasAgregados(String matricula) async {
+    if (widget.diasAgregadosTeste != null) {
+      return _ConsultaIper.ok(widget.diasAgregadosTeste!);
+    }
+    _ConsultaIper falha(String codigo, Object detalhe) {
+      debugPrint('[IPER] $codigo matricula=$matricula: $detalhe');
+      return _ConsultaIper.falha(codigo);
+    }
+
+    if (matricula.trim().isEmpty) return falha('TS-IPER-MATR', 'sessão sem matrícula');
     final uri = Uri.parse(
       'https://pmrr.online/flutter/sigrh/listar_policial_iper.php?matricula=$matricula',
     );
+    final http.Response resp;
     try {
-      final resp = await http.get(uri).timeout(const Duration(seconds: 10));
-      if (resp.statusCode != 200) return 0;
-      final json = jsonDecode(resp.body);
-      if (json['code'] != 1) return 0;
-      return (json['result'] as List<dynamic>).fold<int>(0, (p, e) {
-        final raw = e['poip_total_dias'];
-        if (raw is int) return p + raw;
-        if (raw is String) return p + (int.tryParse(raw) ?? 0);
-        if (raw is num) return p + raw.toInt();
-        return p;
-      });
-    } catch (_) {
-      return 0;
+      resp = await (widget.cliente ?? http.Client())
+          .get(uri)
+          .timeout(const Duration(seconds: 10));
+    } on TimeoutException catch (e) {
+      return falha('TS-IPER-LENTO', e);
+    } on SocketException catch (e) {
+      return falha('TS-IPER-REDE', e);
+    } on http.ClientException catch (e) {
+      return falha('TS-IPER-REDE', e);
+    } on HandshakeException catch (e) {
+      return falha('TS-IPER-SSL', e);
     }
+    if (resp.statusCode != 200) {
+      return falha('TS-IPER-SRV-${resp.statusCode}', resp.body);
+    }
+    final Object? json;
+    try {
+      json = jsonDecode(resp.body);
+    } on FormatException catch (e) {
+      return falha('TS-IPER-RESP', e);
+    }
+    if (json is! Map) return falha('TS-IPER-RESP', resp.body);
+    if (json['code'] != 1) {
+      final msg = (json['message'] ?? '').toString();
+      // A API responde code 0 também quando a matrícula não tem registro no
+      // IPER: aí é "não tem averbado", não erro.
+      if (msg.toLowerCase().contains('nenhum dado')) return const _ConsultaIper.ok(0);
+      return falha('TS-IPER-API', msg);
+    }
+    final lista = json['result'];
+    if (lista is! List) return falha('TS-IPER-RESP', resp.body);
+    return _ConsultaIper.ok(lista.fold<int>(0, (p, e) {
+      final raw = e is Map ? e['poip_total_dias'] : null;
+      if (raw is int) return p + raw;
+      if (raw is String) return p + (int.tryParse(raw) ?? 0);
+      if (raw is num) return p + raw.toInt();
+      return p;
+    }));
   }
 
   DateTime? _parseDataIncorporacao(String? str) {
@@ -164,7 +221,7 @@ class _CardTempoServicoState extends State<CardTempoServico> {
     int diasNormal = 0;
     if (dataInc != null) diasNormal = DateTime.now().difference(dataInc).inDays;
 
-    return FutureBuilder<int>(
+    return FutureBuilder<_ConsultaIper>(
       future: _futurePara(matricula),
       builder: (context, snap) {
         final isLoading = snap.connectionState == ConnectionState.waiting;
@@ -191,7 +248,9 @@ class _CardTempoServicoState extends State<CardTempoServico> {
           );
         }
 
-        final diasAgregados = snap.data ?? 0;
+        final consulta = snap.data;
+        final falhaIper = !isLoading && consulta != null && consulta.falhou;
+        final diasAgregados = consulta?.dias ?? 0;
         final diasTotal = diasNormal + diasAgregados;
         const metaDias = 10950; // 30 anos
         final percTotal = (diasTotal / metaDias).clamp(0.0, 1.0);
@@ -223,6 +282,8 @@ class _CardTempoServicoState extends State<CardTempoServico> {
         final String origem;
         if (isLoading) {
           origem = 'Fonte: SIGRH  •  consultando IPER…';
+        } else if (falhaIper) {
+          origem = 'Fonte: SIGRH  •  tempo averbado não consultado';
         } else if (diasAgregados == 0) {
           origem = 'Fonte: SIGRH  •  sem tempo agregado do IPER';
         } else {
@@ -319,6 +380,14 @@ class _CardTempoServicoState extends State<CardTempoServico> {
                         ),
                       ],
 
+                      if (falhaIper) ...[
+                        const SizedBox(height: 10),
+                        _AvisoFalhaIper(
+                          codigo: consulta.codigo!,
+                          aoTentarDeNovo: _tentarDeNovo,
+                        ),
+                      ],
+
                       const SizedBox(height: 6),
                       RodapeCartao(texto: origem),
                     ]),
@@ -327,6 +396,86 @@ class _CardTempoServicoState extends State<CardTempoServico> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Aviso dentro do card quando o IPER não respondeu: o total mostrado é só o
+/// tempo na PMRR e pode estar incompleto. Diz o que houve, o que fazer e o
+/// código (que também foi para o log).
+class _AvisoFalhaIper extends StatelessWidget {
+  const _AvisoFalhaIper({required this.codigo, required this.aoTentarDeNovo});
+
+  final String codigo;
+  final VoidCallback aoTentarDeNovo;
+
+  String get _motivo {
+    if (codigo == 'TS-IPER-REDE') return 'Sem conexão com o servidor.';
+    if (codigo == 'TS-IPER-LENTO') return 'O servidor demorou a responder.';
+    if (codigo == 'TS-IPER-SSL') return 'A conexão segura foi recusada.';
+    if (codigo == 'TS-IPER-MATR') return 'Sua sessão está sem a matrícula. Saia e entre de novo.';
+    return 'O servidor não conseguiu consultar o seu tempo averbado agora.';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cor = Theme.of(context).colorScheme.error;
+    return Semantics(
+      container: true,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 8, 6, 2),
+        decoration: BoxDecoration(
+          color: cor.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: cor.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Icon(Icons.error_outline, size: AppIconSize.xs, color: cor),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Não foi possível consultar o tempo averbado (IPER). '
+                    'O total acima mostra só o tempo na PMRR.',
+                    style: TextStyle(
+                        fontSize: 12.5,
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$_motivo\nCódigo $codigo',
+                    style: TextStyle(
+                        fontSize: 12, height: 1.35, color: TomCartao.medio(context)),
+                  ),
+                  // Embaixo do texto, e não ao lado: ao lado ele espremia a
+                  // explicação em quatro linhas.
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: aoTentarDeNovo,
+                      icon: const Icon(Icons.refresh_rounded, size: AppIconSize.xs),
+                      label: const Text('Tentar de novo'),
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(44, 44),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

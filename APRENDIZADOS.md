@@ -1294,3 +1294,41 @@ as de plataforma.
 **Regra:** antes de incluir uma skill, conferir se outra da lista ou um comando
 nativo do Claude Code já faz o mesmo. Duas skills para a mesma coisa dão
 orientações diferentes, e o agente escolhe uma sem critério.
+
+---
+
+## 37. Card de tempo de serviço: "não consegui consultar" virava "não tem averbado"
+
+**O que aconteceu (20/10/2026).** O SD Sousa Rios (matrícula 456012) reclamou
+que o tempo averbado não aparecia mais na tela inicial. A API estava certa:
+`listar_policial_iper.php` devolvia 5.993 dias (16 anos, 5 meses e 3 dias) em
+menos de meio segundo, com a matrícula escrita de vários jeitos. O defeito
+estava no card: **qualquer falha da consulta** (rede, demora de mais de 10 s,
+HTTP diferente de 200, resposta que não é JSON, erro do banco, sessão sem
+matrícula) caía num `catch` que devolvia **0 dias**. O card então mostrava só o
+tempo de PM e escrevia no rodapé "sem tempo agregado do IPER", como se o
+militar não tivesse averbado. A causa exata no aparelho dele ainda depende de
+um print do card; o defeito de esconder a falha foi corrigido de qualquer forma.
+
+**Como ficou (próxima versão do app).**
+- `_buscarDiasAgregados` devolve `_ConsultaIper`: os dias, ou a falha com
+  código. Códigos: `TS-IPER-REDE`, `TS-IPER-LENTO`, `TS-IPER-SSL`,
+  `TS-IPER-SRV-nnn`, `TS-IPER-RESP`, `TS-IPER-API`, `TS-IPER-MATR`. O detalhe vai
+  para o log (`[IPER] ...`).
+- "Não tem averbado" continua sendo resposta normal: a API responde `code: 0`
+  com "Nenhum dado encontrado" para quem não tem registro no IPER, e o card
+  mostra "sem tempo agregado do IPER". Se a API mudar esse texto, o card passa a
+  tratar como erro: o certo seria a API devolver `code: 1` com lista vazia.
+- Na falha, o card mostra um aviso dentro dele: "Não foi possível consultar o
+  tempo averbado (IPER). O total acima mostra só o tempo na PMRR.", o motivo,
+  o código e o botão **Tentar de novo**. O rodapé diz "tempo averbado não
+  consultado".
+- Testes em `test/widgets/card_tempo_servico_test.dart` (o card ganhou o
+  parâmetro `cliente`, um `http.Client` falso nos testes). Três deles falhavam
+  antes da correção. Conferido no simulador com o endereço do IPER trocado só
+  na compilação de teste.
+
+**Regra.** Valor numérico que vem da rede nunca cai para zero em silêncio:
+"zero" e "não sei" são coisas diferentes para quem lê. O `test/widget_test.dart`
+(contador de exemplo do Flutter, de 2023) falha desde sempre e não tem relação
+com isso: apagar ou trocar por um teste real.
