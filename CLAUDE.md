@@ -71,6 +71,12 @@ que depende dela.
   `pg_attribute`, como no `titulo_curto`).
 - **Trabalho independente vai para sessão separada** (o usuário prefere assim);
   ajustes rápidos ficam na sessão atual.
+- **Tudo tem log.** Toda ação do usuário no app (abrir tela, tocar em função,
+  emitir, enviar, falhar) e todo erro (do app e da API) ficam registrados no
+  nosso banco, com matrícula, aparelho, plataforma, versão do app, data e
+  código do erro, para serem acompanhados no painel. Erro capturado também é
+  salvo, não só mostrado. Sem dado sensível no log (senha, MD5, CPF completo,
+  conteúdo de documentos). Função nova sem log não está pronta.
 - **Nada se faz sem consultar as skills.** Antes de começar qualquer tarefa
   (código, tela, API, SQL, painel, teste, plano, vídeo, revisão), olhar a
   tabela "Skills: quando usar cada uma" logo abaixo e **carregar todas as que
