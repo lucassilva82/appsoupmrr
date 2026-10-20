@@ -18,7 +18,7 @@ Documento novo? Acrescente na lista abaixo com `@`.
 | [SETUP.md](SETUP.md) | Montar a máquina: versões, arquivos fora do git, builds, API (§9), vídeos (§10) |
 | [APRENDIZADOS.md](APRENDIZADOS.md) | Erros que já custaram caro: publicar versão, API, login, certidões, capturas, vídeos |
 | [DESIGN.md](DESIGN.md) | Qualquer tela nova: cores, tipografia, cartões |
-| [docs/PAINEL_ADMIN.md](docs/PAINEL_ADMIN.md) | Plano do painel de administração (configuração vinda do banco) |
+| [docs/PAINEL_ADMIN.md](docs/PAINEL_ADMIN.md) | Planejamento do painel web (funções, notificações, conteúdo, contrato `app_config`, fases) |
 | [README.md](README.md) | Visão geral do app |
 
 @SETUP.md
