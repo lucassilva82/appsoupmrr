@@ -268,7 +268,7 @@ menos ~20 GB livres antes de um Archive.
 - [ ] Archive no Xcode concluindo
 - [ ] Cópia local da API e `~/.netrc` com o FTP (§9), se for mexer na API
 - [ ] Vídeos: `tools/video-tutorial/scripts/preparar.sh` (§10)
-- [ ] Abrir o projeto no Claude Code: as skills de `tools/skills.txt` (ui-ux-pro-max e Remotion) são baixadas sozinhas na primeira sessão, na versão mais recente (ver CLAUDE.md)
+- [ ] Abrir o projeto no Claude Code: as skills de `tools/skills.txt` (Flutter, Dart, processo, web/PHP, design e Remotion) são baixadas sozinhas na primeira sessão (§11). Conferir com `tools/instalar-skills.sh --agora`
 
 ---
 
@@ -312,4 +312,31 @@ As gravações (`videos-tutoriais/gravacoes/`) e os vídeos prontos não vão pa
 git: copie a pasta `videos-tutoriais/` da máquina antiga se precisar reeditar o
 vídeo de acesso, ou grave de novo no modo vitrine. O instalador oficial de
 skills (`npx skills add remotion-dev/skills`) exige Node 22+, por isso o script.
+
+---
+
+## 11. Skills do Claude Code
+
+O Claude Code usa as skills de `tools/skills.txt` (quando usar cada uma:
+CLAUDE.md, seção "Skills"). Elas não vão para o git: ficam em
+`.claude/skills/`, instaladas por `tools/instalar-skills.sh`, que o gancho de
+início de sessão (`.claude/settings.json`) roda sozinho.
+
+| Precisa de | Por quê |
+|---|---|
+| `git` e acesso ao GitHub por HTTPS | o script clona cada repositório da lista |
+| Nada de Node 22 | o script substitui o `npx skills add`, que exige Node 22+ e manda telemetria |
+
+```bash
+tools/instalar-skills.sh --agora   # instala e atualiza tudo agora, mostrando cada skill e o commit
+```
+
+- Cada skill instalada ganha um `ORIGEM.txt` com o repositório e o commit.
+- Linha com commit na terceira coluna instala exatamente aquele commit (a
+  versão que foi lida e aprovada). Sem commit, vem a mais recente; isso fica só
+  para organizações oficiais (Flutter, Dart, Anthropic, Vercel, Remotion).
+- Se uma pasta sumir do repositório de origem, o script avisa
+  (`⚠ ... não existe mais`). Foi o que aconteceu com `flutter-animating-apps`
+  e `flutter-theming-apps`, que por isso estão presas a um commit antigo.
+- Skill nova ou commit novo: ler tudo antes, seguindo o APRENDIZADOS §36.
 

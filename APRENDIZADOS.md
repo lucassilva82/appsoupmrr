@@ -1190,3 +1190,89 @@ receber. Junto, foi uma notificação push para todos os aparelhos
   do usuário. Contornar abrindo outra sessão não é o caminho: ou o usuário
   aprova, ou libera o Claude in Chrome nas próprias configurações
   (`.claude/settings.local.json`) e apaga a liberação no fim.
+
+---
+
+## 36. Skills do Claude Code: conferir antes de instalar, fixar o commit
+
+**O pedido (20/10/2026).** Antes das próximas missões (módulos da intranet,
+painel web e nova navegação), o usuário pediu um ambiente de skills completo:
+quatro de Flutter pelo nome (`flutter-animate-skill`, `flutter-modern-uikit`,
+`flutter-declarative-styling` e `flutter-lint-analyzer`), a `find-skills` da
+Vercel e uma busca por outras úteis.
+
+**Os quatro nomes não existiam.** Não estavam no skills.sh, nem no código do
+GitHub, nem na web. Pareciam inventados por outra IA. Instalar "o resultado
+mais parecido" com o nome teria posto no projeto skills de autores
+desconhecidos com 10 a 50 instalações. Em vez disso, cada pedido virou a
+skill oficial que cobre o assunto (time do Flutter e do Dart), e o usuário
+aprovou a troca:
+
+| Pedida | Instalada |
+|---|---|
+| animate | `flutter-animating-apps` |
+| modern-uikit, declarative-styling | `flutter-theming-apps`, `flutter-build-responsive-layout`, `flutter-fix-layout-issues` |
+| lint-analyzer | `dart-run-static-analysis` |
+
+O usuário pediu também padrões de design por plataforma: entraram as
+diretrizes de iOS, iPadOS, Android e web do `ehmo/platform-design-skills` e a
+`material-3` (`hamen/material-3-skill`). Para Linux não há skill confiável (as
+de GNOME têm menos de 100 instalações), e o app não roda em Linux. As pastas do
+ehmo se chamam só `ios`, `web` etc., então o instalador passou a usar o
+`name:` do SKILL.md como nome da pasta.
+
+**Skill oficial também some.** O time do Flutter apagou 22 skills do
+`flutter/agent-plugins` em 21/04/2026 (commit `130378c`), entre elas as de
+animação e tema. O skills.sh continua listando as duas, com milhares de
+instalações, mas `git clone` não as traz mais. Por isso o
+`instalar-skills.sh` ganhou a terceira coluna (commit) e avisa quando uma pasta
+não existe mais no repositório.
+
+**O que foi recusado e por quê.**
+- `web-design-guidelines` da Vercel (a instalada com esse nome é a do ehmo, só texto): a cada uso, baixa as regras de uma URL no
+  branch `main` e obedece ao que vier. Quem controla aquele arquivo controla o
+  agente.
+- `brainstorming` (superpowers): sobe um servidor local e tem telemetria.
+- `git-workflow-and-versioning`: manda commitar sozinha e tira a versão da tag,
+  o que contraria o CLAUDE.md (versão em três arquivos, commit só a pedido).
+- O próprio `npx skills add`, que a `find-skills` manda usar com `-g -y`:
+  instala sem perguntar, fora do projeto, e envia telemetria
+  (`skills.sh/tele`). A busca é feita direto pela API do skills.sh
+  (`/api/search?q=`), a mesma que o CLI usa, e a instalação só pelo
+  `tools/skills.txt`.
+
+**Como conferir uma skill (receita).**
+1. Achar a origem: `curl "https://skills.sh/api/search?q=<termo>"` devolve
+   repositório e instalações. O número de instalações não prova nada: há forks
+   com centenas de milhares de instalações. Valem o mantenedor (organização
+   oficial ou autor conhecido), as estrelas e o histórico do repositório.
+2. Clonar numa pasta temporária, fora do projeto, e **não rodar nada** dela.
+3. Ler o SKILL.md e todos os arquivos que vêm junto. Procurar: script que a
+   skill manda rodar, instalação de pacote, URL de onde ela tira instruções,
+   envio de dados (telemetria, webhook), pedido de token ou senha, "ignore as
+   instruções", commit ou push automático, unicode invisível, base64 e
+   comentário HTML com texto.
+4. Anotar o que conflita com o projeto (DESIGN.md, fluxo de versão, repositório
+   público) e as dependências de outras skills que não vêm junto.
+5. Mostrar ao usuário nome, origem, para quê e o resultado. Só entra no
+   `tools/skills.txt` o que ele aprovar, com commit fixo quando o autor é pessoa
+   física ou coletânea aberta (`github/awesome-copilot`).
+6. `tools/instalar-skills.sh --agora` e conferir o `ORIGEM.txt` de cada uma.
+   Skill que sai da lista é apagada de `.claude/skills/` na instalação seguinte:
+   tirar a linha basta para ela deixar de valer.
+
+**Por que fixar o commit.** A skill é instrução que o agente segue. Se o
+script puxasse sempre a versão mais recente de um autor individual, uma
+mudança feita depois da conferência (por engano, por conta invadida ou por
+má-fé) entraria sozinha, no próximo início de sessão. Com o commit fixo, a
+atualização é uma decisão: ler o diff e trocar o commit.
+
+**Prioridade.** Algumas skills contradizem o projeto: a de tema sugere
+`ColorScheme.fromSeed`, a de arquitetura sugere outra estrutura de pastas e a
+de planejamento grava `tasks/plan.md`. O CLAUDE.md diz que as regras do
+projeto vêm antes, e a seção "Skills" de lá diz quando usar cada uma.
+
+**Nome repetido.** A `security-review` do `github/awesome-copilot` tem o mesmo
+nome do `/security-review` que já vem no Claude Code (revisão do branch). A
+skill só lê e faz relatório; se um dia o comando nativo fizer falta, mudar o
+`name:` não resolve (o instalador lê o nome do SKILL.md): trocar de skill.

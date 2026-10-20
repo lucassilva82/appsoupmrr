@@ -1,7 +1,54 @@
 # Skills do Claude Code usadas neste projeto. Não são versionadas aqui: o
-# tools/instalar-skills.sh baixa sempre a versão mais recente de cada uma para
-# .claude/skills/ (fora do git). Para incluir outra, acrescente uma linha.
+# tools/instalar-skills.sh baixa cada uma para .claude/skills/ (fora do git).
 #
-# repositório no GitHub                                 pasta da skill dentro dele
+# Colunas: repositório no GitHub, pasta da skill dentro dele e, opcional, o
+# commit conferido. Com commit, instala exatamente aquele; sem commit, a versão
+# mais recente (só para organizações oficiais). Autor individual e coletânea
+# aberta ficam sempre com commit: atualizar = ler a versão nova inteira (regras
+# no APRENDIZADOS §36) e trocar o commit aqui. Quando usar cada uma: CLAUDE.md.
+#
+# repositório no GitHub                                 pasta da skill                    commit conferido
+
+# Design e vídeo (já em uso)
 https://github.com/nextlevelbuilder/ui-ux-pro-max-skill  .claude/skills/ui-ux-pro-max
 https://github.com/remotion-dev/skills                   skills/remotion-*
+
+# Procurar skills novas (só a busca; instalar é por este arquivo)
+https://github.com/vercel-labs/skills                    skills/find-skills
+
+# Flutter e Dart: oficiais (time do Flutter e do Dart)
+https://github.com/flutter/agent-plugins                 skills/flutter-build-responsive-layout
+https://github.com/flutter/agent-plugins                 skills/flutter-fix-layout-issues
+https://github.com/flutter/agent-plugins                 skills/flutter-add-widget-test
+https://github.com/flutter/agent-plugins                 skills/flutter-add-integration-test
+https://github.com/flutter/agent-plugins                 skills/flutter-apply-architecture-best-practices
+https://github.com/dart-lang/skills                      skills/dart-run-static-analysis
+https://github.com/dart-lang/skills                      skills/dart-fix-runtime-errors
+# Oficiais retiradas do repositório em 21/04/2026: presas no último commit em que existiam
+https://github.com/flutter/agent-plugins                 skills/flutter-animating-apps     430687774a92ab84e4fdf96de6415ee407dd4beb
+https://github.com/flutter/agent-plugins                 skills/flutter-theming-apps       430687774a92ab84e4fdf96de6415ee407dd4beb
+
+# Processo: depuração, revisão, planejamento, verificação e testes
+https://github.com/mattpocock/skills                     skills/engineering/diagnosing-bugs   5beb35b040e3de97e54fa9e386d7e42d15c295c2
+https://github.com/mattpocock/skills                     skills/engineering/tdd               5beb35b040e3de97e54fa9e386d7e42d15c295c2
+https://github.com/addyosmani/agent-skills               skills/code-review-and-quality       aeac41d4d005999432bb7312f7ff06383a91d59d
+https://github.com/addyosmani/agent-skills               skills/planning-and-task-breakdown   aeac41d4d005999432bb7312f7ff06383a91d59d
+https://github.com/obra/superpowers                      skills/receiving-code-review         bb92a77741419a4ab5f06e711a283343f1ada0c3
+https://github.com/obra/superpowers                      skills/verification-before-completion bb92a77741419a4ab5f06e711a283343f1ada0c3
+
+# Web, PHP e banco (API do app e painel da intranet)
+https://github.com/github/awesome-copilot                skills/security-review               613efc8c21d9b3ce642dff361d17006cd9967e28
+https://github.com/github/awesome-copilot                skills/postgresql-code-review        613efc8c21d9b3ce642dff361d17006cd9967e28
+https://github.com/jeffallan/claude-skills               skills/php-pro                       36f3fe8052da7c57083783268c6ea3265d075265
+https://github.com/anthropics/skills                     skills/webapp-testing
+https://github.com/anthropics/skills                     skills/frontend-design
+
+# Animação
+https://github.com/emilkowalski/skills                   skills/review-animations             2d228630ba1446365f614a108cb8252f1feda202
+
+# Padrões de design por plataforma (Apple HIG, Material, web)
+https://github.com/ehmo/platform-design-skills           skills/ios                           dc2be825d8b439caea78e9eaa8fb3ac23b0ff3e9
+https://github.com/ehmo/platform-design-skills           skills/ipados                        dc2be825d8b439caea78e9eaa8fb3ac23b0ff3e9
+https://github.com/ehmo/platform-design-skills           skills/android                       dc2be825d8b439caea78e9eaa8fb3ac23b0ff3e9
+https://github.com/ehmo/platform-design-skills           skills/web                           dc2be825d8b439caea78e9eaa8fb3ac23b0ff3e9
+https://github.com/hamen/material-3-skill                skills/material-3                    14385f2bf3804d8779f8b4db2604211f1e70b4c1
