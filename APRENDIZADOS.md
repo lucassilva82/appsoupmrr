@@ -1334,3 +1334,40 @@ um print do card; o defeito de esconder a falha foi corrigido de qualquer forma.
 "zero" e "não sei" são coisas diferentes para quem lê. O `test/widget_test.dart`
 (contador de exemplo do Flutter, de 2023) falha desde sempre e não tem relação
 com isso: apagar ou trocar por um teste real.
+
+---
+
+## 38. Primeiro acesso: o e-mail nunca era cadastrado ("Erro interno")
+
+**O que aconteceu (20/10/2026).** Um militar (com Starlink) relatou que, no
+Primeiro acesso, ao pedir o código do e-mail, recebia "Erro interno" e não
+passava dali. A Starlink não tinha nada a ver. O `error_log` da pasta `sigrh/`
+mostrava 93 vezes, desde 19/10, a mesma linha:
+`SQLSTATE[22001]: value too long for type character varying(20)`.
+
+**Causa.** A ação `enviar_codigo_email` grava em `public.sec_recuperacao` o tipo
+`primeiro_acesso_email`, com **21** caracteres, e a coluna `tipo` é
+`VARCHAR(20)`. Os outros tipos cabem (`primeiro_acesso` tem 15,
+`primeiro_acesso_ok` tem 18), por isso o militar passava pelo CPF e pelas
+perguntas e só travava no e-mail. **Todo** militar sem e-mail cadastrado caía
+nisso. O `catch` geral escondia a causa atrás de "Erro interno".
+
+**Correção (API, sem versão nova do app).** `TIPO_EMAIL` passou a
+`primeiro_acesso_mail` (20 caracteres), e o log do `catch` agora diz a ação
+(`primeiro_acesso.php (enviar_codigo_email): ...`). Reproduzido antes no
+Postgres local: o mesmo INSERT com `VARCHAR(20)` falha com a mesma mensagem e
+passa com o tipo novo. Backup em `/backups_api/primeiro_acesso.php.bak-20261020-v1`.
+
+**Pendente.** O DDL da `sec_recuperacao` não está em `sql/`, então não se sabe o
+tamanho da coluna `dados` (onde vai o e-mail). Se o erro continuar no log com
+outra coluna, alargar no phpPgAdmin:
+`ALTER TABLE public.sec_recuperacao ALTER COLUMN tipo TYPE VARCHAR(40), ALTER COLUMN dados TYPE TEXT;`
+e guardar o DDL em `sql/`.
+
+**Regras.**
+- Valor gravado em coluna de tamanho fixo: conferir o tamanho da coluna antes
+  (e guardar o DDL de toda tabela que a API usa em `sql/`).
+- O teste com dados fictícios (modo vitrine, §33) respondia `primeiro_acesso.php`
+  em memória e por isso não pegou o defeito. Fluxo que grava no banco precisa
+  de um teste contra um Postgres com o mesmo esquema (§19).
+- Ler o `error_log` de `sigrh/` depois de cada deploy e de tempos em tempos (§22).
