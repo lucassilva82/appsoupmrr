@@ -1358,6 +1358,9 @@ nisso. O `catch` geral escondia a causa atrás de "Erro interno".
 Postgres local: o mesmo INSERT com `VARCHAR(20)` falha com a mesma mensagem e
 passa com o tipo novo. Backup em `/backups_api/primeiro_acesso.php.bak-20261020-v1`.
 
+**Confirmado (21/10/2026):** o militar que relatou o problema concluiu o
+Primeiro acesso normalmente depois da correção.
+
 **Pendente.** O DDL da `sec_recuperacao` não está em `sql/`, então não se sabe o
 tamanho da coluna `dados` (onde vai o e-mail). Se o erro continuar no log com
 outra coluna, alargar no phpPgAdmin:
