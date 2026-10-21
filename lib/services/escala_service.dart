@@ -30,7 +30,6 @@ class EscalaLoginResult {
 
 // ── Serviço principal ─────────────────────────────────────────────────────────
 class EscalaService {
-  static const _baseUrlProd = 'https://intranet.pmrr.online/api/v1';
   static const _baseUrlDev = 'https://intranet.gitpmrr.com/api/v1';
   static const _baseUrlDevPrefixed =
       'https://intranet.gitpmrr.com/intranet/api/v1';
@@ -44,22 +43,20 @@ class EscalaService {
   /// Endereço único da API da intranet (SIGE) para TODOS os módulos que
   /// falam com ela: escalas, SVI, avisos e permutas.
   ///
-  /// Vem do `API_BASE_URL` do `env.json` (`--dart-define-from-file`). Sem ele,
-  /// o build de loja usa produção e o de debug, o desenvolvimento. Foi essa
-  /// diferença que fez o "Abrir" do aviso falhar no TestFlight em 20/10/2026:
-  /// o build de release chamava `intranet.pmrr.online`, onde a `/api/v1`
-  /// ainda não existe e o Apache responde uma página HTML de 404.
+  /// Padrão: o desenvolvimento, em QUALQUER build (debug, TestFlight e loja),
+  /// por decisão do usuário em 21/10/2026, enquanto a API do SIGE só existe
+  /// lá. Para apontar para produção, pôr `API_BASE_URL` no `env.json`
+  /// (`--dart-define-from-file`).
+  ///
+  /// Antes, o build de release ia para produção e o de debug para o
+  /// desenvolvimento. Foi essa diferença que fez o "Abrir" do aviso falhar no
+  /// TestFlight em 20/10/2026: `intranet.pmrr.online` ainda não tem a
+  /// `/api/v1` e o Apache responde uma página HTML de 404.
   static String get baseApi {
     final envBase = _normalizeBaseStatic(_apiBaseUrlFromEnv);
     if (envBase.isNotEmpty) return envBase;
-    if (kReleaseMode && !_avisouSemBase) {
-      _avisouSemBase = true;
-      debugPrint('[ESCALA] ATENÇÃO: build sem API_BASE_URL, usando $_baseUrlProd');
-    }
-    return kReleaseMode ? _baseUrlProd : _baseUrlDev;
+    return _baseUrlDev;
   }
-
-  static bool _avisouSemBase = false;
 
   static String _normalizeBaseStatic(String base) {
     final b = base.trim();

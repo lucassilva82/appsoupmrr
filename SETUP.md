@@ -68,7 +68,7 @@ que é público.
 |---|---|---|
 | `android/app/upload-keystore.jks` | Keystore de assinatura do release Android | **Sem ele é impossível publicar atualizações na Play Store.** Não existe como recuperar — faça backup em local seguro. |
 | `android/key.properties` | Senhas/alias do keystore acima | Build de release Android falha na assinatura |
-| `env.json` | Chaves de API usadas no build (`LEGISLACOES_API_KEY`) e o endereço da API da intranet (`API_BASE_URL`, usado por escalas, SVI e avisos do SIGE) | Sem a chave, Legislações e POPs respondem 401. Sem o endereço, o build de loja usa produção (`intranet.pmrr.online`), onde a `/api/v1` só existe depois que o SIGE for publicado lá; para testar o SIGE, use o desenvolvimento (`https://intranet.gitpmrr.com/api/v1`). Copie de `env.example.json`. |
+| `env.json` | Chaves de API usadas no build (`LEGISLACOES_API_KEY`) e o endereço da API da intranet (`API_BASE_URL`, usado por escalas, SVI e avisos do SIGE) | Sem a chave, Legislações e POPs respondem 401. Sem o endereço (ou vazio), todo build usa o desenvolvimento (`https://intranet.gitpmrr.com/api/v1`); para apontar para produção, preencha com `https://intranet.pmrr.online/api/v1` depois que o SIGE for publicado lá. Copie de `env.example.json`. |
 
 Formato esperado de `android/key.properties` (valores reais vêm da máquina antiga):
 
