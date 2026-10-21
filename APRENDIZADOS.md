@@ -1404,3 +1404,31 @@ sair da conta e entrar de novo.
 
 **Enquanto a versão nova não chega:** quem teve dado trocado no SIGRH precisa
 tocar em Sair e entrar de novo.
+
+---
+
+## 40. Brasão novo da PMRR (21/10/2026)
+
+O usuário mandou o brasão novo (JPEG 1520×1600, fundo branco, "1944" na
+faixa; o antigo dizia "1975"). O fundo branco de fora foi tirado com OpenCV
+(`floodFill` a partir dos quatro cantos com `FLOODFILL_FIXED_RANGE`: sem ele, a
+comparação ia de vizinho em vizinho e atravessava para o cinza e o verde do
+escudo). Os brancos de dentro (faixa da bandeira, capacete) ficam, porque não
+tocam a borda.
+
+**Onde foi trocado.**
+- **API (no ar na hora, sem versão do app):** `sigrh/certidoes/assets/brasao_pmrr.png`
+  (cabeçalho e marca d'água das certidões, 380×400), `brasao_pmrr_pb.png` e
+  `sigrh/img/brasao-pmrr.png` (todos os e-mails e a página do QR, 152×160).
+  Backups em `/backups_api/*.bak-20261021-v1`. Leitor de e-mail que guarda
+  imagem em cache (Gmail) pode mostrar o antigo por um tempo.
+- **App (próxima versão):** `pmrrr.png` (marca d'água do PDF do contracheque),
+  `logo_pmrr.png`, `pmrr.png` e o brasão pequeno dentro das montagens
+  `rodape_marcas.png` (login), `entradacapa.png` (abertura) e `dti.jpeg`
+  (rodapé da Início). Nas montagens, o antigo foi apagado com `cv2.inpaint`
+  (fundo reconstruído) e o novo colado na mesma caixa.
+
+**Fica de fora (não é arquivo nosso):** as artes dos cards dos comandantes e do
+anúncio vêm do Firestore (`stores`, `appConfig/anuncio`) e trazem o brasão
+desenhado nelas; trocar a arte é com quem as produz. A intranet tem as próprias
+imagens.
