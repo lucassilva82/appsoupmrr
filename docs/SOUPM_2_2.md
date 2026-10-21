@@ -116,6 +116,9 @@ bastaram as diretrizes acima e o DESIGN.md, que vale mais que qualquer skill.
 | Matrícula e e-mail em query string | Baixa | API (lista privada) |
 
 As correções da API continuam numa sessão própria (PAINEL_ADMIN §11, item 6).
+A troca das credenciais que ficaram expostas (lista privada da API) fica para
+uma revisão futura do usuário, por decisão dele em 21/10/2026, e não bloqueia
+nenhuma fase.
 O que é do app (senha em texto puro, checagem na tela) entra na fase 0.
 
 ### 1.4 O que a intranet já tem e o app vai usar
