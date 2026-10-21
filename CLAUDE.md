@@ -69,6 +69,17 @@ que depende dela.
   para quando está sem internet. Campo novo na API não pode quebrar versão
   antiga do app nem depender da ordem do deploy (conferir a coluna em
   `pg_attribute`, como no `titulo_curto`).
+- **Documento é da API, e o padrão dele é do painel.** Todo documento que o
+  militar vê ou baixa (contracheque, certidões, declarações, comprovantes e os
+  que vierem) segue o modelo das certidões (APRENDIZADOS §22–28, Anexo A do
+  PAINEL_ADMIN): a **API monta o PDF**, confere os dados antes e devolve o
+  arquivo pronto com hash; o **padrão** dele (títulos, textos, ressalvas,
+  rodapé, o que aparece e o que não aparece, liga/desliga, mensagens) fica no
+  banco (`soupm_config` e tabelas próprias) e é **editado pelo painel**. O app
+  só pede, mostra, guarda e compartilha. Nada de montar documento oficial no
+  aparelho. **O contracheque hoje é montado no app** (`page_contracheque.dart`,
+  dart_pdf): a migração dele para a API, com o padrão no painel, é obrigatória e
+  já entra no plano do SouPM 2.2. Documento novo nasce na API, nunca no app.
 - **Trabalho independente vai para sessão separada** (o usuário prefere assim);
   ajustes rápidos ficam na sessão atual.
 - **Tudo tem log.** Toda ação do usuário no app (abrir tela, tocar em função,
