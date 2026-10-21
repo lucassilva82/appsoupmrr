@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io'; // Para detectar iOS/Android
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -42,6 +43,9 @@ class _AuthOrHomeState extends State<AuthOrHome> {
       final trabalho = auth.tryAutoLogin().then((_) {
         debugPrint(
             "[LOG] initState: tryAutoLogin finalizado, agora checkVersion...");
+        // Abre com a cópia guardada e, sem esperar, busca a ficha de novo no
+        // SIGRH (nome de guerra, posto, foto trocados lá).
+        unawaited(auth.atualizarPerfilEmSegundoPlano());
         return _checkVersionFromFirestore();
       });
       await Future.wait([

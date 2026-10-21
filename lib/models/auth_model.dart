@@ -56,7 +56,88 @@ class Auth with ChangeNotifier {
   String? image; // URL no servidor
   String? localImagePath; // Caminho local salvo no aparelho
 
-  final DadosSql dadosSql = DadosSql();
+  final DadosSql dadosSql;
+
+  /// `dadosSql` só é passado nos testes (respostas simuladas do SIGRH).
+  Auth({DadosSql? dadosSql}) : dadosSql = dadosSql ?? DadosSql();
+
+  bool _atualizandoPerfil = false;
+
+  /// Busca de novo a ficha do militar no SIGRH, sem travar a abertura.
+  ///
+  /// A abertura automática (`tryAutoLogin`) usa a cópia guardada no aparelho,
+  /// para o app abrir na hora. Sem esta atualização, nome de guerra, posto,
+  /// lotação e foto trocados no SIGRH só apareciam depois de sair e entrar de
+  /// novo (APRENDIZADOS §39). Falha aqui nunca derruba a sessão: fica a cópia
+  /// guardada e o motivo vai para o log com código.
+  Future<void> atualizarPerfilEmSegundoPlano() async {
+    final mat = matricula;
+    if (!autorizado || mat == null || mat.isEmpty || _atualizandoPerfil) return;
+    _atualizandoPerfil = true;
+    try {
+      final militar = await dadosSql
+          .buscarMilitarBancoByMatricula(mat)
+          .timeout(const Duration(seconds: 20));
+      if (militar == null) {
+        debugPrint('[PERFIL] PF-VAZIO matricula=$mat: SIGRH sem ficha; mantida a cópia guardada');
+        return;
+      }
+      if (matricula != mat || !autorizado) return; // saiu da conta no meio
+      final imagemAntes = image;
+      _aplicarMilitar(militar);
+      if (image != imagemAntes) {
+        try {
+          await saveImgToFileIfNeeded();
+        } catch (e) {
+          debugPrint('[PERFIL] PF-FOTO matricula=$mat: $e');
+        }
+      }
+      await saveUserData();
+      notifyListeners();
+      debugPrint('[PERFIL] ficha atualizada: $nomeMilitar');
+    } on TimeoutException catch (e) {
+      debugPrint('[PERFIL] PF-LENTO matricula=$mat: $e');
+    } on SocketException catch (e) {
+      debugPrint('[PERFIL] PF-REDE matricula=$mat: $e');
+    } on http.ClientException catch (e) {
+      debugPrint('[PERFIL] PF-REDE matricula=$mat: $e');
+    } catch (e) {
+      debugPrint('[PERFIL] PF-X-${e.runtimeType} matricula=$mat: $e');
+    } finally {
+      _atualizandoPerfil = false;
+    }
+  }
+
+  /// Copia a ficha do SIGRH para a sessão. Usado no login e na atualização
+  /// em segundo plano, para os dois nunca divergirem.
+  void _aplicarMilitar(Militar militarTemp) {
+    // Campos básicos
+    cpf = militarTemp.cpf;
+    nomeCompleto = militarTemp.nomeCompleto;
+    image = militarTemp.imageUrl;
+    nomeMilitar = '${militarTemp.postoGraduacao} ${militarTemp.qra}';
+    dataIncorporacao = militarTemp.dataIncorporacao;
+    grupo = militarTemp.grupo;
+
+    // ► Novos campos
+    nivel = militarTemp.nivel.toInt();
+    idPosto = militarTemp.idPosto.toInt();
+
+    /* ------------------------------------------------------------
+     * 3) Super-usuário — nova lógica simplificada
+     * ---------------------------------------------------------- */
+    if (nivel == 1) {
+      //Adm
+      isSuperUser = true; // sempre
+    } else if (nivel == 10) {
+      //Usuario comum
+      isSuperUser = false; // nunca
+    } else {
+      // Qualquer outro nível: depende do idPosto
+      isSuperUser = (idPosto != null && idPosto! < 8);
+    }
+    debugPrint('isSuperUser: $isSuperUser');
+  }
 
   // Valor de activation_code de quem confirmou o e-mail; as telas de
   // Configurações e Confirmar e-mail comparam com ele.
@@ -133,32 +214,7 @@ class Auth with ChangeNotifier {
       throw _falhaFicha('SQL', 'buscapormatricula sem dados');
     }
 
-    // Campos básicos
-    cpf = militarTemp.cpf;
-    nomeCompleto = militarTemp.nomeCompleto;
-    image = militarTemp.imageUrl;
-    nomeMilitar = '${militarTemp.postoGraduacao} ${militarTemp.qra}';
-    dataIncorporacao = militarTemp.dataIncorporacao;
-    grupo = militarTemp.grupo;
-
-    // ► Novos campos
-    nivel = militarTemp.nivel.toInt();
-    idPosto = militarTemp.idPosto.toInt();
-
-    /* ------------------------------------------------------------
-     * 3) Super-usuário — nova lógica simplificada
-     * ---------------------------------------------------------- */
-    if (nivel == 1) {
-      //Adm
-      isSuperUser = true; // sempre
-    } else if (nivel == 10) {
-      //Usuario comum
-      isSuperUser = false; // nunca
-    } else {
-      // Qualquer outro nível: depende do idPosto
-      isSuperUser = (idPosto != null && idPosto! < 8);
-    }
-    debugPrint('isSuperUser: $isSuperUser');
+    _aplicarMilitar(militarTemp);
 
     /* ------------------------------------------------------------
      * 4) Imagem local & gravação dos dados

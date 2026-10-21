@@ -1371,3 +1371,36 @@ e guardar o DDL em `sql/`.
   em memória e por isso não pegou o defeito. Fluxo que grava no banco precisa
   de um teste contra um Postgres com o mesmo esquema (§19).
 - Ler o `error_log` de `sigrh/` depois de cada deploy e de tempos em tempos (§22).
+
+---
+
+## 39. Dados do militar ficavam velhos até sair e entrar de novo
+
+**O que aconteceu (21/10/2026).** O militar da matrícula 453854 teve o nome de
+guerra trocado no SIGRH (FELICIANO para F. JÚNIOR), e o app continuou mostrando o
+antigo. A API já devolvia "F. JÚNIOR" (`buscapormatricula.php`, campo `qra`).
+
+**Causa.** A ficha do militar (nome de guerra, posto, nome completo, foto,
+data de incorporação, grupo, nível) só era buscada no login completo, com senha
+ou biometria. A abertura automática (`Auth.tryAutoLogin`) usa a cópia guardada
+no aparelho, e a sessão dura cerca de 24 horas. Qualquer mudança no SIGRH,
+inclusive **promoção**, só aparecia depois de a sessão vencer ou de o militar
+sair da conta e entrar de novo.
+
+**Como ficou (próxima versão do app).**
+- A abertura continua usando a cópia guardada (o app abre na hora) e, sem
+  esperar, chama `Auth.atualizarPerfilEmSegundoPlano()` (`auth_or_home.dart`),
+  que busca a ficha de novo e atualiza a tela e a cópia guardada.
+- O login e a atualização usam o mesmo `_aplicarMilitar`, para nunca
+  divergirem. A foto só é baixada de novo se o endereço mudou.
+- Falha nunca derruba a sessão: fica a cópia guardada e o motivo vai para o log
+  com código (`[PERFIL] PF-REDE`, `PF-LENTO`, `PF-VAZIO`, `PF-FOTO`, `PF-X-...`).
+  Quando o log remoto existir (SouPM 2.2), esses códigos vão para ele.
+- O `Auth` ganhou o parâmetro `dadosSql` (só para testes). Testes em
+  `test/models/auth_perfil_test.dart`: nome de guerra novo, promoção, sem
+  internet, SIGRH sem dados e sem sessão. Os dois primeiros falhavam antes da
+  correção. Conferido no simulador (modo vitrine): na abertura, o log mostra
+  `[PERFIL] ficha atualizada`.
+
+**Enquanto a versão nova não chega:** quem teve dado trocado no SIGRH precisa
+tocar em Sair e entrar de novo.
