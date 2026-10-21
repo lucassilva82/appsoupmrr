@@ -1432,3 +1432,30 @@ tocam a borda.
 anúncio vêm do Firestore (`stores`, `appConfig/anuncio`) e trazem o brasão
 desenhado nelas; trocar a arte é com quem as produz. A intranet tem as próprias
 imagens.
+
+---
+
+## 41. A 2.1.4 e a 2.1.5 saíram sem a chave de Legislações e POPs
+
+**O que aconteceu (21/10/2026).** Ao gerar a 2.1.6, o `env.json` não existia
+nesta máquina. Conferindo o histórico: a chave da API de legislações saiu do
+código em 15/10 (`f03f09e`) e passou a entrar só pelo
+`--dart-define-from-file=env.json`, mas a 2.1.4 e a 2.1.5 foram geradas com
+`flutter build ... --release` puro. O build passa sem o arquivo e só avisa no
+log (`[LEGIS] ATENÇÃO`). Resultado: **Legislações e POPs não funcionavam nas
+versões publicadas** (a API responde `401 Não autorizado` sem a chave).
+
+**Como foi resolvido na 2.1.6.** `env.json` montado com a chave antiga, tirada
+do histórico do git (decisão do usuário; ela já é pública desde `3522d09`).
+Conferido antes de enviar: a API responde 200 com ela, e a chave está dentro
+do `libapp.so` do AAB e do `App.framework` do iOS.
+
+**Pendente.**
+- Pedir uma chave nova a quem mantém `pm.rr.gov.br` e guardar o `env.json` no
+  Google Drive ("Arquivos SouPMRR"), junto das chaves do Android.
+- Fazer o build de release falhar quando faltar a chave (hoje só avisa).
+- A correção definitiva continua a do §3: a API de legislações chamada pelo
+  nosso backend, não pelo app.
+
+**Regra.** Build de loja sempre com `--dart-define-from-file=env.json`, e
+antes de enviar conferir que o arquivo existe e que a chave está no binário.
