@@ -1840,6 +1840,30 @@ que o contrato da fase estiver fixado. A sessão "Chat Intranet" precisa saber
 antes, pelas regras de convivência da intranet (módulo novo, migrações, menu
 "Todos os sistemas").
 
+**Quem implementa o painel (decisão do usuário, 21/10/2026).** O painel é
+feito **pela sessão "Chat Intranet"**, não pelas sessões deste repositório,
+porque ele tem de seguir as regras de design e de desenvolvimento da intranet.
+
+1. Esta sessão (do app) manda o módulo para a "Chat Intranet": este documento,
+   o protótipo do painel e o contrato (§2 e §9). O usuário autorizou que esta
+   sessão passe as instruções direto para ela.
+2. A "Chat Intranet" abre uma **subsessão própria** para o painel.
+3. A subsessão **lê primeiro as regras da intranet** (`REGRAS_DESIGN_2.0.md`,
+   as regras de desenvolvimento e de convivência entre módulos) e o módulo
+   SISCHAMADOS, que é o modelo.
+4. Desenvolve o painel como **módulo novo da intranet** (`painelsoupmrr/`, em
+   `/painelsoupmrr`), igual ao SISCHAMADOS: mesma estrutura de pastas, casca
+   Nexus 2.0, ACL, migrações e `verificar_design.php`. **Em conflito, valem
+   as regras da intranet**, e o desenho deste documento se adapta a elas.
+5. O que é da API do app (`app_config.php`, `log.php`, o cron de envio pelo
+   FCM, a sonda de saúde e os endpoints internos do §1.2) continua com as
+   sessões deste repositório. Mudança no contrato (§2 e §9) é combinada entre
+   as duas antes de ir para o código.
+
+A ordem continua a das fases acima: cada fase do painel começa quando a fase
+do app correspondente fixar o contrato dela, e a P0 só vai ao ar depois das
+correções de segurança da API (§7).
+
 **Carga inicial = o app de hoje.** A fase P1 grava a árvore e os estados
 exatamente como a 2.1.5 se comporta (Escalas e SVI "Em breve", Mapa da Força
 para nível 2+). Publicar a 2.2 não muda nada para o militar até alguém mexer
