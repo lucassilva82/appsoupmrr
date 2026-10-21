@@ -322,8 +322,8 @@ class _EscalasPageState extends State<EscalasPage>
       'REQUIRES_2FA': 'Código 2FA obrigatório.',
       'NOT_AUTHENTICATED': 'Login necessário.',
       'SERVER_ERROR': 'Erro interno no servidor. Aguarde e tente novamente.',
-      'API_HTML_RESPONSE':
-          'A API respondeu HTML em vez de JSON. Verifique se a URL base e o roteamento da intranet estão corretos no ambiente atual.',
+      // API_HTML_RESPONSE usa a própria mensagem do serviço, que já diz de
+      // quem é o problema e traz o código ES-SEM-API-nnn.
     };
     return map[e.code] ?? e.message;
   }

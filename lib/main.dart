@@ -59,6 +59,9 @@ import 'package:projetonovo/pages/svi_escalas_page.dart';
 import 'package:projetonovo/pages/svi_meus_voluntarios_page.dart';
 import 'package:projetonovo/pages/main_shell.dart';
 import 'package:projetonovo/utils/app_routes.dart';
+import 'package:projetonovo/pages/aviso_detalhe_page.dart';
+import 'package:projetonovo/models/aviso_model.dart';
+import 'dart:convert';
 
 import 'firebase_options.dart';
 import 'models/auth_model.dart';
@@ -79,6 +82,7 @@ Future<void> mostrarBannerNotificacao(
   String title,
   String body, {
   String? route,
+  Map<String, dynamic>? aviso,
 }) async {
   try {
     await flutterLocalNotificationsPlugin.show(
@@ -99,7 +103,9 @@ Future<void> mostrarBannerNotificacao(
           presentSound: true,
         ),
       ),
-      payload: route,
+      // Aviso do SIGE leva os campos dele no payload, para o toque no banner
+      // abrir a mesma tela do toque no push.
+      payload: aviso != null ? '$kPrefixoPayloadAviso${jsonEncode(aviso)}' : route,
     );
     print('[DEBUG] Banner local exibido (foreground): $title');
   } catch (e) {
@@ -231,7 +237,7 @@ Future<void> _prepararServicos() async {
       onDidReceiveNotificationResponse: (resp) {
         debugPrint(
             '[DEBUG] Notificação local clicada – payload: ${resp.payload}');
-        navegarPorNotificacao(resp.payload);
+        tratarPayloadLocal(resp.payload);
       },
     );
   });
@@ -348,13 +354,10 @@ void mostrarToastEvento(String mensagem, Color cor, {IconData? icone}) {
   );
 }
 
-/// Trata os valores do campo `tipo_evento` do payload de push (adição
-/// retrocompatível: o restante do payload não mudou).
-///
-/// [interacao] = true quando o usuário TOCOU na notificação (app aberto pelo
-/// toque / trazido do background). false quando a mensagem apenas chegou com o
-/// app em foreground.
-void tratarTipoEvento(Map<String, dynamic> data, {required bool interacao}) {
+/// Aviso curto com a cor do `tipo_evento`, quando o push chega com o app
+/// aberto. O toque não passa por aqui: vai para [tratarToqueNotificacao], que
+/// abre a tela do aviso.
+void tratarTipoEvento(Map<String, dynamic> data) {
   final tipo = (data['tipo_evento'] ?? '').toString().trim();
   if (tipo.isEmpty) return;
 
@@ -368,28 +371,24 @@ void tratarTipoEvento(Map<String, dynamic> data, {required bool interacao}) {
       // Alerta vermelho; a escala já sai da lista de próximas ao recarregar.
       mostrarToastEvento('Uma escala foi cancelada.', vermelho,
           icone: Icons.event_busy_rounded);
-      if (interacao) navegarPorNotificacao('/escalas');
       break;
 
     case 'removido':
       // Alerta laranja; removido da lista.
       mostrarToastEvento('Você foi removido de uma escala.', laranja,
           icone: Icons.person_remove_rounded);
-      if (interacao) navegarPorNotificacao('/escalas');
       break;
 
     case 'escalado':
       // Badge verde; abrir escala ao tocar.
       mostrarToastEvento('Você foi escalado para um serviço.', verde,
           icone: Icons.assignment_turned_in_rounded);
-      if (interacao) navegarPorNotificacao('/escalas');
       break;
 
     case 'svi_inscrito':
       // Confirmação; navegar para "Meus Voluntários".
       mostrarToastEvento('Inscrição no SVI confirmada.', verde,
           icone: Icons.more_time_rounded);
-      if (interacao) navegarPorNotificacao('/svi/meus-voluntarios');
       break;
 
     case 'svi_adesao_reativada':
@@ -406,6 +405,67 @@ void tratarTipoEvento(Map<String, dynamic> data, {required bool interacao}) {
       // Valor desconhecido — ignora silenciosamente (retrocompatível).
       break;
   }
+}
+
+const kPrefixoPayloadAviso = 'aviso:';
+
+/// Último push tratado: o `getInitialMessage` devolve a mesma mensagem a cada
+/// volta do app ao primeiro plano, e o aviso não pode reabrir sozinho.
+String? _ultimoPushTratado;
+
+/// Toque num push (app fechado, em segundo plano ou aberto). Aviso do SIGE
+/// (com `notificacao_id` ou `tipo_evento`) abre a tela do aviso; o resto segue
+/// a `route`, como sempre.
+void tratarToqueNotificacao(RemoteMessage message) {
+  final id = message.messageId;
+  if (id != null && id == _ultimoPushTratado) return;
+  _ultimoPushTratado = id;
+  final data = message.data;
+  if (AvisoAberto.ehDoSige(data)) {
+    abrirAviso(AvisoAberto.doPush(
+      data,
+      tituloSistema: message.notification?.title,
+      corpoSistema: message.notification?.body,
+    ));
+    return;
+  }
+  navegarPorNotificacao(data['route']?.toString());
+}
+
+/// Toque no banner local (app aberto).
+void tratarPayloadLocal(String? payload) {
+  if (payload != null && payload.startsWith(kPrefixoPayloadAviso)) {
+    try {
+      final data = jsonDecode(payload.substring(kPrefixoPayloadAviso.length))
+          as Map<String, dynamic>;
+      abrirAviso(AvisoAberto.doPush(data));
+      return;
+    } catch (e) {
+      debugPrint('[AVISO] payload local inválido: $e');
+      return;
+    }
+  }
+  navegarPorNotificacao(payload);
+}
+
+/// Abre a tela do aviso do SIGE.
+///
+/// Com o app fechado, o `getInitialMessage` responde antes de o MaterialApp
+/// existir, e o aviso se perdia (conferido no simulador em 21/10/2026). Por
+/// isso espera o Navigator por até 10 s antes de desistir.
+void abrirAviso(AvisoAberto aviso, {int tentativa = 0}) {
+  final nav = navigatorKey.currentState;
+  if (nav == null) {
+    if (tentativa < 40) {
+      Future.delayed(const Duration(milliseconds: 250),
+          () => abrirAviso(aviso, tentativa: tentativa + 1));
+    } else {
+      debugPrint('[AVISO] AV-NAV Navigator indisponível em 10 s — '
+          'aviso ${aviso.notificacaoId} não aberto.');
+    }
+    return;
+  }
+  nav.pushNamed(AppRoutes.AVISO, arguments: aviso);
 }
 
 /// Rotas seguras para deep-link via notificação (sem argumentos obrigatórios).
@@ -515,6 +575,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             notif.title,
             notif.body,
             route: notif.route,
+            aviso: notif.dadosAviso,
           );
         }
       };
@@ -529,8 +590,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         print('[DEBUG] ===== getInitialMessage =====');
         print('[DEBUG] App aberto via notificação: ${message.data}');
         // App estava terminado e foi aberto pelo toque na notificação.
-        tratarTipoEvento(message.data, interacao: true);
-        navegarPorNotificacao(message.data['route']?.toString());
+        tratarToqueNotificacao(message);
       }
     });
 
@@ -552,7 +612,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         }
       }
       // Toast colorido em foreground conforme o tipo_evento do payload.
-      tratarTipoEvento(message.data, interacao: false);
+      tratarTipoEvento(message.data);
       print('[DEBUG] ===== FOREGROUND MESSAGE PROCESSADO =====');
     });
 
@@ -560,8 +620,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       print('[DEBUG] ===== onMessageOpenedApp INICIADO =====');
       print('[DEBUG] App aberto pelo toque na notificação: ${message.data}');
       // App em background e foi trazido ao foreground pelo toque.
-      tratarTipoEvento(message.data, interacao: true);
-      navegarPorNotificacao(message.data['route']?.toString());
+      tratarToqueNotificacao(message);
     });
   }
 
@@ -619,7 +678,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           .then((RemoteMessage? message) {
         if (message != null) {
           print('[DEBUG] Notificação clicada (resume) — navegando por rota');
-          navegarPorNotificacao(message.data['route']?.toString());
+          tratarToqueNotificacao(message);
         }
       });
 
@@ -730,6 +789,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             AppRoutes.PLANTAO: (_) => PlantaoPage(),
             AppRoutes.ESCALAS: (_) => const EscalasPage(),
             AppRoutes.ESCALA_DETALHE: (_) => const EscalaDetalhePage(),
+            AppRoutes.AVISO: (ctx) => AvisoDetalhePage(
+                  aviso: ModalRoute.of(ctx)!.settings.arguments as AvisoAberto,
+                ),
             AppRoutes.SVI_ESCALAS: (_) => const SviEscalasPage(),
             AppRoutes.SVI_MEUS_VOLUNTARIOS: (_) =>
                 const SviMeusVoluntariosPage(),

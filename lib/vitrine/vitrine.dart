@@ -34,6 +34,9 @@ http.Client clienteVitrine() {
   final real = IOClient();
   return MockClient((req) async {
     final url = req.url;
+    if (url.host.startsWith('intranet.') && url.path.contains('/api/v1/')) {
+      return _responderIntranet(url, req);
+    }
     final ehSigrh = url.host.endsWith('pmrr.online') &&
         url.path.contains('/flutter/sigrh/');
     if (!ehSigrh || _liberados.any(url.path.endsWith)) {
@@ -342,6 +345,209 @@ List<Map<String, String>> certidoesVitrine() {
   ];
 }
 
+// ── API da intranet (SIGE): escalas, permuta e avisos ───────────────────────
+//
+// Os avisos 9001 a 9010 seguem o roteiro da parte 7 do documento do SIGE, com
+// as respostas de exemplo da parte 4 (nomes fictícios). O 9011 simula o
+// endereço sem a API (página HTML de 404, como em produção hoje).
+
+bool _vitrineCiencia346 = false;
+
+http.Response _intranetJson(Object corpo, [int status = 200]) =>
+    http.Response.bytes(utf8.encode(jsonEncode(corpo)), status,
+        headers: {'content-type': 'application/json; charset=utf-8'});
+
+http.Response _ok(Object data) => _intranetJson({'success': true, 'data': data});
+
+http.Response _naoAchado() => _intranetJson({
+      'success': false,
+      'error': {'code': 'NOT_FOUND', 'message': 'Nao encontrado'}
+    }, 404);
+
+Map<String, Object?> _escala346() => {
+      'escala_id': 346,
+      'escala_status': 'PUBLICADA',
+      'data_escala': '22/10/2026',
+      'data_escala_iso': '2026-10-22',
+      'tipo_servico': 'Evento / Operação / Missão',
+      'guarnicao_nome': 'RP 002',
+      'horario_ini': '07:00',
+      'horario_fim': '19:00',
+      'funcao_nome': 'Motorista',
+      'horas': '12',
+      'local_assuncao': 'Quartel do Comando-Geral',
+      'uniforme': 'Uniforme 4º A',
+      'tem_ciencia': _vitrineCiencia346,
+      'ciencia_em_br': _vitrineCiencia346 ? '21/10/2026 09:41' : null,
+      'tem_impossibilidade': false,
+      'situacao_militar': 'ESCALADO',
+      'somente_leitura': false,
+      'composicao': [],
+    };
+
+const _escala338 = {
+  'escala_id': 338,
+  'escala_status': 'CANCELADA',
+  'data_escala': '28/12/2026',
+  'data_escala_iso': '2026-12-28',
+  'tipo_servico': 'Escala de Serviço',
+  'guarnicao_nome': null,
+  'horario_ini': '07:00',
+  'horario_fim': '19:00',
+  'funcao_nome': '',
+  'uniforme': 'Uniforme 4º A',
+  'tem_ciencia': false,
+  'tem_impossibilidade': false,
+  'situacao_militar': 'ESCALA_CANCELADA',
+  'somente_leitura': true,
+  'mensagem': 'Esta escala foi cancelada. Você NÃO precisa comparecer.',
+};
+
+const _escala347 = {
+  'escala_id': 347,
+  'escala_status': 'PUBLICADA',
+  'data_escala': '25/10/2026',
+  'data_escala_iso': '2026-10-25',
+  'tipo_servico': 'Escala de Serviço',
+  'horario_ini': '19:00',
+  'horario_fim': '07:00',
+  'funcao_nome': '',
+  'tem_ciencia': false,
+  'tem_impossibilidade': false,
+  'situacao_militar': 'REMOVIDO',
+  'somente_leitura': true,
+  'mensagem':
+      'Você foi removido desta escala. Em caso de dúvida, fale com o escalante.',
+};
+
+/// id → (tipo_evento, título, corpo, destino)
+final Map<int, List<Object?>> _avisosSige = {
+  9001: ['publicada', 'Escalado em 22/10 — Evento',
+      'Você foi escalado para 22/10/2026, das 07:00 às 19:00, na guarnição RP 002 (Motorista). Dê ciência no app.',
+      {'tela': 'escala', 'id': 346, 'acoes': ['ciencia', 'impossibilidade'], 'somente_leitura': false, 'escala_id': 346, 'situacao_militar': 'ESCALADO'}],
+  9002: ['aprovada', 'Escalado em 22/10 e escala aprovada',
+      'Você foi escalado para 22/10/2026 e a escala foi aprovada pelo comandante.',
+      {'tela': 'escala', 'id': 346, 'acoes': ['ciencia'], 'somente_leitura': false, 'escala_id': 346, 'situacao_militar': 'ESCALADO'}],
+  9003: ['ciencia_lembrete', 'Ciência pendente — escala de amanhã',
+      'Você ainda não deu ciência da escala de 22/10/2026. O serviço começa às 07:00.',
+      {'tela': 'escala', 'id': 346, 'acoes': ['ciencia'], 'somente_leitura': false, 'escala_id': 346, 'situacao_militar': 'ESCALADO'}],
+  9004: ['permuta_solicitada', 'Permuta solicitada — 22/10',
+      'SD QPCPM FICTÍCIO pediu que você o substitua no dia 22/10. Procure o escalante para confirmar.',
+      {'tela': 'permuta', 'id': 10, 'acoes': [], 'somente_leitura': true, 'escala_id': 346}],
+  9005: ['cancelada', 'Escala CANCELADA — 28/12',
+      'A escala de 28/12/2026 foi cancelada. Você não precisa comparecer.',
+      {'tela': 'escala', 'id': 338, 'acoes': [], 'somente_leitura': true, 'escala_id': 338, 'situacao_militar': 'ESCALA_CANCELADA'}],
+  9006: ['removido', 'Você foi removido — 25/10',
+      'Você foi retirado da escala de 25/10/2026. Em caso de dúvida, fale com o escalante.',
+      {'tela': 'escala', 'id': 347, 'acoes': [], 'somente_leitura': true, 'escala_id': 347, 'situacao_militar': 'REMOVIDO'}],
+  9007: ['svi_voluntarios_80', 'Últimas 2 vagas — SVI 30/10',
+      'A escala SVI de 30/10/2026 está quase completa: restam 2 vagas para voluntários.',
+      {'tela': 'svi_vagas', 'id': 501, 'acoes': ['ver_vagas'], 'somente_leitura': true, 'escala_id': 501}],
+  9008: ['svi_suspensao', 'SVI suspenso',
+      'Seu SVI está suspenso até 21/11/2026 (falta em 20/10).',
+      {'tela': 'svi_adesao', 'id': null, 'acoes': ['ver_adesao'], 'somente_leitura': true}],
+  9009: ['teste', 'Push de teste',
+      'Este é um aviso de teste enviado pelo painel do SIGE.',
+      {'tela': 'aviso', 'id': null, 'acoes': [], 'somente_leitura': true}],
+  9010: ['tipo_inventado', 'Aviso de um tipo novo',
+      'O SIGE criou um tipo de aviso que esta versão do app não conhece. O texto aparece inteiro, sem erro.',
+      {'tela': 'tela_nova', 'id': 5, 'acoes': [], 'somente_leitura': true, 'assunto': {'modulo': 'escala_periodo', 'id': 5}}],
+  9011: ['publicada', 'Escalado em 22/10 (endereço sem API)',
+      'Este aviso simula o app apontando para um endereço onde a API da intranet não existe.',
+      null],
+};
+
+http.Response _responderIntranet(Uri url, http.Request req) {
+  final caminho = url.path.split('/api/v1/').last;
+  final post = req.method == 'POST';
+  final expira =
+      DateTime.now().add(const Duration(hours: 12)).toIso8601String();
+  debugPrint('[VITRINE] intranet ${req.method} $caminho');
+
+  if (caminho == 'auth/login' || caminho == 'auth/refresh') {
+    return _ok({'token': 'vitrine', 'expires_at': expira});
+  }
+  final aviso = RegExp(r'^dispositivo/notificacoes/(\d+)(/lida)?$')
+      .firstMatch(caminho);
+  if (aviso != null) {
+    final id = int.parse(aviso.group(1)!);
+    final a = _avisosSige[id];
+    if (a == null) return _naoAchado();
+    if (id == 9011) {
+      return http.Response('<!DOCTYPE html><html><head><title>404 Not Found'
+          '</title></head><body>Not Found</body></html>', 404,
+          headers: {'content-type': 'text/html'});
+    }
+    if (post) return _ok({'ok': true, 'ja_lida': false});
+    return _ok({
+      'id': id,
+      'tipo_evento': a[0],
+      'titulo': a[1],
+      'corpo': a[2],
+      'destino': a[3],
+      'criado_em_br': '21/10/2026 09:30',
+      'lida': false,
+    });
+  }
+  if (caminho == 'escala/permuta/10') {
+    return _ok({
+      'permuta_id': 10,
+      'escala_id': 346,
+      'tipo': 'SUBSTITUICAO',
+      'situacao': 'PENDENTE',
+      'situacao_texto': 'Aguardando decisão do escalante',
+      'meu_papel': 'substituto',
+      'data_servico': '22/10/2026',
+      'tipo_servico': 'Evento / Operação / Missão',
+      'guarnicao': 'RP 002',
+      'turno': {'horario_ini': '07:00', 'horario_fim': '19:00'},
+      'solicitante': 'SD QPCPM FICTÍCIO',
+      'titular': 'SD QPCPM FICTÍCIO',
+      'ja_na_escala': false,
+      'somente_leitura': true,
+      'mensagem':
+          'A decisão é do escalante. Procure o escalante para confirmar a substituição.',
+    });
+  }
+  if (caminho == 'escala/346/ciencia' && post) {
+    _vitrineCiencia346 = true;
+    return _ok({'ok': true});
+  }
+  switch (caminho) {
+    case 'escala/346':
+      return _ok(_escala346());
+    case 'escala/338':
+      return _ok(_escala338);
+    case 'escala/347':
+      return _ok(_escala347);
+    case 'escala/minhas-escalas':
+      return _ok({'escalas': [_escala346()]});
+    case 'escala/proxima':
+      return _ok({'proxima': _escala346()});
+    case 'svi/adesao':
+      return _ok({'status': 'suspensa', 'ativa': false, 'horas_mes': 0});
+    case 'svi/escalas-disponiveis':
+      return _ok({'tem_adesao': true, 'escalas': []});
+  }
+  return _intranetJson({'erro': 'Endpoint nao encontrado'}, 404);
+}
+
+/// Avisos do SIGE na lista, como a Cloud Function grava no Firestore.
+List<NotificationModel> _avisosSigeNaLista(DateTime agora) => [
+      for (final e in _avisosSige.entries)
+        NotificationModel(
+          id: 'sige${e.key}',
+          title: e.value[1]! as String,
+          body: e.value[2]! as String,
+          timestamp: agora.subtract(Duration(minutes: 9020 - e.key)),
+          clicked: false,
+          route: '/escalas',
+          tipoEvento: e.value[0]! as String,
+          referenciaId: '346',
+          notificacaoId: '${e.key}',
+        ),
+    ];
+
 // ── Notificações ────────────────────────────────────────────────────────────
 
 List<NotificationModel> notificacoesVitrine() {
@@ -368,5 +574,6 @@ List<NotificationModel> notificacoesVitrine() {
         'Sua Certidão de Tempo de Serviço foi emitida e vale por 30 dias. Uma cópia em PDF foi enviada para o seu e-mail.',
         const Duration(hours: 2),
         lida: false),
+    ..._avisosSigeNaLista(agora),
   ];
 }

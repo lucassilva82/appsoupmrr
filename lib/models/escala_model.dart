@@ -91,6 +91,10 @@ class EscalaModel {
   final String? policialPostoSigla;
   final String? policialNomeCompleto;
   final String? policialTelefone;
+  // Somente leitura (E3 do SIGE): escala cancelada ou de que o militar saiu.
+  final String? situacaoMilitar;
+  final bool somenteLeitura;
+  final String? mensagem;
 
   EscalaModel({
     required this.escalaId,
@@ -117,6 +121,9 @@ class EscalaModel {
     this.policialPostoSigla,
     this.policialNomeCompleto,
     this.policialTelefone,
+    this.situacaoMilitar,
+    this.somenteLeitura = false,
+    this.mensagem,
   });
 
   factory EscalaModel.fromJson(Map<String, dynamic> j) {
@@ -150,6 +157,9 @@ class EscalaModel {
       policialPostoSigla: policial?['posto_sigla']?.toString(),
       policialNomeCompleto: policial?['nome_completo']?.toString(),
       policialTelefone: policial?['telefone']?.toString(),
+      situacaoMilitar: j['situacao_militar']?.toString(),
+      somenteLeitura: j['somente_leitura'] == true,
+      mensagem: j['mensagem']?.toString(),
     );
   }
 

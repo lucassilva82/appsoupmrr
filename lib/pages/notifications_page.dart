@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:projetonovo/main.dart' show navegarPorNotificacao;
+import 'package:projetonovo/main.dart' show abrirAviso, navegarPorNotificacao;
+import 'package:projetonovo/models/aviso_model.dart';
 import 'package:projetonovo/models/notification_model.dart';
 import 'package:projetonovo/utils/app_theme.dart';
 import 'package:projetonovo/utils/notification_provider.dart';
@@ -555,7 +556,9 @@ class _NotifDetailSheet extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cat = _categoriaDe(notif, theme);
-    final temRota = notif.route != null && notif.route!.isNotEmpty;
+    final aviso = notif.dadosAviso;
+    final temRota =
+        aviso != null || (notif.route != null && notif.route!.isNotEmpty);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.5,
@@ -679,7 +682,11 @@ class _NotifDetailSheet extends StatelessWidget {
                         child: ElevatedButton.icon(
                           onPressed: () {
                             Navigator.of(context).pop();
-                            navegarPorNotificacao(notif.route);
+                            if (aviso != null) {
+                              abrirAviso(AvisoAberto.doPush(aviso));
+                            } else {
+                              navegarPorNotificacao(notif.route);
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             foregroundColor: theme.colorScheme.onPrimary,
@@ -689,7 +696,7 @@ class _NotifDetailSheet extends StatelessWidget {
                           ),
                           icon:
                               const Icon(Icons.arrow_forward_rounded, size: 18),
-                          label: const Text('Abrir',
+                          label: Text(aviso != null ? 'Ver detalhes' : 'Abrir',
                               style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
                       ),

@@ -11,6 +11,7 @@ class AppRoutes {
   static const PLANTAO = '/plantao';
   static const ESCALAS = '/escalas';
   static const ESCALA_DETALHE = '/escala-detalhe';
+  static const AVISO = '/aviso'; // aviso do SIGE (argumento: AvisoAberto)
   static const SVI_ESCALAS = '/svi/escalas';
   static const SVI_MEUS_VOLUNTARIOS = '/svi/meus-voluntarios';
   static const NOTIFICATIONS_PAGE = '/notifications-page';

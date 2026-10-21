@@ -6,6 +6,7 @@ admin.initializeApp();
 // Lista de matrículas autorizadas a receber notificações INDIVIDUAIS.
 // Edite o arquivo matriculas_autorizadas.js e faça deploy para atualizar.
 const AUTORIZADOS = require("./matriculas_autorizadas");
+const { camposAviso } = require("./aviso_campos");
 
 /**
  * Lê a configuração de autorização de notificações a partir do arquivo
@@ -25,7 +26,7 @@ function carregarConfigNotificacoes() {
  * o histórico individual (coleção militares/{id}/notificacoes) e dispara o
  * push. Reutilizado por notificarEscala e por notificarTodos (modo restrito).
  */
-async function enviarParaMatriculas(ids, { titulo, mensagem, rota }) {
+async function enviarParaMatriculas(ids, { titulo, mensagem, rota, extras = {} }) {
   const db = admin.firestore();
   const idsStr = ids.map(String);
 
@@ -58,6 +59,7 @@ async function enviarParaMatriculas(ids, { titulo, mensagem, rota }) {
           title: titulo,
           body: mensagem,
           route: rota ?? "",
+          ...extras,
           read: false,
           timestamp: agora,
         })
@@ -70,7 +72,7 @@ async function enviarParaMatriculas(ids, { titulo, mensagem, rota }) {
   // 3. Envia em lotes de até 500 (limite do FCM por chamada)
   const payload = {
     notification: { title: titulo, body: mensagem },
-    data: { route: rota ?? "", titulo, mensagem },
+    data: { route: rota ?? "", titulo, mensagem, ...extras },
     android: { priority: "high" },
     apns: { payload: { aps: { sound: "default" } } },
   };
@@ -108,7 +110,10 @@ async function enviarParaMatriculas(ids, { titulo, mensagem, rota }) {
  *     "ids":      ["123456", "789012"],   // matrículas dos militares
  *     "titulo":   "Escala de Serviço",
  *     "mensagem": "Você foi escalado para 05/06/2026.",
- *     "rota":     "/plantao"              // opcional – navega no app
+ *     "rota":     "/plantao",             // opcional – navega no app
+ *     "tipo_evento":    "cancelada",       // opcionais (SIGE): o app abre a
+ *     "referencia_id":  "347",             // tela do aviso pelo notificacao_id
+ *     "notificacao_id": "1168"             // (ver aviso_campos.js)
  *   }
  *
  * Busca o fcmToken de cada militar no Firestore e envia via FCM.
@@ -150,10 +155,16 @@ exports.notificarEscala = onRequest({ invoker: "public", cors: true }, async (re
     });
   }
 
+  const { campos: extras, descartados } = camposAviso(req.body);
+  if (descartados.length > 0) {
+    console.warn(`notificarEscala: campos fora do formato descartados: ${descartados.join(", ")}`);
+  }
+
   const resultado = await enviarParaMatriculas(idsAlvo, {
     titulo,
     mensagem,
     rota,
+    extras,
   });
 
   return res.status(200).json({

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../data/store.dart';
+import '../models/aviso_model.dart';
 import '../models/escala_model.dart';
 import '../models/svi_model.dart';
 
@@ -40,11 +41,35 @@ class EscalaService {
   static const _storageKey = 'escalaJwt';
   static const _kCacheMinhasEscalas = 'escalaMinhasCache';
 
-  String get _base {
-    final envBase = _normalizeBase(_apiBaseUrlFromEnv);
+  /// Endereço único da API da intranet (SIGE) para TODOS os módulos que
+  /// falam com ela: escalas, SVI, avisos e permutas.
+  ///
+  /// Vem do `API_BASE_URL` do `env.json` (`--dart-define-from-file`). Sem ele,
+  /// o build de loja usa produção e o de debug, o desenvolvimento. Foi essa
+  /// diferença que fez o "Abrir" do aviso falhar no TestFlight em 20/10/2026:
+  /// o build de release chamava `intranet.pmrr.online`, onde a `/api/v1`
+  /// ainda não existe e o Apache responde uma página HTML de 404.
+  static String get baseApi {
+    final envBase = _normalizeBaseStatic(_apiBaseUrlFromEnv);
     if (envBase.isNotEmpty) return envBase;
+    if (kReleaseMode && !_avisouSemBase) {
+      _avisouSemBase = true;
+      debugPrint('[ESCALA] ATENÇÃO: build sem API_BASE_URL, usando $_baseUrlProd');
+    }
     return kReleaseMode ? _baseUrlProd : _baseUrlDev;
   }
+
+  static bool _avisouSemBase = false;
+
+  static String _normalizeBaseStatic(String base) {
+    final b = base.trim();
+    if (b.isEmpty) return '';
+    var normalized = b.endsWith('/') ? b.substring(0, b.length - 1) : b;
+    if (!normalized.contains('/api/v1')) normalized = '$normalized/api/v1';
+    return normalized;
+  }
+
+  String get _base => baseApi;
 
   String get _phpHost {
     final host = Uri.tryParse(_activeBase)?.host.toLowerCase() ?? '';
@@ -66,14 +91,6 @@ class EscalaService {
   String _clip(String text, [int max = 220]) {
     if (text.length <= max) return text;
     return '${text.substring(0, max)}...';
-  }
-
-  String _normalizeBase(String base) {
-    final b = base.trim();
-    if (b.isEmpty) return '';
-    var normalized = b.endsWith('/') ? b.substring(0, b.length - 1) : b;
-    if (!normalized.contains('/api/v1')) normalized = '$normalized/api/v1';
-    return normalized;
   }
 
   Map<String, String> _sanitizeHeaders(Map<String, String> headers) {
@@ -317,11 +334,17 @@ class EscalaService {
             (title.toLowerCase().contains('intranet') ||
                 title.toLowerCase().contains('início') ||
                 title.toLowerCase().contains('inicio'));
+        // Página HTML no lugar da API: o endereço não tem a API do app
+        // (ex.: produção antes de o SIGE ser publicado lá) ou a intranet
+        // devolveu a tela de login. Não é problema do aparelho.
         throw EscalaServiceException(
           'API_HTML_RESPONSE',
           isIntranetPage
-              ? 'A autenticação web funcionou, mas a API de escalas retornou uma página HTML da intranet em vez de JSON. Ambiente ainda não compatível com o módulo.'
-              : 'Servidor retornou HTML em vez de JSON para o módulo de escalas.',
+              ? 'A intranet respondeu com uma página em vez dos dados. '
+                  'Saia das escalas e entre de novo. (ES-SEM-API-${resp.statusCode})'
+              : 'Servidor da intranet indisponível ou sem a API do app neste '
+                  'endereço (HTTP ${resp.statusCode}). O problema é do servidor, '
+                  'não do seu aparelho. Tente mais tarde. (ES-SEM-API-${resp.statusCode})',
         );
       }
 
@@ -962,6 +985,28 @@ class EscalaService {
         .map((e) =>
             EscalaImpossibilidadeTipo.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  // ── Avisos do SIGE (toque no push) ────────────────────────────────────────
+
+  /// GET /dispositivo/notificacoes/{id} — aviso do próprio militar com o texto
+  /// completo e o `destino` já resolvido pelo servidor (E1). Não marca como
+  /// lido: isso é [marcarAvisoLido].
+  Future<AvisoDetalhe> getAviso(int notificacaoId) async {
+    final data = await _get('/dispositivo/notificacoes/$notificacaoId');
+    return AvisoDetalhe.fromJson(data as Map<String, dynamic>);
+  }
+
+  /// POST /dispositivo/notificacoes/{id}/lida — chamar de novo é inofensivo.
+  Future<void> marcarAvisoLido(int notificacaoId) async {
+    await _post('/dispositivo/notificacoes/$notificacaoId/lida', {});
+  }
+
+  /// GET /escala/permuta/{id} — permuta em que o militar é substituto ou
+  /// titular, mesmo sem estar na escala (E2). Somente leitura.
+  Future<PermutaModel> getPermuta(int permutaId) async {
+    final data = await _get('/escala/permuta/$permutaId');
+    return PermutaModel.fromJson(data as Map<String, dynamic>);
   }
 
   // ── Endpoints de SVI (Serviço Voluntário Interno) ──────────────────────────────

@@ -208,7 +208,15 @@ class NotificationService {
           ? null
           : data['route'].toString(),
       isGlobal: isGlobal,
+      tipoEvento: _campo(data['tipo_evento']),
+      referenciaId: _campo(data['referencia_id']),
+      notificacaoId: _campo(data['notificacao_id']),
     );
+  }
+
+  static String? _campo(dynamic v) {
+    final s = v?.toString().trim() ?? '';
+    return s.isEmpty ? null : s;
   }
 
   // ───────────────────────── Cache local (fallback) ───────────────────────────
