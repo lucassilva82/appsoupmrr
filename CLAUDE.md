@@ -18,12 +18,14 @@ Documento novo? Acrescente na lista abaixo com `@`.
 | [SETUP.md](SETUP.md) | Montar a máquina: versões, arquivos fora do git, builds, API (§9), vídeos (§10), skills (§11) |
 | [APRENDIZADOS.md](APRENDIZADOS.md) | Erros que já custaram caro: publicar versão, API, login, certidões, capturas, vídeos |
 | [DESIGN.md](DESIGN.md) | Qualquer tela nova: cores, tipografia, cartões |
+| [docs/SOUPM_2_2.md](docs/SOUPM_2_2.md) | Plano da versão 2.2 do app: navegação, Início, níveis, logs, versões por plataforma, fases |
 | [docs/PAINEL_ADMIN.md](docs/PAINEL_ADMIN.md) | Planejamento do painel web (funções, notificações, conteúdo, contrato `app_config`, fases) |
 | [README.md](README.md) | Visão geral do app |
 
 @SETUP.md
 @APRENDIZADOS.md
 @DESIGN.md
+@docs/SOUPM_2_2.md
 @docs/PAINEL_ADMIN.md
 @README.md
 
@@ -87,7 +89,20 @@ que depende dela.
   nosso banco, com matrícula, aparelho, plataforma, versão do app, data e
   código do erro, para serem acompanhados no painel. Erro capturado também é
   salvo, não só mostrado. Sem dado sensível no log (senha, MD5, CPF completo,
-  conteúdo de documentos). Função nova sem log não está pronta.
+  conteúdo de documentos). Toda interação vira um evento com nome
+  `<modulo>.<acao>` (abrir o app, abrir tela, ver, baixar, compartilhar,
+  emitir, enviar, tocar em card ou atalho), com a chave da função e o
+  resultado, no catálogo do `docs/SOUPM_2_2.md` §9.2. Função nova só está
+  pronta quando os eventos dela estão no catálogo e aparecem no painel.
+- **Tudo o que entra no app entra no painel.** Função, tela, card, módulo,
+  serviço ou API nova já nasce com tudo isto, sem esperar pedido: chave na
+  árvore (`soupm_menu_item`), eventos no catálogo, códigos de erro em
+  `soupm_config` (`erros`), e, se fala com um sistema novo, um ponto no mapa
+  de conexões do painel (catálogo `soupm_servico`, com ícone, dependências e
+  sonda de saúde), o que faz o serviço aparecer também na disponibilidade de
+  24 h, nos alertas de "serviço lento ou fora" e na busca do painel. Se tem
+  data, aparece na Agenda. Detalhe: `docs/PAINEL_ADMIN.md` §1.4. Não está
+  pronto enquanto não aparecer no painel.
 - **Nada se faz sem consultar as skills.** Antes de começar qualquer tarefa
   (código, tela, API, SQL, painel, teste, plano, vídeo, revisão), olhar a
   tabela "Skills: quando usar cada uma" logo abaixo e **carregar todas as que

@@ -65,6 +65,9 @@ flutter_*.png
 # Vídeos tutoriais (projeto Remotion, gravações e vídeo final)
 /videos-tutoriais/
 
+# Protótipos do SouPM 2.2 (os prints mostram os comandantes, pessoas reais)
+/prototipos/
+
 # Permissões locais do Claude Code (cada máquina tem as suas)
 /.claude/settings.local.json
 
