@@ -1436,11 +1436,31 @@ Todos com consulta preparada, POST, sem dado na URL e passando pelo
 
 > **O desenho final das tabelas fica no `docs/PAINEL_ADMIN.md` §8**, combinado
 > com a sessão do painel em 21/10/2026: `TIMESTAMPTZ` em vez de `TIMESTAMP`,
-> `CHECK` em vez de `ENUM` (o banco é PostgreSQL 9.6), log em tabela por mês
-> com uma view (o 9.6 não tem partição declarativa), auditoria na
+> `CHECK` em vez de `ENUM`, log em tabela por mês
+> com uma view, auditoria na
 > `intranet.auditoria` (sem `soupm_admin_log`), `soupm_pendencia_tipo` com
 > `fonte_status`, `prazo_tipo` e `prazo`, e `soupm_feedback_anexo`. Os
 > rascunhos abaixo mostram a ideia; em conflito, vale o PAINEL_ADMIN.
+>
+> **Bancos (22/10/2026).** Hoje são dois: o **banco de produção**, do SIGRH,
+> que a API do app usa (conferido: **PostgreSQL 13.23**, e não 9.6 como se
+> supunha), e o **banco de desenvolvimento da intranet**, onde roda a intranet
+> nova e onde o painel é desenvolvido. Quando a intranet entrar em produção,
+> os dois se juntam. Até lá:
+> - as tabelas `soupm_*` que a API do app grava (log, configuração) existem
+>   **no banco de produção**; as do banco de desenvolvimento servem só para
+>   desenvolver o painel;
+> - o mesmo SQL versionado em `sql/` da API é aplicado **nos dois**, para o
+>   esquema não divergir;
+> - o painel chega aos dados reais do app pela troca de conexão por nome
+>   (PAINEL_ADMIN §5.17), nunca com endereço ou senha no código;
+> - SQL no banco de produção é rodado **pelo usuário**, no phpPgAdmin; a sessão
+>   prepara o script, testa num Postgres local e diz a ordem.
+>
+> Com o 13 existem partição declarativa, colunas `GENERATED` e `CREATE INDEX IF
+> NOT EXISTS`; os limites do 9.6 deixam de valer. `CHECK` no lugar de `ENUM`
+> continua, porque é mais fácil de mudar. A versão do banco de desenvolvimento
+> ainda precisa ser conferida.
 
 ```sql
 -- Árvore de menus e estado de cada função (substitui o soupm_modulo do PAINEL §8)
@@ -1502,12 +1522,10 @@ CREATE TABLE public.soupm_evento (
     dados        JSONB,
     PRIMARY KEY (id, recebido_em)
 ) PARTITION BY RANGE (recebido_em);
--- Atenção: o banco de produção é PostgreSQL 9.6 (lado da intranet). Se a API do
--- app usar o mesmo servidor, partição declarativa não existe no 9.6: usar tabela
--- por mês (soupm_evento_2026_11) com uma view de união. Conferir a versão antes.
--- Fase 0 (22/10/2026): ficou uma tabela só por tipo (soupm_evento, soupm_erro),
--- com índice por data e limpeza por DELETE (180 dias e 1 ano). Vira tabela por
--- mês com uma view de mesmo nome quando o volume pedir; app e log.php não mudam.
+-- Produção é PostgreSQL 13.23 (conferido em 22/10/2026), que tem partição
+-- declarativa. Fase 0: ficou uma tabela só por tipo (soupm_evento, soupm_erro),
+-- com índice por data e limpeza por DELETE (180 dias e 1 ano). Quando o volume
+-- pedir, vira tabela particionada por mês com o mesmo nome; app e log.php não mudam.
 -- SQL: api-soupmrr/sql/2026-10-22_soupm_log.sql.
 
 -- Log de erros (mesmas colunas de identificação)
@@ -2060,7 +2078,7 @@ usuário antes da próxima.
 | Fase | Entrega | Fatias (cada uma ≤ 5 arquivos) | Riscos |
 |---|---|---|---|
 | **0. Fundação** | Nada muda na tela | `ApiClient` + `FalhaApp`; log local + `log.php` + tabelas; sonda de saúde dos serviços (`soupm_saude`, mapa de conexões do Painel); códigos de erro em `soupm_config` (`erros`); `Sessao` com armazenamento seguro (senha sai do SharedPreferences); captura global de erros; registro de módulos | Migrar a sessão guardada sem deslogar ninguém (ler o antigo, gravar no novo, apagar o antigo). `log.php` lento atrasando o app (envio sempre em segundo plano) |
-| **1. app_config** | API decide | `soupm_menu_item` com carga igual ao app de hoje; `app_config.php` (público e logado); app lê, guarda e usa padrões; versão por plataforma | Carga inicial diferente do app atual muda o que o militar vê: comparar item a item. PostgreSQL 9.6 (sem alguns recursos) |
+| **1. app_config** | API decide | `soupm_menu_item` com carga igual ao app de hoje; `app_config.php` (público e logado); app lê, guarda e usa padrões; versão por plataforma | Carga inicial diferente do app atual muda o que o militar vê: comparar item a item |
 | **2. Navegação nova** | Abas, Serviços, Início, comandantes compactos, iPad | shell com navegador por aba; Serviços e áreas; nova Início (sem personalizar ainda); folha de bloqueio; barra lateral do iPad | Push que abre rota precisa achar a aba certa. Telas antigas que assumem o navegador raiz. Rejeição da Apple por iPad: testar em iPad Air 11" (onde a Apple revisou) |
 | **3. Busca e feedback** | Busca, "Preciso de ajuda" e "Sugestões e elogios" | índice e tela de busca; `feedback.php` e as tabelas de feedback; "Minhas mensagens"; tela Feedback no painel (P3) | Anexo grande em rede ruim: envio com progresso e retomada |
 | **3b. Contracheque na API** | PDF do contracheque gerado no servidor | `contracheque_pdf.php` com conferência e hash; padrão em `soupm_documento_padrao`; grupo "Documentos" do painel (casa com esta fase); app passa a pedir o PDF pronto; eventos `contracheque.pdf_*` | PDF diferente do de hoje: comparação página por página antes de trocar. Carga no dia da folha: cache por mês |
