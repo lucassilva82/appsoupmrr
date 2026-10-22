@@ -67,6 +67,7 @@ http.Response _json(Object corpo, {Map<String, String> headers = const {}}) =>
     });
 
 void main() {
+  testesFase2();
   late _ArmazemMemoria armazem;
   late List<http.Request> pedidos;
 
@@ -152,5 +153,31 @@ void main() {
     expect(c.situacaoVersao('android', '2.10.0'), SituacaoVersao.emDia);
     expect(c.situacaoVersao('ios', '2.1.5'), SituacaoVersao.emDia);
     expect(c.situacaoVersao('windows', '1.0.0'), SituacaoVersao.emDia);
+  });
+}
+
+void testesFase2() {
+  test('home e mais usados: lê a ordem do painel e ignora bloco sem chave', () {
+    final c = AppConfig.deJson({
+      'code': 1,
+      'home': [
+        {'chave': 'home.atalhos', 'ordem': 50, 'escondivel': true, 'dados': ['rh.ferias']},
+        {'chave': 'home.comandantes', 'ordem': 10, 'escondivel': false, 'arte': 'estrelas'},
+        {'ordem': 5},
+      ],
+      'servicos': {'mais_usados': ['rh.certidoes']},
+    }, origem: OrigemConfig.rede);
+    expect(c.home!.map((b) => b.chave), ['home.atalhos', 'home.comandantes']);
+    expect(c.bloco('home.atalhos')!.dados, ['rh.ferias']);
+    expect(c.bloco('home.comandantes')!.escondivel, isFalse);
+    expect(c.blocoLigado('home.dicas'), isFalse, reason: 'desligado no painel');
+    expect(c.maisUsados, ['rh.certidoes']);
+  });
+
+  test('API sem a fase 2: todo bloco vale e não há mais usados', () {
+    final c = AppConfig.deJson({'code': 1}, origem: OrigemConfig.rede);
+    expect(c.home, isNull);
+    expect(c.blocoLigado('home.dicas'), isTrue);
+    expect(c.maisUsados, isNull);
   });
 }

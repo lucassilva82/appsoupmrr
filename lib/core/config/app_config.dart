@@ -186,6 +186,43 @@ int compararVersoes(String a, String b) {
   return 0;
 }
 
+/// Um bloco da Início como o painel deixou (docs/SOUPM_2_2.md §4).
+class BlocoInicio {
+  const BlocoInicio({
+    required this.chave,
+    this.ordem = 0,
+    this.escondivel = true,
+    this.arte,
+    this.arteEstilo,
+    this.dados = const [],
+  });
+
+  final String chave;
+  final int ordem;
+  final bool escondivel;
+  final String? arte;
+  final String? arteEstilo;
+
+  /// Só `home.atalhos` usa: as chaves dos atalhos padrão do militar.
+  final List<String> dados;
+
+  static List<BlocoInicio> lista(Object? j) => [
+        if (j is List)
+          for (final b in j)
+            if (b is Map && b['chave'] is String)
+              BlocoInicio(
+                chave: b['chave'] as String,
+                ordem: (b['ordem'] as num?)?.toInt() ?? 0,
+                escondivel: b['escondivel'] != false,
+                arte: b['arte'] as String?,
+                arteEstilo: b['arte_estilo'] as String?,
+                dados: b['dados'] is List
+                    ? [for (final d in b['dados'] as List) '$d']
+                    : const [],
+              ),
+      ];
+}
+
 class AppConfig {
   const AppConfig({
     required this.origem,
@@ -194,6 +231,8 @@ class AppConfig {
     this.versoes = const {},
     this.tempoLimiteRede = const Duration(seconds: 15),
     this.menu = const [],
+    this.home,
+    this.maisUsados,
     this.recebidoEm,
   });
 
@@ -210,6 +249,13 @@ class AppConfig {
 
   /// Vazio enquanto não houver sessão: o app usa o menu do código.
   final List<ItemMenu> menu;
+
+  /// Blocos da Início na ordem do painel; nulo = o app usa a ordem dele
+  /// (versão da API sem a fase 2, ou sem sessão).
+  final List<BlocoInicio>? home;
+
+  /// "Mais usados" de Serviços; nulo = a linha não aparece.
+  final List<String>? maisUsados;
 
   /// Quando a cópia em uso chegou do servidor ("Atualizado hoje às 07:30").
   final DateTime? recebidoEm;
@@ -234,6 +280,10 @@ class AppConfig {
           ? Duration(seconds: timeout.toInt())
           : const Duration(seconds: 15),
       menu: ItemMenu.lista(j['menu']),
+      home: j['home'] is List ? BlocoInicio.lista(j['home']) : null,
+      maisUsados: j['servicos'] is Map && j['servicos']['mais_usados'] is List
+          ? [for (final c in j['servicos']['mais_usados'] as List) '$c']
+          : null,
       recebidoEm: recebidoEm,
     );
   }
@@ -263,6 +313,18 @@ class AppConfig {
     }
 
     return busca(menu);
+  }
+
+  /// O bloco da Início pela chave; nulo se o painel o desligou. Sem `home`
+  /// do servidor, todo bloco vale (padrão do app).
+  bool blocoLigado(String chave) =>
+      home == null || home!.any((b) => b.chave == chave);
+
+  BlocoInicio? bloco(String chave) {
+    for (final b in home ?? const <BlocoInicio>[]) {
+      if (b.chave == chave) return b;
+    }
+    return null;
   }
 }
 

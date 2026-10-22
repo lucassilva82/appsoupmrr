@@ -6,10 +6,36 @@ import 'package:projetonovo/widgets/HomeContrachequeCard.dart';
 import 'package:projetonovo/widgets/HomePlanoFeriasCard.dart';
 import 'package:projetonovo/widgets/anuncio_institucional.dart';
 import 'package:projetonovo/widgets/card_tempo_servico.dart';
+import 'package:projetonovo/core/config/app_config.dart';
 import 'package:projetonovo/features/inicio/faixa_comando.dart';
 import 'package:projetonovo/features/inicio/linha_atalhos.dart';
 import 'package:projetonovo/widgets/vidro.dart';
 import 'package:projetonovo/widgets/widget_dicas_app.dart';
+
+/// Ordem dos blocos: a do painel, ou a padrão do app (§4).
+List<String> blocosDaInicio(AppConfig config) => config.home == null
+    ? const [
+        'home.comandantes',
+        'home.anuncio',
+        'home.dicas',
+        'home.pendencias',
+        'home.atalhos',
+        'home.contracheque',
+        'home.tempo_servico',
+        'home.ferias',
+      ]
+    : [for (final b in [...config.home!]..sort((x, y) => x.ordem.compareTo(y.ordem))) b.chave];
+
+class _Card extends StatelessWidget {
+  const _Card(this.child);
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+        child: child,
+      );
+}
 
 // ── HomeBody ─────────────────────────────────────────────────────────────────
 // Conteúdo da aba "Início" dentro do MainShell.
@@ -31,7 +57,10 @@ class _HomeBodyState extends State<HomeBody>
     super.initState();
     _requestPermissions();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) AnuncioInstitucional.mostrarSeAtivo(context);
+      // O anúncio de abertura respeita o bloco desligado no painel.
+      if (mounted && RepositorioConfig.atual.blocoLigado('home.anuncio')) {
+        AnuncioInstitucional.mostrarSeAtivo(context);
+      }
     });
   }
 
@@ -49,6 +78,22 @@ class _HomeBodyState extends State<HomeBody>
     }
   }
 
+  /// Cada bloco com o espaço de baixo dele (§15.2: 12 entre blocos).
+  /// Bloco que esta versão ainda não desenha (comunicados, pendências)
+  /// devolve nulo.
+  Widget? _bloco(String chave) => switch (chave) {
+        'home.comandantes' => FaixaComando(),
+        'home.dicas' => Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: WidgetDicasApp()),
+        'home.atalhos' => const Padding(
+            padding: EdgeInsets.only(top: 12), child: LinhaAtalhos()),
+        'home.contracheque' => const _Card(HomeContrachequeCard()),
+        'home.tempo_servico' => _Card(CardTempoServico()),
+        'home.ferias' => const _Card(HomePlanoFeriasCard()),
+        _ => null,
+      };
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -60,37 +105,19 @@ class _HomeBodyState extends State<HomeBody>
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Faixa do Comando (64 pt, §4.1) ───────────────────────────────
-          FaixaComando(),
-
-          const SizedBox(height: 8),
-
-          // ── Balão de dicas / avisos ──────────────────────────────────────
-          WidgetDicasApp(),
-
-          const SizedBox(height: 12),
-
-          // ── Atalhos: uma linha só (§4.4) ─────────────────────────────────
-          const LinhaAtalhos(),
-
-          const SizedBox(height: 12),
-
-          // ── Widgets de resumo ────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Column(
+          // ── Blocos na ordem do painel (§4); sem `home`, a do app ──────
+          ValueListenableBuilder<AppConfig>(
+            valueListenable: RepositorioConfig.emUso,
+            builder: (context, config, _) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const HomeContrachequeCard(),
-                const SizedBox(height: 10),
-                CardTempoServico(),
-                const SizedBox(height: 10),
-                const HomePlanoFeriasCard(),
+                for (final chave in blocosDaInicio(config))
+                  if (_bloco(chave) case final w?) w,
               ],
             ),
           ),
 
-
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
 
           // ── Rodapé DTI ───────────────────────────────────────────────────
           // A arte é um bloco navy fechado e virava um retângulo no fim da

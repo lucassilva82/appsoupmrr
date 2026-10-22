@@ -121,7 +121,9 @@ class _ServicosBodyState extends State<ServicosBody> {
                   abrirFuncao(context, r.item, origem: 'busca');
                 },
               )
-            else
+            else ...[
+              if (_maisUsados(menu, config) case final l when l.isNotEmpty)
+                SliverToBoxAdapter(child: _LinhaMaisUsados(itens: l)),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                 sliver: SliverLayoutBuilder(builder: (context, c) {
@@ -143,10 +145,26 @@ class _ServicosBodyState extends State<ServicosBody> {
                   );
                 }),
               ),
+            ],
           ],
         );
       },
     );
+  }
+
+  /// "Mais usados" (§3.3): o que o servidor mandou, na ordem dele, só com
+  /// as funções que estão no menu deste militar.
+  List<({ItemMenu item, ItemMenu area})> _maisUsados(
+      List<ItemMenu> menu, AppConfig config) {
+    final chaves = config.maisUsados ?? const <String>[];
+    final porChave = {
+      for (final a in menu)
+        for (final f in a.filhos) f.chave: (item: f, area: a),
+    };
+    return [
+      for (final c in chaves)
+        if (porChave[c] != null) porChave[c]!,
+    ];
   }
 
   void _abrirArea(BuildContext context, ItemMenu area) {
@@ -160,6 +178,84 @@ class _ServicosBodyState extends State<ServicosBody> {
       settings: RouteSettings(name: '/servicos/${area.chave}'),
       builder: (_) => AreaPage(area: area),
     ));
+  }
+}
+
+/// Linha de círculos que rola de lado, como os destaques do Instagram.
+class _LinhaMaisUsados extends StatelessWidget {
+  const _LinhaMaisUsados({required this.itens});
+
+  final List<({ItemMenu item, ItemMenu area})> itens;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        child: Text('Mais usados',
+            style: theme.textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.w700)),
+      ),
+      SizedBox(
+        height: MediaQuery.textScalerOf(context).scale(34) + 64,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: itens.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          itemBuilder: (context, i) {
+            final r = itens[i];
+            final arte = Arte.de(r.area.arte);
+            return Semantics(
+              button: true,
+              label: r.item.rotulo,
+              excludeSemantics: true,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () => abrirFuncao(context, r.item, origem: 'mais_usados'),
+                child: SizedBox(
+                  width: 72,
+                  child: Column(children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                            colors: [arte.base, arte.meio],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight),
+                        border: Border.all(color: arte.destaque, width: 2),
+                      ),
+                      child: Icon(iconePorChave(r.item.icone),
+                          color: Colors.white, size: AppIconSize.md),
+                    ),
+                    const SizedBox(height: 4),
+                    // Palavra única encolhe em vez de quebrar no meio.
+                    if (r.item.rotulo.contains(' '))
+                      Text(r.item.rotulo,
+                          maxLines: 2,
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelSmall
+                              ?.copyWith(letterSpacing: 0, height: 1.15))
+                    else
+                      FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(r.item.rotulo,
+                              maxLines: 1,
+                              style: theme.textTheme.labelSmall
+                                  ?.copyWith(letterSpacing: 0))),
+                  ]),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+      const SizedBox(height: 8),
+    ]);
   }
 }
 

@@ -2124,7 +2124,8 @@ sonda (`sql/2026-10-22_*` e `2026-10-23_soupm_cron_log.sql`); scripts em
 03:10) e os alvos da sonda em `~/private/config_sonda.php`. Os códigos de erro
 em `soupm_config` (`erros`) ficam para a fase 1, junto com o `app_config`.
 
-**Fase 1 (22/10/2026): pronta e testada localmente, falta produção.**
+**Fase 1 (22/10/2026): no ar.** O SQL rodou em produção e o `app_config.php`
+está publicado; falta só o cron que grava `versao_legada` no Firestore.
 `sql/2026-10-23_soupm_app_config.sql` cria `soupm_menu_item` (carga igual à
 loja: Escalas e SVI "Em breve", Mapa da Força para gestor pela regra de hoje),
 `soupm_versao_regra`, `soupm_versao_app`, `soupm_ajuda_assunto`, `soupm_faq` e
@@ -2141,6 +2142,25 @@ mudou), e senha errada conta no mesmo limite do `login.php`. No app,
 telas passam a usar o menu na fase 2. Pendente: rodar o SQL em produção,
 subir o `app_config.php` e o cron que grava `versao_legada` no Firestore das
 2.1.x (precisa da conta de serviço do FCM em `/private`).
+
+**Fase 2 (22/10/2026): app pronto na branch, falta produção.** Quatro abas
+(Início, Serviços, Avisos, Perfil), cada uma com o próprio navegador: a barra
+não some ao abrir uma função, tocar de novo na aba volta ao começo e o voltar
+do Android sobe dentro da aba, depois vai para a Início. A partir de 600 pt as
+abas vão para a lateral (iPad e Android largo). Serviços: busca sem acento e
+por sinônimo, "Mais usados", áreas em cartões com arte e ladrilhos de função;
+função bloqueada abre a folha com o motivo e o código `MD-`, e rota que a
+versão não conhece pede para atualizar o app (`funcao.tocar`,
+`modulo.bloqueio_visto`, `busca.*` no log). Início: faixa do Comando de 64 pt
+(dois cartões com a arte das estrelas; tocar abre o cartão grande), atalhos
+numa linha só (o que não cabe vai para "Mais") e os blocos na ordem do painel.
+Configurações virou a aba Perfil, com a Ficha Individual num botão da barra. Ainda fora: comunicados
+e pendências (fases seguintes), personalizar a Início e os dados do Comando
+pelo `app_config` (fase 4). API: `sql/2026-10-23_soupm_inicio.sql` (blocos
+`bloco_inicio`, `soupm_atalho_padrao` por perfil militar/gestor até a fase 5,
+`soupm_config` `servicos`, funções `soupm_inicio_para` e
+`soupm_mais_usados_para`), e o `app_config.php` passa a mandar `home` e
+`servicos.mais_usados` quando o SQL existe.
 
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),

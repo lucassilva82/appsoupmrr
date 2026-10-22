@@ -55,8 +55,9 @@ class LinhaAtalhos extends StatelessWidget {
     return ValueListenableBuilder<AppConfig>(
       valueListenable: RepositorioConfig.emUso,
       builder: (context, config, _) {
-        final atalhos = resolverAtalhos(
-            menuEmUso(config, gestor: gestor), atalhosPadrao(gestor: gestor));
+        final doPainel = config.bloco('home.atalhos')?.dados;
+        final atalhos = resolverAtalhos(menuEmUso(config, gestor: gestor),
+            doPainel == null || doPainel.isEmpty ? atalhosPadrao(gestor: gestor) : doPainel);
         if (atalhos.isEmpty) return const SizedBox.shrink();
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),

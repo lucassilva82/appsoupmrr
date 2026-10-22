@@ -15,7 +15,9 @@ import '../../widgets/carouselSlider.dart' show CachedImageFromPrefs;
 class FaixaComando extends StatelessWidget {
   FaixaComando({super.key});
 
-  final Stream<List<Map<String, dynamic>>> _slides = FirebaseFirestore.instance
+  // Uma assinatura só para o app: a Início redesenha a faixa quando o
+  // app_config chega, e um stream novo a cada vez fazia a faixa piscar.
+  static final Stream<List<Map<String, dynamic>>> _slides = FirebaseFirestore.instance
       .collection('stores')
       .snapshots()
       .map((s) => s.docs.map((d) => d.data()).toList());

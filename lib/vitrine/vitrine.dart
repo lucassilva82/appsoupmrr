@@ -78,6 +78,10 @@ Object? _responder(Uri url, http.Request req) {
           'ios': {'minima': '2.1.5', 'recomendada': '2.1.5'},
         },
         'rede': {'timeout_s': 15},
+        // Sem `menu`: vale o de reserva do app, igual à carga do banco.
+        'servicos': {
+          'mais_usados': ['rh.contracheques', 'rh.certidoes', 'rh.ferias', 'normas.legislacoes'],
+        },
       };
     case 'login.php':
       return {
