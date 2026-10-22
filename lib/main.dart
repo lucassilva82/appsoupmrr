@@ -69,6 +69,10 @@ import 'widgets/aviso_rapido.dart';
 import 'package:http/http.dart' as http;
 import 'widgets/dialogo_confirmacao.dart';
 import 'vitrine/vitrine.dart';
+import 'core/erros/captura_global.dart';
+import 'core/log/iniciar_log.dart';
+import 'core/rede/api_client.dart';
+import 'core/sessao/sessao.dart';
 import 'package:projetonovo/data/store.dart'; // Certifique-se de que Store está acessível
 
 // Instância global de notificações locais
@@ -139,6 +143,10 @@ Future<void> main() => modoVitrine
 Future<void> _iniciar() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Antes de tudo: o que escapar de um `try` daqui em diante vai para o log
+  // com código AP-FATAL (SouPMRR 2.2, fase 0).
+  instalarCapturaGlobal();
+
   // ── Por que o runApp vem cedo ───────────────────────────────────────────
   //
   // Antes, o `runApp` era a última linha desta função, depois de uns dez
@@ -203,6 +211,11 @@ Future<void> _prepararServicos() async {
       debugPrint('[INIT] $nome falhou: $e');
     }
   }
+
+  // Primeiro, para registrar a abertura e o que vier depois.
+  await passo('log do app', () async {
+    await iniciarLog(api: ApiClient(), matricula: () => Sessao.matriculaAtual);
+  });
 
   await passo('detector de captura', () async {
     await ScreenshotRecordingDetector.initialize();

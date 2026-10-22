@@ -64,6 +64,9 @@ http.Response _json(Object corpo) => http.Response.bytes(
 Object? _responder(Uri url, http.Request req) {
   final arquivo = url.pathSegments.last;
   switch (arquivo) {
+    // O log do modo vitrine não vai a lugar nenhum: o militar é fictício.
+    case 'log.php':
+      return {'code': 1, 'aceitos': 0, 'recusados': 0};
     case 'login.php':
       return {
         'code': 1,
