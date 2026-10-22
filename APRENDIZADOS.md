@@ -1495,3 +1495,20 @@ aviso não entrava sozinha.
 **Regra.** Tela que depende de outro sistema não pode assumir que a sessão
 dele existe: confere, tenta entrar sozinha e só então pergunta ao militar. E
 antes de culpar o servidor, ver se o pedido chegou a sair do aparelho.
+
+---
+
+## 43. O `conexao.php` do servidor define `$senha`: variável do pedido precisa de outro nome
+
+**O que aconteceu (22/10/2026).** O `app_config.php` novo lia a senha do
+pedido em `$senha` e só depois fazia `require_once('../conexao.php')`. O
+`conexao.php` de produção define `$host`, `$usuario`, `$senha` e `$banco`, e
+sobrescreveu a senha do pedido pela do banco. Resultado: todo pedido, até o
+público, saía com `"sessao":"invalida"`. Nada vazou (a senha do banco só era
+comparada, nunca devolvida), mas a função não funcionava. No teste local não
+apareceu porque o `conexao.php` falso só criava o `$conexaoPdo`.
+
+**O que fazer.** Em endpoint novo, as variáveis do pedido têm nome próprio
+(`$pedMatricula`, `$pedSenha`) ou são lidas depois do `require`. E o
+`conexao.php` falso dos testes locais define as mesmas variáveis do de
+produção (`$host`, `$usuario`, `$senha`, `$banco`), só com valores de teste.
