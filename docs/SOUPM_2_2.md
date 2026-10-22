@@ -15,8 +15,10 @@
 ## 0. Resumo
 
 O SouPMRR ganha a **versão 2.2**: a versão mobile, resumida, da intranet da PMRR.
-Esta versão **não traz módulo novo**. Ela reorganiza o app para aguentar
-dezenas de módulos (SISCHAMADOS primeiro), com quatro mudanças grandes:
+Ela reorganiza o app para aguentar dezenas de módulos, com quatro mudanças
+grandes, e traz um módulo novo: o **SISCHAMADOS do solicitante** (abrir
+chamado, responder, confirmar a solução e avaliar com estrelas; seção 8.3,
+decisão do usuário de 22/10/2026). O atendimento continua só na web.
 
 1. **Navegação por áreas** ("Serviços", no estilo de bancos e do gov.br) no
    lugar do grid "Acesso Rápido", e uma **tela inicial que é um resumo
@@ -247,8 +249,8 @@ servicos
 │   ├── gestao.boletins       Boletins                    futuro
 │   └── gestao.patrimonio     Patrimônio e frota          futuro
 ├── atendimento               Atendimento DTI
-│   ├── atend.chamados        Meus chamados (SISCHAMADOS: só abrir e acompanhar)
-│   └── atend.feedback        Sugestões e problemas       NOVO nesta versão
+│   ├── atend.chamados        Meus chamados (SISCHAMADOS, tudo do solicitante; atendimento só na web)
+│   └── atend.feedback        Sugestões e elogios         NOVO nesta versão (só ideias e elogios)
 └── institucional             Institucional
     ├── com.central           Comunicados                 NOVO (seção 4.2)
     └── inst.noticias         Notícias e agenda           NOVO (P7)
@@ -270,10 +272,9 @@ perfil
 ├── perfil.ficha              atalho para rh.ficha
 ├── conta.email               (config.email)
 ├── conta.senha               (config.alterar_senha)
-├── seg.biometria             (config.biometria)
-├── apar.tema                 (config.tema)
+├── seg.biometria             (config.biometria) "Face ID" no iPhone, "Biometria" no Android: liga e desliga
+├── apar.tema                 (config.tema) tela Aparência: tema e "Reorganizar a tela inicial"
 ├── notif.preferencias        (config.notificacoes)
-├── ajuda                     (ajuda)
 ├── atend.feedback            atalho
 └── sair                      não desligável
 
@@ -295,12 +296,31 @@ busca                         NOVO
 
 ### 3.3 Como é a tela Serviços
 
+Refeita a pedido do usuário (22/10/2026): mais bonita e profissional, no
+estilo dos apps mais baixados (Instagram, Facebook), em vez de uma lista.
+
 - Campo de busca fixo no topo.
-- **Áreas como cartões** (`CartaoVidro`, raio 16), cada um com ícone, título,
-  uma linha de descrição e as 3–4 funções mais usadas daquela área como
-  linhas tocáveis (44 pt). "Ver tudo" abre a área.
-- Dentro da área: lista agrupada (iOS: *inset grouped*; Android: `ListItem`),
-  com selo de estado à direita ("Em breve", "Manutenção", "Proposta").
+- **Mais usados:** uma linha de círculos, como os destaques do Instagram, que
+  rola de lado. Função com novidade ganha o anel colorido. A ordem vem do log
+  (`funcao.tocar`), ou o painel fixa uma lista de até 10 (`soupm_config`,
+  chave `servicos`: `{"mais_usados":{"modo":"automatico|fixo","fixos":[...]}}`).
+- **Áreas como cartões com arte de fundo**, em grade de 2 colunas (3 no
+  iPad): cada área tem a sua **ilustração vetorial própria** (degradê da cor
+  da área, trilhas de circuito e os ícones dela grandes e apagados, no estilo
+  da marca d'água do DESIGN §2c), com o ícone num quadrado de vidro e, embaixo,
+  o nome, a quantidade de serviços e "com novidade". Área sozinha na última
+  linha ocupa a largura toda. **Sem foto** (direito de uso, peso e pessoa
+  real). A arte é escolhida no painel num catálogo de chaves, como as marcas
+  d'água; o painel também aceita uma imagem aprovada do catálogo de mídia.
+- **Novidades no SouPMRR:** faixa de cartões que rola de lado, com as funções
+  marcadas como novas, cada uma com a arte da sua área e o selo "Novo".
+- No fim, "Não achou o que procurava?", que abre o "Preciso de ajuda" (8.0).
+- **Dentro da área:** um cartão grande com a arte da área, o nome e a
+  descrição, e as funções em **ladrilhos de 2 colunas** (ícone na cor da
+  área, nome, descrição de duas linhas e o selo de estado no canto: "Novo",
+  "Em breve", "Manutenção").
+- O texto sobre a arte é sempre branco sobre um véu escuro embaixo (4,5:1 nos
+  dois temas).
 - Tocar numa função bloqueada abre a **folha de bloqueio** (seção 5.2), nunca
   um aviso genérico.
 - **Manutenção automática** (pelo painel): quando a sonda mede um serviço fora
@@ -339,6 +359,22 @@ comandantes, comunicados e pendências são fixos por padrão.
   cima da tela (*container transform*, 400 ms, `easeOutCubic`; no Flutter,
   `OpenContainer` do pacote `animations` ou uma rota com `Hero` na foto). Fechar
   faz o caminho de volta até o botão de onde saiu.
+- **Estrelas de coronel como arte do Comando** (pedido do usuário,
+  22/10/2026; refeito para combinar com o resto do app). Os dois comandantes
+  viram **dois cards lado a lado no mesmo padrão dos cards com arte** (estilo
+  cheio): degradê azul-marinho, brilho dourado no canto, trilhas finas e, no
+  lugar dos três ícones, **três estrelas de cinco pontas** brancas e apagadas,
+  no canto direito, exatamente como os ícones dos outros cards (uma grande
+  inclinada no canto de cima e duas menores), lembrando a insígnia dos
+  oficiais superiores. A foto tem aro
+  dourado; posto e cargo em branco. No cartão aberto, a capa azul-marinho com
+  as estrelas grandes atrás da foto. O desenho é vetorial e próprio; a
+  quantidade de estrelas segue o posto que vem do SIGRH e **precisa ser
+  conferida com o regulamento de uniformes da PMRR** antes de publicar. O
+  painel guarda isso como a arte `estrelas` (especial, desenhada pelo app).
+  No `app_config`, `home.comandantes` traz `arte: "estrelas"` e cada item de
+  `dados[]` traz `estrelas: N`, **calculado pela API** a partir do posto; o app
+  só desenha.
 - O cartão mostra: foto grande (112 pt, aro dourado), cargo, posto, **nome
   completo**, mensagem à tropa (se houver) e uma lista com quadro, no cargo
   desde, na PMRR desde, lotação e cursos. No iPad, o cartão abre centralizado.
@@ -376,13 +412,13 @@ Comunicados oficiais para a tropa, todos geridos pelo painel. Substitui o
   borda (o dedo entende que dá para deslizar). Desenho na "Anatomia do
   cartão", abaixo.
 - Passa sozinho a cada 6,5 s; a pílula do ponto ativo se enche nesse tempo.
-- **Pontos do carrossel com área de toque de 44 pt** (o desenho continua
-  pequeno); pelo leitor de tela, o carrossel é um controle ajustável ("deslize
+- **Pontos do carrossel:** o desenho é pequeno, mas o toque vale na faixa inteira
+  (44 pt de altura somando o espaço em volta); pelo leitor de tela, o carrossel é um controle ajustável ("deslize
   para cima ou para baixo para trocar"). Depois que o militar desliza à mão, o
   tempo do próximo recomeça do zero.
-- **Controle do militar:** botão de pausar/continuar (exigência de
-  acessibilidade para conteúdo que se move sozinho), pausa ao tocar e segurar,
-  ao focar com leitor de tela e com "Reduzir movimento" ligado (aí não passa
+- **Controle do militar, sem botão de pausa** (decisão do usuário,
+  22/10/2026: discreto, como nos apps grandes): para ao tocar e segurar, ao
+  focar com leitor de tela e com "Reduzir movimento" ligado (aí não passa
   sozinho). Deslizar troca à mão. "Ver todos" abre a central.
 - Contador "3 novos" no título do bloco.
 - **Sem nenhum comunicado no ar** (para aquele militar), o bloco **some** e os
@@ -405,8 +441,10 @@ do usuário):**
   "Ciência pendente" (âmbar) ou "Urgente" (vermelho).
 - Rodapé separado por um fio: origem · data ("Comando-Geral · 20 out") e o
   botão redondo com seta.
-- Embaixo do carrossel: botão de pausa, **pontos com a pílula do ativo**
-  (que se enche durante os 6,5 s) e o contador "01 / 06".
+- Embaixo do carrossel, centralizados e pequenos: **pontos de 5 pt**, e o
+  ativo vira uma pílula de 16 pt que se enche, em cinza, durante os 6,5 s.
+  Sem contador visível ("Comunicado 1 de 6" só para o leitor de tela) e sem
+  cor de destaque: a posição informa, não chama atenção.
 - Cabeçalho do bloco: "Comunicados" grande, pílula "2 novos" e "Ver todos ›".
   As outras seções da Início (Suas pendências, Atalhos) usam o mesmo
   cabeçalho.
@@ -543,8 +581,11 @@ formal, à altura de uma instituição militar.
 
 ### 4.4 Atalhos
 
-Duas linhas de quatro (8 atalhos), escolhidos pelo militar em "Editar". O
-padrão vem do painel por perfil (para o militar: Contracheques, Certidões,
+**Uma linha só** (decisão do usuário, 22/10/2026), **sem atalho cortado**:
+a linha mostra só os que cabem inteiros conforme a largura da tela (5 num
+iPhone, mais no iPad e em Android largo, divididos por igual). Se o militar
+escolheu mais do que cabe, o último lugar vira **"Mais"**, que abre uma folha
+com todos e o botão "Editar atalhos". Até 12, escolhidos em "Editar". O padrão vem do painel por perfil (para o militar: Contracheques, Certidões,
 Férias, Minha ficha, Tempo de serviço, Declarações, Legislações, Sugestões; o
 gestor troca um deles pelo Mapa da Força). Função sem acesso ou oculta some
 do atalho sozinha.
@@ -554,7 +595,14 @@ do atalho sozinha.
 No lugar da lista com setas, a tela inicial **entra em modo de edição** (como
 os widgets do iPhone e do Android):
 
-- "Personalizar início" (no fim da tela ou em Perfil › Aparência) deixa os
+- **Perfil › Aparência é uma tela de configuração** (correção pedida pelo
+  usuário em 22/10/2026: antes o toque já levava para a Início): **Tema**
+  (Automático, que segue o aparelho e é o padrão; Claro; Escuro, com a amostra
+  de cada um, e a troca vale na hora), **Tela inicial** ("Reorganizar a tela
+  inicial", que leva ao modo de edição abaixo, e "Restaurar o padrão da PMRR")
+  e **Texto** (o tamanho segue os ajustes do aparelho). A escolha do tema fica
+  no aparelho e gera o evento `aparencia.tema`.
+- "Personalizar início" (no fim da Início ou em Aparência › Reorganizar) deixa os
   blocos com contorno e uma alça; no iOS eles tremem de leve, no Android ficam
   elevados (cada um no padrão da plataforma).
 - **Arrastar pela alça** muda a ordem, com háptico e um espaço reservado onde
@@ -606,7 +654,7 @@ O app tem alguns **modelos** prontos, e o painel só preenche:
 
 Em todos: público (nível, unidade, posto, matrículas), período de exibição,
 ordem, se o militar pode esconder, e o botão de ação (abrir uma função do app,
-um comunicado, um link externo ou o WhatsApp do suporte). O painel mostra a
+um comunicado ou um link externo). O painel mostra a
 **prévia do card** nos temas claro e escuro, no iPhone e no Android, antes de
 publicar. Modelo novo, de desenho diferente, aí sim exige versão do app.
 
@@ -619,7 +667,36 @@ dados** (`soupm_fonte_dados`: endereço, método, autenticação guardada só no
 servidor, campo da resposta, cache, tempo limite, prefixo de erro), usado pelo
 modelo "Número" e pelas pendências.
 
-**Marca d'água em todo card** (DESIGN §2c, que volta a valer na 2.2): todo
+**Novo padrão visual do app: cards com arte** (decisão do usuário,
+22/10/2026). O desenho das áreas de Serviços (seção 3.3) passa a valer para os
+cards da Início e para os cards criados no painel: fundo em degradê de duas
+cores, um brilho da terceira cor no canto, trilhas de circuito finas e três
+ícones grandes e apagados, com texto branco sobre um véu escuro (4,5:1 nos dois
+temas; o card não clareia no tema claro). Cada card tem a sua **arte** (chave
+do catálogo): `cc` Contracheque (azul), `ts` Tempo de serviço (dourado), `fe`
+Plano de férias e "Sem pendências" (verde-água), `dc` Dica (índigo), `pe`
+Pendências (vinho), `rosa` campanhas de saúde, e as seis das áreas (`rh`,
+`operacional`, `normas`, `gestao`, `atendimento`, `institucional`). Proventos
+e descontos usam o verde e o vermelho claros do DESIGN §3. Os ícones dos
+atalhos ganham a cor da área da função. O **catálogo de artes vem pronto no
+painel** (PAINEL_ADMIN), com essas e outras pré-configuradas, para trocar a de
+um card ou criar novas sem versão do app: cada arte é uma chave com três cores
+da paleta fechada, três ícones do catálogo e a conferência de contraste. Na
+implementação, o DESIGN.md (§2b, §2c e §3) é atualizado com este padrão, e o
+`CartaoVidro` continua para listas e superfícies que não são card de resumo.
+
+**Arte discreta nas superfícies** (decisão do usuário, 22/10/2026: "combinar,
+sem ficar muito colorido"). Suas pendências, Atalhos, a faixa do Comando, os
+grupos do Perfil e o cartão do nível continuam no vidro do tema (claros no tema
+claro), mas ganham a **mesma arte em versão discreta**: um brilho de 15% da cor
+de destaque no canto, duas trilhas de circuito finas e dois ícones grandes quase
+apagados (9% no escuro, 7% no claro). Usa a mesma chave de arte (`estilo:
+discreto`), então o painel troca as duas versões juntas. No **Perfil**, o cartão
+do militar ganha uma **capa** com a arte cheia da área (78 pt), com a foto
+sobreposta na borda, como nos perfis dos apps grandes; as seções (Conta,
+Segurança e aparência, Ajuda) e o nível usam a arte discreta.
+
+**Marca d'água em todo card** (DESIGN §2c, agora dentro da arte): todo
 card de resumo tem o desenho grande, inclinado e quase apagado no canto. Já
 existem cédula (contracheque), medalha (tempo de serviço) e calendário
 (férias); entram prancheta (Suas pendências), grade (Atalhos), lâmpada (Dica)
@@ -648,8 +725,7 @@ Resumo do que muda em relação ao plano anterior:
 - `textos`: os textos de tela que hoje estão fixos.
 - Campos novos propostos pelo painel (PAINEL_ADMIN §9.1), todos opcionais:
   `categorias_comunicado` (nome, cor e ícone de cada categoria), `pilula` e
-  `versao` em cada comunicado, e o bloco `ajuda` (WhatsApp, horário, e-mail,
-  perguntas frequentes).
+  `versao` em cada comunicado, e o bloco `ajuda` (assuntos, perguntas e respostas do "Preciso de ajuda", seção 8.0).
 - `perfis`: os perfis do militar (para o app mostrar o selo do nível e
   dos papéis; nunca para decidir acesso).
 
@@ -661,7 +737,7 @@ acrescenta é o **desenho único** do bloqueio:
 - No menu e na busca: item a 45% de opacidade com selo curto.
 - Ao tocar: **folha** (iOS: *sheet* de altura média; Android: *bottom sheet*
   com alça) com ícone do motivo, título, texto, previsão de volta, botão da
-  ação (Avisar quando voltar, Falar com o suporte, Atualizar o app) e o código
+  ação (Avisar quando voltar, Abrir chamado, Atualizar o app) e o código
   (`MD-RH.CONTRACHEQUES-MANUT`).
 - Se o militar chegar por outro caminho (push, atalho): a tela mostra o mesmo
   conteúdo no lugar dela.
@@ -950,73 +1026,129 @@ cadastro, endereço, telefone".
 
 ---
 
-## 8. Feedback e solicitações (módulo do painel)
+## 8. Ajuda, chamados e sugestões
 
-Decisão do usuário (21/10/2026): **o feedback vai para um módulo próprio do
-painel**, onde a equipe do SouPMRR lê e responde. O **SISCHAMADOS fica só para
-chamados de suporte** (Serviços › Atendimento DTI › Meus chamados).
+Reorganizado pelo usuário em 22/10/2026, porque as opções de ajuda confundiam.
+Ficam **dois canais, cada um com um papel só**:
 
-### 8.0 Uma porta só: "Preciso de ajuda"
+| Canal | Para quê | Vai para |
+|---|---|---|
+| **Meus chamados** (SISCHAMADOS) | **Todo suporte técnico**: erro ou travamento do app, acesso, senha, rede, equipamento, outros sistemas | Equipe do DTI, pelo SISCHAMADOS (seção 8.3) |
+| **Sugestões e elogios** | Ideia de melhoria, **função nova** que o DTI pode adotar e desenvolver, elogio | Equipe do SouPMRR, no módulo de feedback do painel (seção 8.1) |
 
-O militar não precisa saber se o caso é feedback ou chamado do DTI (revisão de
-21/10/2026). Em Serviços › Atendimento e em Perfil › Ajuda, o primeiro item é
-**"Preciso de ajuda"**, que pergunta o que ele quer e encaminha:
+- **Não há mais atendimento pelo WhatsApp** a partir da 2.2: como o militar
+  já está logado no app, todo suporte é um chamado técnico, e a equipe resolve
+  por ele. Somem do app o "WhatsApp do DTI", o horário e o e-mail de suporte
+  (o item antigo "Ajuda e suporte" do Perfil sai).
+- **Problema no app não vai para a equipe do SouPMRR.** O tipo "Relatar um
+  problema" sai das sugestões; nas telas de erro, "Relatar este problema" vira
+  **"Abrir chamado técnico"**, que abre o chamado já preenchido (Sistemas da
+  PMRR › SouPMRR, título e descrição com o código do erro, e o id do registro
+  em `soupm_erro` para o DTI ver o log).
+- Em Perfil › Ajuda e em Serviços › Atendimento DTI ficam três itens:
+  **Preciso de ajuda**, **Meus chamados** e **Sugestões e elogios**.
 
-| Resposta do militar | Vai para |
-|---|---|
-| "O app deu problema" ou "Tenho uma sugestão ou elogio" | Sugestões e problemas (feedback, seção 8.1) |
-| "Preciso de suporte: senha, acesso a sistema, rede, equipamento" | Novo chamado no SISCHAMADOS (seção 8.3) |
-| "Tenho uma dúvida" | Perguntas frequentes e contato do suporte (`ajuda`) |
+### 8.0 "Preciso de ajuda": respostas automáticas que terminam no chamado
 
-As entradas diretas (Sugestões e problemas, Meus chamados) continuam no menu.
-As telas de erro com "Relatar este problema" vão direto para o feedback, já com
-o código.
+Funciona como um filtro: o militar escolhe o assunto e vai recebendo as
+respostas das dúvidas mais comuns, de acordo com o que o app já tem. Se não
+resolver, termina num chamado técnico.
 
-### 8.1 O que o militar faz
+1. **Assunto** em ladrilhos: Entrar e senha, Contracheque, Certidões e
+   documentos, Férias e tempo de serviço, Avisos e notificações, O app deu
+   erro ou travou (a lista vem do painel).
+2. **Perguntas** do assunto ("Esqueci minha senha", "O contracheque do mês não
+   aparece"…).
+3. **Resposta** curta e, quando existe, o botão que leva à função que resolve
+   ("Ir para Certidões", "Ir para Face ID").
+4. **"Isso resolveu?"** (cada resposta aberta gera `ajuda.ver`): "Sim,
+   resolveu" encerra (evento `ajuda.resolveu`);
+   "Não, abrir chamado" abre o chamado já com o assunto e a pergunta no título
+   (evento `ajuda.abriu_chamado`).
+5. Em todas as etapas há "Abrir chamado técnico" para quem não achou o
+   assunto, e um link discreto "Tem uma ideia para o app? Sugestões e elogios".
 
-Perfil › Ajuda e feedback, ou Serviços › Atendimento DTI › Sugestões e
-problemas, ou "Sugerir esta função" na busca, ou "Relatar este problema" em
-qualquer tela de erro.
+As perguntas, respostas, assuntos e funções de destino são cadastrados no
+painel (perguntas frequentes, em Suporte e textos), sem versão nova do app. O
+painel mostra quais respostas mais resolvem e quais mais terminam em chamado.
 
-1. Escolhe o tipo: **Relatar um problema**, **Sugerir melhoria**, **Pedir
-   função nova**, **Elogio**.
+### 8.1 Sugestões e elogios
+
+Serviços › Atendimento DTI › Sugestões e elogios, Perfil › Ajuda, ou
+"Sugerir esta função" na busca sem resultado.
+
+1. Escolhe o tipo: **Sugerir melhoria**, **Pedir função nova** ou **Elogio**.
+   No topo, um aviso leva a Meus chamados: "O app deu erro ou precisa de
+   suporte? Isso vai por chamado técnico".
 2. Escreve (rótulo visível, contador, mínimo de 10 caracteres).
-3. Anexa até 5 arquivos (guardados por **180 dias** depois de encerrado o
-   feedback e vistos **só pelo Administrador**; decisão do usuário, 21/10/2026): prints e vídeos da galeria (seletor do sistema, sem
-   pedir permissão de armazenamento) ou captura da tela atual. Até 25 MB no
-   total.
-4. Marca "Enviar dados do aparelho" (vem marcado; mostra o que vai: modelo,
-   sistema, versão do app, tela de onde veio, últimos 3 códigos de erro).
-5. Envia e recebe um protocolo (`FB-2026-00042`). Acompanha em **Minhas
-   mensagens**, dentro de Sugestões e problemas: situação, resposta da equipe
-   e campo para responder.
+3. Anexa até 5 arquivos, se quiser mostrar a ideia (prints e vídeos da
+   galeria, pelo seletor do sistema, sem pedir permissão; 25 MB no total;
+   guardados por **180 dias** depois de encerrado e vistos **só pelo
+   Administrador**, decisão do usuário de 21/10/2026).
+4. Envia e recebe um protocolo (`FB-2026-00042`). Acompanha em **Minhas
+   mensagens**: situação, resposta da equipe e campo para responder.
 
 ### 8.2 Como funciona por trás
 
 - Grava em `soupm_feedback` (seção 12), com os anexos numa pasta fora da área
   pública, servidos só por uma rota que confere quem pede.
-- **No painel:** lista com filtros (tipo, situação, versão do app,
-  plataforma, módulo, período), detalhe com anexos, dados do aparelho e o log
-  dos erros citados, resposta ao militar, classificação (situação: Recebido,
-  Em análise, Planejado, Concluído, Arquivado), marcação de duplicado e
-  indicadores (o que mais pedem, que tela mais dá problema).
-- A resposta da equipe vira **notificação do SouPMRR** para o militar e
-  aparece em Minhas mensagens.
-- "Relatar um problema" vindo de uma tela de erro leva o código e o id do
-  registro em `soupm_erro`, para a equipe ver o log inteiro.
-- Feedback não vira chamado: se for problema de suporte (conta, acesso a
-  outro sistema), a equipe responde orientando o militar a abrir um chamado em
-  Meus chamados.
+- **No painel:** lista com filtros (tipo, situação, versão do app, plataforma,
+  função, período), detalhe com anexos, resposta ao militar, classificação
+  (Recebido, Em análise, Planejado, Concluído, Arquivado), duplicados e
+  "Assuntos em alta" (os pedidos de função mais repetidos).
+- A resposta da equipe vira **notificação do SouPMRR** e aparece em Minhas
+  mensagens.
+- Se alguém mandar um problema técnico pelas sugestões, a equipe responde com
+  um botão que abre o chamado para ele; a sugestão não vira chamado sozinha.
 - Tabelas `soupm_feedback`, `soupm_feedback_mensagem` e `soupm_feedback_anexo`
-  (o desenho final está no PAINEL_ADMIN §8).
+  (o desenho final está no PAINEL_ADMIN §8). O `tipo` deixa de aceitar
+  `problema`: `melhoria`, `funcao_nova` e `elogio`.
 
 ### 8.3 SISCHAMADOS no app
 
-Só do solicitante: abrir chamado de suporte, acompanhar, responder quando a
-equipe pedir e avaliar, pela API que o SISCHAMADOS já tem
-(`/sischamados/api/v1`). Triagem, técnico e fila continuam na intranet. As
-notificações do SISCHAMADOS são da intranet e **não entram na aba Avisos** do
-SouPMRR, que é só do SouPMRR (decisão do usuário).
+**Entra inteiro na 2.2, tudo o que é do solicitante** (decisão do usuário,
+22/10/2026). O **atendimento** (triagem, fila, técnico, encaminhar, relacionar,
+relatórios) **fica só na web**: são muitas funções e não faz sentido no
+celular agora; talvez no futuro.
+
+| No app | Como funciona |
+|---|---|
+| **Meus chamados** | Lista com filtros Em aberto, Aguardando você e Encerrados (com contagem), situação de cada um, protocolo, assunto e data. Botão "Novo chamado" (no Android, botão flutuante) |
+| **Abrir chamado** (3 passos) | 1) assunto: categoria em ladrilhos e subcategoria em lista, do catálogo do SISCHAMADOS; 2) título (até 80), descrição, o campo próprio da categoria (sistema, local, nº de patrimônio) e até 5 anexos (prints, fotos, vídeo, 25 MB no total, pelo seletor do sistema, sem pedir permissão); 3) revisar e abrir. Sai o protocolo ("SC-2026-01495") e o botão "Acompanhar" |
+| **Detalhe** | Título, situação, categoria › subcategoria, linha do tempo (Aberto, Em atendimento, Resolvido, Encerrado), conversa com anexos e campo para responder com anexo |
+| **Aguardando você** | Faixa no topo ("A equipe do DTI aguarda sua resposta"); responder devolve o chamado ao atendimento. Vira a pendência `sischamados.aguardando_solicitante` |
+| **Confirmar a solução** | Quando o DTI marca como resolvido: "Resolveu?" com "Sim, resolveu" e "Não resolveu" (volta ao atendimento) e o prazo: sem resposta, encerra sozinho, como na web |
+| **Avaliar** | Depois do "Sim": 1 a 5 estrelas, com o nome da nota (Ruim a Excelente) e comentário opcional; dá para encerrar sem avaliar. Uma avaliação por chamado (`sccti.chamados_avaliacoes`). O chamado encerrado mostra a nota dada |
+| **Encerrado** | "Abrir outro chamado sobre isso" |
+
+**Configurado no painel, atendido na intranet** (decisão do usuário,
+22/10/2026; PAINEL_ADMIN §5.18). O painel não atende chamados: na tela
+"Chamados no app" ele liga a função, cuida do acesso móvel do SISCHAMADOS e
+escolhe **quais tipos e categorias aparecem em "Novo chamado"**, com a
+orientação de cada um, além dos anexos, dos textos e dos avisos por push. O
+passo 1 do app mostra só o que está liberado ali. Todo chamado aberto pelo app
+aparece no SISCHAMADOS da intranet com o selo **"Aberto pelo SOUPM"**, e o
+atendimento continua lá.
+
+**API.** A API móvel do SISCHAMADOS (`/sischamados/api/v1`, chave do app +
+token da pessoa) já tem sessão, catálogo, listar, abrir com anexo, detalhar e
+notificações. **Faltam, para a 2.2** (pedido à sessão da intranet; a web já
+faz tudo isso em `ChamadoController`): responder com anexo
+(`POST v1/chamados/{id}/mensagens`), confirmar a solução com a nota
+(`POST v1/chamados/{id}/confirmar`, com `resolveu`, `nota` e `comentario`),
+reabrir dentro da janela (`POST v1/chamados/{id}/reabrir`) e baixar anexo
+(`GET v1/chamados/{id}/anexos/{n}`). As regras ficam no servidor (quem pode
+reabrir, prazo da confirmação, uma nota por chamado); o app só mostra o que a
+API deixa.
+
+**Erros** com o prefixo `CH-` (`CH-REDE`, `CH-LENTO`, `CH-ANEXO-GRANDE`,
+`CH-ANEXO-TIPO`, `CH-SESSAO`); **eventos** `chamado.lista_ver`,
+`chamado.abrir`, `chamado.ver`, `chamado.responder`, `chamado.anexo_enviar`,
+`chamado.confirmar`, `chamado.recusar_solucao`, `chamado.avaliar` (só a nota,
+nunca o texto); **pendências** `sischamados.aguardando_solicitante` e
+`sischamados.avaliar` (desligadas no início, como todas). As notificações do
+SISCHAMADOS chegam como push pela API do SouPMRR (modelo do SIGE, §13) e
+**não entram na aba Avisos**, que é só do SouPMRR (decisão do usuário).
 
 ---
 
@@ -1035,8 +1167,19 @@ e um código. Na 2.2 isso sai do login e vira peça comum
   (configurável pelo `app_config`), conversão de toda falha em `FalhaApp`
   com o prefixo do módulo, cabeçalhos com versão e plataforma, envio do log.
 - **Três desenhos:** aviso curto (`avisoErro`), cartão de erro (o do login,
-  generalizado) e **tela de erro** no lugar do conteúdo (com "Tentar de novo",
-  "Relatar este problema" e o código).
+  generalizado) e **tela de erro** no lugar do conteúdo. A tela de erro usa a
+  **mesma viatura da abertura, quebrada** (decisão do usuário, 22/10/2026, no
+  lugar da animação antiga): inclinada para a frente com o pneu dianteiro
+  murcho, fumaça saindo do capô, o giroflex apagado, o pisca-alerta âmbar
+  piscando e um triângulo de sinalização no chão, com um selo do tipo de erro
+  (sem rede, servidor, app). Embaixo: o que aconteceu, de quem é o problema, o
+  que fazer, os botões e **"Detalhes técnicos"** (fechado por padrão): código,
+  data e hora, tela, chave da função, origem, versão e build do app, sistema e
+  aparelho, conexão, id do registro em `soupm_erro` e da sessão, com "Copiar
+  detalhes". Tudo isso vai sozinho no chamado; nada sensível (sem senha, CPF
+  nem valores). Com "Reduzir movimento", a cena fica parada. Botões e código
+  (com "Tentar de novo",
+  "Abrir chamado técnico", que abre o chamado já com o código, e o código).
 - **Captura global:** `FlutterError.onError` e
   `PlatformDispatcher.instance.onError` gravam em `soupm_erro` com o código
   `AP-FATAL-<tipo>`. É o nosso "Crashlytics", sem sair do Postgres.
@@ -1081,6 +1224,7 @@ cancelado, falhou + código).
 | `funcao.tocar` | item de menu, atalho, card | chave, estado (ativo, bloqueado) |
 | `modulo.bloqueio_visto` | folha de bloqueio | chave, motivo |
 | `busca.executar`, `busca.abrir_resultado`, `busca.sem_resultado` | busca | termo, total, posição |
+| `ajuda.ver`, `ajuda.resolveu`, `ajuda.abriu_chamado` | "Preciso de ajuda" | assunto, id da pergunta |
 | `inicio.personalizar`, `inicio.card_tocar` | Início | ordem nova; chave do card |
 | `comunicado.ver`, `comunicado.abrir`, `comunicado.ciencia`, `comunicado.popup_fechar` | comunicados | id, tempo de leitura |
 | `pendencia.abrir`, `pendencia.dispensar` | Suas pendências | tipo |
@@ -1098,7 +1242,7 @@ cancelado, falhou + código).
 | Declarações | `declaracao.ver`, `declaracao.enviar` (tipo), `declaracao.anexo_enviar` |
 | Ficha | `ficha.ver`, `ficha.contato_alterar`, `ficha.endereco_alterar` |
 | Mapa da Força | `mapa.ver` (escopo), `mapa.filtrar`, `mapa.ficha_abrir` (só a matrícula de quem foi aberta) |
-| Feedback e chamados | `feedback.abrir`, `feedback.enviar` (tipo, anexos), `chamado.abrir`, `chamado.responder` |
+| Feedback e chamados | `feedback.abrir`, `feedback.enviar` (tipo, anexos), `chamado.lista_ver`, `chamado.abrir`, `chamado.ver`, `chamado.responder`, `chamado.anexo_enviar`, `chamado.confirmar`, `chamado.recusar_solucao`, `chamado.avaliar` |
 | Conta | `conta.email_alterar`, `conta.senha_alterar`, `conta.biometria_ligar` |
 
 **Erros:** todo `FalhaApp` (mostrado ou não) vai para `soupm_erro` com
@@ -1150,7 +1294,11 @@ vezes uma correção sai só para uma das duas.
 - "O que há de novo" escrito separado para cada loja (já é regra, §31).
 - O painel guarda o histórico de versões publicadas por plataforma
   (`soupm_versao_app`: plataforma, versão, build, data, situação na loja,
-  notas). Mínima e recomendada ficam à parte, em `soupm_versao_regra`
+  notas e `pilha JSONB`, a ficha técnica do build gravada pelo script de
+  publicação: Flutter, Dart, `min_sdk`, `target_sdk`, `compile_sdk`, iOS
+  mínimo, Xcode, AGP, Kotlin e as versões dos pacotes, como o Firebase). O
+  painel mostra a ficha em cada ponto do mapa (PAINEL_ADMIN §5.1); o que é do
+  servidor (PHP, PostgreSQL, tamanho do banco) a sonda lê. Mínima e recomendada ficam à parte, em `soupm_versao_regra`
   (uma linha por plataforma: mínima, recomendada, título, texto, novidades),
   que o `app_config` lê no formato da seção 10.2.
 - **Muda o processo de lançar versão do CLAUDE.md** (hoje "versão nos três
@@ -1187,39 +1335,60 @@ No `app_config` (parte pública, antes do login):
 
 ### 10.3 A tela de atualização obrigatória
 
-É uma tela rara (o militar a vê uma vez por versão), por isso pode ter
-encanto, seguindo as skills `flutter-animating-apps` e `review-animations`:
-só `transform` e opacidade, curva de saída forte (`cubic-bezier(.23,1,.32,1)`),
-nada nasce de `scale(0)` (parte de 0,9) e tudo para com "Reduzir movimento".
+Refeita a pedido do usuário (21/10/2026, para a 2.2): **mais bonita e com
+humor leve**, respeitoso com a corporação. É uma tela rara (uma vez por
+versão), por isso pode ter encanto (`flutter-animating-apps`,
+`review-animations`): só `transform` e opacidade, curva de saída forte, nada
+nasce de `scale(0)`, tudo para com "Reduzir movimento".
 
-Sequência (protótipo, "Simular › Atualização obrigatória"):
+**A cena** (protótipo: "Simular › Atualização obrigatória"):
 
-1. Linhas de circuito no fundo (as mesmas do login), com pontos de luz
-   correndo por elas, sem parar.
-2. O ícone do SouPMRR sobe e cresce de 0,9 para 1 (0,7 s); ondas saem dele em
-   volta, como um sinal, e um reflexo passa pelo ícone a cada 3,6 s.
-3. Um selo dourado com seta para cima entra no canto do ícone e fica
-   flutuando.
-4. A pílula "Versão 2.1.5" aparece, é **riscada** em vermelho e cai; no lugar
-   sobe "Versão 2.2.0" em verde, com o visto (a mensagem "o seu está antigo"
-   sem precisar de texto).
-5. Entram em sequência: "ATUALIZAÇÃO OBRIGATÓRIA" (dourado), o título "Seu
-   SouPMRR ficou para trás", a explicação com a versão instalada, as três
-   novidades da versão e o botão "Atualizar na App Store" ou "no Google Play"
-   (só a loja da plataforma), com um reflexo passando de tempos em tempos.
-6. Rodapé com "Leva menos de um minuto" e o código `CF-VERSAO-IOS` ou
-   `CF-VERSAO-ANDROID`.
+- **Lado antigo:** um **Fusca antigo da PMRR**, caindo aos pedaços (pedido do
+  usuário): branco desbotado com a faixa azul, "POLÍCIA" na porta, o giroflex
+  redondo de antigamente apagado, ferrugem, pneu murcho, para-choque torto,
+  antena entortada, vidro trincado, fumaça saindo de trás e o carro tremendo. Na lateral, **"VTR 2.1.5"**
+  (a versão instalada, no lugar do número da viatura) e a etiqueta "Sua versão ·
+  2.1.5" em vermelho.
+- **Ao lado:** um policial ilustrado e genérico (farda e boina azul da PMRR,
+  rosto de desenho, sem semelhança com ninguém), **triste**, com uma lágrima.
+- **Lado novo:** uma **viatura de última geração**, bonitona e detalhada:
+  caminhonete cabine dupla de linhas retas, pintura da PMRR com brilho (azul em
+  cima, branco embaixo, faixa verde com filete azul e dourado), vidros escuros
+  com reflexo, rack no teto, portas com maçaneta cromada, retrovisor, para-lamas
+  e estribo, grade e farol de neblina, faróis e lanternas em LED, **barra de
+  giroflex em LED** vermelha, branca e azul piscando, rodas de liga com pinça de
+  freio vermelha, um escudo dourado genérico na porta, "190" na traseira e
+  **"POLÍCIA"** em itálico forte com contorno branco, com "MILITAR DE RORAIMA"
+  logo abaixo. Na lateral, "VTR 2.2.0" (ou a versão da loja), com a etiqueta
+  "Nova · 2.2.0" em verde. A mesma ilustração aparece na abertura (§15.6).
+- **Ao tocar em Atualizar:** o policial dá dois pulinhos até a viatura nova e
+  fica **feliz** (sorriso e braços para cima), a velha perde a cor e afunda um
+  pouco, a nova dá um salto com as rodas girando e solta confete. Em seguida
+  abre a loja da plataforma (cerca de 1,7 s; com "Reduzir movimento", abre na
+  hora).
+- **Texto padrão** (o painel sobrescreve, por plataforma): "ATUALIZAÇÃO
+  OBRIGATÓRIA", "Essa versão já deu baixa", "A 2.1.5 está velha demais para
+  rodar. A 2.2.0 já está na App Store, revisada e de tanque cheio.", as três
+  novidades, o botão "Atualizar na App Store" ou "no Google Play" (só a loja da
+  plataforma) e o código `CF-VERSAO-IOS` ou `CF-VERSAO-ANDROID`.
 
-Título, texto e novidades vêm do painel (`versao.<plataforma>.titulo`,
-`texto` e uma lista `novidades`), separados por plataforma; sem eles, o app usa
-os padrões do código.
+**Ilustração própria, em vetor.** O Fusca lembra as viaturas antigas; a nova
+segue as viaturas atuais da PMRR (caminhonetes como a S-10: frente e parte de cima em azul, faixa verde,
+lateral branca, "POLÍCIA" com o pino vermelho, giroflex vermelho e azul),
+tomadas só como referência. **Nenhuma foto vai para o app** (direito de uso,
+peso do app e estilo diferente do resto), sem placa real e sem pessoa real.
 
-**No Flutter:** um `AnimationController` de 1,8 s com `Interval` para cada
-peça (animação em etapas da skill `flutter-animating-apps`), mais dois
-controladores em repetição (ondas e seta) parados quando
-`MediaQuery.disableAnimationsOf(context)` é verdadeiro. Circuito e ondas com
-`CustomPainter`. Sem Lottie nem pacote novo. A tela não reinicia a animação
-se o app voltar do fundo.
+**Acessibilidade:** a cena tem uma descrição para o leitor de tela ("Uma
+viatura velha, com a versão 2.1.5, e um policial triste…"); textos e
+etiquetas passam de 4,5:1 nos dois temas; no iPad a cena fica centralizada,
+com largura máxima, sem esticar.
+
+**No Flutter:** viaturas e policial em `CustomPainter` (ou SVG com
+`flutter_svg`, que é leve), um `AnimationController` de entrada com `Interval`
+para cada peça, controladores em repetição para fumaça, tremor e giroflex
+(parados com `MediaQuery.disableAnimationsOf`), e um controlador da troca
+disparado no toque, que só depois abre a loja. **Sem Lottie** e sem pacote
+pesado. A animação não reinicia se o app voltar do fundo.
 
 ## 11. Funções novas (aprovadas em 20/10/2026)
 
@@ -1300,6 +1469,8 @@ CREATE TABLE public.soupm_menu_item (
     apelidos       TEXT[],                    -- chaves antigas: '{contracheques}'
     volta_auto     BOOLEAN NOT NULL DEFAULT FALSE, -- manutenção automática: volta sozinha quando o serviço normaliza
     servico_dependente VARCHAR(30) REFERENCES public.soupm_servico(chave), -- serviço de que a função depende
+    arte           VARCHAR(30),               -- área: chave do catálogo de artes de fundo (seção 3.3)
+    arte_imagem    INT REFERENCES public.soupm_midia(id), -- área: imagem aprovada; vence a arte
     atualizado_em  TIMESTAMP NOT NULL DEFAULT NOW(),
     atualizado_por VARCHAR(20)
 );
@@ -1364,7 +1535,15 @@ CREATE INDEX ON public.soupm_erro (codigo, recebido_em);
 -- Campanhas de declaração: soupm_declaracao_campanha (tipo, ano, abre_em, prazo, situacao agendada|aberta|encerrada, UNIQUE tipo+ano).
 -- Mídia aprovada para cards: soupm_midia; paleta fechada do DESIGN.md em soupm_config 'paleta'; fontes de dados: soupm_fonte_dados.
 -- soupm_servico também guarda tipo (api, banco, push, externo), conexao e conexao_anterior (nome da conexão; a credencial fica em /private).
--- Cards criados no painel: soupm_card (PAINEL_ADMIN §8); blocos fixos são linhas bloco_inicio de soupm_menu_item com marca, marca_imagem e escondivel.
+-- Cards criados no painel: soupm_card (PAINEL_ADMIN §8); blocos fixos são linhas bloco_inicio de soupm_menu_item com arte, arte_imagem e escondivel.
+-- Artes dos cards (novo padrão visual, seção 4.6): soupm_arte (chave PK, nome, cor_base, cor_meio, cor_destaque com CHECK de hex,
+--   icones TEXT[] com exatamente 3, situacao ativa|sugerida|arquivada, versao_reg, atualizado_por, atualizado_em). Blocos, áreas
+--   e soupm_card guardam arte REFERENCES soupm_arte(chave) e arte_imagem REFERENCES soupm_midia(id); a imagem vence a arte.
+--   O app_config traz em `artes` só as artes em uso (chave, cores, ícones), para o app desenhar arte nova sem versão nova.
+--   soupm_menu_item e soupm_card ganham arte_estilo VARCHAR(8) DEFAULT 'cheio' CHECK (arte_estilo IN ('cheio','discreto'));
+--   as superfícies perfil.capa, perfil.grupos e perfil.nivel são linhas do soupm_menu_item.
+--   soupm_arte ganha tipo VARCHAR(10) DEFAULT 'icones' CHECK (tipo IN ('icones','especial')) e config JSONB; cores e ícones
+--   só podem ser nulos quando tipo = 'especial'. A especial `estrelas` usa config {"estrelas":"posto"} ou um número.
 
 -- Aparelhos e tokens (sai do Firestore)
 CREATE TABLE public.soupm_dispositivo (
@@ -1683,7 +1862,7 @@ lib/
 │   ├── rh_certidoes/  rh_declaracoes/
 │   ├── op_escalas/  op_svi/
 │   ├── normas/  gestao_mapa_forca/
-│   └── atend_chamados/        (o SISCHAMADOS entra aqui depois da 2.2)
+│   └── atend_chamados/        SISCHAMADOS do solicitante (fase 3c)
 └── vitrine/
 ```
 
@@ -1812,6 +1991,58 @@ tablet (§32).
 
 ---
 
+### 15.6 Tela de abertura
+
+Pedido do usuário (21/10/2026): uma abertura mais bonita, profissional e sem
+exagero, juntando a marca de hoje (linhas de circuito e o "SOU PMRR" no
+contorno) com a viatura nova da tela de atualização. Protótipo: "Simular ›
+Tela de abertura". Sequência, cerca de 4,2 s:
+
+1. **0 a 0,9 s: a tecnologia chega à PMRR.** O fundo é **o mesmo de hoje**
+   (`abertura_soupmrr.dart`): o degradê escuro da app bar, a foto
+   `fundo_abertura.jpg` com o véu escuro e a vinheta, e a câmera recuando
+   devagar. Por cima, em vez das 6 trilhas atuais, cerca de 50 trilhas de
+   circuito longas, no ciano do app (`#4FD8F0`), crescem das bordas para o
+   centro, cada uma com um ponto na ponta; algumas pulsam, e pulsos de luz
+   correm por elas. Elas param antes da marca.
+2. **0,15 a 1,1 s:** a viatura entra pela esquerda, rápida, com linhas de
+   velocidade atrás, e desacelera até o centro, na pista.
+3. **1,1 s: freia.** A frente abaixa um pouco e volta, como numa freada
+   firme (só uma vez, sem quique exagerado).
+4. **1,1 a 2 s:** o giroflex pisca vermelho e azul três vezes, e a luz de
+   cada piscada ilumina o fundo. Nesse momento a marca é montada **com a
+   mesma coreografia de hoje** (`abertura_soupmrr.dart`): o nó acende; a
+   trilha sai dele **no sentido horário** (para a direita, desce, volta por
+   baixo e sobe pela esquerda) até **fechar no nó**; ao fechar, o nó **pisca**
+   e saem três ondas; uma corrente de luz dá uma volta na moldura; as letras
+   assentam caindo de leve. Contorno azul `#2E7FBF` em cima, clareando até o
+   branco embaixo, como hoje. Letras em Montserrat 800, mais perto do ícone.
+5. **2,6 a 3,35 s: pausa.** A marca está pronta e a viatura continua parada
+   embaixo dela, com o giroflex ainda piscando: o militar vê os dois juntos,
+   no centro, sem nada correndo (pedido do usuário, 22/10/2026: "senão tudo
+   está sempre em movimento").
+6. **3,05 a 4,1 s: a arrancada**, que mostra a potência da viatura (pedido do
+   usuário, 22/10/2026). As rodas patinam no lugar e soltam fumaça branca da
+   roda traseira; a traseira abaixa e a **frente levanta** uns 4° com a força;
+   em 3,35 s ela sai com tudo pela direita, deixando a marca de pneu no chão,
+   linhas de velocidade e a nuvem de fumaça se desfazendo para trás. O rastro
+   de luz dela vira o **traço sob a marca**. Com "Reduzir movimento" nada disso
+   aparece.
+7. **2,6 s:** entra "POLÍCIA MILITAR DE RORAIMA", em letras espaçadas que se
+   aproximam, em branco a 82% (hoje 62%; pedido do usuário, para ler melhor).
+8. **4,15 s:** a abertura se dissolve e entra o login ou a Início.
+
+**Regras:** a abertura não atrasa nada. Ela roda enquanto o app inicializa
+em segundo plano (`runApp` primeiro, APRENDIZADOS §2); se a inicialização
+terminar antes, a animação continua até o fim; se demorar mais, a marca fica
+parada com um brilho suave até terminar. Na volta do fundo (app já aberto) não
+há abertura. Um toque pula a animação. Com "Reduzir movimento", só a marca
+aparece, sem a viatura. A viatura é a mesma ilustração da tela de atualização
+(§10.3), sem número. No Flutter: um `AnimationController` de 4,2 s com
+`Interval` para cada parte, a viatura em `CustomPainter` ou SVG, sem Lottie.
+A abertura nativa (`LaunchScreen` e `launch_background`) continua só com a
+cor de fundo, igual ao primeiro quadro.
+
 ## 16. Fases de implementação
 
 Cada fase termina com o app funcionando, `flutter analyze` limpo, teste no
@@ -1823,8 +2054,9 @@ usuário antes da próxima.
 | **0. Fundação** | Nada muda na tela | `ApiClient` + `FalhaApp`; log local + `log.php` + tabelas; sonda de saúde dos serviços (`soupm_saude`, mapa de conexões do Painel); códigos de erro em `soupm_config` (`erros`); `Sessao` com armazenamento seguro (senha sai do SharedPreferences); captura global de erros; registro de módulos | Migrar a sessão guardada sem deslogar ninguém (ler o antigo, gravar no novo, apagar o antigo). `log.php` lento atrasando o app (envio sempre em segundo plano) |
 | **1. app_config** | API decide | `soupm_menu_item` com carga igual ao app de hoje; `app_config.php` (público e logado); app lê, guarda e usa padrões; versão por plataforma | Carga inicial diferente do app atual muda o que o militar vê: comparar item a item. PostgreSQL 9.6 (sem alguns recursos) |
 | **2. Navegação nova** | Abas, Serviços, Início, comandantes compactos, iPad | shell com navegador por aba; Serviços e áreas; nova Início (sem personalizar ainda); folha de bloqueio; barra lateral do iPad | Push que abre rota precisa achar a aba certa. Telas antigas que assumem o navegador raiz. Rejeição da Apple por iPad: testar em iPad Air 11" (onde a Apple revisou) |
-| **3. Busca e feedback** | Busca e "Sugestões e problemas" | índice e tela de busca; `feedback.php` e as tabelas de feedback; "Minhas mensagens"; tela Feedback no painel (P3) | Anexo grande em rede ruim: envio com progresso e retomada |
+| **3. Busca e feedback** | Busca, "Preciso de ajuda" e "Sugestões e elogios" | índice e tela de busca; `feedback.php` e as tabelas de feedback; "Minhas mensagens"; tela Feedback no painel (P3) | Anexo grande em rede ruim: envio com progresso e retomada |
 | **3b. Contracheque na API** | PDF do contracheque gerado no servidor | `contracheque_pdf.php` com conferência e hash; padrão em `soupm_documento_padrao`; grupo "Documentos" do painel (casa com esta fase); app passa a pedir o PDF pronto; eventos `contracheque.pdf_*` | PDF diferente do de hoje: comparação página por página antes de trocar. Carga no dia da folha: cache por mês |
+| **3c. SISCHAMADOS do solicitante** | Abrir, responder, confirmar e avaliar chamados | `features/atend_chamados/` com o cliente da API do SISCHAMADOS; lista, abrir em 3 passos com anexos, detalhe com conversa, confirmar a solução e estrelas; eventos `chamado.*` e erros `CH-` | Depende das rotas novas na API móvel do SISCHAMADOS (seção 8.3), da sessão da intranet. Anexo grande em rede ruim: envio com progresso e nova tentativa |
 | **4. Fora do Firebase** | Só FCM | `notificacoes.php` e `dispositivo.php`; Avisos lendo do Postgres; envio FCM pelo PHP; conteúdo da Início pelo `app_config`; escrita dupla | Perder notificação na troca: escrita dupla e conferência por contagem. Conta de serviço do FCM no servidor (fora da pasta pública) |
 | **5. Níveis e papéis pelo painel** | Fim do `isSuperUser` | níveis e papéis calculados no servidor (seção 6.5); módulo `soupm` na ACL da intranet; endpoints de gestão conferem nível e escopo. **O login pela intranet não entra aqui: vai para a 2.3** (seção 6.6) | Depende da sessão "Chat Intranet". Quem hoje é gestor perder acesso: comparação obrigatória no painel e lista revisada pelo usuário |
 | **6. Acabamento** | Bonito e acessível | migração das telas grandes para `features/`; esqueletos; movimento; Dynamic Type; leitor de tela; contraste nos dois temas | Escopo grande: limitar às telas mais usadas (log da fase 0 mostra quais) |
@@ -1834,6 +2066,12 @@ usuário antes da próxima.
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
 porque o contrato do `app_config` fica fixado antes. A fase 5 depende da
 intranet.
+
+**Duas frentes (decisão do usuário, 22/10/2026):** o app e a API do app ficam
+com a sessão "SouPM 2.2", neste repositório, na branch `feature/soupm-2-2`; o
+painel web fica com a sessão "Chat Intranet" (ou uma subsessão dela), como
+módulo da intranet e seguindo as regras de lá. As duas conversam direto e
+combinam toda mudança no contrato antes do código (PAINEL_ADMIN §10).
 
 ---
 

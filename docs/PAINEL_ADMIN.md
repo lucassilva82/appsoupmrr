@@ -32,11 +32,11 @@ papel no painel controla **tudo o que o militar vê no app**:
 | Papéis | Administrador, Publicar comunicados (delegável; no início só o administrador), Enviar notificações, Atender feedback, Gerir certidões, Consulta | Papéis |
 | Militares | Busca, nível e porquê, aparelhos, últimas ações; resetar senha, desconectar aparelhos, "ver o app como" | Militares |
 | Notificações | Só do SouPMRR: um militar, grupo com filtros ou todos; agendadas; lembretes automáticos; modelos; histórico com entrega e abertura | Notificações |
-| Feedback | Caixa própria para sugestões e problemas do app, com anexos (prints e vídeos), classificação e resposta. **Não vai para o SISCHAMADOS** | Feedback |
+| Feedback | Caixa própria de **sugestões e elogios** (o único canal que chega à equipe do SouPMRR), com anexos, classificação e resposta. Problema técnico vai para o SISCHAMADOS | Feedback |
 | Logs e erros | Ações e erros do app e da API, busca por matrícula, código, versão e plataforma; códigos mais frequentes; versões em uso | Logs e erros |
 | Certidões | Tipos, textos e ressalvas, emissões, revogação, verificações do QR | Certidões |
 | Auditoria do painel | Quem mudou o quê, com antes e depois, em `intranet.auditoria` | Auditoria do painel |
-| Suporte e textos | WhatsApp, horário, e-mail, perguntas frequentes, rodapé, parâmetros de rede e log do app | Suporte e textos |
+| Suporte e textos | "Preciso de ajuda" (assuntos, perguntas, respostas e função de destino, com indicadores), rodapé, parâmetros de rede e log do app | Suporte e textos |
 
 A regra continua a mesma do app: **o painel edita o banco, a API decide, o app
 só desenha.** O app nunca recebe segredo nem grava configuração.
@@ -197,8 +197,8 @@ Cada nó da árvore tem: `tipo` (`area`, `funcao`, `acao`, `bloco_inicio`,
 | `gestao.boletins` | função | Boletins | — | futuro (intranet `boletim/`) |
 | `gestao.patrimonio` | função | Patrimônio e frota | — | futuro (intranet `patrimonio/`) |
 | `atendimento` | área | Atendimento DTI | — | — |
-| `atend.chamados` | função | Meus chamados | — | futuro, API do SISCHAMADOS; no app **só abrir, acompanhar e avaliar** (o atendimento fica na intranet) |
-| `atend.feedback` | função | Sugestões e problemas | — | **novo na 2.2** (SOUPM_2_2 §8) |
+| `atend.chamados` | função | Meus chamados | — | **na 2.2, completo do lado de quem pede** (SOUPM_2_2 §8.3, fase 3c): abrir em 3 passos com até 5 anexos, responder com anexo, confirmar a solução e avaliar de 1 a 5 estrelas, pela API móvel do SISCHAMADOS. O atendimento fica só na intranet |
+| `atend.feedback` | função | Sugestões e elogios | — | **novo na 2.2** (SOUPM_2_2 §8) |
 | `busca` | função | Busca global | — | **novo na 2.2**, índice local do `menu` |
 | `rh.contracheques.mudou` | ação | O que mudou no mês | — | novo (P1), mesmos endpoints do contracheque |
 | `rh.documentos` | função | Central de documentos | — | novo (P4) |
@@ -227,7 +227,7 @@ painel, junto das notificações (§4), e o militar não os desliga um por um.
 | `home.anuncio` | **Central de comunicados**: carrossel com barras de progresso, pausa, "Ver todos"; o destaque de abertura volta para o carrossel ao fechar | `home.anuncio` | Firestore `appConfig/anuncio` → `soupm_comunicado` (SOUPM_2_2 §4.2) |
 | `home.dicas` | Dica em uma linha, ícone por chave | `home.dicas` | Firestore `dicas_app` → `app_config` |
 | `home.pendencias` | **Suas pendências** (só aparece se houver; obrigatórias e lembretes, de todos os sistemas) | — | novo, `pendencias.php` + `soupm_pendencia_tipo` (SOUPM_2_2 §4.3) |
-| `home.atalhos` | Atalhos: duas linhas de quatro, escolhidos pelo militar; padrão por perfil | `home.acesso_rapido` | fixo → painel + preferência |
+| `home.atalhos` | Atalhos: uma linha que rola de lado, até 12, escolhidos pelo militar; padrão por nível | `home.acesso_rapido` | fixo → painel + preferência |
 | `home.contracheque` | Card Contracheque | `home.contracheque` | API |
 | `home.tempo_servico` | Card Tempo de serviço | `home.tempo_servico` | API |
 | `home.ferias` | Card Plano de férias | `home.plano_ferias` | API |
@@ -260,7 +260,7 @@ push).
 | `seg.biometria` | Entrar com biometria | antiga `config.biometria` |
 | `apar.tema` | Tema e "Personalizar início" | antiga `config.tema` |
 | `notif.preferencias` | Ligar/desligar avisos | antiga `config.notificacoes` |
-| `ajuda` | Suporte (WhatsApp, horário, e-mail, perguntas frequentes) | textos para o painel |
+| `ajuda` | "Preciso de ajuda": filtro guiado (assunto → perguntas → resposta → "Isso resolveu?" → chamado técnico). Sem WhatsApp, horário nem e-mail de suporte desde a 2.2 | perguntas e respostas no painel (§5.12) |
 | `sair` | Sair | não pode ser desligado; saiu do menu de funções |
 | `login.primeiro_acesso`, `login.recuperar_senha` | Tela de login | parte pública do `app_config` |
 
@@ -324,7 +324,7 @@ que aconteceu, o que fazer e tem um código.
 | `titulo` | "Contracheque em manutenção" |
 | `texto` | "Estamos atualizando a folha de outubro. Volte a partir das 18h." |
 | `previsao` | `2026-10-21T18:00` (opcional; o app mostra "Volta em 21/10 às 18h") |
-| `acao` | `nenhuma`, `avisar_quando_voltar`, `whatsapp_suporte`, `abrir_link`, `atualizar_app` (opcional) |
+| `acao` | `nenhuma`, `avisar_quando_voltar`, `abrir_chamado` (chamado técnico já preenchido com o código), `abrir_link`, `atualizar_app` (opcional) |
 | `codigo` | `MD-CONTRACHEQUE-MANUT` (gerado: `MD-<CHAVE>-<MOTIVO>`, vai para o log) |
 
 Cada motivo tem um texto padrão (por exemplo, `em_breve`: "Este recurso estará
@@ -496,7 +496,7 @@ Menu lateral do módulo:
 | Grupo | Itens |
 |---|---|
 | Visão geral | Painel |
-| O app | Agenda · Funções e menu · Tela inicial · Comunicados · Suas pendências · Versões do app |
+| O app | Agenda · Funções e menu · Tela inicial · Artes dos cards · Comunicados · Suas pendências · Chamados no app · Versões do app |
 | Pessoas e acesso | Níveis de acesso · Papéis · Militares |
 | Comunicação | Notificações · Feedback (com contagem de novos) |
 | Acompanhamento | Logs e erros (com contagem de erros 24 h) · Alertas (com contagem de abertos) · Bancos e conexões |
@@ -536,6 +536,30 @@ painel), um anel com a cor do status e, quando há problema, um selo no canto.
 | Legislações e POPs | API externa |
 | Painel `/painelsoupmrr` | Administradores com sessão, última publicação, fila de envio |
 
+- **Os aparelhos aparecem como "Android" e "iOS"** (o iOS soma iPhone e
+  iPad; a divisão fica no detalhe).
+- **Faixa de versões** acima do mapa: Android mínimo e alvo, iOS mínimo,
+  Flutter e Dart, versão do SouPMRR, FCM e PostgreSQL, numa linha de pílulas.
+- **Ficha técnica** em cada ponto (pedido do usuário, 22/10/2026), o máximo
+  que se sabe, em grupos, cada um com a origem do dado ("do projeto",
+  "registro de versões", "sonda da API", "log do app"):
+
+  | Ponto | O que mostra |
+  |---|---|
+  | Android | versão mais nova na Play, mínima e recomendada (do painel), versões em uso; `minSdk`, `targetSdk`, `compileSdk`; versões do Android nos aparelhos e fabricantes; build (Flutter, Dart, AGP, Kotlin, Gradle, Java, NDK) |
+  | iOS | versão na App Store, mínima e recomendada, em uso; iOS mínimo, SDK e Xcode do build, UIScene; iPhone × iPad e versões do iOS; CocoaPods e Firebase iOS SDK |
+  | SouPMRR | versão, build por plataforma, datas de publicação, versão anterior, `versao_config`, funções e módulos; pacotes principais (Provider, http, cofre, biometria, Firebase) com versão; uso agora |
+  | API | linguagem e versão (a sonda lê), bibliotecas (TCPDF, PHPMailer), endpoints da 2.2, credencial em uso; pedidos e erros |
+  | Banco | versão (`version()`), nome da conexão, tamanho e crescimento, esquemas usados, tabelas `soupm_*` e a maior, retenção, conexões, cache, consulta mais lenta, último backup. **Aviso fixo:** o PostgreSQL 9.6 está sem suporte desde novembro de 2021 |
+  | FCM | projeto, como envia hoje (Cloud Functions, Node e versões) e na 2.2 (API HTTP v1 pelo PHP), plugins e SDKs, tópicos legados, entrega em 24 h |
+  | Firestore | plugin e SDK, o que ainda está nele (coleções), escrita dupla, corte; aviso de que não há regras no repositório |
+  | Intranet, SISCHAMADOS, Legislações, Painel | endereço da rota (sem servidor), autenticação, rotas usadas e que faltam, dono |
+
+  **De onde vem:** o que é do build (SDKs, Flutter, Dart, pacotes) é gravado
+  no **registro de versões** a cada publicação (`soupm_versao_app.pilha`, um
+  JSONB que o script de build preenche); o que é do servidor (PHP, PostgreSQL,
+  tamanho do banco) vem da **sonda**; o resto, do log. Nenhum endereço de
+  servidor, usuário ou senha aparece na ficha.
 - **Situação de monitoramento de cada serviço:** `monitorado` (tem sonda e
   números reais), `homologado` (ligado ao app, sonda em teste) ou `planejado`
   (o app ainda não usa; hoje, a API da intranet e o SISCHAMADOS). Serviço
@@ -600,6 +624,10 @@ mínimo. Ao escolher um item, o editor ao lado:
 
 - nome no app, ícone (só chaves que o app conhece), descrição de uma linha,
   sinônimos e palavras-chave da busca;
+- **numa área** (aba Serviços, SOUPM_2_2 §3.3): a **arte de fundo** do cartão
+  da área, escolhida no catálogo de artes (§5.3b) ou uma
+  imagem aprovada do catálogo de mídia (`soupm_midia`), com a prévia do cartão
+  nos dois temas e a conferência do contraste do texto (4,5:1);
 - as quatro perguntas do §3.0: **visível no menu** (sim/não), **autorizado**
   (quem vê, abaixo), **disponível** (ativo ou bloqueado) e **compatível**
   (versão mínima do app); se bloqueado, motivo, selo, título,
@@ -612,6 +640,12 @@ mínimo. Ao escolher um item, o editor ao lado:
 - **"Ver o app como…"** um nível ou uma matrícula: menu, Início, o que fica
   bloqueado e o escopo do Mapa da Força. Nada é gravado.
 
+**Mais usados (aba Serviços):** a linha de círculos segue o uso real
+(`funcao.tocar` no log). O painel pode **fixar a lista** (escolher e ordenar
+até 10 funções) ou deixar automática; função que o militar não pode ver some
+sozinha. Fica em `soupm_config`, chave `servicos`
+(`{"mais_usados": {"modo": "automatico"|"fixo", "fixos": [...]}}`).
+
 Item com `bloqueavel = false` (`sair`, `aba.inicio`) não mostra o seletor de
 estado. Chave nunca se edita: chave nova é cadastro novo, e só vale se o app
 tiver o módulo registrado (senão o app mostra "Atualize o app").
@@ -623,16 +657,16 @@ tiver o módulo registrado (senão o app mostra "Atualize o app").
   desligado**, inclusive os fixos: desligado, some do app para todos ou só
   para o público escolhido, e o que está abaixo sobe. "Fixo" quer dizer só que
   o **militar** não pode esconder (SOUPM_2_2 §4.6). Por bloco: ligado,
-  público, se o militar pode esconder e a **marca d'água**.
-- **Marca d'água** (DESIGN §2c): cada card de resumo tem a sua. O painel
-  escolhe o desenho num catálogo de chaves (`cedula`, `medalha`,
-  `calendario`, `prancheta`, `grade`, `lampada`, `laco`, `escudo`, `viatura`,
-  `livro`, `saude`) ou envia uma **imagem de fundo** (o app põe um véu por
-  cima para o texto manter 4,5:1). Desenho novo no catálogo exige versão do
-  app; imagem não. Padrões: contracheque `cedula`, tempo de serviço
-  `medalha`, férias `calendario`, Suas pendências `prancheta`, Atalhos
-  `grade`, Dica `lampada`.
-- **Atalhos padrão por nível:** 8 casas (duas linhas de quatro). Quem nunca
+  público, se o militar pode esconder, a **arte** e o **estilo** (cheio ou discreto, §5.3b).
+- **Arte** (novo padrão visual do app, SOUPM_2_2 §4.6; substitui a marca
+  d'água): cada bloco escolhe uma arte do catálogo (§5.3b) ou uma **imagem
+  aprovada** do catálogo de mídia, que vence a arte (o app põe o mesmo véu
+  por cima para o texto manter 4,5:1). Padrões: contracheque `cc`, tempo de
+  serviço `ts`, férias `fe`, Dica `dc`, Suas pendências `pe`, Atalhos `cc`,
+  card Outubro Rosa `rosa`.
+- **Atalhos padrão por nível:** até **12** casas, numa linha só que rola de
+  lado no app (SOUPM_2_2 §4.4); o painel mostra a ordem e quantos cabem sem
+  rolar num iPhone (cerca de 5). Quem nunca
   personalizou recebe o padrão do seu nível; função que ele não pode ver some
   sozinha.
 - **Comando (dados do SIGRH com aprovação; SOUPM_2_2 §4.1).** No app, o
@@ -665,7 +699,7 @@ tiver o módulo registrado (senão o app mostra "Atualize o app").
 
   | Modelo | Para quê | Campos próprios |
   |---|---|---|
-  | **Campanha** | campanha, evento, aviso visual (ex.: Outubro Rosa) | selo, título, texto, cor, marca d'água ou imagem, botão |
+  | **Campanha** | campanha, evento, aviso visual (ex.: Outubro Rosa) | selo, título, texto, arte (§5.3b) ou imagem aprovada, botão |
   | **Atalho grande** | levar a uma função com destaque | título, texto, ícone, função de destino |
   | **Número** | um dado de fonte confirmada ("3 escalas este mês") | título, fonte do número (catálogo `soupm_fonte_dados`), texto de apoio, destino |
   | **Lista curta** | até 3 linhas com links | título, linhas (texto + destino) |
@@ -678,7 +712,7 @@ tiver o módulo registrado (senão o app mostra "Atualize o app").
   fontes de dados** (`soupm_fonte_dados`), o mesmo das pendências, e só as
   `confirmada`. Em todos: chave (gerada do título, fixa depois de publicar), público (os
   filtros do §4.3), período, ordem, se o militar pode esconder e o botão
-  (abrir função do app, comunicado, link externo `https` ou WhatsApp do
+  (abrir função do app, comunicado, link externo `https` ou chamado técnico do
   suporte). Limites de texto por modelo, com contador. **Prévia** do card (com as
   medidas compactas do SOUPM_2_2 §15.2: 14 dentro do card, 6 a 8 do título ao
   conteúdo) nos
@@ -700,6 +734,82 @@ tiver o módulo registrado (senão o app mostra "Atualize o app").
 - A personalização de cada militar fica em `soupm_inicio_preferencia`. O
   painel pode "restaurar o padrão" de todos quando mudar a ordem padrão (com
   confirmação).
+
+### 5.3b Artes dos cards
+
+Decisão do usuário (22/10/2026): a arte e as cores dos cartões de Serviços são
+o **novo padrão visual de todo o app** (Início, áreas de Serviços e cards do
+painel; SOUPM_2_2 §4.6). O painel já vem com as artes configuradas, e o
+administrador muda ou cria outras sem versão nova do app.
+
+- **Cada arte tem:** chave (fixa depois de publicada), nome, **três cores da
+  paleta fechada** (base, meio e destaque: o degradê vai da base ao meio, e o
+  destaque pinta o brilho e as trilhas de circuito) e **três ícones** do
+  catálogo do app (um grande e apagado no canto, dois menores).
+- **Prévia** nos temas claro e escuro, no iPhone e no Android, e
+  **conferência de contraste**: texto branco sobre o véu escuro do pé do
+  cartão, no mínimo 4,5:1. Abaixo disso, não publica.
+- **Onde é usada:** a lista de blocos, áreas e cards que usam a arte. Editar
+  muda todos de uma vez, e a confirmação diz quais.
+- **Duplicar, editar, arquivar.** Arte em uso não se arquiva: o painel pede
+  para escolher outra nos lugares que a usam.
+- **Dois estilos por arte** (decisão do usuário, 22/10/2026): **cheio**, nos
+  cards de resumo (degradê, trilhas, ícones e véu), e **discreto**, nas
+  superfícies (só a cor de destaque: brilho de 15% no canto, trilhas finas e
+  ícones a 9%; o texto segue as cores do tema). A prévia mostra os dois.
+- **Arte especial `estrelas`** (decisão do usuário, 22/10/2026; SOUPM_2_2
+  §4.1): a arte da Faixa do Comando, que são dois cartões lado a lado no
+  **estilo cheio**, como os outros cards. Degradê `#081A36` → `#16396B`,
+  brilho dourado `#E0A100` e trilhas finas; no lugar dos 3 ícones, **3
+  estrelas de cinco pontas brancas e apagadas no canto direito**, como os
+  ícones dos outros cards (uma grande e inclinada, a 30%, e duas menores, a
+  24% e 20%); o dourado fica só no brilho e no aro da foto; posto e cargo em
+  branco. No cartão aberto, capa azul-marinho com
+  brilho dourado e as estrelas grandes e apagadas atrás da foto. O app
+  desenha, então o painel não escolhe ícones; as cores ficam guardadas na
+  arte (`cor_base`, `cor_meio`, `cor_destaque`). A única configuração é o
+  **número de estrelas**, que segue o posto vindo do SIGRH (padrão 3 para
+  coronel; a API calcula, §9.1 nº 14). Antes de publicar, o painel mostra o
+  aviso **"Confira com o regulamento de uniformes da PMRR"**, porque a
+  insígnia muda de corporação para corporação.
+- **Superfícies do app** (lista nesta tela): cada lugar fora dos cards de
+  resumo escolhe arte e estilo. Padrões: capa do Perfil (`perfil.capa`, `rh`,
+  cheio), grupos do Perfil (`rh`, discreto), cartão do nível (`gestao`,
+  discreto), Faixa do Comando (`estrelas`, especial, cheio), Suas pendências (`pe`,
+  discreto) e Atalhos (`cc`, discreto).
+- O desenho (degradê, trilhas, ícones, véu) é do app; o painel só escolhe as
+  cores e os ícones. Desenho de arte novo, diferente desse, exige versão do
+  app.
+
+**Carga inicial** (cores do protótipo do app, versão 31):
+
+| Chave | Nome | Base · meio · destaque | Ícones |
+|---|---|---|---|
+| `cc` | Contracheque | `#0A2350` `#1565C0` `#4FD8F0` | payments, receipt_long, savings |
+| `ts` | Tempo de serviço | `#251800` `#8A5A00` `#FFC233` | military_tech, hourglass_top, workspace_premium |
+| `fe` | Férias | `#00303A` `#00838F` `#80DEEA` | beach_access, flight, wb_sunny |
+| `dc` | Dica | `#1A1846` `#4338CA` `#A5B4FC` | tips_and_updates, search, lightbulb |
+| `pe` | Pendências | `#2B0F12` `#9F1D2B` `#FF9E9E` | pending_actions, assignment_late, task_alt |
+| `rosa` | Outubro Rosa | `#3A0A1E` `#B0225A` `#FF8FB8` | favorite, volunteer_activism, health_and_safety |
+| `rh` | Minha vida funcional | `#14205C` `#4338CA` `#38BDF8` | badge, receipt_long, verified |
+| `operacional` | Serviço operacional | `#071A33` `#1D4ED8` `#EF4444` | local_police, calendar_month, shield |
+| `normas` | Normas e procedimentos | `#2A1704` `#A15C07` `#FCD34D` | gavel, menu_book, balance |
+| `gestao` | Gestão | `#1A1405` `#7A5800` `#FFC233` | monitoring, groups, military_tech |
+| `atendimento` | Atendimento DTI | `#032A28` `#0F766E` `#5EEAD4` | support_agent, forum, build |
+| `institucional` | Institucional | `#06281A` `#15803D` `#86EFAC` | account_balance, campaign, newspaper |
+
+**Sugeridas para campanhas** (cadastradas como sugestão, ativadas com um
+clique):
+
+| Chave | Nome | Base · meio · destaque | Ícones |
+|---|---|---|---|
+| `aniversario_pmrr` | Aniversário da PMRR (cores nacionais) | `#0A2A12` `#15803D` `#FACC15` | celebration, flag, shield |
+| `operacao` | Operação (azul policial com vermelho) | `#050B1F` `#1E3A8A` `#EF4444` | local_police, emergency, radar |
+| `setembro_amarelo` | Setembro Amarelo | `#2A2200` `#A16207` `#FDE047` | psychology, favorite, diversity_1 |
+| `novembro_azul` | Novembro Azul | `#0A1A3A` `#1D4ED8` `#93C5FD` | health_and_safety, man, favorite |
+
+As cores das artes formam a **paleta fechada** (`soupm_config`, chave
+`paleta`); cor nova entra na paleta antes, com a conferência de contraste.
 
 ### 5.4 Comunicados
 
@@ -901,8 +1011,9 @@ auditoria (quem olhou o quê de quem).
 Caixa de entrada própria (padrão `nxc-feed`), **fora do SISCHAMADOS**:
 
 - **Abas por situação** (SOUPM_2_2 §8.2): Recebido, Em análise, Planejado,
-  Concluído, Arquivado. Fichas por tipo (Problema, Melhoria, Função nova,
-  Elogio). Cada feedback tem protocolo (`FB-2026-00042`).
+  Concluído, Arquivado. Fichas por tipo (Melhoria, Função nova, Elogio).
+  Desde a 2.2 é **só sugestões e elogios** (decisão do usuário, 22/10/2026):
+  o tipo "Problema" saiu, e problema técnico é chamado no SISCHAMADOS. Cada feedback tem protocolo (`FB-2026-00042`).
 - **Linha:** tipo, título, trecho, versão e plataforma, anexos, quando.
 - **Detalhe:** texto, **anexos** (prints e vídeos, até 5 e 25 MB no total,
   com miniatura e player; **só o Administrador abre**, e os anexos são
@@ -911,14 +1022,14 @@ Caixa de entrada própria (padrão `nxc-feed`), **fora do SISCHAMADOS**:
 - **Classificar:** tipo, prioridade, função (chave da árvore), rótulos,
   "duplicado de #…" (soma votos no pedido original).
 - **Responder:** a resposta vai como notificação do SouPMRR e aparece em
-  **Minhas mensagens** (Sugestões e problemas, no app). O militar
+  **Minhas mensagens** (Sugestões e elogios, no app). O militar
   pode responder de volta (conversa). Pergunta do DTI aguardando o militar
   cria a pendência `soupm.feedback_resposta`.
-- **Concluir ou arquivar.** Feedback não vira chamado: se for problema de
-  suporte (conta, acesso a outro sistema), a equipe responde orientando o
-  militar a abrir um chamado em Meus chamados, e o painel oferece essa
-  resposta pronta.
-- **Indicadores:** novos, em análise, problemas em 30 dias, pedidos de função
+- **Concluir ou arquivar.** Feedback não vira chamado. Se chegar algo técnico
+  (erro, acesso, conta), a equipe responde com a resposta pronta "Isso é um
+  problema técnico", que leva ao militar um **botão "Abrir chamado técnico"**
+  (o chamado abre já preenchido com o assunto) e arquiva o feedback.
+- **Indicadores:** novos, em análise, técnicos encaminhados para chamado em 30 dias, pedidos de função
   mais votados.
 - **Assuntos em alta:** o painel agrupa feedbacks parecidos (mesma função,
   mesma tela, mesmo código de erro, palavras em comum) e mostra quantos pedem
@@ -1029,8 +1140,26 @@ revogação de certidão, e-mail enviado. Essas linhas mostram o selo
 
 ### 5.12 Suporte e textos
 
-WhatsApp, horário e e-mail do suporte, perguntas frequentes (ordenáveis),
-rodapé da Início, textos fixos que vêm para o painel (SOUPM_2_2 §2.4) e os
+**Sem WhatsApp, horário nem e-mail de suporte a partir da 2.2** (decisão do
+usuário, 22/10/2026): todo suporte é chamado técnico no SISCHAMADOS. O bloco
+`ajuda` do `app_config` deixa de trazer esses campos.
+
+**"Preciso de ajuda" (filtro guiado).** No app: assunto → perguntas comuns →
+resposta com botão para a função certa → "Isso resolveu?" → se não, chamado
+técnico já preenchido. No painel, tudo isso é cadastrado aqui:
+
+- **Assuntos** (nome, ícone, ordem): por exemplo Acesso e senha, Contracheque,
+  Certidões, Férias, O app.
+- **Perguntas** de cada assunto (pergunta, resposta curta, ordem, **função de
+  destino** da árvore, que vira o botão da resposta, e o tipo e categoria do
+  SISCHAMADOS para o chamado, se não resolver).
+- **Indicadores por resposta:** quantos abriram, quantos marcaram "resolveu"
+  (`ajuda.resolveu`) e quantos terminaram em chamado (`ajuda.abriu_chamado`),
+  com a taxa de resolução. Resposta com muitos chamados aparece em destaque
+  para ser reescrita.
+- Prévia do caminho no app, nos dois temas.
+
+Também ficam aqui o rodapé da Início, textos fixos que vêm para o painel (SOUPM_2_2 §2.4) e os
 parâmetros técnicos do app no `app_config` (tempo limite das chamadas, lote e
 intervalo do log).
 
@@ -1103,6 +1232,64 @@ planejado), a sonda (tempo e falhas) e a disponibilidade de 24 h.
   3. **auditoria** e **voltar** com um clique (a conexão anterior fica
      guardada).
 - Pode trocar por função (por exemplo, só Certidões primeiro) ou tudo junto.
+
+### 5.18 Chamados no app (configuração do SISCHAMADOS móvel)
+
+Pedido do usuário (22/10/2026). **O painel não atende chamados e não tem
+botão para o SISCHAMADOS.** O lado de quem pede entra completo na 2.2
+(SOUPM_2_2 §8.3, fase 3c): abrir em 3 passos com até 5 anexos, responder,
+confirmar a solução e avaliar de 1 a 5 estrelas. O atendimento continua na intranet, no módulo
+SISCHAMADOS, como hoje: triagem, técnico, fila e resposta. No app, o militar
+só abre, acompanha, responde quando pedirem e avalia (`atend.chamados`).
+
+**Chamado vindo de uma tela de erro** (decisão do usuário, 22/10/2026): o
+botão "Relatar este problema" das telas de erro virou **"Abrir chamado
+técnico"**. A tela de erro do app tem o bloco "Detalhes técnicos" (código,
+data e hora, tela, chave da função, origem, versão e build, sistema e
+aparelho, conexão, id em `soupm_erro` e id da sessão), e **esse mesmo
+conjunto** vai no chamado. No SISCHAMADOS, a
+equipe vê esse conjunto e um link "Ver no log do SouPMRR", que recebe o
+id do erro e o id da sessão e abre a linha do tempo da sessão no painel
+(§5.8). Os chamados que vêm de "Preciso de ajuda"
+levam a pergunta que não resolveu.
+
+- **Selo na intranet:** todo chamado aberto pelo app aparece no SISCHAMADOS
+  com o selo **"Aberto pelo SOUPM"** (na lista, no painel de atendimento e no
+  detalhe), para a equipe saber de onde veio. O chamado guarda a origem
+  (`canal = 'soupm'`) e, se o militar permitir, a versão do app e o aparelho.
+  Isso é feito do lado da intranet (sessão "Chat Intranet").
+- **O que o painel configura** (tela "Chamados no app", grupo O app), o
+  máximo possível, para não depender de código:
+  - liga e desliga a função no app (`atend.chamados`, com mensagem de
+    bloqueio como qualquer função, §3);
+  - liga e desliga o acesso móvel do SISCHAMADOS (`api_mobile_ativa`) e o
+    prazo da sessão móvel;
+  - quais **tipos e categorias** do catálogo do SISCHAMADOS aparecem para
+    abrir pelo app (por exemplo, "Senha e acesso" e "Rede", sem "Compra de
+    equipamento"), com o texto de orientação de cada um;
+  - anexos aceitos no app (quantidade e tamanho, dentro do limite do
+    SISCHAMADOS);
+  - textos da tela no app (topo, lista vazia, confirmação de envio);
+  - avisos ao militar pelo push (resposta da equipe, aguardando você,
+    resolvido), pelo filtro do §4.1b;
+  - pendências ligadas ao SISCHAMADOS (`sischamados.aguardando_solicitante`,
+    `sischamados.avaliar`), como qualquer tipo do §5.5.
+- **Indicadores** (sem nomes, só números): chamados abertos pelo app em 7 e
+  30 dias, por tipo, tempo até a primeira resposta, soluções confirmadas e
+  recusadas e avaliação média (estrelas). Vêm dos eventos `chamado.*` e dos
+  erros `CH-` do log (SOUPM_2_2 §9.2).
+- **API móvel do SISCHAMADOS:** faltam 4 rotas, pedidas à sessão da intranet
+  (a web já faz tudo em `ChamadoController`): `POST v1/chamados/{id}/mensagens`
+  (com anexo), `POST v1/chamados/{id}/confirmar` (`resolveu`, `nota`,
+  `comentario`), `POST v1/chamados/{id}/reabrir` e
+  `GET v1/chamados/{id}/anexos/{n}`. Para ver
+  um chamado, a equipe usa o SISCHAMADOS na intranet.
+- **Onde fica a configuração:** o que é do app (função, textos, push,
+  pendências) fica nas tabelas `soupm_*`; o que é do SISCHAMADOS (acesso móvel,
+  tipos e categorias liberados no app) fica nas tabelas do próprio
+  SISCHAMADOS (`sccti`), que o painel edita pela permissão de gerência do
+  módulo. O desenho dessas colunas é combinado com a sessão "Chat Intranet".
+
 
 ---
 
@@ -1178,6 +1365,14 @@ Papéis da carga inicial:
 **Até o login ir para a intranet, só existe o papel Administrador em uso**
 (decisão do usuário, 21/10/2026). Os outros cinco ficam desenhados (matriz e
 escopo prontos) e sem ninguém.
+
+**Administrador da intranet é administrador do SouPMRR** (decisão do usuário,
+22/10/2026). O login do painel é o da intranet, e **quem é administrador da
+intranet entra e gerencia o painel do SouPMRR automaticamente**, sem
+concessão à parte. A ligação exata (qual perfil da intranet conta como
+administrador, se haverá exceções) o usuário vai detalhar depois; até lá, a
+subsessão da intranet usa o perfil de administrador que a intranet já tem e
+registra a escolha neste documento.
 
 **Administrador: acesso a tudo, com três travas** (decisão do usuário,
 21/10/2026: "um administrador tem acesso a tudo do app mesmo, independente do
@@ -1362,12 +1557,12 @@ CREATE TABLE IF NOT EXISTS public.soupm_feedback (
     id            BIGSERIAL PRIMARY KEY,
     protocolo     VARCHAR(20) UNIQUE NOT NULL,      -- 'FB-2026-00042'
     matricula     VARCHAR(20) NOT NULL,
-    tipo          VARCHAR(12) NOT NULL CHECK (tipo IN ('problema','melhoria','funcao_nova','elogio')),
+    tipo          VARCHAR(12) NOT NULL CHECK (tipo IN ('melhoria','funcao_nova','elogio')),
     texto         TEXT NOT NULL CHECK (char_length(texto) >= 10),
     plataforma    VARCHAR(8) CHECK (plataforma IN ('android','ios')),
     app_versao    VARCHAR(20),
     contexto      JSONB,                            -- aparelho, tela, últimos códigos (sem dado sensível)
-    erro_id       BIGINT,                           -- soupm_erro, quando veio de "Relatar este problema"
+    erro_id       BIGINT,                           -- soupm_erro citado pelo militar (o caminho de erro agora é chamado técnico)
     situacao      VARCHAR(12) NOT NULL DEFAULT 'recebido'
                   CHECK (situacao IN ('recebido','em_analise','planejado','concluido','arquivado')),
     aguarda_militar BOOLEAN NOT NULL DEFAULT FALSE, -- a equipe perguntou algo (pendência soupm.feedback_resposta)
@@ -1458,9 +1653,10 @@ CREATE TABLE IF NOT EXISTS public.soupm_card (
     chave          VARCHAR(60) PRIMARY KEY,          -- 'outubro_rosa' → bloco 'home.livre.outubro_rosa'
     modelo         VARCHAR(12) NOT NULL CHECK (modelo IN ('campanha','atalho','numero','lista')),
     dados          JSONB NOT NULL,                   -- campos do modelo: selo, titulo, texto, cor, icone, fonte, linhas[]
-    marca          VARCHAR(20),                      -- chave do catálogo de marcas d'água
-    marca_imagem   TEXT,                             -- imagem de fundo (pasta só de imagens); vence a marca
-    acao           JSONB,                            -- {tipo: funcao|comunicado|link|whatsapp, destino}
+    arte           VARCHAR(30) REFERENCES public.soupm_arte(chave),  -- §5.3b (substitui marca)
+    arte_imagem    INT REFERENCES public.soupm_midia(id),             -- imagem aprovada; vence a arte
+    arte_estilo    VARCHAR(8) NOT NULL DEFAULT 'cheio' CHECK (arte_estilo IN ('cheio','discreto')),
+    acao           JSONB,                            -- {tipo: funcao|comunicado|link|chamado, destino}
     publico        JSONB,                            -- filtros do §4.3; nulo = todos
     inicio         TIMESTAMPTZ,
     fim            TIMESTAMPTZ,
@@ -1473,12 +1669,32 @@ CREATE TABLE IF NOT EXISTS public.soupm_card (
     criado_em      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     atualizado_por VARCHAR(20),
     atualizado_em  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CHECK (acao IS NULL OR acao->>'tipo' IN ('funcao','comunicado','link','whatsapp'))
+    CHECK (acao IS NULL OR acao->>'tipo' IN ('funcao','comunicado','link','chamado'))
 );
 CREATE INDEX ON public.soupm_card USING gin (publico);
--- Blocos fixos da Início: são linhas tipo 'bloco_inicio' do soupm_menu_item, que ganha
---   marca VARCHAR(20), marca_imagem TEXT e escondivel BOOLEAN NOT NULL DEFAULT TRUE
---   (desligar o bloco = visivel_menu false; o publico já existe).
+-- Artes dos cards (§5.3b): o novo padrão visual do app; blocos, áreas e cards apontam para cá
+CREATE TABLE IF NOT EXISTS public.soupm_arte (
+    chave         VARCHAR(30) PRIMARY KEY CHECK (chave ~ '^[a-z_]+$'),
+    nome          VARCHAR(60) NOT NULL,
+    tipo          VARCHAR(10) NOT NULL DEFAULT 'icones' CHECK (tipo IN ('icones','especial')),  -- especial = desenhada pelo app
+    cor_base      CHAR(7) CHECK (cor_base ~ '^#[0-9A-Fa-f]{6}$'),
+    cor_meio      CHAR(7) CHECK (cor_meio ~ '^#[0-9A-Fa-f]{6}$'),
+    cor_destaque  CHAR(7) CHECK (cor_destaque ~ '^#[0-9A-Fa-f]{6}$'),
+    icones        TEXT[] CHECK (array_length(icones, 1) = 3),  -- chaves do catálogo de ícones
+    config        JSONB,                            -- só das especiais: estrelas {"estrelas": "posto"} ou um número
+    CHECK (tipo = 'especial' OR (cor_base IS NOT NULL AND cor_meio IS NOT NULL AND cor_destaque IS NOT NULL AND icones IS NOT NULL)),
+    situacao      VARCHAR(10) NOT NULL DEFAULT 'ativa' CHECK (situacao IN ('ativa','sugerida','arquivada')),
+    versao_reg    INT NOT NULL DEFAULT 1,           -- controle de concorrência (§1.3)
+    atualizado_por VARCHAR(20),
+    atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+-- As cores têm de estar na paleta fechada (soupm_config 'paleta'); o painel confere antes de gravar.
+-- Blocos fixos da Início e áreas de Serviços: linhas do soupm_menu_item, que ganha
+--   arte VARCHAR(30) REFERENCES soupm_arte(chave), arte_imagem INT REFERENCES soupm_midia(id),
+--   arte_estilo VARCHAR(8) NOT NULL DEFAULT 'cheio' CHECK (arte_estilo IN ('cheio','discreto'))
+--   (superfícies como perfil.capa, perfil.grupos e perfil.nivel também são linhas do soupm_menu_item)
+--   (a imagem aprovada vence a arte) e escondivel BOOLEAN NOT NULL DEFAULT TRUE
+--   (desligar o bloco = visivel_menu false; o publico já existe). "Mais usados" fixos: soupm_config 'servicos'.
 -- soupm_menu_item ganha visivel_menu BOOLEAN NOT NULL DEFAULT TRUE, separado do estado,
 --   que passa a ter CHECK (estado IN ('ativo','bloqueado')) (§3.0).
 
@@ -1639,11 +1855,19 @@ CREATE TABLE IF NOT EXISTS public.soupm_comando (
 CREATE TABLE IF NOT EXISTS public.soupm_dica (id SERIAL PRIMARY KEY, texto VARCHAR(120) NOT NULL,
     icone VARCHAR(40) NOT NULL, tipo VARCHAR(12) NOT NULL DEFAULT 'dica', publico JSONB,
     inicio TIMESTAMPTZ, fim TIMESTAMPTZ, ordem INT NOT NULL DEFAULT 0, ativo BOOLEAN NOT NULL DEFAULT TRUE);
-CREATE TABLE IF NOT EXISTS public.soupm_faq (id SERIAL PRIMARY KEY, pergunta VARCHAR(160) NOT NULL,
-    resposta TEXT NOT NULL, ordem INT NOT NULL DEFAULT 0, ativo BOOLEAN NOT NULL DEFAULT TRUE);
+-- "Preciso de ajuda" (§5.12): assuntos e perguntas do filtro guiado
+CREATE TABLE IF NOT EXISTS public.soupm_ajuda_assunto (chave VARCHAR(40) PRIMARY KEY, nome VARCHAR(60) NOT NULL,
+    icone VARCHAR(40) NOT NULL, ordem INT NOT NULL DEFAULT 0, ativo BOOLEAN NOT NULL DEFAULT TRUE);
+CREATE TABLE IF NOT EXISTS public.soupm_faq (id SERIAL PRIMARY KEY,
+    assunto VARCHAR(40) NOT NULL REFERENCES public.soupm_ajuda_assunto(chave),
+    pergunta VARCHAR(160) NOT NULL, resposta TEXT NOT NULL,
+    chave_destino VARCHAR(80),                          -- função da árvore que vira o botão da resposta
+    chamado_tipo INT, chamado_categoria INT,            -- catálogo do SISCHAMADOS para o chamado, se não resolver
+    ordem INT NOT NULL DEFAULT 0, ativo BOOLEAN NOT NULL DEFAULT TRUE);
+-- Indicadores por pergunta: eventos ajuda.ver, ajuda.resolveu e ajuda.abriu_chamado (dados: id da pergunta).
 -- Atalhos padrão por nível
 CREATE TABLE IF NOT EXISTS public.soupm_atalho_padrao (nivel_id INT REFERENCES public.soupm_nivel(id),
-    posicao SMALLINT CHECK (posicao BETWEEN 1 AND 8), chave VARCHAR(80) NOT NULL, PRIMARY KEY (nivel_id, posicao));
+    posicao SMALLINT CHECK (posicao BETWEEN 1 AND 12), chave VARCHAR(80) NOT NULL, PRIMARY KEY (nivel_id, posicao));
 ```
 
 **Mudanças pedidas às tabelas do SOUPM_2_2 §12.2** (avisadas à sessão do
@@ -1735,7 +1959,7 @@ públicos). Resposta (exemplo):
     { "chave": "home.ferias" }
   ],
   "busca": { "mais_procurados": ["rh.contracheques", "rh.certidoes"] },
-  "textos": { "suporte.whatsapp": "...", "suporte.horario": "Seg–Sex, 8h–17h" },
+  "textos": { "inicio.rodape": "Desenvolvido pelo DTI" },
   "rede": { "timeout_s": 15 },
   "log": { "ativo": true, "lote": 50, "intervalo_s": 30 }
 }
@@ -1788,25 +2012,25 @@ do app), então nenhuma quebra versão antiga.
 |---|---|---|
 | 1 | Novo campo de topo `categorias_comunicado: [{chave, nome, cor, icone}]`; cada item de `home.anuncio.dados.itens` traz `categoria` como chave | A cor e o ícone do cartão vêm do painel (§5.4), não do app |
 | 2 | Item de comunicado ganha `pilula: {icone, texto}` e `versao` | Prévia fiel e ciência por versão |
-| 3 | Novo bloco `ajuda: {whatsapp, horario, email, faq: [{pergunta, resposta}]}` | Suporte e perguntas frequentes pelo painel (§5.12) |
+| 3 | Novo bloco `ajuda: {assuntos: [{chave, nome, icone, perguntas: [{id, pergunta, resposta, destino, chamado: {tipo, categoria}}]}]}`, **sem WhatsApp, horário nem e-mail** (suporte só por chamado técnico desde a 2.2) | "Preciso de ajuda" guiado, cadastrado no painel (§5.12) |
 | 4 | Feedback pela API do app (enviar com anexos, Minhas mensagens, responder), já no SOUPM_2_2 §8 | Decisão do usuário (§5.9) |
 | 5 | Pendência de tipo desligado nunca aparece, nem como erro | Todos os tipos começam desligados (§5.5) |
 | 6 | `versao` lida de `soupm_versao_regra` (mesmo formato do exemplo acima) | Uma linha por plataforma; o histórico fica em `soupm_versao_app` |
 | 7 | Login pela intranet passa da fase 5 da 2.2 para a **2.3** | Decisão do usuário (§6.4). Até lá, MD5 no POST, como hoje |
 | 8 | `papeis` traz as chaves dos papéis (`["soupm-comunicados"]`) só para o app mostrar selo; nunca para decidir acesso | Mesmo princípio do `nivel` |
 | 9 | `home.comandantes.dados[]` ganha `cargo`, `quadro`, `desde`, `inclusao`, `lotacao`, `cursos[]` e `mensagem`, todos opcionais e já sem os campos escondidos no painel; vem só da versão aprovada | Comando pelo SIGRH com aprovação (SOUPM_2_2 §4.1) |
-| 10 | `home` aceita blocos `home.livre.<chave>` com `modelo` (`campanha`, `atalho`, `numero`, `lista`), `dados`, `acao`, `escondivel` e `marca`. Modelo desconhecido é ignorado pelo app | Cards criados no painel (SOUPM_2_2 §4.6) |
-| 11 | Todo bloco de `home` (fixo ou livre) pode trazer `marca: {desenho}` ou `marca: {imagem}`; sem `marca`, vale o padrão do app | Marca d'água escolhida no painel |
+| 10 | `home` aceita blocos `home.livre.<chave>` com `modelo` (`campanha`, `atalho`, `numero`, `lista`), `dados`, `acao`, `escondivel` e `arte`. Modelo desconhecido é ignorado pelo app | Cards criados no painel (SOUPM_2_2 §4.6) |
+| 11 | Todo bloco de `home` (fixo ou livre) e toda área do `menu` trazem `arte` (chave), `arte_estilo` (`cheio` ou `discreto`; sem ele, o padrão do bloco) e, se houver, `arte_imagem` (endereço da imagem aprovada, que vence a arte). Novo campo de topo `artes: [{chave, cores: [base, meio, destaque], icones: [3]}]` com as artes em uso. Sem `arte`, vale o padrão do app. Substitui o `marca`. Superfícies também: `perfil.capa`, `perfil.grupos`, `perfil.nivel` | Novo padrão visual: artes editáveis no painel (§5.3b)
 | 12 | Propagação: `versao_config` com **ETag** (o app revalida com `If-None-Match` e recebe 304 quando nada mudou), novas tentativas com recuo quando a leitura falha, cache do servidor **invalidado ao publicar**, e um push silencioso só de dados `{"tipo": "config", "versao_config": N}` como **tentativa** de acelerar (o iOS limita esses pushes; não é garantia) | Texto único no painel: "Vale em segundos para quem está com o app aberto, e na próxima abertura para os demais" |
 | 13 | Item do `menu` com `visivel` separado de `estado` (§3.0); `acao` aceita `avisar_quando_voltar` | Ocultar do menu não pode quebrar card nem push |
+| 14 | `home.comandantes` traz `arte: "estrelas"` e `arte_estilo: "cheio"` e cada item de `dados[]` ganha `estrelas: N`, **calculado pela API** a partir do posto do SIGRH (ou o número fixo do painel) | O app só desenha as estrelas (§5.3b)
 
 Exemplo de card no `home`:
 
 ```json
 { "chave": "home.livre.outubro_rosa", "modelo": "campanha", "escondivel": true,
-  "marca": { "desenho": "laco" },
-  "dados": { "selo": "Campanha", "titulo": "Outubro Rosa", "texto": "Exames preventivos na Diretoria de Saúde até 31/10.",
-             "cor": "#E5487F" },
+  "arte": "rosa",
+  "dados": { "selo": "Campanha", "titulo": "Outubro Rosa", "texto": "Exames preventivos na Diretoria de Saúde até 31/10." },
   "acao": { "tipo": "comunicado", "destino": 8, "rotulo": "Saiba mais" } }
 ```
 
@@ -1825,6 +2049,7 @@ editar o banco à mão. As fases do app são as do SOUPM_2_2 §16.
 | **P2. A nova Início** | **Tela inicial** (blocos, atalhos, Comando, dicas), **Comunicados** (editor com prévia, publicar, relatório), **Suas pendências** (catálogo todo desligado; ligar os de fonte pronta), **Militares** (consulta e "ver o app como") | **App 2** (navegação nova, Início, folha de bloqueio) | P1 |
 | **P3. Feedback** | **Feedback** (caixa, anexos, classificar, responder, Minhas mensagens) | **App 3** (busca e feedback; tabelas de feedback) | P2 |
 | **P3b. Contracheque pela API** | **Documentos › Contracheque** (Serviço, Padrão do PDF, Blocos e rubricas, Mensagens, Versões) e a prévia do PDF pela rotina da API | **App 3b** (`contracheque_pdf.php` com conferência e SHA-256; app pede o PDF pronto) | P3 |
+| **P3c. Chamados no app** | **Chamados no app** (§5.18): ligar, tipos liberados, anexos, textos, avisos e indicadores | **App 3c** (SISCHAMADOS do lado de quem pede) | P3b; as 4 rotas novas da API móvel e o selo "Aberto pelo SOUPM", da intranet |
 | **P4. Notificações** | **Notificações** (enviar, histórico, agendadas, lembretes, modelos), cron de envio pelo FCM na API do app, aparelhos, "desconectar" e resetar senha em Militares | **App 4** (fora do Firebase, escrita dupla) | P3; conta de serviço do FCM em `/private` |
 | **P5. Níveis de acesso** | **Níveis de acesso** (escada, regras, prévia de entra e sai, membros com porquê, comparação com a regra antiga), papel "Publicar comunicados" valendo no app, relatório de ciência por escopo | **App 5** (níveis e papéis pelo painel, fim do `isSuperUser`) | P4; sessão "Chat Intranet" (ACL) |
 | **P6. Acabamento e lançamento** | **Certidões** e **Declarações** com tela, no modelo do contracheque, Painel com todas as análises, conferência de acessibilidade (`web-design-guidelines`) e `verificar_design.php`, carga final revisada item a item | **App 6 e 7** (acabamento, lançamento 2.2.0) | P5 |
@@ -1863,6 +2088,16 @@ porque ele tem de seguir as regras de design e de desenvolvimento da intranet.
 A ordem continua a das fases acima: cada fase do painel começa quando a fase
 do app correspondente fixar o contrato dela, e a P0 só vai ao ar depois das
 correções de segurança da API (§7).
+
+**Duas frentes, que conversam entre si (decisão do usuário, 22/10/2026).**
+- **App Flutter e API do app:** a sessão "SouPM 2.2", neste repositório, na
+  branch `feature/soupm-2-2`.
+- **Painel web:** a sessão "Chat Intranet" (ou uma subsessão dela), dentro da
+  intranet, porque é lá que está todo o contexto e as regras dela. A sessão que
+  planejou o painel passa tudo o que sabe para ela.
+- As sessões podem e devem trocar mensagens direto: tirar dúvidas, avisar
+  mudança no contrato (§2 e §9) antes de mexer no código e devolver o que
+  aprenderem para os dois planos.
 
 **Carga inicial = o app de hoje.** A fase P1 grava a árvore e os estados
 exatamente como a 2.1.5 se comporta (Escalas e SVI "Em breve", Mapa da Força
@@ -1973,7 +2208,7 @@ simulador (modo vitrine) com "ver o app como" para militar e gestor.
 
 | Tarefa | Aceite | Tam. |
 |---|---|---|
-| T2.1 Tela inicial: blocos (todos desligáveis), ordem, público, marca d'água, atalhos por nível | Desligar o Comando some do app; mudar a ordem padrão aparece para quem nunca personalizou | M |
+| T2.1 Tela inicial: blocos (todos desligáveis), ordem, público, arte, atalhos por nível | Desligar o Comando some do app; mudar a ordem padrão aparece para quem nunca personalizou | M |
 | T2.1b Cards do painel: 4 modelos, prévia 2 temas × 2 plataformas, publicar com push silencioso | Card publicado aparece no app aberto em menos de 1 min, sem versão nova | M |
 | T2.2 Comando: leitura do SIGRH, pendente com antes e depois, aprovar com ajustes | Uma troca no SIGRH só aparece no app depois de aprovada, e a aprovação está na auditoria | M |
 | T2.2b Dicas e foto oficial (upload conferido pelo conteúdo) | Foto sobe para a pasta só de imagens com nome por hash | S |
@@ -1981,6 +2216,7 @@ simulador (modo vitrine) com "ver o app como" para militar e gestor.
 | T2.4 Publicar, destaque de abertura, ciência com prazo, relatório por unidade | Ciência gravada no app aparece no relatório; gestor N3 vê só a OPM | M |
 | T2.5 Suas pendências: catálogo (37 tipos do SOUPM_2_2 §4.3, desligados), configuração, simulação, homologação | Nada liga sem fonte confirmada; homologar a declaração de bens e ligar mostra no app de quem não declarou | M |
 | T2.6 Militares: busca, nível e porquê, últimas ações, diagnóstico e resposta sugerida | O diagnóstico separa erro da conta de erro de serviço | M |
+| T2.9 Artes dos cards: catálogo com a carga inicial e as sugeridas, editor com prévia e contraste, onde é usada, duplicar e arquivar | Editar a arte `cc` muda o card do contracheque e o atalho sem versão nova do app; arte em uso não arquiva | M |
 | T2.8 Catálogos dos cards: mídia aprovada, paleta fechada com conferência de contraste, fontes de dados (`soupm_fonte_dados`) | Cor fora da paleta ou contraste abaixo de 4,5:1 não publica | M |
 | T2.7 Agenda do app com aviso de conflito | Dois destaques de abertura no mesmo dia aparecem como conflito | M |
 
@@ -1998,6 +2234,7 @@ mão.
 | T3b.2 Rubricas: nome de exibição, ordem, grupo e visível | Renomear uma rubrica muda o PDF e a tela do app; código e valor continuam os do SIGRH | S |
 | T3b.3 Prévia do PDF pela rotina da API (fictício, caso longo, matrícula real com auditoria) | A prévia tem o mesmo conteúdo do PDF que o militar baixa | M |
 | T3b.4 Comparação do PDF novo com o de hoje, página por página, antes de trocar | O usuário aprova a comparação com dados fictícios e uma matrícula real | S |
+| T3c.1 Chamados no app: ligar, tipos e categorias liberados, anexos, textos, avisos (§5.18); selo "Aberto pelo SOUPM" no SISCHAMADOS (lado da intranet) | Um tipo desmarcado some do app; o chamado aberto pelo app chega na intranet com o selo | M |
 | T4.1 Envio: um militar, grupo (filtros §4.3 com contagem e amostra), todos | Confirmação com a quantidade; acima de 500, digitar | M |
 | T4.2 Cron de envio na API do app (FCM HTTP v1, lotes, token vencido), destino por aparelho | Histórico com aceitos pelo FCM, falhas, sem aparelho e abertos; nunca "entregue" | M |
 | T4.5 Módulos da intranet: cadastro, chave de serviço, limites, tipos aceitos, histórico de pedidos (§4.1b) | Pedido do SIGE passa pelo filtro, chega como push e não entra em Avisos | M |

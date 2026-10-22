@@ -32,7 +32,7 @@ causa mais comum de erro de build.
 | Ruby | **4.0.6** (arm64, via Homebrew) |
 | Java / JDK | **OpenJDK 17.0.13** (Homebrew) |
 | Gradle (wrapper) | **8.14.3** |
-| Android Gradle Plugin | **8.7.0** |
+| Android Gradle Plugin | **8.11.1** (`android/settings.gradle.kts`) |
 | Node.js | **20.x** para as Cloud Functions (ver ressalva na seção 7) |
 | Android NDK | **27.0.12077973** |
 
@@ -40,7 +40,7 @@ causa mais comum de erro de build.
 
 - `compileSdk = 36`
 - `targetSdk = 36`
-- `minSdk = 21`
+- `minSdk = 24` (literal, exigido pelo `local_auth_android`; APRENDIZADOS §4)
 - `sourceCompatibility` / `targetCompatibility` = Java 17
 - `jvmTarget = "17"`
 - Core library desugaring habilitado (`desugar_jdk_libs:1.2.2`)
@@ -51,7 +51,7 @@ causa mais comum de erro de build.
 
 ### Configuração iOS
 
-- Plataforma mínima do Podfile: **iOS 15.0**
+- Plataforma mínima do Podfile: **iOS 15.0**; o projeto do Xcode (`IPHONEOS_DEPLOYMENT_TARGET`) usa **15.6**, e esse é o mínimo real do app. Igualar o Podfile em 15.6 exige um build de teste
 - O `post_install` também força **15.0** nos pods: o Xcode 27 recusa 13.0
 - Workspace: `ios/Runner.xcworkspace` (**nunca** abrir o `.xcodeproj` direto)
 
