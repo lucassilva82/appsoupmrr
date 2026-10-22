@@ -1276,7 +1276,14 @@ dias seriam uns 4 GB.
   `app_config` **não viram linha**: ficam só nos passos dos erros
   (`RegistroLog.soPassos`). O tempo na tela, se for preciso, vai como dado do
   próximo `tela.abrir`.
-- Os gráficos do painel leem o `soupm_uso_dia`, não o detalhe.
+- Os gráficos do painel leem o `soupm_uso_dia`, não o detalhe. Os ativos em 1,
+  7 e 30 dias, por plataforma e no total, ficam prontos em `soupm_ativos_dia`
+  (pedido da sessão do painel, para não recalcular no detalhe).
+- O cron noturno é uma função só, `soupm_cron_log()` (`SECURITY DEFINER`):
+  o usuário da API pode chamá-la, mas continua sem poder apagar nada direto.
+  Scripts em `sigrh/cron/` da API (`cron_log.php`, uma vez por noite;
+  `sonda.php`, a cada minuto), só pela linha de comando. Os alvos da sonda
+  ficam em `~/private/config_sonda.php`, fora do código e do banco.
 - SQL: `api-soupmrr/sql/2026-10-22_soupm_log.sql`, aplicado em produção em
   22/10/2026.
 

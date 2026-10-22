@@ -995,10 +995,16 @@ o servidor resolve pela matrícula na consulta.
 - **Indicadores** ficam no Painel (§5.1), que é onde moram os gráficos de
   uso; a tela de Logs é para investigar.
 
-**Retenção:** eventos 180 dias, erros 1 ano. Tabela por mês com view de
-união (PostgreSQL 9.6 não tem partição declarativa), índices por
-(matricula, ocorrido_em), (sessao_id) e (evento, ocorrido_em). A limpeza
-apaga a tabela do mês vencido inteira.
+**Retenção (log leve, aprovado e aplicado em produção em 22/10/2026):** eventos
+detalhados **30 dias**, erros **1 ano** (cada erro leva os últimos 20 passos da
+sessão em `soupm_erro.passos`, que contam o caminho até a falha depois que o
+detalhe some) e resumo diário `soupm_uso_dia` **2 anos** (dia, evento, função,
+plataforma, versão: vezes, militares, falhas), montado por um cron noturno da
+API que refaz os últimos 3 dias. Não viram linha: `app.fundo`, `app.voltar`,
+`tela.sair`, `rede.trocou` e `config.recebida` (só aparecem como passos).
+Índices do detalhe: (recebido_em), (matricula, ocorrido_em) e (sessao_id); o
+(evento, ocorrido_em) saiu, porque os gráficos leem o resumo. Uma tabela por
+tipo, com o mesmo nome lido pelo painel se um dia virar tabela por mês.
 
 **Nada sensível no log** (CLAUDE.md, "Tudo tem log"): o painel não tem como
 mostrar senha, MD5, token, CPF completo, valor de contracheque, conteúdo de
@@ -1355,7 +1361,7 @@ Papéis da carga inicial:
 
 | Papel | Pode | Quem, no início |
 |---|---|---|
-| Administrador do app | Tudo, com escopo de toda a PMRR (no app e no painel), com as travas do §7 (bloqueio por tentativas, sessão que expira, aviso de aparelho novo) e todo acesso a dado de militar auditado | **Só os que o SIGRH já indica como administradores hoje**, em lista manual. Quando o login for para a intranet, valem os administradores de lá |
+| Administrador do app | Tudo, com escopo de toda a PMRR (no app e no painel), com as travas do §7 (bloqueio por tentativas, sessão que expira, aviso de aparelho novo) e todo acesso a dado de militar auditado | **Quem é administrador da intranet acessa e gerencia o painel do SouPMRR automaticamente** (decisão do usuário, 22/10/2026; detalhes a definir por ele) |
 | Publicar comunicados | Criar e publicar comunicados (com limite de público, se configurado) | **Ninguém**: desenhado para depois do login pela intranet |
 | Enviar notificações | Um militar e grupos; "todos" fica com o Administrador | **Ninguém**: para depois |
 | Atender feedback | Ler, classificar e responder feedback (sem abrir anexos); ler os logs das sessões dos feedbacks dele | **Ninguém**: para depois |
@@ -1523,15 +1529,19 @@ As tabelas do app estão no SOUPM_2_2 §12.2 e **não se repetem aqui**
 §6.5: `soupm_nivel`, `soupm_nivel_regra`, `soupm_papel`, `soupm_papel_regra`).
 Abaixo, só o que o painel acrescenta e o que ele pede para mudar.
 
-**Regras para todo DDL novo** (`postgresql-code-review`, limitado ao
-PostgreSQL 9.6):
+**Regras para todo DDL novo** (`postgresql-code-review`). Versões medidas em
+22/10/2026: **produção 13.23** (`pmrronline_erp_prod`, onde a API grava) e
+**desenvolvimento 9.6.6** (`gitpmrrl_pmrr_erp`, onde a intranet nova e o painel
+rodam). Escreve-se para a **menor** das duas (9.6), porque toda migração passa
+primeiro por dev; a regra é revista quando o dev subir de versão:
 
 - `TIMESTAMPTZ` em vez de `TIMESTAMP` (o servidor e o app estão em fusos
   diferentes do UTC; APRENDIZADOS §17 já mostrou o custo disso).
 - Valores fechados com `CHECK (col IN (…))`, não `ENUM` (ENUM no 9.6 não
   aceita remover valor).
 - `JSONB` de público com índice GIN e consulta por `@>`.
-- Sem `GENERATED`, sem partição declarativa, `EXECUTE PROCEDURE` nos gatilhos.
+- Sem `GENERATED`, sem partição declarativa, `EXECUTE PROCEDURE` nos gatilhos
+  (existem no 13 de produção, mas não no 9.6 de dev).
 - Script idempotente em `sql/` da API (`CREATE TABLE IF NOT EXISTS`) e coluna
   nova conferida em `pg_attribute` antes de ser lida, como no `titulo_curto`.
 
@@ -2108,9 +2118,10 @@ no painel.
 
 ## 11. Decisões do usuário (todas fechadas em 21/10/2026)
 
-1. ~~Quem é Administrador?~~ **Na carga inicial, só os que o SIGRH já indica
-   como administradores hoje**, em lista manual. Quando o login for para a
-   intranet, valem os administradores de lá (§6.3).
+1. ~~Quem é Administrador?~~ **Quem é administrador da intranet** acessa e
+   gerencia o painel do SouPMRR automaticamente, com o login da intranet
+   (decisão do usuário, 22/10/2026, que substitui a lista do SIGRH; ele vai
+   detalhar depois). §6.3.
 2. ~~Push dos módulos da intranet?~~ **Modelo do SIGE para todos**: a
    intranet manda para a API do SouPMRR, que filtra, gerencia e encaminha ao
    app; o filtro sempre existe (§4.1b).
