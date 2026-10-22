@@ -13,6 +13,7 @@ import '../utils/theme_provider.dart';
 import 'home_page.dart';
 import 'notifications_page.dart';
 import 'configuracoes.dart';
+import '../widgets/barra_lateral.dart';
 import '../widgets/barra_navegacao.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/vidro.dart';
@@ -150,6 +151,44 @@ class _MainShellState extends State<MainShell> {
     final notifProvider = Provider.of<NotificationProvider>(context);
     final unread = notifProvider.notifications.where((n) => !n.clicked).length;
 
+    final abas = IndexedStack(
+      index: _currentIndex,
+      children: [
+        _aba(0, _RaizAba(indice: 0, irPara: _irPara, child: const HomeBody())),
+        _aba(1, _RaizAba(indice: 1, irPara: _irPara, child: const ServicosBody())),
+        _aba(2, _RaizAba(indice: 2, irPara: _irPara, child: const NotificationsBody())),
+        _aba(3, _RaizAba(indice: 3, irPara: _irPara, child: const SettingsBody())),
+      ],
+    );
+    final itens = [
+      const ItemNavegacao(
+        icone: Icons.home_outlined,
+        iconeAtivo: Icons.home_rounded,
+        rotulo: 'Início',
+      ),
+      const ItemNavegacao(
+        icone: Icons.apps_outlined,
+        iconeAtivo: Icons.apps_rounded,
+        rotulo: 'Serviços',
+      ),
+      ItemNavegacao(
+        icone: Icons.notifications_outlined,
+        iconeAtivo: Icons.notifications_rounded,
+        rotulo: 'Avisos',
+        contador: unread,
+      ),
+      const ItemNavegacao(
+        icone: Icons.person_outline,
+        iconeAtivo: Icons.person_rounded,
+        rotulo: 'Perfil',
+      ),
+    ];
+
+    // iPad e Android largo (≥ 600): barra lateral no lugar da barra de
+    // baixo (§3.1); a partir de 840, com o nome ao lado do ícone.
+    final largura = MediaQuery.sizeOf(context).width;
+    final lateral = largura >= 600;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -157,45 +196,24 @@ class _MainShellState extends State<MainShell> {
       },
       child: FundoSuave(
         child: Scaffold(
-          // ── Corpo: um navegador por aba (preserva o estado de cada uma) ──
-          body: IndexedStack(
-            index: _currentIndex,
-            children: [
-              _aba(0, _RaizAba(indice: 0, irPara: _irPara, child: const HomeBody())),
-              _aba(1, _RaizAba(indice: 1, irPara: _irPara, child: const ServicosBody())),
-              _aba(2, _RaizAba(indice: 2, irPara: _irPara, child: const NotificationsBody())),
-              _aba(3, _RaizAba(indice: 3, irPara: _irPara, child: const SettingsBody())),
-            ],
-          ),
-
-          // ── Barra inferior ───────────────────────────────────────────────
-          bottomNavigationBar: BarraNavegacao(
-            indiceAtual: _currentIndex,
-            aoSelecionar: _irPara,
-            itens: [
-              const ItemNavegacao(
-                icone: Icons.home_outlined,
-                iconeAtivo: Icons.home_rounded,
-                rotulo: 'Início',
-              ),
-              const ItemNavegacao(
-                icone: Icons.apps_outlined,
-                iconeAtivo: Icons.apps_rounded,
-                rotulo: 'Serviços',
-              ),
-              ItemNavegacao(
-                icone: Icons.notifications_outlined,
-                iconeAtivo: Icons.notifications_rounded,
-                rotulo: 'Avisos',
-                contador: unread,
-              ),
-              const ItemNavegacao(
-                icone: Icons.person_outline,
-                iconeAtivo: Icons.person_rounded,
-                rotulo: 'Perfil',
-              ),
-            ],
-          ),
+          body: lateral
+              ? Row(children: [
+                  BarraLateral(
+                    itens: itens,
+                    indice: _currentIndex,
+                    aoSelecionar: _irPara,
+                    estendida: largura >= 840,
+                  ),
+                  Expanded(child: abas),
+                ])
+              : abas,
+          bottomNavigationBar: lateral
+              ? null
+              : BarraNavegacao(
+                  indiceAtual: _currentIndex,
+                  aoSelecionar: _irPara,
+                  itens: itens,
+                ),
         ),
       ),
     );
