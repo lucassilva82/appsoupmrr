@@ -1,0 +1,129 @@
+import '../config/app_config.dart';
+
+/// Menu de reserva, igual à carga inicial do `soupm_menu_item`
+/// (api-soupmrr/sql/2026-10-23_soupm_app_config.sql). Vale enquanto o
+/// `app_config` não chegou (primeira abertura sem internet). [gestor] segue
+/// a regra de hoje do app (`Auth.isSuperUser`) até a fase 5.
+List<ItemMenu> menuPadrao({required bool gestor}) {
+  ItemMenu f(String chave, String rotulo, String icone, String rota,
+          {String? descricao,
+          List<String> sinonimos = const [],
+          List<String> apelidos = const [],
+          bool emBreve = false,
+          bool visivel = true}) =>
+      ItemMenu(
+        chave: chave,
+        tipo: 'funcao',
+        rotulo: rotulo,
+        descricao: descricao,
+        icone: icone,
+        rota: rota,
+        sinonimos: sinonimos,
+        apelidos: apelidos,
+        visivel: visivel,
+        bloqueado: emBreve,
+        selo: emBreve ? 'Em breve' : null,
+        mensagem: emBreve
+            ? MensagemBloqueio(
+                motivo: 'em_breve',
+                titulo: 'Em desenvolvimento',
+                texto: 'Este recurso estará disponível em breve.',
+                codigo: 'MD-${chave.toUpperCase()}-EM_BREVE')
+            : null,
+      );
+
+  return [
+    ItemMenu(
+      chave: 'rh',
+      tipo: 'area',
+      rotulo: 'Minha vida funcional',
+      descricao: 'Contracheque, férias, certidões e seus dados',
+      icone: 'pessoa',
+      arte: 'rh',
+      filhos: [
+        f('rh.ficha', 'Ficha Individual', 'pessoa', '/page-militar',
+            descricao: 'Seus dados, contatos e endereço',
+            sinonimos: ['meus dados', 'cadastro', 'endereço', 'telefone'],
+            apelidos: ['ficha_individual']),
+        f('rh.certidoes', 'Certidões', 'certidao', '/certidoes-page',
+            descricao: 'Emita certidões na hora, com QR Code',
+            sinonimos: ['tempo de serviço', 'declaração', 'documento'],
+            apelidos: ['certidoes']),
+        f('rh.contracheques', 'Contracheques', 'contracheque',
+            '/contracheque-page',
+            descricao: 'Mês a mês, PDF e análise salarial',
+            sinonimos: ['salário', 'pagamento', 'holerite', 'folha'],
+            apelidos: ['contracheques']),
+        f('rh.ferias', 'Plano de férias', 'ferias', '/plano-de-ferias-page',
+            descricao: 'Seus períodos de férias',
+            sinonimos: ['férias', 'descanso'],
+            apelidos: ['plano_ferias']),
+        f('rh.declaracoes', 'Declarações', 'declaracao', '/declaracoes-page',
+            descricao: 'Bens, IRPF, parentesco e acúmulo de cargos',
+            sinonimos: ['bens', 'imposto de renda', 'irpf', 'parentesco'],
+            apelidos: ['declaracoes']),
+        f('rh.tempo_servico', 'Tempo de serviço e inatividade', 'tempo',
+            '/calculo-inatividade-page',
+            descricao: 'Simule sua reserva remunerada',
+            sinonimos: ['reserva', 'aposentadoria', 'inatividade'],
+            apelidos: ['calculo_inatividade']),
+      ],
+    ),
+    ItemMenu(
+      chave: 'operacional',
+      tipo: 'area',
+      rotulo: 'Serviço operacional',
+      descricao: 'Escalas e serviço voluntário',
+      icone: 'escala',
+      arte: 'operacional',
+      filhos: [
+        f('op.escalas', 'Minhas escalas', 'escala', '/escalas',
+            descricao: 'Suas escalas de serviço',
+            sinonimos: ['escala', 'serviço', 'turno', 'folga'],
+            apelidos: ['escalas'],
+            emBreve: true),
+        f('op.svi', 'Serviço voluntário (SVI)', 'svi', '/svi/escalas',
+            descricao: 'Escalas do SVI',
+            sinonimos: ['svi', 'voluntário', 'hora extra'],
+            apelidos: ['svi'],
+            emBreve: true),
+        f('op.plantao', 'Meu plantão', 'escala', '/plantao',
+            apelidos: ['plantao'], emBreve: true, visivel: false),
+      ],
+    ),
+    ItemMenu(
+      chave: 'normas',
+      tipo: 'area',
+      rotulo: 'Normas e procedimentos',
+      descricao: 'Legislações e POPs',
+      icone: 'lei',
+      arte: 'normas',
+      filhos: [
+        f('normas.legislacoes', 'Legislações', 'lei', '/legislacoes-page',
+            descricao: 'Leis, decretos e portarias da PMRR',
+            sinonimos: ['lei', 'decreto', 'estatuto', 'portaria'],
+            apelidos: ['legislacoes']),
+        f('normas.pops', 'POPs', 'pop', '/pop-page',
+            descricao: 'Procedimentos operacionais padrão',
+            sinonimos: ['procedimento', 'pop'],
+            apelidos: ['pops']),
+      ],
+    ),
+    if (gestor)
+      ItemMenu(
+        chave: 'gestao',
+        tipo: 'area',
+        rotulo: 'Gestão',
+        descricao: 'Ferramentas de comando',
+        icone: 'efetivo',
+        arte: 'gestao',
+        filhos: [
+          f('gestao.mapa_forca', 'Mapa da Força', 'efetivo',
+              '/mapa-da-forca-page',
+              descricao: 'Efetivo e situação da tropa',
+              sinonimos: ['efetivo', 'tropa', 'força'],
+              apelidos: ['mapa_forca']),
+        ],
+      ),
+  ];
+}

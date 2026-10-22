@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -121,6 +122,24 @@ class ItemMenu {
       filhos: lista(j['filhos']),
     );
   }
+
+  /// Cópia com outros filhos (a tela tira os que não são visíveis).
+  ItemMenu comFilhos(List<ItemMenu> novos) => ItemMenu(
+        chave: chave,
+        tipo: tipo,
+        rotulo: rotulo,
+        descricao: descricao,
+        icone: icone,
+        rota: rota,
+        arte: arte,
+        visivel: visivel,
+        bloqueado: bloqueado,
+        selo: selo,
+        mensagem: mensagem,
+        sinonimos: sinonimos,
+        apelidos: apelidos,
+        filhos: novos,
+      );
 
   static List<ItemMenu> lista(Object? j) => j is List
       ? j.map(deJson).whereType<ItemMenu>().toList()
@@ -312,7 +331,12 @@ class RepositorioConfig {
   final ArmazemConfig _armazem;
 
   /// Configuração em uso no app (atualizada a cada [carregar]).
-  static AppConfig atual = AppConfig.padrao;
+  static AppConfig get atual => emUso.value;
+  static set atual(AppConfig c) => emUso.value = c;
+
+  /// O mesmo valor, para as telas (Serviços, Início) redesenharem quando o
+  /// `app_config` chega depois que elas abriram.
+  static final emUso = ValueNotifier<AppConfig>(AppConfig.padrao);
 
   /// [matricula] e [senhaMd5] nulos: só a parte pública (antes do login).
   Future<AppConfig> carregar({String? matricula, String? senhaMd5}) async {
