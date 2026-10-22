@@ -2114,6 +2114,16 @@ usuário antes da próxima.
 | **6. Acabamento** | Bonito e acessível | migração das telas grandes para `features/`; esqueletos; movimento; Dynamic Type; leitor de tela; contraste nos dois temas | Escopo grande: limitar às telas mais usadas (log da fase 0 mostra quais) |
 | **7. Lançamento 2.2.0** | Lojas | versão nos três arquivos; capturas novas em todos os tamanhos (§31–32); "O que há de novo" separado por loja; TestFlight em iPhone e iPad físicos (§1) | Mudança grande de navegação confunde quem já usa: vídeo tutorial (§33) e um cartão "Conheça o novo SouPM" na primeira abertura |
 
+**Fase 0 concluída (22/10/2026), na branch `feature/soupm-2-2`.** App:
+`ApiClient` e `FalhaApp`, log local com os últimos 20 passos em cada erro,
+`Sessao` no Keychain/Keystore (migração conferida no simulador por cima da
+2.1.7, sem deslogar), captura global (`AP-FATAL`) e registro de módulos. API e
+banco de produção: `log.php` no ar; tabelas de log, resumo diário, ativos e
+sonda (`sql/2026-10-22_*` e `2026-10-23_soupm_cron_log.sql`); scripts em
+`sigrh/cron/` com dois crons no cPanel (sonda a cada minuto, `cron_log` às
+03:10) e os alvos da sonda em `~/private/config_sonda.php`. Os códigos de erro
+em `soupm_config` (`erros`) ficam para a fase 1, junto com o `app_config`.
+
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
 porque o contrato do `app_config` fica fixado antes. A fase 5 depende da
