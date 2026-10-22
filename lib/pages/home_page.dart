@@ -6,9 +6,9 @@ import 'package:projetonovo/widgets/HomeContrachequeCard.dart';
 import 'package:projetonovo/widgets/HomePlanoFeriasCard.dart';
 import 'package:projetonovo/widgets/anuncio_institucional.dart';
 import 'package:projetonovo/widgets/card_tempo_servico.dart';
-import 'package:projetonovo/widgets/carouselSlider.dart';
+import 'package:projetonovo/features/inicio/faixa_comando.dart';
+import 'package:projetonovo/features/inicio/linha_atalhos.dart';
 import 'package:projetonovo/widgets/vidro.dart';
-import 'package:projetonovo/widgets/grid_menu.dart';
 import 'package:projetonovo/widgets/widget_dicas_app.dart';
 
 // ── HomeBody ─────────────────────────────────────────────────────────────────
@@ -60,15 +60,20 @@ class _HomeBodyState extends State<HomeBody>
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Comandante / Sub-Comandante ──────────────────────────────────
-          WidgetCarouselSlider(),
+          // ── Faixa do Comando (64 pt, §4.1) ───────────────────────────────
+          FaixaComando(),
 
           const SizedBox(height: 8),
 
           // ── Balão de dicas / avisos ──────────────────────────────────────
           WidgetDicasApp(),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
+
+          // ── Atalhos: uma linha só (§4.4) ─────────────────────────────────
+          const LinhaAtalhos(),
+
+          const SizedBox(height: 12),
 
           // ── Widgets de resumo ────────────────────────────────────────────
           Padding(
@@ -84,10 +89,6 @@ class _HomeBodyState extends State<HomeBody>
             ),
           ),
 
-          const SizedBox(height: 20),
-
-          // ── Menu de funcionalidades (grid 3 colunas) ─────────────────────
-          HorizontalMenu(),
 
           const SizedBox(height: 20),
 

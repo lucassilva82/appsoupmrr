@@ -1,0 +1,186 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../core/config/app_config.dart';
+import '../../core/design/arte_cartao.dart';
+import '../../core/navegacao/abrir_funcao.dart';
+import '../../models/auth_model.dart';
+import '../../utils/app_theme.dart';
+import '../servicos/servicos_page.dart';
+
+/// Atalhos padrão até o painel mandar os de cada nível (`home.atalhos`).
+/// O gestor troca o último pelo Mapa da Força (§4.4).
+List<String> atalhosPadrao({required bool gestor}) => [
+      'rh.contracheques',
+      'rh.certidoes',
+      'rh.ferias',
+      'rh.ficha',
+      'rh.tempo_servico',
+      'rh.declaracoes',
+      gestor ? 'gestao.mapa_forca' : 'normas.legislacoes',
+    ];
+
+/// Acha as funções dos atalhos no menu em uso, com a área de cada uma (para
+/// a cor). Atalho de função oculta ou sem acesso some sozinho.
+List<({ItemMenu item, ItemMenu area})> resolverAtalhos(
+    List<ItemMenu> menu, List<String> chaves) {
+  final porChave = {
+    for (final a in menu)
+      for (final f in a.filhos) ...{
+        f.chave: (item: f, area: a),
+        for (final ap in f.apelidos) ap: (item: f, area: a),
+      },
+  };
+  return [
+    for (final c in chaves)
+      if (porChave[c] != null) porChave[c]!,
+  ];
+}
+
+/// Quantos atalhos cabem inteiros numa linha. Se o militar tem mais do que
+/// cabe, o último lugar vira "Mais" (§4.4: sem atalho cortado).
+int atalhosQueCabem(double largura, int total, {double celula = 72}) {
+  final cabem = (largura / celula).floor().clamp(1, 12);
+  if (total <= cabem) return total;
+  return cabem - 1;
+}
+
+/// Uma linha só de atalhos, divididos por igual na largura (§4.4).
+class LinhaAtalhos extends StatelessWidget {
+  const LinhaAtalhos({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final gestor = context.select<Auth, bool>((a) => a.isSuperUser);
+    return ValueListenableBuilder<AppConfig>(
+      valueListenable: RepositorioConfig.emUso,
+      builder: (context, config, _) {
+        final atalhos = resolverAtalhos(
+            menuEmUso(config, gestor: gestor), atalhosPadrao(gestor: gestor));
+        if (atalhos.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: LayoutBuilder(builder: (context, c) {
+            final n = atalhosQueCabem(c.maxWidth, atalhos.length);
+            final mais = n < atalhos.length;
+            return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              for (final a in atalhos.take(n))
+                Expanded(
+                  child: _Atalho(
+                    icone: iconePorChave(a.item.icone),
+                    cor: Arte.de(a.area.arte).destaque,
+                    rotulo: a.item.rotulo,
+                    bloqueado: a.item.bloqueado,
+                    aoTocar: () => abrirFuncao(context, a.item, origem: 'atalho'),
+                  ),
+                ),
+              if (mais)
+                Expanded(
+                  child: _Atalho(
+                    icone: Icons.more_horiz_rounded,
+                    cor: Theme.of(context).colorScheme.primary,
+                    rotulo: 'Mais',
+                    aoTocar: () => _todos(context, atalhos),
+                  ),
+                ),
+            ]);
+          }),
+        );
+      },
+    );
+  }
+
+  void _todos(BuildContext context, List<({ItemMenu item, ItemMenu area})> l) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Wrap(runSpacing: 12, children: [
+            for (final a in l)
+              SizedBox(
+                width: (MediaQuery.sizeOf(ctx).width - 32) / 4,
+                child: _Atalho(
+                  icone: iconePorChave(a.item.icone),
+                  cor: Arte.de(a.area.arte).destaque,
+                  rotulo: a.item.rotulo,
+                  bloqueado: a.item.bloqueado,
+                  aoTocar: () {
+                    Navigator.of(ctx).pop();
+                    abrirFuncao(context, a.item, origem: 'atalho');
+                  },
+                ),
+              ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+class _Atalho extends StatelessWidget {
+  const _Atalho({
+    required this.icone,
+    required this.cor,
+    required this.rotulo,
+    required this.aoTocar,
+    this.bloqueado = false,
+  });
+
+  final IconData icone;
+  final Color cor;
+  final String rotulo;
+  final VoidCallback aoTocar;
+  final bool bloqueado;
+
+  static TextStyle? _estilo(ThemeData t) =>
+      t.textTheme.labelSmall?.copyWith(height: 1.15, letterSpacing: 0);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Opacity(
+      opacity: bloqueado ? 0.55 : 1,
+      child: Semantics(
+        button: true,
+        label: rotulo,
+        excludeSemantics: true,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: aoTocar,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: cor.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: cor.withValues(alpha: 0.35)),
+                ),
+                child: Icon(icone, color: cor, size: AppIconSize.md),
+              ),
+              const SizedBox(height: 6),
+              // Palavra única longa ("Contracheques") encolhe em vez de
+              // quebrar no meio; frase quebra em até duas linhas.
+              if (rotulo.contains(' '))
+                Text(rotulo,
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: _estilo(theme))
+              else
+                FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(rotulo, maxLines: 1, style: _estilo(theme))),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
