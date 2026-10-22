@@ -19,6 +19,10 @@ import '../erros/falha_app.dart';
 //
 // Nunca entra no log: senha, MD5, token, CPF completo, valores e conteúdo de
 // documentos. Os dados extras passam por [_limpar] antes de entrar na fila.
+//
+// Log leve (decisão do usuário, 22/10/2026): os últimos 20 eventos da sessão
+// ficam só na memória e vão junto com cada erro (`passos`), para o suporte ver
+// o caminho até ele. Os eventos de [soPassos] nunca viram linha no banco.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Onde a fila fica guardada entre uma abertura e outra.
@@ -82,6 +86,20 @@ class RegistroLog {
   final int limite;
   final int lote;
 
+  /// Movimentos que só servem de contexto para um erro.
+  static const soPassos = {
+    'app.fundo',
+    'app.voltar',
+    'tela.sair',
+    'rede.trocou',
+    'config.recebida',
+  };
+  static const maxPassos = 20;
+  final _passos = <Map<String, Object?>>[];
+
+  /// Cópia dos últimos passos (para testes e para a tela de erro).
+  List<Map<String, Object?>> get passos => List.unmodifiable(_passos);
+
   // Leitura e gravação da fila uma de cada vez (APRENDIZADOS §26).
   Future<void> _fila = Future.value();
   bool _enviando = false;
@@ -93,15 +111,25 @@ class RegistroLog {
     String resultado = 'ok',
     String? codigo,
     Map<String, Object?>? dados,
-  }) =>
-      _acrescentar({
-        'tipo': 'evento',
-        'evento': nome,
-        'chave': chave,
-        'resultado': resultado,
-        'codigo': codigo,
-        if (dados != null) 'dados': _limpar(dados),
-      });
+  }) {
+    _passos.add({
+      'evento': nome,
+      if (chave != null) 'chave': chave,
+      if (resultado != 'ok') 'resultado': resultado,
+      if (codigo != null) 'codigo': codigo,
+      'em': DateTime.now().toIso8601String(),
+    });
+    if (_passos.length > maxPassos) _passos.removeAt(0);
+    if (soPassos.contains(nome)) return Future.value();
+    return _acrescentar({
+      'tipo': 'evento',
+      'evento': nome,
+      'chave': chave,
+      'resultado': resultado,
+      'codigo': codigo,
+      if (dados != null) 'dados': _limpar(dados),
+    });
+  }
 
   Future<void> erro(
     FalhaApp falha, {
@@ -118,6 +146,7 @@ class RegistroLog {
         'mensagem': falha.detalhe ?? falha.titulo,
         'pilha': pilha,
         'mostrado': mostrado,
+        if (_passos.isNotEmpty) 'passos': List.of(_passos),
       });
 
   /// Manda o lote mais antigo. Só tira da fila o que o servidor aceitou.

@@ -1260,7 +1260,25 @@ modelo do aparelho, versão e build do app, tipo de rede, tema (claro/escuro),
 tamanho de fonte do sistema, data e hora do aparelho e do servidor. Unidade e
 nível são resolvidos no servidor pela matrícula (não viajam no log).
 
-**Retenção:** ações 180 dias, erros 1 ano (decisão do usuário, 21/10/2026).
+**Log leve (decisão do usuário, 22/10/2026, que substitui a de 21/10).** "Saber
+de modo geral o que está sendo feito, o mais leve possível, para suporte e
+correções", no modelo do Sentry e do Firebase. Medido no banco de
+desenvolvimento: 1 milhão de eventos ocupa cerca de 380 MB; com tudo por 180
+dias seriam uns 4 GB.
+
+| O quê | Onde | Por quanto tempo |
+|---|---|---|
+| Ações que interessam (abrir o app, entrar, abrir tela, ver, baixar, compartilhar, emitir, enviar, tocar) | `soupm_evento` | **30 dias** |
+| Erros, cada um com os **últimos 20 passos da sessão** (evento, chave, resultado, código e hora; sem dados extras) | `soupm_erro.passos` | 1 ano |
+| Resumo por dia: vezes, militares distintos e falhas por evento, função, plataforma e versão | `soupm_uso_dia`, montado por um cron noturno que refaz os últimos 3 dias | 2 anos |
+
+- Ir para o fundo, voltar, sair da tela, trocar de rede e receber o
+  `app_config` **não viram linha**: ficam só nos passos dos erros
+  (`RegistroLog.soPassos`). O tempo na tela, se for preciso, vai como dado do
+  próximo `tela.abrir`.
+- Os gráficos do painel leem o `soupm_uso_dia`, não o detalhe.
+- SQL: `api-soupmrr/sql/2026-10-22_soupm_log.sql`, aplicado em produção em
+  22/10/2026.
 
 **Nunca no log:** senha, MD5, token, CPF completo, valores de contracheque,
 conteúdo de documentos, texto livre do feedback (fica no feedback, não no log).

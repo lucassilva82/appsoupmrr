@@ -105,4 +105,25 @@ void main() {
     expect(armazem.fila.length, 1);
     expect(armazem.fila.single['evento'], 'app.abrir');
   });
+
+  test('ir para o fundo e sair da tela não viram linha, só passos', () async {
+    final log = novo();
+    await log.evento('app.fundo');
+    await log.evento('tela.sair', chave: 'rh.contracheques');
+    expect(armazem.fila, isEmpty);
+    expect(log.passos.map((p) => p['evento']), ['app.fundo', 'tela.sair']);
+  });
+
+  test('o erro leva os últimos 20 passos, sem os dados extras', () async {
+    final log = novo();
+    for (var i = 1; i <= 25; i++) {
+      await log.evento('tela.abrir', chave: 'rh.n$i', dados: {'mes': '09'});
+    }
+    await log.erro(FalhaApp.lento('CC', detalhe: 'timeout 15s'));
+    final passos = armazem.fila.last['passos'] as List;
+    expect(passos.length, RegistroLog.maxPassos);
+    expect((passos.first as Map)['chave'], 'rh.n6');
+    expect((passos.last as Map)['chave'], 'rh.n25');
+    expect((passos.last as Map).containsKey('dados'), isFalse);
+  });
 }
