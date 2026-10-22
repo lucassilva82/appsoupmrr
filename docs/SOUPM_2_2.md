@@ -1198,6 +1198,10 @@ Prefixos por módulo (o sufixo segue o padrão `LG-`: `REDE`, `FORA`,
 | `FI` | ficha individual | `CH` | SISCHAMADOS |
 | `DC-FECHADA` | declaração fora da campanha aberta pelo painel | `PD` | pendência de um sistema que não respondeu |
 | `MD` | bloqueio pelo painel | `AP` | app (falha geral) |
+| `ES` | Minhas escalas (SIGE) | `SV` | serviço voluntário (SVI) |
+| `AJ` | "Preciso de ajuda" | `LOG` | envio do log (nunca vira log) |
+| `DO` | central de documentos | `NT` | notícias e agenda |
+| `CM` | comunicados | | |
 
 ### 9.2 Logs
 
@@ -1501,6 +1505,10 @@ CREATE TABLE public.soupm_evento (
 -- Atenção: o banco de produção é PostgreSQL 9.6 (lado da intranet). Se a API do
 -- app usar o mesmo servidor, partição declarativa não existe no 9.6: usar tabela
 -- por mês (soupm_evento_2026_11) com uma view de união. Conferir a versão antes.
+-- Fase 0 (22/10/2026): ficou uma tabela só por tipo (soupm_evento, soupm_erro),
+-- com índice por data e limpeza por DELETE (180 dias e 1 ano). Vira tabela por
+-- mês com uma view de mesmo nome quando o volume pedir; app e log.php não mudam.
+-- SQL: api-soupmrr/sql/2026-10-22_soupm_log.sql.
 
 -- Log de erros (mesmas colunas de identificação)
 CREATE TABLE public.soupm_erro (
