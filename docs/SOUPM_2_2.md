@@ -1457,10 +1457,11 @@ Todos com consulta preparada, POST, sem dado na URL e passando pelo
 > - SQL no banco de produção é rodado **pelo usuário**, no phpPgAdmin; a sessão
 >   prepara o script, testa num Postgres local e diz a ordem.
 >
-> Com o 13 existem partição declarativa, colunas `GENERATED` e `CREATE INDEX IF
-> NOT EXISTS`; os limites do 9.6 deixam de valer. `CHECK` no lugar de `ENUM`
-> continua, porque é mais fácil de mudar. A versão do banco de desenvolvimento
-> ainda precisa ser conferida.
+> O banco de desenvolvimento é **PostgreSQL 9.6.6** (conferido pela sessão do
+> painel no mesmo dia). Como o mesmo SQL vai para os dois e passa primeiro pelo
+> de desenvolvimento, **todo DDL continua escrito para o 9.6**: sem partição
+> declarativa, sem `GENERATED`, `EXECUTE PROCEDURE` nos gatilhos, `CHECK` no
+> lugar de `ENUM`.
 
 ```sql
 -- Árvore de menus e estado de cada função (substitui o soupm_modulo do PAINEL §8)
@@ -1522,10 +1523,10 @@ CREATE TABLE public.soupm_evento (
     dados        JSONB,
     PRIMARY KEY (id, recebido_em)
 ) PARTITION BY RANGE (recebido_em);
--- Produção é PostgreSQL 13.23 (conferido em 22/10/2026), que tem partição
--- declarativa. Fase 0: ficou uma tabela só por tipo (soupm_evento, soupm_erro),
+-- Produção é PostgreSQL 13.23 e o banco de desenvolvimento 9.6.6 (22/10/2026);
+-- o DDL é escrito para o 9.6. Fase 0: ficou uma tabela só por tipo (soupm_evento, soupm_erro),
 -- com índice por data e limpeza por DELETE (180 dias e 1 ano). Quando o volume
--- pedir, vira tabela particionada por mês com o mesmo nome; app e log.php não mudam.
+-- pedir, vira tabela por mês com uma view de mesmo nome; app e log.php não mudam.
 -- SQL: api-soupmrr/sql/2026-10-22_soupm_log.sql.
 
 -- Log de erros (mesmas colunas de identificação)
