@@ -2124,6 +2124,24 @@ sonda (`sql/2026-10-22_*` e `2026-10-23_soupm_cron_log.sql`); scripts em
 03:10) e os alvos da sonda em `~/private/config_sonda.php`. Os códigos de erro
 em `soupm_config` (`erros`) ficam para a fase 1, junto com o `app_config`.
 
+**Fase 1 (22/10/2026): pronta e testada localmente, falta produção.**
+`sql/2026-10-23_soupm_app_config.sql` cria `soupm_menu_item` (carga igual à
+loja: Escalas e SVI "Em breve", Mapa da Força para gestor pela regra de hoje),
+`soupm_versao_regra`, `soupm_versao_app`, `soupm_ajuda_assunto`, `soupm_faq` e
+as chaves `versao_config`, `versao_legada`, `bloqueio` (textos padrão da folha
+por motivo), `rede`, `log` e `erros` em `soupm_config`. A árvore de cada
+militar sai de **uma função**, `soupm_menu_para(matricula, plataforma,
+app_versao, gestor)`, usada pelo `app_config.php` e pelo "ver o app como" do
+painel (decisão da spec P1 do painel): público, estado, agendamento, versão
+mínima e o código `MD-` moram nela. O `app_config.php` devolve a parte pública
+sem login e o menu com login; o ETag é o hash do corpo (304 quando nada
+mudou), e senha errada conta no mesmo limite do `login.php`. No app,
+`lib/core/config/app_config.dart` lê na abertura e depois do login, guarda a
+última resposta por matrícula e cai na cópia ou nos padrões do código; as
+telas passam a usar o menu na fase 2. Pendente: rodar o SQL em produção,
+subir o `app_config.php` e o cron que grava `versao_legada` no Firestore das
+2.1.x (precisa da conta de serviço do FCM em `/private`).
+
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
 porque o contrato do `app_config` fica fixado antes. A fase 5 depende da
