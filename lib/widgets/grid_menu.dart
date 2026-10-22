@@ -20,7 +20,7 @@ class HorizontalMenu extends StatelessWidget {
 
   // Ordem: os módulos mais completos e mais usados primeiro (Ficha,
   // Certidões, Contracheques e, para gestores, Mapa da Força). Escalas e
-  // SVI ainda estão em desenvolvimento ("Em breve") e ficam no fim.
+  // SVI ficam no fim (liberados em 22/10/2026 para o teste com o SIGE).
   final List<Choice> allChoices = <Choice>[
     Choice(
         title: 'Ficha Individual', icon: Icons.account_circle_rounded, id: 1),
@@ -99,7 +99,9 @@ class _GridMenuItem extends StatelessWidget {
   }) : super(key: key);
 
   // Recursos ainda em desenvolvimento — indisponíveis para o usuário final.
-  static const Set<int> _emDesenvolvimento = {2, 11}; // Escalas e SVI
+  // Escalas (2) e SVI (11) liberados em 22/10/2026 para o teste com o SIGE
+  // (decisão do usuário). Para bloquear de novo: {2, 11}.
+  static const Set<int> _emDesenvolvimento = {};
 
   bool get _isEmDesenvolvimento => _emDesenvolvimento.contains(choice.id);
 

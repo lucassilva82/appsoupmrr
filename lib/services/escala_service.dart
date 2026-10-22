@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../data/store.dart';
@@ -28,8 +32,78 @@ class EscalaLoginResult {
   });
 }
 
+// ── Entrada automática na intranet ───────────────────────────────────────────
+
+/// Resultado de [EscalaService.entrarSozinho].
+enum EntradaIntranet { ok, precisaSenha, precisa2fa, precisaMigrar, falhou }
+
+class ResultadoEntrada {
+  final EntradaIntranet tipo;
+
+  /// Exceção da última tentativa, quando [tipo] é [EntradaIntranet.falhou].
+  final Object? erro;
+  final String? mensagemMigracao;
+
+  const ResultadoEntrada(this.tipo, {this.erro, this.mensagemMigracao});
+}
+
+/// Senha da intranet guardada no Keychain (iOS) ou no Keystore (Android),
+/// nunca no SharedPreferences. Fica junto da matrícula a que pertence.
+class CofreSenhaIntranet {
+  static const _chave = 'escala_senha_intranet';
+  const CofreSenhaIntranet();
+
+  FlutterSecureStorage get _cofre => const FlutterSecureStorage();
+
+  Future<({String matricula, String senha})?> ler() async {
+    try {
+      final raw = await _cofre.read(key: _chave);
+      if (raw == null || raw.isEmpty) return null;
+      final m = jsonDecode(raw) as Map<String, dynamic>;
+      final mat = m['matricula']?.toString() ?? '';
+      final senha = m['senha']?.toString() ?? '';
+      if (mat.isEmpty || senha.isEmpty) return null;
+      return (matricula: mat, senha: senha);
+    } catch (e) {
+      debugPrint('[ESCALA] ES-COFRE leitura falhou: $e');
+      return null;
+    }
+  }
+
+  Future<void> gravar(String matricula, String senha) async {
+    try {
+      await _cofre.write(
+          key: _chave,
+          value: jsonEncode({'matricula': matricula, 'senha': senha}));
+    } catch (e) {
+      debugPrint('[ESCALA] ES-COFRE gravação falhou: $e');
+    }
+  }
+
+  Future<void> apagar() async {
+    try {
+      await _cofre.delete(key: _chave);
+    } catch (e) {
+      debugPrint('[ESCALA] ES-COFRE remoção falhou: $e');
+    }
+  }
+}
+
 // ── Serviço principal ─────────────────────────────────────────────────────────
 class EscalaService {
+  EscalaService({CofreSenhaIntranet? cofre})
+      : _cofre = cofre ?? const CofreSenhaIntranet();
+
+  final CofreSenhaIntranet _cofre;
+
+  /// Matrícula dona da sessão guardada (a sessão de um militar não vale para
+  /// outro que entre no mesmo aparelho).
+  static const _kMatriculaSessao = 'escalaMatricula';
+
+  /// Hash da senha do app que a intranet já recusou: não tentar de novo a
+  /// cada abertura, para não bloquear a conta por tentativas.
+  static const _kSenhaAppRecusada = 'escalaSenhaAppRecusada';
+
   static const _baseUrlDev = 'https://intranet.gitpmrr.com/api/v1';
   static const _baseUrlDevPrefixed =
       'https://intranet.gitpmrr.com/intranet/api/v1';
@@ -249,6 +323,8 @@ class EscalaService {
     _sessionOnlyAuth = false;
     _baseOverride = null;
     await Store.remove(_storageKey);
+    await Store.remove(_kMatriculaSessao);
+    await _cofre.apagar();
   }
 
   bool get _isTokenNearExpiry {
@@ -712,6 +788,7 @@ class EscalaService {
         await _acquirePhpSession(cleanMat, senha);
       }
       await _persistSessionOnlyAuth();
+      await _lembrarEntrada(cleanMat, senha);
       _log(trace,
           'login em modo sessionOnlyAuth=true (HTML no endpoint de login)');
       return const EscalaLoginResult(
@@ -735,6 +812,7 @@ class EscalaService {
       // redireciona para página HTML da intranet.
       if (_isLikelyHtml(resp)) {
         await _persistSessionOnlyAuth();
+        await _lembrarEntrada(cleanMat, senha);
         _log(
             trace, 'login em modo sessionOnlyAuth=true (HTML apos sessao PHP)');
         return const EscalaLoginResult(
@@ -768,6 +846,7 @@ class EscalaService {
     );
     _log(trace,
         'login sucesso tokenPersistido expires=${data['expires_at']} migrarSenha=${data['precisa_migrar_senha'] == true}');
+    await _lembrarEntrada(cleanMat, senha);
 
     return EscalaLoginResult(
       precisaMigrarSenha: data['precisa_migrar_senha'] == true,
@@ -780,7 +859,126 @@ class EscalaService {
       'nova_senha': novaSenha,
       'confirmar_senha': confirmarSenha,
     });
+    final dono = await Store.getString(_kMatriculaSessao);
+    if (dono.isNotEmpty) await _cofre.gravar(dono, novaSenha);
   }
+
+  /// Login deu certo: guarda a senha no cofre e marca a sessão com a matrícula.
+  Future<void> _lembrarEntrada(String cleanMatricula, String senha) async {
+    await Store.saveString(_kMatriculaSessao, cleanMatricula);
+    await _cofre.gravar(cleanMatricula, senha);
+  }
+
+  /// Há sessão da intranet utilizável para esta matrícula? Sessão de outra
+  /// matrícula (outro militar no mesmo aparelho) é apagada.
+  Future<bool> temSessao(String matricula) async {
+    await _loadTokenFromStore();
+    final mat = _cleanMatricula(matricula);
+    final dono = await Store.getString(_kMatriculaSessao);
+    if (dono.isNotEmpty && mat.isNotEmpty && dono != mat) {
+      debugPrint('[ESCALA] sessão de outra matrícula descartada');
+      await clearToken();
+      return false;
+    }
+    if (_sessionOnlyAuth) return _phpSession != null && _phpSession!.isNotEmpty;
+    if (_token == null || _token!.isEmpty) return false;
+    return _expiresAt == null || _expiresAt!.isAfter(DateTime.now());
+  }
+
+  static bool _ehErroDeServidor(String code) =>
+      code.startsWith('HTTP_') ||
+      const {
+        'API_HTML_RESPONSE',
+        'SERVER_ERROR',
+        'INTERNAL_ERROR',
+        'PARSE_ERROR',
+        'API_REDIRECT',
+        'TIMEOUT',
+      }.contains(code);
+
+  /// Entra na intranet sem perguntar nada ao militar: primeiro com a senha da
+  /// intranet guardada no cofre (a que ele digitou alguma vez), depois com a
+  /// senha do app. Uma tentativa de cada, no máximo.
+  Future<ResultadoEntrada> entrarSozinho({
+    required String matricula,
+    String? senhaApp,
+  }) async {
+    final mat = _cleanMatricula(matricula);
+    if (mat.isEmpty) return const ResultadoEntrada(EntradaIntranet.precisaSenha);
+
+    final guardada = await _cofre.ler();
+    final recusada = await Store.getString(_kSenhaAppRecusada);
+    final tentativas = <({String senha, bool doCofre})>[];
+    if (guardada != null && guardada.matricula == mat) {
+      tentativas.add((senha: guardada.senha, doCofre: true));
+    }
+    if (senhaApp != null &&
+        senhaApp.isNotEmpty &&
+        senhaApp != guardada?.senha &&
+        _hash(mat, senhaApp) != recusada) {
+      tentativas.add((senha: senhaApp, doCofre: false));
+    }
+    if (tentativas.isEmpty) {
+      return const ResultadoEntrada(EntradaIntranet.precisaSenha);
+    }
+
+    for (final t in tentativas) {
+      try {
+        final r = await login(mat, t.senha);
+        await Store.remove(_kSenhaAppRecusada);
+        if (r.precisaMigrarSenha) {
+          return ResultadoEntrada(EntradaIntranet.precisaMigrar,
+              mensagemMigracao: r.mensagemMigracao);
+        }
+        return const ResultadoEntrada(EntradaIntranet.ok);
+      } on EscalaServiceException catch (e) {
+        if (e.code == 'REQUIRES_2FA') {
+          return const ResultadoEntrada(EntradaIntranet.precisa2fa);
+        }
+        if (_ehErroDeServidor(e.code)) {
+          return ResultadoEntrada(EntradaIntranet.falhou, erro: e);
+        }
+        // Senha recusada pela intranet.
+        debugPrint('[ESCALA] ES-SENHA recusada (${t.doCofre ? 'cofre' : 'app'}) '
+            'code=${e.code}');
+        if (t.doCofre) {
+          await _cofre.apagar();
+        } else {
+          await Store.saveString(_kSenhaAppRecusada, _hash(mat, t.senha));
+        }
+      } on TimeoutException catch (e) {
+        return ResultadoEntrada(EntradaIntranet.falhou, erro: e);
+      } on SocketException catch (e) {
+        return ResultadoEntrada(EntradaIntranet.falhou, erro: e);
+      } on http.ClientException catch (e) {
+        return ResultadoEntrada(EntradaIntranet.falhou, erro: e);
+      } on HandshakeException catch (e) {
+        return ResultadoEntrada(EntradaIntranet.falhou, erro: e);
+      }
+    }
+    return const ResultadoEntrada(EntradaIntranet.precisaSenha);
+  }
+
+  /// Na abertura do app: se ainda não há sessão da intranet, tenta entrar
+  /// sozinho. Nunca lança erro nem mostra nada; o resultado vai para o log.
+  Future<void> entrarEmSegundoPlano({
+    required String? matricula,
+    String? senhaApp,
+  }) async {
+    try {
+      final mat = matricula ?? '';
+      if (mat.isEmpty) return;
+      if (await temSessao(mat)) return;
+      final r = await entrarSozinho(matricula: mat, senhaApp: senhaApp);
+      debugPrint('[ESCALA] entrada automática: ${r.tipo.name}'
+          '${r.erro != null ? ' (${r.erro})' : ''}');
+    } catch (e) {
+      debugPrint('[ESCALA] ES-X entrada automática falhou: $e');
+    }
+  }
+
+  static String _hash(String mat, String senha) =>
+      sha256.convert(utf8.encode('$mat:$senha')).toString();
 
   Future<void> _refreshToken() async {
     if (_sessionOnlyAuth || _token == null || _token!.isEmpty) return;

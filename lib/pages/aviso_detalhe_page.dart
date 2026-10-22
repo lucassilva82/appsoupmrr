@@ -3,7 +3,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
+import '../models/auth_model.dart';
 import '../models/aviso_model.dart';
 import '../models/escala_model.dart';
 import '../models/svi_model.dart';
@@ -24,11 +26,19 @@ import '../widgets/vidro.dart';
 ///     falhar, só o bloco mostra o erro: o texto do aviso continua na tela;
 ///  4. o aviso é marcado como lido (`POST .../lida`).
 /// Tipo ou tela desconhecida mostra só o texto, nunca erro.
+///
+/// Sem sessão da intranet, entra sozinha (senha da intranet guardada, depois a
+/// do app); se a intranet recusar as duas, pede a senha aqui mesmo, uma vez, e
+/// ela fica guardada no cofre do aparelho.
 class AvisoDetalhePage extends StatefulWidget {
   final AvisoAberto aviso;
   final EscalaService? service;
 
-  const AvisoDetalhePage({super.key, required this.aviso, this.service});
+  /// Matrícula para entrar na intranet. Nulo: a do militar logado no app.
+  final String? matricula;
+
+  const AvisoDetalhePage(
+      {super.key, required this.aviso, this.service, this.matricula});
 
   @override
   State<AvisoDetalhePage> createState() => _AvisoDetalhePageState();
@@ -43,6 +53,27 @@ class FalhaAviso {
 
   const FalhaAviso(this.codigo, this.titulo, this.texto,
       {this.precisaEntrar = false});
+
+  static const precisa2fa = FalhaAviso(
+    'AV-2FA',
+    'A intranet pede o código de verificação',
+    'Sua conta da intranet usa verificação em duas etapas. Abra Escalas de '
+        'Serviço para digitar o código e volte a este aviso.',
+    precisaEntrar: true,
+  );
+
+  static FalhaAviso precisaMigrar(String? texto) => FalhaAviso(
+        'AV-MIGRAR',
+        'Atualize sua senha da intranet',
+        texto ??
+            'A intranet pede uma senha nova antes de mostrar os detalhes. '
+                'Abra Escalas de Serviço para criar a senha e volte a este aviso.',
+        precisaEntrar: true,
+      );
+
+  static bool ehDeLogin(Object e) =>
+      e is EscalaServiceException &&
+      (e.code == 'NOT_AUTHENTICATED' || e.code == 'UNAUTHORIZED');
 
   static FalhaAviso de(Object e) {
     if (e is EscalaServiceException) {
@@ -108,6 +139,15 @@ class _AvisoDetalhePageState extends State<AvisoDetalhePage> {
   bool _carregando = false;
   FalhaAviso? _falha;
 
+  // Entrada na intranet
+  bool _tentouEntrar = false;
+  bool _pedirSenha = false;
+  bool _entrando = false;
+  String? _erroSenha;
+  final _senhaCtrl = TextEditingController();
+  String? _matriculaApp;
+  String? _senhaApp;
+
   EscalaModel? _escala;
   PermutaModel? _permuta;
   SviAdesaoModel? _adesao;
@@ -118,15 +158,31 @@ class _AvisoDetalhePageState extends State<AvisoDetalhePage> {
   @override
   void initState() {
     super.initState();
+    try {
+      final auth = Provider.of<Auth>(context, listen: false);
+      _matriculaApp = auth.matricula;
+      _senhaApp = auth.password;
+    } catch (_) {
+      // Sem Auth na árvore (testes): usa só a matrícula do widget.
+    }
     _log('aviso.abrir id=${widget.aviso.notificacaoId} '
         'tipo=${widget.aviso.tipoEvento} ref=${widget.aviso.referenciaId}');
     _carregar();
   }
 
+  @override
+  void dispose() {
+    _senhaCtrl.dispose();
+    super.dispose();
+  }
+
+  String get _matricula => widget.matricula ?? _matriculaApp ?? '';
+
   Future<void> _carregar() async {
     setState(() {
       _carregando = true;
       _falha = null;
+      _pedirSenha = false;
     });
     try {
       final id = widget.aviso.notificacaoId;
@@ -149,6 +205,7 @@ class _AvisoDetalhePageState extends State<AvisoDetalhePage> {
       if (!mounted) return;
       setState(() => _carregando = false);
     } catch (e) {
+      if (FalhaAviso.ehDeLogin(e)) return _semSessao();
       final f = FalhaAviso.de(e);
       _log('aviso.falhou ${f.codigo} id=${widget.aviso.notificacaoId} '
           'tipo=${widget.aviso.tipoEvento} detalhe=$e');
@@ -156,6 +213,104 @@ class _AvisoDetalhePageState extends State<AvisoDetalhePage> {
       setState(() {
         _carregando = false;
         _falha = f;
+      });
+    }
+  }
+
+  /// Sem sessão da intranet (ou vencida): entra sozinho uma vez; se não der,
+  /// pede a senha.
+  Future<void> _semSessao() async {
+    if (_tentouEntrar) {
+      _log('aviso.login pedir_senha (sessão recusada de novo)');
+      if (mounted) {
+        setState(() {
+          _carregando = false;
+          _pedirSenha = true;
+        });
+      }
+      return;
+    }
+    _tentouEntrar = true;
+    final r = await _service.entrarSozinho(
+        matricula: _matricula, senhaApp: _senhaApp);
+    _log('aviso.login_auto ${r.tipo.name}');
+    if (!mounted) return;
+    switch (r.tipo) {
+      case EntradaIntranet.ok:
+        return _carregar();
+      case EntradaIntranet.precisaSenha:
+        setState(() {
+          _carregando = false;
+          _pedirSenha = true;
+        });
+      case EntradaIntranet.precisa2fa:
+        setState(() {
+          _carregando = false;
+          _falha = FalhaAviso.precisa2fa;
+        });
+      case EntradaIntranet.precisaMigrar:
+        setState(() {
+          _carregando = false;
+          _falha = FalhaAviso.precisaMigrar(r.mensagemMigracao);
+        });
+      case EntradaIntranet.falhou:
+        final f = FalhaAviso.de(r.erro ?? 'sem detalhe');
+        _log('aviso.falhou ${f.codigo} (entrada automática) detalhe=${r.erro}');
+        setState(() {
+          _carregando = false;
+          _falha = f;
+        });
+    }
+  }
+
+  Future<void> _entrarComSenha() async {
+    final senha = _senhaCtrl.text;
+    if (senha.isEmpty) {
+      setState(() => _erroSenha = 'Digite a senha da intranet.');
+      return;
+    }
+    setState(() {
+      _entrando = true;
+      _erroSenha = null;
+    });
+    try {
+      final r = await _service.login(_matricula, senha);
+      _log('aviso.login_manual ok migrar=${r.precisaMigrarSenha}');
+      if (!mounted) return;
+      _senhaCtrl.clear();
+      if (r.precisaMigrarSenha) {
+        setState(() {
+          _entrando = false;
+          _pedirSenha = false;
+          _falha = FalhaAviso.precisaMigrar(r.mensagemMigracao);
+        });
+        return;
+      }
+      setState(() => _entrando = false);
+      await _carregar();
+    } catch (e) {
+      if (!mounted) return;
+      if (e is EscalaServiceException && e.code == 'REQUIRES_2FA') {
+        setState(() {
+          _entrando = false;
+          _pedirSenha = false;
+          _falha = FalhaAviso.precisa2fa;
+        });
+        return;
+      }
+      final servidor = e is! EscalaServiceException ||
+          e.code.startsWith('HTTP_') ||
+          const {'API_HTML_RESPONSE', 'SERVER_ERROR', 'INTERNAL_ERROR',
+                  'PARSE_ERROR', 'API_REDIRECT', 'TIMEOUT'}
+              .contains(e.code);
+      final f = servidor ? FalhaAviso.de(e) : null;
+      _log('aviso.login_manual falhou ${f?.codigo ?? 'AV-SENHA'} detalhe=$e');
+      setState(() {
+        _entrando = false;
+        _erroSenha = f == null
+            ? 'A intranet não aceitou esta senha. Confira e tente de novo. '
+                '(AV-SENHA)'
+            : '${f.texto} (${f.codigo})';
       });
     }
   }
@@ -292,6 +447,7 @@ class _AvisoDetalhePageState extends State<AvisoDetalhePage> {
         child: Center(child: CircularProgressIndicator()),
       );
     }
+    if (_pedirSenha) return _blocoSenha(context);
     final f = _falha;
     if (f != null) return _blocoFalha(context, f);
 
@@ -327,6 +483,53 @@ class _AvisoDetalhePageState extends State<AvisoDetalhePage> {
       case null:
         return const SizedBox.shrink();
     }
+  }
+
+  Widget _blocoSenha(BuildContext context) {
+    final theme = Theme.of(context);
+    return CartaoVidro(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Entre na intranet', style: _rotulo(theme)),
+          const SizedBox(height: 8),
+          Text(
+            'Os detalhes vêm do sistema da intranet, e a sua senha de lá é '
+            'diferente da senha do app. Digite-a uma vez: ela fica guardada '
+            'com segurança neste aparelho.',
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          if (_matricula.isNotEmpty)
+            Text('Matrícula $_matricula',
+                style: theme.textTheme.bodySmall?.copyWith(
+                    color:
+                        theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _senhaCtrl,
+            obscureText: true,
+            enabled: !_entrando,
+            autofillHints: const [AutofillHints.password],
+            textInputAction: TextInputAction.go,
+            onSubmitted: (_) => _entrarComSenha(),
+            decoration: InputDecoration(
+              labelText: 'Senha da intranet',
+              errorText: _erroSenha,
+              errorMaxLines: 3,
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+          const SizedBox(height: 14),
+          ElevatedButton(
+            onPressed: _entrando ? null : _entrarComSenha,
+            child: Text(_entrando ? 'Entrando…' : 'Entrar e ver os detalhes'),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _blocoFalha(BuildContext context, FalhaAviso f) {
@@ -369,7 +572,7 @@ class _AvisoDetalhePageState extends State<AvisoDetalhePage> {
                 await Navigator.of(context).pushNamed(AppRoutes.ESCALAS);
                 if (mounted) _carregar();
               },
-              child: const Text('Entrar nas escalas'),
+              child: const Text('Abrir Escalas de Serviço'),
             )
           else
             OutlinedButton(

@@ -154,41 +154,55 @@ class _EscalasPageState extends State<EscalasPage>
       _logUi('load falhou code=${e.code} message=${e.message}');
       if ((e.code == 'UNAUTHORIZED' || e.code == 'NOT_AUTHENTICATED') &&
           !forceRelogin) {
-        // tenta auto-login com credenciais salvas
-        try {
-          _logUi('tentando auto-login apos erro de autenticacao');
-          final loginResult =
-              await _service.login(auth.matricula ?? '', auth.password ?? '');
-          if (loginResult.precisaMigrarSenha) {
-            _logUi('auto-login exigiu migracao de senha');
-            if (!mounted) return;
+        // Entra sozinho: senha da intranet guardada no cofre e, depois, a do
+        // app. Só pede a senha se as duas forem recusadas.
+        _logUi('tentando auto-login apos erro de autenticacao');
+        final r = await _service.entrarSozinho(
+          matricula: auth.matricula ?? '',
+          senhaApp: auth.password,
+        );
+        _logUi('auto-login resultado=${r.tipo.name}');
+        if (!mounted) return;
+        switch (r.tipo) {
+          case EntradaIntranet.ok:
+            try {
+              await tryLoad();
+            } on EscalaServiceException catch (e2) {
+              if (!mounted) return;
+              setState(() {
+                _loading = false;
+                _error = _mensagemErroAmigavel(e2);
+              });
+            }
+          case EntradaIntranet.precisaMigrar:
             setState(() {
               _loading = false;
               _needsPasswordMigration = true;
-              _migrationMessage = loginResult.mensagemMigracao;
+              _migrationMessage = r.mensagemMigracao;
             });
-            return;
-          }
-          _logUi('auto-login ok, recarregando escalas');
-          await tryLoad();
-        } on EscalaServiceException catch (e2) {
-          _logUi('auto-login falhou code=${e2.code} message=${e2.message}');
-          if (!mounted) return;
-          if (e2.code == 'REQUIRES_2FA') {
+          case EntradaIntranet.precisa2fa:
             setState(() {
               _loading = false;
               _needs2FA = true;
             });
-          } else {
-            // Credenciais do app não funcionam na intranet → pede login manual
-            final auth = Provider.of<Auth>(context, listen: false);
+          case EntradaIntranet.precisaSenha:
+            // Senha do app não vale na intranet → pede a senha uma vez; o
+            // login manual guarda no cofre para as próximas vezes.
             _tfMatricula.text =
                 (auth.matricula ?? '').replaceAll(RegExp(r'[^0-9]'), '');
             setState(() {
               _loading = false;
               _needsManualLogin = true;
             });
-          }
+          case EntradaIntranet.falhou:
+            final erro = r.erro;
+            setState(() {
+              _loading = false;
+              _error = erro is EscalaServiceException
+                  ? _mensagemErroAmigavel(erro)
+                  : 'Não foi possível falar com a intranet. Confira a '
+                      'internet e tente de novo. (ES-REDE)';
+            });
         }
       } else if (e.code == 'REQUIRES_2FA') {
         if (!mounted) return;

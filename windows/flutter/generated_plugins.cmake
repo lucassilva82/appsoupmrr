@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   cloud_firestore
   firebase_core
+  flutter_secure_storage_windows
   local_auth_windows
   pdfx
   permission_handler_windows

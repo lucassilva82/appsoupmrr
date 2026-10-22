@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/auth_model.dart';
+import '../services/escala_service.dart';
 import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 import '../utils/notification_provider.dart';
@@ -37,6 +38,13 @@ class _MainShellState extends State<MainShell> {
     // Conecta o histórico de notificações do militar logado (stream Firestore).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<NotificationProvider>(context, listen: false).bindUser();
+      // Entra na intranet em segundo plano, para Escalas, SVI e os avisos do
+      // SIGE já abrirem com a sessão pronta (sem pedir senha).
+      final auth = Provider.of<Auth>(context, listen: false);
+      EscalaService().entrarEmSegundoPlano(
+        matricula: auth.matricula,
+        senhaApp: auth.password,
+      );
     });
   }
 

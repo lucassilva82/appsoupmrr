@@ -21,6 +21,31 @@ class _ServicoFalso extends EscalaService {
   final ciencias = <int>[];
   final pedidos = <String>[];
 
+  // Entrada na intranet
+  ResultadoEntrada entrada = const ResultadoEntrada(EntradaIntranet.ok);
+  String? senhaCerta;
+  int entradasAuto = 0;
+  final senhasDigitadas = <String>[];
+
+  @override
+  Future<ResultadoEntrada> entrarSozinho(
+      {required String matricula, String? senhaApp}) async {
+    entradasAuto++;
+    if (entrada.tipo == EntradaIntranet.ok) falhaAviso = null;
+    return entrada;
+  }
+
+  @override
+  Future<EscalaLoginResult> login(String matricula, String senha,
+      {String? codigo2fa}) async {
+    senhasDigitadas.add(senha);
+    if (senha != senhaCerta) {
+      throw const EscalaServiceException('INVALID_CREDENTIALS', 'invalida');
+    }
+    falhaAviso = null;
+    return const EscalaLoginResult(precisaMigrarSenha: false);
+  }
+
   @override
   Future<AvisoDetalhe> getAviso(int notificacaoId) async {
     pedidos.add('aviso/$notificacaoId');
@@ -90,6 +115,7 @@ Future<void> _abrir(WidgetTester tester, _ServicoFalso s,
   await tester.pumpWidget(MaterialApp(
     home: AvisoDetalhePage(
       service: s,
+      matricula: '1234567',
       aviso: AvisoAberto(
         notificacaoId: id,
         titulo: 'Texto do push (cortado)',
@@ -225,14 +251,66 @@ void main() {
     expect(find.textContaining('HTML'), findsNothing);
   });
 
-  testWidgets('sem login na intranet: pede para entrar nas escalas',
+  testWidgets('sem sessão da intranet: entra sozinho e mostra os detalhes',
       (tester) async {
     final s = _ServicoFalso()
       ..falhaAviso =
-          const EscalaServiceException('NOT_AUTHENTICATED', 'Login necessário');
+          const EscalaServiceException('NOT_AUTHENTICATED', 'Login necessário')
+      ..aviso = _aviso('publicada', {
+        'tela': 'escala',
+        'id': 346,
+        'acoes': ['ciencia'],
+        'somente_leitura': false,
+      })
+      ..escala = Map.of(_escalaPublicada);
     await _abrir(tester, s, tipo: 'publicada');
-    expect(find.text('Código: AV-LOGIN'), findsOneWidget);
-    expect(find.text('Entrar nas escalas'), findsOneWidget);
+    expect(s.entradasAuto, 1);
+    expect(find.text('RP 002'), findsOneWidget);
+    expect(find.textContaining('Não foi possível'), findsNothing);
+    expect(find.text('Senha da intranet'), findsNothing);
+  });
+
+  testWidgets('intranet recusa a senha do app: pede a senha uma vez',
+      (tester) async {
+    final s = _ServicoFalso()
+      ..falhaAviso =
+          const EscalaServiceException('NOT_AUTHENTICATED', 'Login necessário')
+      ..entrada = const ResultadoEntrada(EntradaIntranet.precisaSenha)
+      ..senhaCerta = 'certa'
+      ..aviso = _aviso('cancelada', {
+        'tela': 'escala',
+        'id': 338,
+        'acoes': [],
+        'somente_leitura': true,
+      })
+      ..escala = {..._escalaPublicada, 'somente_leitura': true};
+    await _abrir(tester, s, tipo: 'cancelada');
+
+    expect(find.text('Texto local do aviso.'), findsOneWidget);
+    expect(find.text('Senha da intranet'), findsOneWidget);
+    expect(find.text('Matrícula 1234567'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'errada');
+    await tester.tap(find.text('Entrar e ver os detalhes'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('AV-SENHA'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'certa');
+    await tester.tap(find.text('Entrar e ver os detalhes'));
+    await tester.pumpAndSettle();
+    expect(s.senhasDigitadas, ['errada', 'certa']);
+    expect(find.text('Senha da intranet'), findsNothing);
+    expect(find.text('Escala (somente leitura)'), findsOneWidget);
+  });
+
+  testWidgets('intranet pede verificação em duas etapas', (tester) async {
+    final s = _ServicoFalso()
+      ..falhaAviso =
+          const EscalaServiceException('UNAUTHORIZED', 'Sessão expirada')
+      ..entrada = const ResultadoEntrada(EntradaIntranet.precisa2fa);
+    await _abrir(tester, s, tipo: 'publicada');
+    expect(find.text('Código: AV-2FA'), findsOneWidget);
+    expect(find.text('Abrir Escalas de Serviço'), findsOneWidget);
   });
 
   testWidgets('push antigo sem notificacao_id abre a escala pelo tipo',

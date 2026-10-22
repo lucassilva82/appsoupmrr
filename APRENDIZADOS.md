@@ -1462,3 +1462,36 @@ do `libapp.so` do AAB e do `App.framework` do iOS.
 
 **Regra.** Build de loja sempre com `--dart-define-from-file=env.json`, e
 antes de enviar conferir que o arquivo existe e que a chave está no binário.
+
+---
+
+## 42. Aviso do SIGE: "Entre nas Escalas de Serviço" para quem já estava logado
+
+**O que aconteceu (22/10/2026).** O desenvolvedor do SIGE abriu, pelo
+TestFlight, o aviso de uma escala que existia e viu `AV-LOGIN`. A causa não
+estava no servidor: o pedido nem saiu do aparelho. As escalas usam um login
+próprio na intranet (o token do `EscalaService`), separado do login do
+SouPMRR, e esse token só era criado ao abrir a tela de Escalas. Como Escalas e
+SVI estavam bloqueadas no menu ("Em breve"), ninguém chegava lá, e a tela do
+aviso não entrava sozinha.
+
+**Como ficou (2.1.7).**
+- Ao abrir o app (`MainShell`), se não há sessão da intranet, o app entra
+  sozinho em segundo plano (`EscalaService.entrarEmSegundoPlano`).
+- A entrada automática tenta primeiro a **senha da intranet guardada no
+  cofre** do aparelho (`flutter_secure_storage`: Keychain/Keystore, nunca o
+  SharedPreferences) e depois a senha do app. Uma tentativa de cada. Senha do
+  app recusada pela intranet não é tentada de novo (guarda só o hash), para
+  não bloquear a conta por tentativas.
+- Se a intranet recusar as duas, a tela de Escalas e a tela do aviso **pedem a
+  senha uma vez**; o login que dá certo guarda a senha no cofre. Verificação
+  em duas etapas e troca de senha obrigatória levam à tela de Escalas, que já
+  trata os dois casos (`AV-2FA`, `AV-MIGRAR`). Senha errada: `AV-SENHA`.
+- A sessão guardada fica marcada com a matrícula: outro militar no mesmo
+  aparelho não herda a sessão nem a senha.
+- Escalas e SVI liberados no menu para o teste com o SIGE
+  (`grid_menu.dart`, `_emDesenvolvimento` vazio).
+
+**Regra.** Tela que depende de outro sistema não pode assumir que a sessão
+dele existe: confere, tenta entrar sozinha e só então pergunta ao militar. E
+antes de culpar o servidor, ver se o pedido chegou a sair do aparelho.
