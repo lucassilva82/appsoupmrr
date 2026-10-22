@@ -1,3 +1,4 @@
+import '../core/sessao/sessao.dart';
 import 'package:flutter/material.dart';
 import 'package:projetonovo/pages/primeiro_acesso_page.dart';
 import 'package:projetonovo/pages/recuperar_senha_page.dart';
@@ -40,7 +41,7 @@ class _AuthFormState extends State<AuthForm> {
   Future<void> _loadUserCredentials() async {
     final prefs = await SharedPreferences.getInstance();
     final savedM = prefs.getString('matricula') ?? '';
-    final savedP = prefs.getString('password') ?? '';
+    final savedP = await Sessao.instancia.senhaLembrada() ?? '';
     final lembrar = prefs.getBool('lembrarAcesso') ?? false;
 
     if (lembrar) {
@@ -83,11 +84,11 @@ class _AuthFormState extends State<AuthForm> {
       final prefs = await SharedPreferences.getInstance();
       if (_lembrarAcesso) {
         await prefs.setString('matricula', _authData['matricula']!);
-        await prefs.setString('password', _authData['password']!);
+        await Sessao.instancia.gravarSenhaLembrada(_authData['password']);
         await prefs.setBool('lembrarAcesso', true);
       } else {
         await prefs.remove('matricula');
-        await prefs.remove('password');
+        await Sessao.instancia.gravarSenhaLembrada(null);
         await prefs.setBool('lembrarAcesso', false);
       }
 

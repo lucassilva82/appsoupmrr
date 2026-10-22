@@ -1,9 +1,9 @@
+import '../core/sessao/sessao.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/auth_model.dart';
 import '../utils/api_services.dart';
@@ -156,9 +156,8 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
       auth.password = senhaNova;
       await auth.saveUserData();
 
-      final prefs = await SharedPreferences.getInstance();
-      if (prefs.getString('password') != null) {
-        await prefs.setString('password', senhaNova);
+      if (await Sessao.instancia.senhaLembrada() != null) {
+        await Sessao.instancia.gravarSenhaLembrada(senhaNova);
       }
 
       _timerReenvio?.cancel();

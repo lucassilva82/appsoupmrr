@@ -14,7 +14,13 @@
 enum OrigemFalha { aparelho, rede, servidor, conta, dado, app }
 
 /// O que o militar pode fazer na tela de erro.
-enum AcaoFalha { tentarDeNovo, abrirChamado, atualizarApp, entrarDeNovo, nenhuma }
+enum AcaoFalha {
+  tentarDeNovo,
+  abrirChamado,
+  atualizarApp,
+  entrarDeNovo,
+  nenhuma
+}
 
 class FalhaApp implements Exception {
   const FalhaApp({
@@ -80,8 +86,7 @@ class FalhaApp implements Exception {
         detalhe: detalhe,
       );
 
-  factory FalhaApp.conexaoSegura(String prefixo, {String? detalhe}) =>
-      FalhaApp(
+  factory FalhaApp.conexaoSegura(String prefixo, {String? detalhe}) => FalhaApp(
         codigo: '$prefixo-SSL',
         origem: OrigemFalha.aparelho,
         titulo: 'A conexão segura foi recusada',

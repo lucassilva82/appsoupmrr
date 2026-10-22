@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:projetonovo/core/sessao/sessao.dart';
 import 'package:projetonovo/data/store.dart';
 import 'package:projetonovo/models/auth_model.dart';
 import 'package:projetonovo/models/endereco.dart';
@@ -13,6 +14,8 @@ import 'package:projetonovo/models/ficha_funcional.dart';
 import 'package:projetonovo/models/militar.dart';
 import 'package:projetonovo/services/dados_sql.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../apoio/cofre_memoria.dart';
 
 class _SigrhFalso extends DadosSql {
   _SigrhFalso(this.resposta);
@@ -26,7 +29,10 @@ class _SigrhFalso extends DadosSql {
   }
 }
 
-Militar _militar({String qra = 'F. JÚNIOR', String posto = 'CB', String idPosto = '12'}) =>
+Militar _militar(
+        {String qra = 'F. JÚNIOR',
+        String posto = 'CB',
+        String idPosto = '12'}) =>
     Militar(
       matricula: '000001',
       matRhNova: '000001',
@@ -56,7 +62,8 @@ Future<Auth> _sessaoGuardada(DadosSql sigrh) async {
     'dataIncorporacao': '2015-01-01',
     'image': 'https://exemplo.invalid/foto.jpg',
     'autorizado': 'true',
-    'expireDate': DateTime.now().add(const Duration(hours: 12)).toIso8601String(),
+    'expireDate':
+        DateTime.now().add(const Duration(hours: 12)).toIso8601String(),
     'nivel': '10',
     'idPosto': '12',
   });
@@ -66,12 +73,15 @@ Future<Auth> _sessaoGuardada(DadosSql sigrh) async {
 }
 
 void main() {
+  setUp(() => Sessao.instancia = Sessao(cofre: CofreMemoria()));
+
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('nome de guerra trocado no SIGRH aparece sem sair da conta', () async {
     final sigrh = _SigrhFalso(() => _militar());
     final auth = await _sessaoGuardada(sigrh);
-    expect(auth.nomeMilitar, 'CB FELICIANO'); // abre na hora com a cópia guardada
+    expect(
+        auth.nomeMilitar, 'CB FELICIANO'); // abre na hora com a cópia guardada
 
     await auth.atualizarPerfilEmSegundoPlano();
 
@@ -82,7 +92,8 @@ void main() {
   });
 
   test('promoção atualiza posto e regra de acesso', () async {
-    final sigrh = _SigrhFalso(() => _militar(posto: '3º SGT', idPosto: '7', qra: 'FELICIANO'));
+    final sigrh = _SigrhFalso(
+        () => _militar(posto: '3º SGT', idPosto: '7', qra: 'FELICIANO'));
     final auth = await _sessaoGuardada(sigrh);
     await auth.atualizarPerfilEmSegundoPlano();
     expect(auth.nomeMilitar, '3º SGT FELICIANO');

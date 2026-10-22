@@ -100,8 +100,8 @@ class ApiClient {
           : FalhaApp.semInternet(prefixo, detalhe: '$e');
 
   // Só para testar "sem internet" no simulador, que usa a rede do Mac.
-  static const _hostTeste = String.fromEnvironment('HOST_TESTE_INTERNET',
-      defaultValue: 'google.com');
+  static const _hostTeste =
+      String.fromEnvironment('HOST_TESTE_INTERNET', defaultValue: 'google.com');
 
   static Future<bool> _internetPorDns() async {
     try {

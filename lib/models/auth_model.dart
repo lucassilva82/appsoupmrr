@@ -10,6 +10,9 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:supercharged/supercharged.dart';
 
+import '../core/erros/falha_app.dart';
+import '../core/log/registro_log.dart';
+import '../core/sessao/sessao.dart';
 import '../data/store.dart';
 import '../models/militar.dart';
 import '../services/certidao_service.dart';
@@ -79,7 +82,8 @@ class Auth with ChangeNotifier {
           .buscarMilitarBancoByMatricula(mat)
           .timeout(const Duration(seconds: 20));
       if (militar == null) {
-        debugPrint('[PERFIL] PF-VAZIO matricula=$mat: SIGRH sem ficha; mantida a cópia guardada');
+        debugPrint(
+            '[PERFIL] PF-VAZIO matricula=$mat: SIGRH sem ficha; mantida a cópia guardada');
         return;
       }
       if (matricula != mat || !autorizado) return; // saiu da conta no meio
@@ -290,11 +294,31 @@ class Auth with ChangeNotifier {
     await saveUserData();
   }
 
-  Future<void> saveUserData() async => Store.saveMap('userData', {
+  /// A senha não entra mais no `userData`: vai para o cofre do aparelho
+  /// (Keychain/Keystore), pela [Sessao]. Ver docs/SOUPM_2_2.md §6.6.
+  Future<void> saveUserData() async {
+    Sessao.matriculaAtual = matricula;
+    // O cofre falhar não pode impedir de guardar o resto: no pior caso a
+    // pessoa digita a senha de novo na próxima abertura.
+    try {
+      await Sessao.instancia.gravarSenha(password);
+    } catch (e) {
+      registrarErro(
+          FalhaApp(
+              codigo: 'LG-COFRE',
+              origem: OrigemFalha.aparelho,
+              titulo: 'Não foi possível guardar a senha no aparelho',
+              texto: 'Na próxima abertura o app vai pedir a senha de novo.',
+              detalhe: '$e'),
+          mostrado: false);
+    }
+    await Store.saveMap('userData', _dadosGuardados());
+  }
+
+  Map<String, dynamic> _dadosGuardados() => {
         'cpf': cpf,
         'nomeCompleto': nomeCompleto,
         'matricula': matricula,
-        'password': password,
         'autorizado': autorizado.toString(),
         'expireDate': _expireDate?.toIso8601String() ?? '',
         'nome': nomeMilitar,
@@ -310,7 +334,7 @@ class Auth with ChangeNotifier {
         'idPosto': idPosto?.toString() ?? '',
         'isSuperUser': isSuperUser.toString(),
         'notificationsEnabled': notificationsEnabled.toString(),
-      });
+      };
 
   /// Salva (ou atualiza) o FCM token do dispositivo no Firestore,
   /// usando a matrícula como ID do documento em /militares/{matricula}.
@@ -444,6 +468,13 @@ class Auth with ChangeNotifier {
    * ============================================================= */
   Future<void> tryAutoLogin() async {
     debugPrint('[LOG] tryAutoLogin iniciado');
+    // Quem vem da 2.1.x tem a senha no armazenamento comum: passa para o
+    // cofre antes de ler, sem deslogar ninguém.
+    try {
+      await Sessao.instancia.migrar();
+    } catch (e) {
+      debugPrint('[SESSAO] migração adiada: $e');
+    }
     final userData = await Store.getMap('userData');
     if (userData.isEmpty) {
       notifyListeners();
@@ -452,7 +483,13 @@ class Auth with ChangeNotifier {
 
     // Campos básicos
     matricula = userData['matricula'];
-    password = userData['password'];
+    Sessao.matriculaAtual = matricula;
+    try {
+      password = await Sessao.instancia.senha();
+    } catch (e) {
+      password = null;
+      debugPrint('[SESSAO] cofre indisponível: $e');
+    }
     cpf = userData['cpf'];
     nomeCompleto = userData['nomeCompleto'];
     dataIncorporacao = userData['dataIncorporacao'];
@@ -565,6 +602,8 @@ class Auth with ChangeNotifier {
         if (await f.exists()) await f.delete();
       }
       await Store.remove('userData');
+      await Sessao.instancia.apagarTudo();
+      Sessao.matriculaAtual = null;
       // Certidões têm dados pessoais (a Ficha traz conta e endereço).
       await CertidaoService.apagarTudo();
     } catch (e) {
