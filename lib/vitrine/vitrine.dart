@@ -67,6 +67,18 @@ Object? _responder(Uri url, http.Request req) {
     // O log do modo vitrine não vai a lugar nenhum: o militar é fictício.
     case 'log.php':
       return {'code': 1, 'aceitos': 0, 'recusados': 0};
+    // Sem menu: o app usa o menu do código, como na loja (fase 1 da 2.2).
+    case 'app_config.php':
+      return {
+        'code': 1,
+        'versao_config': 1,
+        'sessao': 'ok',
+        'versao': {
+          'android': {'minima': '2.1.5', 'recomendada': '2.1.5'},
+          'ios': {'minima': '2.1.5', 'recomendada': '2.1.5'},
+        },
+        'rede': {'timeout_s': 15},
+      };
     case 'login.php':
       return {
         'code': 1,
@@ -74,7 +86,9 @@ Object? _responder(Uri url, http.Request req) {
         'email_confirmado': true,
       };
     case 'buscapormatricula.php':
-      return {'result': [_militar]};
+      return {
+        'result': [_militar]
+      };
     case 'buscasituacaofuncional.php':
       return [];
     case 'listamesescontracheque_new.php':
@@ -147,7 +161,12 @@ const _perguntas = [
   {
     'id': 'nome',
     'pergunta': 'Qual é o seu nome?',
-    'opcoes': ['MARCOS OLIVEIRA', 'STIVES SILVA', 'RAFAEL COSTA', 'JOÃO PEREIRA'],
+    'opcoes': [
+      'MARCOS OLIVEIRA',
+      'STIVES SILVA',
+      'RAFAEL COSTA',
+      'JOÃO PEREIRA'
+    ],
   },
   {
     'id': 'matricula',
@@ -199,8 +218,18 @@ const _militar = {
 // ── Contracheque ────────────────────────────────────────────────────────────
 
 const _mesesNome = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho',
-  'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
 ];
 
 /// Folhas até o mês passado do ano pedido.
@@ -340,11 +369,14 @@ List<Map<String, String>> certidoesVitrine() {
   }
 
   return [
-    c('tempo_servico',
+    c(
+        'tempo_servico',
         'Certidão Administrativa de Tempo de Serviço Militar Estadual',
-        'Tempo de Serviço', 'CTS-7K2M9Q', 0),
-    c('vinculo_funcional', 'Certidão de Vínculo Funcional',
-        'Vínculo Funcional', 'CVF-3H8T4P', 6),
+        'Tempo de Serviço',
+        'CTS-7K2M9Q',
+        0),
+    c('vinculo_funcional', 'Certidão de Vínculo Funcional', 'Vínculo Funcional',
+        'CVF-3H8T4P', 6),
   ];
 }
 
@@ -360,7 +392,8 @@ http.Response _intranetJson(Object corpo, [int status = 200]) =>
     http.Response.bytes(utf8.encode(jsonEncode(corpo)), status,
         headers: {'content-type': 'application/json; charset=utf-8'});
 
-http.Response _ok(Object data) => _intranetJson({'success': true, 'data': data});
+http.Response _ok(Object data) =>
+    _intranetJson({'success': true, 'data': data});
 
 http.Response _naoAchado() => _intranetJson({
       'success': false,
@@ -425,39 +458,130 @@ const _escala347 = {
 
 /// id → (tipo_evento, título, corpo, destino)
 final Map<int, List<Object?>> _avisosSige = {
-  9001: ['publicada', 'Escalado em 22/10 — Evento',
-      'Você foi escalado para 22/10/2026, das 07:00 às 19:00, na guarnição RP 002 (Motorista). Dê ciência no app.',
-      {'tela': 'escala', 'id': 346, 'acoes': ['ciencia', 'impossibilidade'], 'somente_leitura': false, 'escala_id': 346, 'situacao_militar': 'ESCALADO'}],
-  9002: ['aprovada', 'Escalado em 22/10 e escala aprovada',
-      'Você foi escalado para 22/10/2026 e a escala foi aprovada pelo comandante.',
-      {'tela': 'escala', 'id': 346, 'acoes': ['ciencia'], 'somente_leitura': false, 'escala_id': 346, 'situacao_militar': 'ESCALADO'}],
-  9003: ['ciencia_lembrete', 'Ciência pendente — escala de amanhã',
-      'Você ainda não deu ciência da escala de 22/10/2026. O serviço começa às 07:00.',
-      {'tela': 'escala', 'id': 346, 'acoes': ['ciencia'], 'somente_leitura': false, 'escala_id': 346, 'situacao_militar': 'ESCALADO'}],
-  9004: ['permuta_solicitada', 'Permuta solicitada — 22/10',
-      'SD QPCPM FICTÍCIO pediu que você o substitua no dia 22/10. Procure o escalante para confirmar.',
-      {'tela': 'permuta', 'id': 10, 'acoes': [], 'somente_leitura': true, 'escala_id': 346}],
-  9005: ['cancelada', 'Escala CANCELADA — 28/12',
-      'A escala de 28/12/2026 foi cancelada. Você não precisa comparecer.',
-      {'tela': 'escala', 'id': 338, 'acoes': [], 'somente_leitura': true, 'escala_id': 338, 'situacao_militar': 'ESCALA_CANCELADA'}],
-  9006: ['removido', 'Você foi removido — 25/10',
-      'Você foi retirado da escala de 25/10/2026. Em caso de dúvida, fale com o escalante.',
-      {'tela': 'escala', 'id': 347, 'acoes': [], 'somente_leitura': true, 'escala_id': 347, 'situacao_militar': 'REMOVIDO'}],
-  9007: ['svi_voluntarios_80', 'Últimas 2 vagas — SVI 30/10',
-      'A escala SVI de 30/10/2026 está quase completa: restam 2 vagas para voluntários.',
-      {'tela': 'svi_vagas', 'id': 501, 'acoes': ['ver_vagas'], 'somente_leitura': true, 'escala_id': 501}],
-  9008: ['svi_suspensao', 'SVI suspenso',
-      'Seu SVI está suspenso até 21/11/2026 (falta em 20/10).',
-      {'tela': 'svi_adesao', 'id': null, 'acoes': ['ver_adesao'], 'somente_leitura': true}],
-  9009: ['teste', 'Push de teste',
-      'Este é um aviso de teste enviado pelo painel do SIGE.',
-      {'tela': 'aviso', 'id': null, 'acoes': [], 'somente_leitura': true}],
-  9010: ['tipo_inventado', 'Aviso de um tipo novo',
-      'O SIGE criou um tipo de aviso que esta versão do app não conhece. O texto aparece inteiro, sem erro.',
-      {'tela': 'tela_nova', 'id': 5, 'acoes': [], 'somente_leitura': true, 'assunto': {'modulo': 'escala_periodo', 'id': 5}}],
-  9011: ['publicada', 'Escalado em 22/10 (endereço sem API)',
-      'Este aviso simula o app apontando para um endereço onde a API da intranet não existe.',
-      null],
+  9001: [
+    'publicada',
+    'Escalado em 22/10 — Evento',
+    'Você foi escalado para 22/10/2026, das 07:00 às 19:00, na guarnição RP 002 (Motorista). Dê ciência no app.',
+    {
+      'tela': 'escala',
+      'id': 346,
+      'acoes': ['ciencia', 'impossibilidade'],
+      'somente_leitura': false,
+      'escala_id': 346,
+      'situacao_militar': 'ESCALADO'
+    }
+  ],
+  9002: [
+    'aprovada',
+    'Escalado em 22/10 e escala aprovada',
+    'Você foi escalado para 22/10/2026 e a escala foi aprovada pelo comandante.',
+    {
+      'tela': 'escala',
+      'id': 346,
+      'acoes': ['ciencia'],
+      'somente_leitura': false,
+      'escala_id': 346,
+      'situacao_militar': 'ESCALADO'
+    }
+  ],
+  9003: [
+    'ciencia_lembrete',
+    'Ciência pendente — escala de amanhã',
+    'Você ainda não deu ciência da escala de 22/10/2026. O serviço começa às 07:00.',
+    {
+      'tela': 'escala',
+      'id': 346,
+      'acoes': ['ciencia'],
+      'somente_leitura': false,
+      'escala_id': 346,
+      'situacao_militar': 'ESCALADO'
+    }
+  ],
+  9004: [
+    'permuta_solicitada',
+    'Permuta solicitada — 22/10',
+    'SD QPCPM FICTÍCIO pediu que você o substitua no dia 22/10. Procure o escalante para confirmar.',
+    {
+      'tela': 'permuta',
+      'id': 10,
+      'acoes': [],
+      'somente_leitura': true,
+      'escala_id': 346
+    }
+  ],
+  9005: [
+    'cancelada',
+    'Escala CANCELADA — 28/12',
+    'A escala de 28/12/2026 foi cancelada. Você não precisa comparecer.',
+    {
+      'tela': 'escala',
+      'id': 338,
+      'acoes': [],
+      'somente_leitura': true,
+      'escala_id': 338,
+      'situacao_militar': 'ESCALA_CANCELADA'
+    }
+  ],
+  9006: [
+    'removido',
+    'Você foi removido — 25/10',
+    'Você foi retirado da escala de 25/10/2026. Em caso de dúvida, fale com o escalante.',
+    {
+      'tela': 'escala',
+      'id': 347,
+      'acoes': [],
+      'somente_leitura': true,
+      'escala_id': 347,
+      'situacao_militar': 'REMOVIDO'
+    }
+  ],
+  9007: [
+    'svi_voluntarios_80',
+    'Últimas 2 vagas — SVI 30/10',
+    'A escala SVI de 30/10/2026 está quase completa: restam 2 vagas para voluntários.',
+    {
+      'tela': 'svi_vagas',
+      'id': 501,
+      'acoes': ['ver_vagas'],
+      'somente_leitura': true,
+      'escala_id': 501
+    }
+  ],
+  9008: [
+    'svi_suspensao',
+    'SVI suspenso',
+    'Seu SVI está suspenso até 21/11/2026 (falta em 20/10).',
+    {
+      'tela': 'svi_adesao',
+      'id': null,
+      'acoes': ['ver_adesao'],
+      'somente_leitura': true
+    }
+  ],
+  9009: [
+    'teste',
+    'Push de teste',
+    'Este é um aviso de teste enviado pelo painel do SIGE.',
+    {'tela': 'aviso', 'id': null, 'acoes': [], 'somente_leitura': true}
+  ],
+  9010: [
+    'tipo_inventado',
+    'Aviso de um tipo novo',
+    'O SIGE criou um tipo de aviso que esta versão do app não conhece. O texto aparece inteiro, sem erro.',
+    {
+      'tela': 'tela_nova',
+      'id': 5,
+      'acoes': [],
+      'somente_leitura': true,
+      'assunto': {'modulo': 'escala_periodo', 'id': 5}
+    }
+  ],
+  9011: [
+    'publicada',
+    'Escalado em 22/10 (endereço sem API)',
+    'Este aviso simula o app apontando para um endereço onde a API da intranet não existe.',
+    null
+  ],
 };
 
 http.Response _responderIntranet(Uri url, http.Request req) {
@@ -470,15 +594,17 @@ http.Response _responderIntranet(Uri url, http.Request req) {
   if (caminho == 'auth/login' || caminho == 'auth/refresh') {
     return _ok({'token': 'vitrine', 'expires_at': expira});
   }
-  final aviso = RegExp(r'^dispositivo/notificacoes/(\d+)(/lida)?$')
-      .firstMatch(caminho);
+  final aviso =
+      RegExp(r'^dispositivo/notificacoes/(\d+)(/lida)?$').firstMatch(caminho);
   if (aviso != null) {
     final id = int.parse(aviso.group(1)!);
     final a = _avisosSige[id];
     if (a == null) return _naoAchado();
     if (id == 9011) {
-      return http.Response('<!DOCTYPE html><html><head><title>404 Not Found'
-          '</title></head><body>Not Found</body></html>', 404,
+      return http.Response(
+          '<!DOCTYPE html><html><head><title>404 Not Found'
+          '</title></head><body>Not Found</body></html>',
+          404,
           headers: {'content-type': 'text/html'});
     }
     if (post) return _ok({'ok': true, 'ja_lida': false});
@@ -524,7 +650,9 @@ http.Response _responderIntranet(Uri url, http.Request req) {
     case 'escala/347':
       return _ok(_escala347);
     case 'escala/minhas-escalas':
-      return _ok({'escalas': [_escala346()]});
+      return _ok({
+        'escalas': [_escala346()]
+      });
     case 'escala/proxima':
       return _ok({'proxima': _escala346()});
     case 'svi/adesao':
@@ -567,13 +695,19 @@ List<NotificationModel> notificacoesVitrine() {
 
   // Mais antigas primeiro, como vem do Firestore.
   return [
-    n('v4', 'Plano de férias publicado',
+    n(
+        'v4',
+        'Plano de férias publicado',
         'Seu plano de férias de 2026 já está no app. A 2ª parcela começa em 21/12.',
         const Duration(days: 9)),
-    n('v3', 'Contracheque disponível',
+    n(
+        'v3',
+        'Contracheque disponível',
         'O contracheque de ${_mesesNome[(agora.month + 10) % 12].toLowerCase()} já pode ser consultado.',
         const Duration(days: 3)),
-    n('v2', 'Certidão emitida',
+    n(
+        'v2',
+        'Certidão emitida',
         'Sua Certidão de Tempo de Serviço foi emitida e vale por 30 dias. Uma cópia em PDF foi enviada para o seu e-mail.',
         const Duration(hours: 2),
         lida: false),

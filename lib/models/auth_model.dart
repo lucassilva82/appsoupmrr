@@ -1,3 +1,5 @@
+import '../core/rede/api_client.dart';
+import '../core/config/app_config.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -298,6 +300,9 @@ class Auth with ChangeNotifier {
   /// (Keychain/Keystore), pela [Sessao]. Ver docs/SOUPM_2_2.md §6.6.
   Future<void> saveUserData() async {
     Sessao.matriculaAtual = matricula;
+    // Entrou: a configuração do app passa a vir com o menu deste militar.
+    unawaited(carregarAppConfig(
+        api: ApiClient(), matricula: matricula, senha: password));
     // O cofre falhar não pode impedir de guardar o resto: no pior caso a
     // pessoa digita a senha de novo na próxima abertura.
     try {

@@ -6,6 +6,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../core/config/app_config.dart';
+import '../core/rede/api_client.dart';
 import '../models/auth_model.dart';
 import '../widgets/abertura_soupmrr.dart';
 import 'auth_page.dart';
@@ -46,6 +48,12 @@ class _AuthOrHomeState extends State<AuthOrHome> {
         // Abre com a cópia guardada e, sem esperar, busca a ficha de novo no
         // SIGRH (nome de guerra, posto, foto trocados lá).
         unawaited(auth.atualizarPerfilEmSegundoPlano());
+        // O que o app desenha vem da API (fase 1 da 2.2). Por enquanto só lê
+        // e guarda; as telas passam a usar na fase 2.
+        unawaited(carregarAppConfig(
+            api: ApiClient(),
+            matricula: auth.isAuth ? auth.matricula : null,
+            senha: auth.isAuth ? auth.password : null));
         return _checkVersionFromFirestore();
       });
       await Future.wait([
@@ -190,7 +198,8 @@ class _AuthOrHomeState extends State<AuthOrHome> {
     debugPrint(
         "[LOG] _buildForceUpdateScreen: Exibindo tela de atualização...");
 
-    return FundoSuave(child: Scaffold(
+    return FundoSuave(
+        child: Scaffold(
       // Fundo com imagem
       body: Container(
         decoration: const BoxDecoration(

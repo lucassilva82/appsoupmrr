@@ -67,8 +67,39 @@ class ApiClient {
               },
               body: jsonEncode(corpo)));
 
+  /// POST com corpo JSON que aproveita a cópia guardada: manda o último
+  /// [etag] em `If-None-Match` e, se o servidor responder 304, devolve
+  /// [RespostaComEtag.naoMudou] sem corpo (o `app_config`, §5.3).
+  Future<RespostaComEtag> postCorpoJsonComEtag(
+    Uri url, {
+    required String prefixo,
+    required Object corpo,
+    String? etag,
+  }) async {
+    final resposta = await _pedir(
+        prefixo,
+        () => _c.post(url,
+            headers: {
+              ..._cabecalhos,
+              'Content-Type': 'application/json; charset=utf-8',
+              if (etag != null) 'If-None-Match': etag,
+            },
+            body: jsonEncode(corpo)),
+        aceita304: true);
+    if (resposta.statusCode == 304) {
+      return RespostaComEtag(naoMudou: true, etag: etag);
+    }
+    return RespostaComEtag(
+        json: _decodificar(prefixo, resposta), etag: resposta.headers['etag']);
+  }
+
   Future<dynamic> _enviar(
-      String prefixo, Future<http.Response> Function() pedido) async {
+          String prefixo, Future<http.Response> Function() pedido) async =>
+      _decodificar(prefixo, await _pedir(prefixo, pedido));
+
+  Future<http.Response> _pedir(
+      String prefixo, Future<http.Response> Function() pedido,
+      {bool aceita304 = false}) async {
     final http.Response resposta;
     try {
       resposta = await pedido().timeout(tempoLimite);
@@ -82,10 +113,15 @@ class ApiClient {
       throw await _semConexao(prefixo, e);
     }
 
-    if (resposta.statusCode != 200) {
+    if (resposta.statusCode != 200 &&
+        !(aceita304 && resposta.statusCode == 304)) {
       throw FalhaApp.httpStatus(prefixo, resposta.statusCode,
           detalhe: 'HTTP ${resposta.statusCode}');
     }
+    return resposta;
+  }
+
+  dynamic _decodificar(String prefixo, http.Response resposta) {
     try {
       return jsonDecode(utf8.decode(resposta.bodyBytes));
     } catch (e) {
@@ -112,4 +148,14 @@ class ApiClient {
       return false;
     }
   }
+}
+
+/// Resultado de [ApiClient.postCorpoJsonComEtag].
+class RespostaComEtag {
+  const RespostaComEtag({this.naoMudou = false, this.json, this.etag});
+
+  /// O servidor respondeu 304: vale a cópia guardada.
+  final bool naoMudou;
+  final dynamic json;
+  final String? etag;
 }
