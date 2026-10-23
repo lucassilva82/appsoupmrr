@@ -82,10 +82,20 @@ class FaixaComando extends StatelessWidget {
         ),
       );
 
+  /// O último Comando que o Firestore mandou.
+  ///
+  /// `_slides` é um stream broadcast: quem assina depois não recebe o que já
+  /// passou. Sem esta cópia, toda remontagem da faixa (entrar no modo de
+  /// edição, por exemplo) deixava a faixa vazia até o Firestore mandar algo
+  /// novo — espaço reservado, nada desenhado e nenhum erro no log.
+  static List<Map<String, dynamic>>? _ultimoComando;
+
   Widget _doFirestore() {
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: _slides,
+      initialData: _ultimoComando,
       builder: (context, snap) {
+        if (snap.hasData) _ultimoComando = snap.data;
         final lista = snap.data ?? const [];
         if (lista.isEmpty) {
           // Carregando: reserva o espaço para a tela não pular.

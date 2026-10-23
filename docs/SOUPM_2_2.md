@@ -1231,6 +1231,7 @@ cancelado, falhou + código).
 | `busca.executar`, `busca.abrir_resultado`, `busca.sem_resultado` | busca | termo, total, posição |
 | `ajuda.ver`, `ajuda.resolveu`, `ajuda.abriu_chamado` | "Preciso de ajuda" | assunto, id da pergunta |
 | `inicio.personalizar`, `inicio.card_tocar` | Início | ordem nova; chave do card |
+| `inicio.editar_abrir`, `inicio.editar_concluir` | Início | edição na própria tela: quantos blocos ao abrir; ordem e escondidos ao concluir |
 | `comunicado.ver`, `comunicado.abrir`, `comunicado.ciencia`, `comunicado.popup_fechar` | comunicados | id, tempo de leitura |
 | `pendencia.abrir`, `pendencia.dispensar` | Suas pendências | tipo |
 | `push.receber`, `push.abrir` | notificação | id, rota |
@@ -2283,14 +2284,22 @@ da PMRR". Guarda no aparelho na hora e no servidor
 o `app_config` devolve a escolha em `preferencias`. A regra de junção
 (`ordenarBlocos`): bloco novo do painel entra depois do vizinho de cima, o
 escondido continua escondido, o fixo nunca some e o bloco desligado volta para
-onde estava. Fica para depois: o modo de edição dentro da própria Início, com
-o tremor do iOS.
+onde estava. **Modo de edição na própria Início (23/10/2026): pronto.** Segurar um bloco
+(ou a ação "Editar a tela inicial" no leitor de tela) põe a Início em edição:
+os blocos tremem, cada um ganha o botão de esconder — cadeado no fixo — e o
+toque longo arrasta para reordenar ali mesmo, sem sair da tela. "Concluído"
+grava no aparelho e no servidor, e falha de rede avisa sem desfazer nada
+(eventos `inicio.editar_abrir` e `inicio.editar_concluir`). Com "Reduzir
+movimento" não treme: a barra do topo e os botões bastam. A tela
+"Personalizar início" continua sendo onde se mexe nos atalhos e se restaura o
+padrão.
 
 **Busca global (22/10/2026).** Lupa no topo da Início, de Avisos e de Perfil
 (em Serviços a busca já fica no topo), abrindo a busca dentro da aba: acha
 por nome, descrição e sinônimo, guarda as 5 últimas buscas no aparelho e, sem
 resultado, oferece "Sugerir esta função" e "Ver todos os serviços" (eventos
-`busca.*`). Fica para depois: tolerância a um erro de digitação e `⌘F` no iPad.
+`busca.*`). Tolerância a um erro de digitação e `⌘F` no iPad entraram depois, em
+9d68e2a.
 
 **Tela de erro (22/10/2026).** `EstadoErro` ganhou a viatura quebrada
 (inclinada, pneu dianteiro murcho, fumaça no capô, giroflex apagado,

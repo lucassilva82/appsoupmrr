@@ -13,6 +13,13 @@ import 'package:projetonovo/features/inicio/card_painel.dart';
 import 'package:projetonovo/features/versao/tela_atualizacao.dart';
 import 'package:projetonovo/features/inicio/personalizar_inicio_page.dart';
 import 'package:projetonovo/features/inicio/preferencias_inicio.dart';
+import 'package:projetonovo/features/inicio/edicao_inicio.dart';
+import 'package:projetonovo/core/erros/falha_app.dart';
+import 'package:projetonovo/core/log/registro_log.dart';
+import 'package:projetonovo/widgets/aviso_rapido.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
+import 'package:flutter/rendering.dart' show CustomSemanticsAction;
+import 'package:projetonovo/utils/app_theme.dart';
 import 'package:projetonovo/features/pendencias/pendencias_page.dart';
 import 'package:projetonovo/features/inicio/faixa_comando.dart';
 import 'package:projetonovo/features/inicio/linha_atalhos.dart';
@@ -70,6 +77,99 @@ class _HomeBodyState extends State<HomeBody>
   bool get wantKeepAlive => true; // preserva estado ao trocar de aba
 
   PreferenciasInicio? _prefServidor;
+
+  // ── Modo de edição na própria Início (§4.5) ────────────────────────────
+  // Segurar um bloco entra em edição: os blocos tremem, cada um ganha o
+  // botão de esconder e dá para arrastar ali mesmo, sem sair da tela. A tela
+  // "Personalizar início" continua existindo — é por lá que se mexe nos
+  // atalhos e se restaura o padrão.
+  bool _editando = false;
+  bool _salvando = false;
+  bool _mudou = false;
+  List<BlocoInicio> _blocosEdicao = const [];
+  Set<String> _escondidosEdicao = {};
+
+  void _entrarEdicao() {
+    if (_editando) return;
+    final m = montarEdicao(
+      RepositorioConfig.atual.home ?? blocosPadrao(),
+      InicioPreferenciasRepositorio.emUso.value,
+    );
+    HapticFeedback.mediumImpact();
+    registrar('inicio.editar_abrir', dados: {'blocos': m.blocos.length});
+    setState(() {
+      _editando = true;
+      _mudou = false;
+      _blocosEdicao = m.blocos;
+      _escondidosEdicao = m.escondidos;
+    });
+  }
+
+  /// Usa `onReorderItem`, não o `onReorder` antigo: ele já entrega o índice
+  /// de destino com a remoção descontada, e a conta na mão era fonte de erro
+  /// de um item ao arrastar para baixo.
+  void _reordenar(int de, int para) {
+    setState(() {
+      final lista = [..._blocosEdicao];
+      lista.insert(para, lista.removeAt(de));
+      _blocosEdicao = lista;
+      _mudou = true;
+    });
+    HapticFeedback.selectionClick();
+  }
+
+  void _alternarVisivel(BlocoInicio b) {
+    if (!b.escondivel) {
+      avisoInfo(context, 'Este bloco não pode ser escondido');
+      return;
+    }
+    setState(() {
+      _escondidosEdicao.contains(b.chave)
+          ? _escondidosEdicao.remove(b.chave)
+          : _escondidosEdicao.add(b.chave);
+      _mudou = true;
+    });
+    HapticFeedback.selectionClick();
+  }
+
+  /// Sai da edição. Só fala com o servidor se algo mudou; a escolha já vale
+  /// no aparelho antes disso, então falha de rede não desfaz nada.
+  Future<void> _concluirEdicao() async {
+    if (!_mudou) {
+      setState(() => _editando = false);
+      return;
+    }
+    setState(() => _salvando = true);
+    final atual = InicioPreferenciasRepositorio.emUso.value;
+    final pref = PreferenciasInicio(
+      blocos: [
+        for (final b in _blocosEdicao)
+          (chave: b.chave, visivel: !_escondidosEdicao.contains(b.chave)),
+      ],
+      atalhos: atual?.atalhos,
+    );
+    try {
+      await repositorioPreferencias(context).salvar(pref);
+      registrar('inicio.editar_concluir', dados: {
+        'ordem': [for (final b in _blocosEdicao) b.chave],
+        'escondidos': _escondidosEdicao.toList(),
+      });
+      if (mounted) avisoSucesso(context, 'Tela inicial atualizada');
+    } on FalhaApp catch (f) {
+      registrarErro(f, tela: 'inicio_edicao', mostrado: true);
+      if (mounted) {
+        avisoAtencao(context, 'Guardado só neste aparelho',
+            texto: 'A ordem vale aqui, mas não foi para o servidor. ${f.codigo}');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _salvando = false;
+          _editando = false;
+        });
+      }
+    }
+  }
 
   /// A Início do militar: a do servidor (no app_config) vence; sem ela, a
   /// guardada no aparelho. Relê quando chega um app_config novo.
@@ -142,9 +242,175 @@ class _HomeBodyState extends State<HomeBody>
         _ => null,
       };
 
+  // ── Peças do modo de edição ───────────────────────────────────────────
+
+  /// Barra do topo: diz em que modo o militar está e como sair.
+  Widget _barraEdicao() => SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 8, 6),
+          child: Row(
+            children: [
+              const Icon(Icons.dashboard_customize_outlined, size: 18),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Segure e arraste para reordenar',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              ),
+              if (_salvando)
+                const Padding(
+                  padding: EdgeInsets.only(right: 12),
+                  child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2)),
+                )
+              else
+                TextButton(
+                  onPressed: _concluirEdicao,
+                  child: const Text('Concluído',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
+            ],
+          ),
+        ),
+      );
+
+  /// O lugar de um bloco escondido. Não desenha o bloco de verdade: além de
+  /// pesar (alguns consultam a API ao nascer), o que o militar precisa ver
+  /// aqui é só o nome e como trazer de volta.
+  Widget _fantasma(BlocoInicio b) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.18),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+            child: Row(
+              children: [
+                Icon(Icons.visibility_off_outlined,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    nomeBloco(b),
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+                  ),
+                ),
+                Text('Escondido',
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+              ],
+            ),
+          ),
+        ),
+      );
+
+  /// Botão redondo no canto do bloco: tira, traz de volta, ou avisa que o
+  /// bloco é fixo. Fica fora do tremor para continuar fácil de acertar.
+  Widget _selo(BlocoInicio b, bool escondido) {
+    final tema = Theme.of(context);
+    final fixo = !b.escondivel;
+    final icone = fixo
+        ? Icons.lock_outline
+        : escondido
+            ? Icons.add
+            : Icons.remove;
+    final cor = fixo
+        ? tema.colorScheme.onSurface.withValues(alpha: 0.45)
+        : escondido
+            ? AppColors.blue
+            : tema.colorScheme.error;
+    return Semantics(
+      button: !fixo,
+      label: fixo
+          ? '${nomeBloco(b)}: bloco fixo'
+          : escondido
+              ? 'Mostrar ${nomeBloco(b)}'
+              : 'Esconder ${nomeBloco(b)}',
+      child: Material(
+        color: tema.colorScheme.surface,
+        shape: const CircleBorder(),
+        elevation: 2,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: () => _alternarVisivel(b),
+          child: Padding(
+            padding: const EdgeInsets.all(5),
+            child: Icon(icone, size: 17, color: cor),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _itemEdicao(BlocoInicio b, int i) {
+    final escondido = _escondidosEdicao.contains(b.chave);
+    final desenhado = _bloco(b.chave);
+    // Bloco que esta versão do app não desenha (comunicados pelo Firestore,
+    // por exemplo) não aparece na Início nem aqui. Guarda o lugar na ordem,
+    // sem ocupar espaço — chamá-lo de "Escondido" seria mentira: o militar
+    // não o escondeu.
+    if (!escondido && desenhado == null) {
+      return SizedBox.shrink(key: ValueKey(b.chave));
+    }
+    final conteudo = escondido ? _fantasma(b) : desenhado!;
+    return Padding(
+      key: ValueKey(b.chave),
+      padding: EdgeInsets.zero,
+      // Pegar pelo toque longo, e não no toque simples: em edição a lista
+      // continua rolando normalmente, que é o que se espera num cartão da
+      // largura da tela.
+      child: ReorderableDelayedDragStartListener(
+        index: i,
+        child: BlocoTremendo(
+          tremendo: true,
+          semente: i,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              conteudo,
+              Positioned(left: 20, top: 2, child: _selo(b, escondido)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _corpoEdicao() => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _barraEdicao(),
+          const Divider(height: 1),
+          Expanded(
+            child: ReorderableListView.builder(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.only(top: 6, bottom: 28),
+              buildDefaultDragHandles: false,
+              itemCount: _blocosEdicao.length,
+              onReorderItem: _reordenar,
+              itemBuilder: (context, i) => _itemEdicao(_blocosEdicao[i], i),
+            ),
+          ),
+        ],
+      );
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
+
+    if (_editando) return FundoSuave(child: _corpoEdicao());
 
     return FundoSuave(
       child: SingleChildScrollView(
@@ -172,7 +438,21 @@ class _HomeBodyState extends State<HomeBody>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 for (final chave in blocosDaInicio(RepositorioConfig.atual, InicioPreferenciasRepositorio.emUso.value))
-                  if (_bloco(chave) case final w?) w,
+                  if (_bloco(chave) case final w?)
+                    // Segurar entra em edição, como na tela do iOS. Para quem
+                    // usa leitor de tela o gesto não serve, então a mesma
+                    // ação vai no menu de ações do bloco.
+                    Semantics(
+                      customSemanticsActions: {
+                        const CustomSemanticsAction(label: 'Editar a tela inicial'):
+                            _entrarEdicao,
+                      },
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.deferToChild,
+                        onLongPress: _entrarEdicao,
+                        child: w,
+                      ),
+                    ),
               ],
             ),
           ),
