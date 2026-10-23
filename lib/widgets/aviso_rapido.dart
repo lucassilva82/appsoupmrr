@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../utils/app_theme.dart';
 
@@ -67,6 +68,15 @@ void avisoInfo(BuildContext context, String titulo, {String? texto}) =>
 
 void _porTipo(
     BuildContext context, TipoAviso tipo, String titulo, String? texto) {
+  // Háptico (§15.2): leve no sucesso, médio no erro e na atenção.
+  switch (tipo) {
+    case TipoAviso.sucesso:
+      HapticFeedback.lightImpact();
+    case TipoAviso.erro || TipoAviso.atencao:
+      HapticFeedback.mediumImpact();
+    case TipoAviso.info:
+      break;
+  }
   avisoRapido(
     context,
     titulo: titulo,
