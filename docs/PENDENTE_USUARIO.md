@@ -24,6 +24,9 @@ podem rodar mais de uma vez sem estragar nada.
 | 6 | `2026-10-23_soupm_notificacoes.sql` | Fase 4 (aparelhos e Avisos pelo Postgres) | **Pendente** |
 | 7 | `2026-10-23_soupm_conta_resumo.sql` | Tela Militares do painel (bloco Conta) | **Pendente** — e depois `ALTER FUNCTION public.soupm_conta_resumo(TEXT) OWNER TO` um usuário que leia o esquema `qra` (o do cPanel não lê) |
 
+| 8 | `2026-10-23_soupm_artes.sql` | Artes dos cards editáveis pelo painel, mídia aprovada e paleta fechada | **Pendente** |
+| 9 | `2026-10-23_soupm_comunicados.sql` | Central de comunicados (categorias, comunicados, leitura e ciência) | **Pendente** — o `comunicados.php` já está no ar e responde erro até este SQL rodar; o app 2.2 só usa com o interruptor abaixo |
+
 Os itens novos que forem entrando vão para o fim desta tabela, com o mesmo
 formato.
 
@@ -48,6 +51,7 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
 |---|---|---|
 | `contracheque` | `pdf_api_matriculas: ["<sua matrícula>"]` | Para comparar o PDF novo com a sua conta (piloto) |
 | `contracheque` | `pdf_api: true` | Depois de aprovar a comparação: o app passa a pedir o PDF à API |
+| `comunicados` | `fonte_app: "api"` | Depois do SQL 9 e de publicar o primeiro comunicado pelo painel: a Início troca o anúncio do Firestore pela central |
 | `notificacoes` | `envio_fcm: true` | Depois da conta de serviço e do cron |
 | `notificacoes` | `fonte_app: "api"` | Depois de exportar o histórico do Firestore (§13, passo 4) e de a certidão e o feedback pedirem push pelo `soupmPedirPush` |
 

@@ -2215,6 +2215,17 @@ conta de serviço em `/private`, criar o cron (a cada minuto) e ligar
 `envio_fcm`; depois, mudar a certidão e o feedback para `soupmPedirPush`, exportar
 o histórico do Firestore e trocar `fonte_app` para `api`.
 
+**Central de comunicados (22/10/2026): pronta e desligada.**
+`sql/2026-10-23_soupm_comunicados.sql` (categorias, comunicados com o público já
+resolvido pelo painel em `matriculas`, leitura e ciência com a versão lida) e
+`sigrh/comunicados.php` (listar os no ar para o militar, lido, ciente). No app,
+`lib/features/comunicados/`: carrossel na Início (passa sozinho a cada 6,5 s,
+para ao segurar e com "Reduzir movimento", some sem comunicado), central com os
+filtros Todos, Não lidos e Ciência pendente, e o comunicado com "Estou ciente";
+o destaque de abertura aparece uma vez por versão (ou até a ciência, se o
+painel pedir). Eventos `comunicado.*`, erros `CM-`. A Início só troca o anúncio
+do Firestore pela central quando `soupm_config.comunicados.fonte_app = api`.
+
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
 porque o contrato do `app_config` fica fixado antes. A fase 5 depende da

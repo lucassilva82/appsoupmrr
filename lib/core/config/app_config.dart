@@ -237,6 +237,7 @@ class AppConfig {
     this.maisUsados,
     this.ajuda,
     this.fonteAvisos = 'firestore',
+    this.fonteComunicados = 'firestore',
     this.recebidoEm,
   });
 
@@ -266,6 +267,10 @@ class AppConfig {
 
   /// De onde vem a aba Avisos: 'firestore' até o corte (§13), depois 'api'.
   final String fonteAvisos;
+
+  /// De onde vêm os comunicados da Início: 'firestore' (o anúncio único de
+  /// hoje) até o painel trocar para 'api' (comunicados.php, §4.2).
+  final String fonteComunicados;
 
   /// Quando a cópia em uso chegou do servidor ("Atualizado hoje às 07:30").
   final DateTime? recebidoEm;
@@ -303,6 +308,7 @@ class AppConfig {
           : null,
       ajuda: AjudaAssunto.lista(j['ajuda']),
       fonteAvisos: j['notificacoes'] is Map && j['notificacoes']['fonte'] == 'api' ? 'api' : 'firestore',
+      fonteComunicados: j['comunicados'] is Map && j['comunicados']['fonte'] == 'api' ? 'api' : 'firestore',
       recebidoEm: recebidoEm,
     );
   }

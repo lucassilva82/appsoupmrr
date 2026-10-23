@@ -86,6 +86,9 @@ class Arte {
   };
 }
 
+/// Ícone do catálogo do painel pelo nome ('campaign', 'local_police'...).
+IconData? iconePorNome(String? nome) => Arte._iconesPorNome[nome];
+
 /// Fundo com a arte no estilo cheio. O conteúdo vai por cima, sobre um véu
 /// escuro embaixo que garante texto branco legível (4,5:1) nos dois temas.
 class FundoArte extends StatelessWidget {

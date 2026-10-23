@@ -84,6 +84,50 @@ final _feedbacks = <Map<String, Object>>[
   },
 ];
 
+// Comunicados fictícios do modo vitrine (§4.2), com leitura em memória.
+final _comLidos = <int>{};
+final _comCientes = <int>{};
+
+Object _comunicados(Map<String, String> c) {
+  final id = int.tryParse(c['id'] ?? '');
+  switch (c['acao']) {
+    case 'lido':
+      if (id != null) _comLidos.add(id);
+      return {'code': 1};
+    case 'ciente':
+      if (id != null) {
+        _comLidos.add(id);
+        _comCientes.add(id);
+      }
+      return {'code': 1, 'ciente_em': DateTime.now().toIso8601String()};
+  }
+  final hoje = DateTime.now();
+  Map<String, Object?> item(int id, String titulo, String resumo, String categoria, String origem,
+          {bool urgente = false, bool ciencia = false, Map<String, String>? pilula}) =>
+      {
+        'id': id, 'titulo': titulo, 'resumo': resumo, 'categoria': categoria, 'origem': origem,
+        'texto': '$resumo.\n\nTexto fictício do modo vitrine, para conferir o desenho da central de '
+            'comunicados. Nenhum dado aqui é real.',
+        'inicio': hoje.subtract(Duration(days: id)).toIso8601String(), 'urgente': urgente, 'ciencia': ciencia,
+        'versao': 1, 'lido': _comLidos.contains(id), 'ciente': _comCientes.contains(id),
+        if (pilula != null) 'pilula': pilula,
+      };
+  return {
+    'code': 1,
+    'categorias': [
+      {'chave': 'operacao', 'nome': 'Operação', 'cor': '#1D4ED8', 'icone': 'local_police'},
+      {'chave': 'saude', 'nome': 'Saúde', 'cor': '#0F766E', 'icone': 'health_and_safety'},
+      {'chave': 'instrucao', 'nome': 'Instrução', 'cor': '#A15C07', 'icone': 'menu_book'},
+    ],
+    'itens': [
+      item(1, 'Operação Eleições 2026', 'Escala especial para o 2º turno em todo o estado', 'operacao',
+          'Comando-Geral', urgente: true, ciencia: true, pilula: {'icone': 'calendar_month', 'texto': 'Até 30/10'}),
+      item(2, 'Outubro Rosa', 'Exames preventivos na Diretoria de Saúde', 'saude', 'Diretoria de Saúde'),
+      item(3, 'Instrução de tiro', 'Novas turmas abertas para novembro', 'instrucao', 'Diretoria de Ensino'),
+    ],
+  };
+}
+
 Object _feedback(Map<String, String> c) {
   Map<String, Object> resumo(Map<String, Object> f) => {
         'id': f['id']!, 'protocolo': f['protocolo']!, 'tipo': f['tipo']!,
@@ -141,6 +185,8 @@ Object? _responder(Uri url, http.Request req) {
       return {'code': 1, 'aceitos': 0, 'recusados': 0};
     case 'feedback.php':
       return _feedback(_camposMultipart(req));
+    case 'comunicados.php':
+      return _comunicados(req.bodyFields);
     // Como em produção até a comparação ser aprovada: o PDF sai do aparelho.
     case 'contracheque_pdf.php':
       return {'code': 0, 'erro': 'DESLIGADO', 'message': 'PDF pela API ainda desligado.'};
@@ -155,6 +201,7 @@ Object? _responder(Uri url, http.Request req) {
           'ios': {'minima': '2.1.5', 'recomendada': '2.1.5'},
         },
         'rede': {'timeout_s': 15},
+        'comunicados': {'fonte': 'api'},
         // Sem `menu`: vale o de reserva do app, igual à carga do banco.
         'servicos': {
           'mais_usados': ['rh.contracheques', 'rh.certidoes', 'rh.ferias', 'normas.legislacoes'],
