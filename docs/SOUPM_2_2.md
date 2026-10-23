@@ -2329,6 +2329,39 @@ nada muda. Também prontos: o Comando lido do SIGRH (cron
 simulação de pendências para o painel (`pendencias_simular.php`, link
 assinado).
 
+**Funções novas P1, P4, P5 e P6 (22/10/2026): prontas no app; P5 com API no
+ar.** P1, "O que mudou": botão no contracheque que compara rubrica a rubrica
+com o mês anterior da mesma folha (entrou, saiu, mudou de valor), calculado no
+aparelho com as mesmas consultas, obedecendo ao "olho" dos valores. P4, Central
+de documentos (`rh.documentos`): certidões e contracheques em PDF guardados no
+aparelho, com busca sem acento; o PDF do contracheque fica guardado ao ser
+gerado (até 24 meses, fila única de leitura e gravação). P5, Linha do tempo
+(`rh.carreira`): `sigrh/carreira.php` (no ar) com incorporação, postos,
+comportamento, escolaridade e tempo averbado, cada seção isolada (a que falhar
+aparece como "não foi possível conferir", `CR-<SEÇÃO>`). P6, Validar documento
+(`rh.validar`): o código impresso ou o link do QR abre a página pública de
+conferência (`verificar.php` ou `doc/conferir.php`); o leitor de QR dentro do
+app fica para depois, porque pede câmera e um pacote nativo novo. No menu:
+`sql/2026-10-23_soupm_funcoes_novas.sql`, com o selo "Novo" e versão mínima
+2.2.0. P3 (lembretes): `sigrh/cron/lembretes.php` calcula férias que começam e
+certidão que vence para os lembretes ligados no painel e põe na fila de push;
+`sql/2026-10-23_soupm_lembretes.sql` evita repetir.
+
+**Fase 6, acabamento (22/10/2026): feito o que não depende do usuário.**
+Esqueletos no lugar do círculo girando nas listas novas; número herói dos cards
+até 1,3× no Dynamic Type; folhas inferiores opacas (o texto de trás aparecia no
+meio); erros das telas antigas (declarações, Mapa da Força, plantão, e-mail)
+com código e log no lugar de "Erro inesperado: $e" (`core/erros/falha_de.dart`);
+Serviços com "Novidades no SouPMRR", "com novidade" nas áreas e "Não achou o que
+procurava?"; selos com contraste nos dois temas; Perfil com capa da arte, foto
+sobreposta, "Reorganizar a tela inicial", tamanho do texto e o grupo Ajuda
+(Preciso de ajuda, Meus chamados, Sugestões e elogios), sem emoji e com o texto
+da biometria por plataforma; eventos `aparencia.tema`, `push.receber` e
+`push.abrir` (o `log.php` marca o "aberto" do envio); abertura nova com a
+viatura (§15.6), 4,2 s, desenho comum em `core/design/viatura.dart`. Fica:
+conferir no iPad (o simulador do iPad precisa ser liberado pelo usuário), o
+toque que pula a abertura e a migração das telas grandes para `features/`.
+
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
 porque o contrato do `app_config` fica fixado antes. A fase 5 depende da
