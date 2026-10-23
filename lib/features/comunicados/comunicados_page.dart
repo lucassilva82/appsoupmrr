@@ -12,6 +12,7 @@ import '../../core/erros/falha_app.dart';
 import '../../core/log/registro_log.dart';
 import '../../core/rede/api_client.dart';
 import '../../models/auth_model.dart';
+import '../../utils/app_theme.dart';
 import '../../widgets/aviso_rapido.dart';
 import '../../widgets/custom_appbar.dart';
 import '../../widgets/vidro.dart';
@@ -211,159 +212,117 @@ class CartaoComunicado extends StatelessWidget {
       label: '${c.categoria.nome}. ${c.titulo}. ${c.resumo}'
           '${c.urgente ? '. Urgente' : ''}${c.cienciaPendente ? '. Ciência pendente' : ''}',
       excludeSemantics: true,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: raio,
-          border: Border.all(color: cor.withValues(alpha: .48)),
-          // linear-gradient(160deg, cor misturada ao fundo escuro)
-          gradient: LinearGradient(
-            begin: const Alignment(-0.34, -1),
-            end: const Alignment(0.34, 1),
-            colors: [Color.lerp(cor, const Color(0xFF0B1220), .72)!, Color.lerp(cor, const Color(0xFF060B14), .88)!],
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: raio,
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              onTap: aoTocar,
-              child: Stack(children: [
-                // radial-gradient(110% 85% at 100% 0%, cor .46, 0 58%)
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        center: const Alignment(1, -1),
-                        radius: 1.1,
-                        stops: const [0, .58],
-                        colors: [cor.withValues(alpha: .46), cor.withValues(alpha: 0)],
-                      ),
-                    ),
+      child: FundoComunicado(
+        cor: cor,
+        raio: raio,
+        icone: c.iconeAssunto,
+        comIlustracao: !compacto,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: aoTocar,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Icon(c.categoria.icone, size: 20, color: branco.withValues(alpha: .92)),
+                  Container(
+                      width: 1,
+                      height: 17,
+                      margin: const EdgeInsets.symmetric(horizontal: 10),
+                      color: branco.withValues(alpha: .28)),
+                  Flexible(
+                    child: Text(c.categoria.nome.toUpperCase(),
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                            TextStyle(fontSize: 11.5, letterSpacing: 1.84, fontWeight: FontWeight.w600, color: claro)),
                   ),
-                ),
-                if (!compacto)
-                  Positioned(
-                      top: 34, right: 10, width: 100, height: 120, child: _Ilustracao(cor: cor, icone: c.iconeAssunto)),
-                // Véu embaixo: linear-gradient(transparente 28%, preto .66).
-                const Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        stops: [.28, 1],
-                        colors: [Color(0x00000000), Color(0xA8000000)],
+                  if (!c.lido) ...[
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: cor.withValues(alpha: .42),
+                        border: Border.all(color: cor.withValues(alpha: .6)),
+                        borderRadius: BorderRadius.circular(20),
                       ),
+                      child: const Text('NOVO',
+                          style: TextStyle(
+                              fontSize: 10.5, letterSpacing: .42, fontWeight: FontWeight.w600, color: branco)),
                     ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      Icon(c.categoria.icone, size: 20, color: branco.withValues(alpha: .92)),
-                      Container(
-                          width: 1,
-                          height: 17,
-                          margin: const EdgeInsets.symmetric(horizontal: 10),
-                          color: branco.withValues(alpha: .28)),
+                  ],
+                ]),
+                const SizedBox(height: 10),
+                // Título e resumo dividem o espaço que sobra: com fonte grande
+                // o resumo encolhe (reticências) em vez de estourar o cartão.
+                Expanded(
+                  child: FractionallySizedBox(
+                    widthFactor: compacto ? 1 : 0.62,
+                    alignment: Alignment.topLeft,
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Flexible(
-                        child: Text(c.categoria.nome.toUpperCase(),
+                        child: Text(c.titulo,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                                fontSize: 11.5, letterSpacing: 1.84, fontWeight: FontWeight.w600, color: claro)),
+                                fontSize: compacto ? 18 : 22,
+                                height: 1.12,
+                                letterSpacing: -.44,
+                                fontWeight: FontWeight.w700,
+                                color: branco)),
                       ),
-                      if (!c.lido) ...[
-                        const SizedBox(width: 10),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: cor.withValues(alpha: .42),
-                            border: Border.all(color: cor.withValues(alpha: .6)),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text('NOVO',
-                              style: TextStyle(
-                                  fontSize: 10.5, letterSpacing: .42, fontWeight: FontWeight.w600, color: branco)),
+                      if (c.resumo.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Flexible(
+                          child: Text(c.resumo,
+                              maxLines: compacto ? 1 : 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 13.5, height: 1.3, color: Color(0xC7E2E8FF))),
                         ),
                       ],
                     ]),
-                    const SizedBox(height: 10),
-                    // Título e resumo dividem o espaço que sobra: com fonte grande
-                    // o resumo encolhe (reticências) em vez de estourar o cartão.
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(spacing: 6, runSpacing: 6, children: [
+                  if (c.pilula != null)
+                    _Pilula(
+                        texto: c.pilula!.texto,
+                        icone: c.pilula!.icone,
+                        fundo: branco.withValues(alpha: .06),
+                        borda: branco.withValues(alpha: .22),
+                        cor: branco),
+                  if (c.cienciaPendente)
+                    const _Pilula(
+                        texto: 'Ciência pendente',
+                        icone: Icons.edit_note_rounded,
+                        fundo: Color(0x1FFFC968),
+                        borda: Color(0x80FFC968),
+                        cor: Color(0xFFFFD892)),
+                  if (c.urgente)
+                    const _Pilula(
+                        texto: 'Urgente',
+                        icone: Icons.priority_high_rounded,
+                        fundo: Color(0x29E5484D),
+                        borda: Color(0x99FF9E9E),
+                        cor: Color(0xFFFFB4B4)),
+                ]),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.only(top: 8),
+                  decoration: BoxDecoration(border: Border(top: BorderSide(color: cor.withValues(alpha: .32)))),
+                  child: Row(children: [
                     Expanded(
-                      child: FractionallySizedBox(
-                        widthFactor: compacto ? 1 : 0.62,
-                        alignment: Alignment.topLeft,
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Flexible(
-                            child: Text(c.titulo,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                    fontSize: compacto ? 18 : 22,
-                                    height: 1.12,
-                                    letterSpacing: -.44,
-                                    fontWeight: FontWeight.w700,
-                                    color: branco)),
-                          ),
-                          if (c.resumo.isNotEmpty) ...[
-                            const SizedBox(height: 3),
-                            Flexible(
-                              child: Text(c.resumo,
-                                  maxLines: compacto ? 1 : 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 13.5, height: 1.3, color: Color(0xC7E2E8FF))),
-                            ),
-                          ],
-                        ]),
-                      ),
+                      child: Text('${c.origem}${c.inicio != null ? ' · ${_data(c.inicio)}' : ''}',
+                          maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: claro)),
                     ),
-                    const SizedBox(height: 8),
-                    Wrap(spacing: 6, runSpacing: 6, children: [
-                      if (c.pilula != null)
-                        _Pilula(
-                            texto: c.pilula!.texto,
-                            icone: c.pilula!.icone,
-                            fundo: branco.withValues(alpha: .06),
-                            borda: branco.withValues(alpha: .22),
-                            cor: branco),
-                      if (c.cienciaPendente)
-                        const _Pilula(
-                            texto: 'Ciência pendente',
-                            icone: Icons.edit_note_rounded,
-                            fundo: Color(0x1FFFC968),
-                            borda: Color(0x80FFC968),
-                            cor: Color(0xFFFFD892)),
-                      if (c.urgente)
-                        const _Pilula(
-                            texto: 'Urgente',
-                            icone: Icons.priority_high_rounded,
-                            fundo: Color(0x29E5484D),
-                            borda: Color(0x99FF9E9E),
-                            cor: Color(0xFFFFB4B4)),
-                    ]),
-                    const SizedBox(height: 8),
+                    const SizedBox(width: 10),
                     Container(
-                      padding: const EdgeInsets.only(top: 8),
-                      decoration: BoxDecoration(border: Border(top: BorderSide(color: cor.withValues(alpha: .32)))),
-                      child: Row(children: [
-                        Expanded(
-                          child: Text('${c.origem}${c.inicio != null ? ' · ${_data(c.inicio)}' : ''}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 12.5, color: claro)),
-                        ),
-                        const SizedBox(width: 10),
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                              shape: BoxShape.circle, border: Border.all(color: branco.withValues(alpha: .3))),
-                          child: const Icon(Icons.arrow_forward_rounded, size: 20, color: branco),
-                        ),
-                      ]),
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle, border: Border.all(color: branco.withValues(alpha: .3))),
+                      child: const Icon(Icons.arrow_forward_rounded, size: 20, color: branco),
                     ),
                   ]),
                 ),
@@ -371,6 +330,87 @@ class CartaoComunicado extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// O fundo dos comunicados (protótipo `.cc-bg`): degradê da cor da
+/// categoria sobre o escuro, brilho no canto, a ilustração de vidro e o véu
+/// embaixo. Serve ao cartão do carrossel e ao topo do comunicado aberto.
+class FundoComunicado extends StatelessWidget {
+  const FundoComunicado({
+    super.key,
+    required this.cor,
+    required this.icone,
+    required this.child,
+    this.raio = BorderRadius.zero,
+    this.comIlustracao = true,
+    this.ilustracaoTopo = 34,
+    this.ilustracaoDireita = 10,
+    this.borda = true,
+  });
+
+  final Color cor;
+  final IconData icone;
+  final Widget child;
+  final BorderRadius raio;
+  final bool comIlustracao;
+  final double ilustracaoTopo;
+  final double ilustracaoDireita;
+  final bool borda;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: raio,
+        border: borda ? Border.all(color: cor.withValues(alpha: .48)) : null,
+        // linear-gradient(160deg, cor misturada ao fundo escuro)
+        gradient: LinearGradient(
+          begin: const Alignment(-0.34, -1),
+          end: const Alignment(0.34, 1),
+          colors: [Color.lerp(cor, const Color(0xFF0B1220), .72)!, Color.lerp(cor, const Color(0xFF060B14), .88)!],
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: raio,
+        child: Stack(children: [
+          // radial-gradient(110% 85% at 100% 0%, cor .46, 0 58%)
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: const Alignment(1, -1),
+                  radius: 1.1,
+                  stops: const [0, .58],
+                  colors: [cor.withValues(alpha: .46), cor.withValues(alpha: 0)],
+                ),
+              ),
+            ),
+          ),
+          if (comIlustracao)
+            Positioned(
+                top: ilustracaoTopo,
+                right: ilustracaoDireita,
+                width: 100,
+                height: 120,
+                child: _Ilustracao(cor: cor, icone: icone)),
+          // Véu embaixo: linear-gradient(transparente 28%, preto .66).
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: [.28, 1],
+                  colors: [Color(0x00000000), Color(0xA8000000)],
+                ),
+              ),
+            ),
+          ),
+          child,
+        ]),
       ),
     );
   }
@@ -492,11 +532,29 @@ Future<void> abrirCentral(BuildContext context, {required String origem}) {
   return Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CentralComunicadosPage()));
 }
 
+/// O comunicado abre como um cartão por cima da tela (protótipo
+/// `.com-modal`): cresce e aparece em 400 ms; sem animação com "Reduzir
+/// movimento". Cobre também a barra de abas.
 Future<void> abrirComunicado(BuildContext context, Comunicado c, ComunicadosRepositorio repo,
     {required String origem}) {
   registrar('comunicado.ver', chave: _chave, dados: {'id': c.id, 'de': origem});
-  return Navigator.of(context).push(MaterialPageRoute(
-      fullscreenDialog: origem == 'abertura', builder: (_) => ComunicadoPage(comunicado: c, repositorio: repo)));
+  return showGeneralDialog<void>(
+    context: context,
+    useRootNavigator: true,
+    barrierDismissible: true,
+    barrierLabel: 'Fechar comunicado',
+    barrierColor: const Color(0x6B000000),
+    transitionDuration: const Duration(milliseconds: 400),
+    pageBuilder: (_, __, ___) => ComunicadoPage(comunicado: c, repositorio: repo, origem: origem),
+    transitionBuilder: (ctx, a, _, filho) {
+      if (MediaQuery.disableAnimationsOf(ctx)) return filho;
+      final curva = CurvedAnimation(parent: a, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+      return FadeTransition(
+        opacity: curva,
+        child: ScaleTransition(scale: Tween<double>(begin: .92, end: 1).animate(curva), child: filho),
+      );
+    },
+  );
 }
 
 // ── Central (com.central) ────────────────────────────────────────────────────
@@ -562,48 +620,45 @@ class _CentralComunicadosPageState extends State<CentralComunicadosPage> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                 children: [
-                  Text('Publicações oficiais do Comando e das diretorias para a tropa.',
-                      style: theme.textTheme.bodySmall),
-                  const SizedBox(height: 10),
-                  Wrap(spacing: 8, children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 2, 4, 10),
+                    child: Text(
+                        'Comunicados oficiais do Comando e das diretorias. Os que abriram como aviso na entrada do app também ficam aqui.',
+                        style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface.withValues(alpha: .62))),
+                  ),
+                  Wrap(spacing: 8, runSpacing: 8, children: [
                     for (final (f, rotulo) in [
                       (_Filtro.todos, 'Todos'),
                       (_Filtro.naoLidos, 'Não lidos'),
                       (_Filtro.ciencia, 'Ciência pendente'),
                     ])
-                      ChoiceChip(
-                        label: Text(rotulo),
-                        selected: _filtro == f,
-                        onSelected: (_) => setState(() => _filtro = f),
-                      ),
+                      _ChipFiltro(rotulo: rotulo, ativo: _filtro == f, aoTocar: () => setState(() => _filtro = f)),
                   ]),
                   const SizedBox(height: 12),
                   if (_carregando) const LinearProgressIndicator(minHeight: 2),
-                  if (filtrada.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 48),
-                      child: Column(children: [
-                        Icon(Icons.campaign_outlined, size: 32, color: theme.colorScheme.onSurfaceVariant),
-                        const SizedBox(height: 8),
-                        Text(lista.isEmpty ? 'Nenhum comunicado no ar agora.' : 'Nada neste filtro.',
-                            style: theme.textTheme.bodyMedium),
-                      ]),
-                    ),
-                  for (final c in filtrada)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: SizedBox(
-                        height: 184,
-                        child: CartaoComunicado(
-                          comunicado: c,
-                          compacto: true,
-                          aoTocar: () {
-                            registrar('comunicado.abrir', chave: _chave, dados: {'id': c.id, 'de': 'central'});
-                            abrirComunicado(context, c, _repo, origem: 'central');
-                          },
-                        ),
-                      ),
-                    ),
+                  CartaoVidro(
+                    raio: 16,
+                    padding: EdgeInsets.zero,
+                    child: filtrada.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 12),
+                            child: Center(
+                              child: Text(
+                                  lista.isEmpty ? 'Nenhum comunicado no ar agora.' : 'Nenhum comunicado neste filtro.',
+                                  style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: .62))),
+                            ),
+                          )
+                        : Column(children: [
+                            for (final c in filtrada)
+                              _LinhaComunicado(
+                                comunicado: c,
+                                aoTocar: () {
+                                  registrar('comunicado.abrir', chave: _chave, dados: {'id': c.id, 'de': 'central'});
+                                  abrirComunicado(context, c, _repo, origem: 'central');
+                                },
+                              ),
+                          ]),
+                  ),
                 ],
               ),
             );
@@ -614,12 +669,135 @@ class _CentralComunicadosPageState extends State<CentralComunicadosPage> {
   }
 }
 
+/// Filtro da central (protótipo `.chip`, ativo em `aria-pressed`).
+class _ChipFiltro extends StatelessWidget {
+  const _ChipFiltro({required this.rotulo, required this.ativo, required this.aoTocar});
+  final String rotulo;
+  final bool ativo;
+  final VoidCallback aoTocar;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final pri = theme.colorScheme.primary;
+    return Semantics(
+      button: true,
+      selected: ativo,
+      child: Material(
+        color: ativo ? pri.withValues(alpha: .16) : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: ativo ? Colors.transparent : theme.colorScheme.onSurface.withValues(alpha: .12)),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: aoTocar,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 36),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Text(rotulo,
+                  style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: ativo ? FontWeight.w600 : FontWeight.w400,
+                      color: ativo ? pri : theme.colorScheme.onSurface)),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Linha da central: miniatura com a cor da categoria, título (negrito se
+/// não lido), resumo e as etiquetas (protótipo, central de comunicados).
+class _LinhaComunicado extends StatelessWidget {
+  const _LinhaComunicado({required this.comunicado, required this.aoTocar});
+  final Comunicado comunicado;
+  final VoidCallback aoTocar;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final c = comunicado;
+    final escuro = theme.brightness == Brightness.dark;
+    final mudo = theme.colorScheme.onSurface.withValues(alpha: .62);
+    final ok = escuro ? const Color(0xFF6EE7A0) : const Color(0xFF14713B);
+    final d = c.inicio;
+    String dois(int n) => n.toString().padLeft(2, '0');
+    return InkWell(
+      onTap: aoTocar,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(
+            width: 56,
+            height: 56,
+            child: FundoComunicado(
+              cor: c.categoria.cor,
+              icone: c.iconeAssunto,
+              comIlustracao: false,
+              raio: BorderRadius.circular(14),
+              child: Center(child: Icon(c.iconeAssunto, color: Colors.white, size: AppIconSize.md)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(c.titulo,
+                  style: TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: c.lido ? FontWeight.w500 : FontWeight.w700,
+                      color: theme.colorScheme.onSurface)),
+              if (c.resumo.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Text(c.resumo, style: TextStyle(fontSize: 12.5, color: mudo)),
+                ),
+              const SizedBox(height: 4),
+              Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                _Selo(c.categoria.nome, cor: mudo, fundo: theme.colorScheme.onSurface.withValues(alpha: .06)),
+                if (c.urgente) _Selo('Urgente', cor: theme.colorScheme.error),
+                if (c.ciencia) c.ciente ? _Selo('Ciente', cor: ok) : const _Selo('Ciência pendente', cor: kCorAtencao),
+                if (d != null) Text('${dois(d.day)}/${dois(d.month)}', style: TextStyle(fontSize: 12.5, color: mudo)),
+              ]),
+            ]),
+          ),
+          if (Theme.of(context).platform == TargetPlatform.iOS)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Icon(Icons.chevron_right_rounded,
+                  size: AppIconSize.sm, color: theme.colorScheme.onSurface.withValues(alpha: .38)),
+            ),
+        ]),
+      ),
+    );
+  }
+}
+
+class _Selo extends StatelessWidget {
+  const _Selo(this.texto, {required this.cor, this.fundo});
+  final String texto;
+  final Color cor;
+  final Color? fundo;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        decoration: BoxDecoration(color: fundo ?? cor.withValues(alpha: .14), borderRadius: BorderRadius.circular(8)),
+        child: Text(texto, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cor, height: 1.5)),
+      );
+}
+
 // ── Detalhe ──────────────────────────────────────────────────────────────────
 
 class ComunicadoPage extends StatefulWidget {
-  const ComunicadoPage({super.key, required this.comunicado, required this.repositorio});
+  const ComunicadoPage({super.key, required this.comunicado, required this.repositorio, this.origem = 'inicio'});
   final Comunicado comunicado;
   final ComunicadosRepositorio repositorio;
+
+  /// De onde abriu: da central, "Ver todos" só fecha o cartão.
+  final String origem;
 
   @override
   State<ComunicadoPage> createState() => _ComunicadoPageState();
@@ -666,86 +844,205 @@ class _ComunicadoPageState extends State<ComunicadoPage> {
     if (mounted) setState(() => _enviando = false);
   }
 
+  void _verTodos() {
+    final nav = Navigator.of(context);
+    nav.pop();
+    if (widget.origem != 'central') abrirCentral(nav.context, origem: 'comunicado');
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final c = _c;
-    return FundoSuave(
-      child: Scaffold(
-        appBar: const CustomAppBar(title: 'Comunicado'),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-          children: [
-            SizedBox(
-              height: 132,
-              child: FundoArte(
-                arte: c.categoria.arte,
-                tamanhoIcone: 110,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Row(children: [
-                      Icon(c.categoria.icone, size: 18, color: Colors.white),
-                      const SizedBox(width: 8),
-                      Text(c.categoria.nome.toUpperCase(),
-                          style: const TextStyle(
-                              fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.w700, color: Colors.white)),
-                    ]),
+    final escuro = theme.brightness == Brightness.dark;
+    final cor = c.categoria.cor;
+    final claro = Color.lerp(cor, Colors.white, .45)!;
+    const branco = Colors.white;
+    final mq = MediaQuery.of(context);
+    final ok = escuro ? const Color(0xFF6EE7A0) : const Color(0xFF14713B);
+    final paragrafos = c.texto.split(RegExp(r'\n\s*\n')).map((p) => p.trim()).where((p) => p.isNotEmpty);
+
+    final topo = FundoComunicado(
+      cor: cor,
+      icone: c.iconeAssunto,
+      borda: false,
+      ilustracaoTopo: 60,
+      ilustracaoDireita: 16,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 250),
+        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: cor.withValues(alpha: .40)))),
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 14),
+        child: IntrinsicHeight(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Padding(
+              padding: const EdgeInsets.only(right: 48),
+              child: Row(children: [
+                Icon(c.categoria.icone, size: 20, color: branco.withValues(alpha: .92)),
+                Container(
+                    width: 1,
+                    height: 17,
+                    margin: const EdgeInsets.symmetric(horizontal: 10),
+                    color: branco.withValues(alpha: .28)),
+                Flexible(
+                  child: Text(c.categoria.nome.toUpperCase(),
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 11.5, letterSpacing: 1.84, fontWeight: FontWeight.w600, color: claro)),
+                ),
+              ]),
+            ),
+            const SizedBox(height: 10),
+            FractionallySizedBox(
+              widthFactor: .66,
+              child: Text(c.titulo,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: 22, height: 1.12, letterSpacing: -.44, fontWeight: FontWeight.w700, color: branco)),
+            ),
+            const SizedBox(height: 14),
+            const Spacer(),
+            Wrap(spacing: 6, runSpacing: 6, children: [
+              if (c.pilula != null)
+                _Pilula(
+                    texto: c.pilula!.texto,
+                    icone: c.pilula!.icone,
+                    fundo: branco.withValues(alpha: .06),
+                    borda: branco.withValues(alpha: .22),
+                    cor: branco),
+              if (c.ciencia)
+                c.ciente
+                    ? const _Pilula(
+                        texto: 'Ciência registrada',
+                        icone: Icons.task_alt_rounded,
+                        fundo: Color(0x1F6EE7A0),
+                        borda: Color(0x806EE7A0),
+                        cor: Color(0xFF9FF0C0))
+                    : _Pilula(
+                        texto: c.cienciaPrazo != null ? 'Ciência até ${_data(c.cienciaPrazo)}' : 'Ciência pendente',
+                        icone: Icons.edit_note_rounded,
+                        fundo: const Color(0x1FFFC968),
+                        borda: const Color(0x80FFC968),
+                        cor: const Color(0xFFFFD892)),
+              if (c.urgente)
+                const _Pilula(
+                    texto: 'Urgente',
+                    icone: Icons.priority_high_rounded,
+                    fundo: Color(0x29E5484D),
+                    borda: Color(0x99FF9E9E),
+                    cor: Color(0xFFFFB4B4)),
+            ]),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 10),
+              decoration: BoxDecoration(border: Border(top: BorderSide(color: cor.withValues(alpha: .32)))),
+              child: Text('${c.origem}${c.inicio != null ? ' · ${_data(c.inicio)}' : ''}',
+                  maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: claro)),
+            ),
+          ]),
+        ),
+      ),
+    );
+
+    final corpo = <Widget>[
+      for (final p in paragrafos)
+        SelectableText(p, style: TextStyle(fontSize: 15.5, height: 1.5, color: theme.colorScheme.onSurface)),
+      if (c.ciencia)
+        if (c.ciente)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(color: ok.withValues(alpha: .12), borderRadius: BorderRadius.circular(12)),
+            child: Row(children: [
+              Icon(Icons.verified_rounded, size: AppIconSize.sm, color: ok),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: Text('Ciência registrada',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ok))),
+            ]),
+          )
+        else ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: kCorAtencao.withValues(alpha: .12),
+              border: Border.all(color: kCorAtencao.withValues(alpha: .35)),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Icon(Icons.edit_note_rounded, color: kCorAtencao),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                    'O Comando pede que você confirme a leitura. A confirmação fica registrada com data e hora.',
+                    style: TextStyle(fontSize: 13.5, color: theme.colorScheme.onSurface)),
+              ),
+            ]),
+          ),
+          ElevatedButton.icon(
+            onPressed: _enviando ? null : _ciente,
+            icon: _enviando
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.check_rounded, size: AppIconSize.sm),
+            label: const Text('Estou ciente'),
+          ),
+        ],
+      TextButton(onPressed: _verTodos, child: const Text('Ver todos os comunicados')),
+    ];
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(10, mq.padding.top + 8, 10, mq.padding.bottom + 12),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Material(
+            color: escuro ? const Color(0xFF10161F) : Colors.white,
+            elevation: 12,
+            shadowColor: Colors.black,
+            borderRadius: BorderRadius.circular(26),
+            clipBehavior: Clip.antiAlias,
+            child: Semantics(
+              scopesRoute: true,
+              explicitChildNodes: true,
+              namesRoute: true,
+              label: c.titulo,
+              child: CustomScrollView(slivers: [
+                SliverToBoxAdapter(
+                  child: Stack(children: [
+                    topo,
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Semantics(
+                        button: true,
+                        label: 'Fechar comunicado',
+                        excludeSemantics: true,
+                        child: Material(
+                          color: const Color(0x6B000000),
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: () => Navigator.of(context).pop(),
+                            child: const SizedBox(
+                                width: 44,
+                                height: 44,
+                                child: Icon(Icons.close_rounded, size: AppIconSize.sm, color: Colors.white)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ]),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
+                  sliver: SliverList.separated(
+                    itemCount: corpo.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (_, i) => corpo[i],
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(c.titulo, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 6),
-            Text('${c.origem}${c.inicio != null ? ' · ${_data(c.inicio)}' : ''}', style: theme.textTheme.bodySmall),
-            if (c.urgente || c.ciencia) ...[
-              const SizedBox(height: 10),
-              Wrap(spacing: 6, children: [
-                if (c.urgente)
-                  const _Pilula(
-                      texto: 'Urgente',
-                      icone: Icons.priority_high_rounded,
-                      fundo: Color(0xFFB3261E),
-                      borda: Color(0xFFB3261E),
-                      cor: Colors.white),
-                if (c.ciencia)
-                  _Pilula(
-                      texto: c.ciente
-                          ? 'Ciência registrada'
-                          : c.cienciaPrazo != null
-                              ? 'Ciência até ${_data(c.cienciaPrazo)}'
-                              : 'Pede ciência',
-                      icone: c.ciente ? Icons.task_alt : Icons.edit_note_rounded,
-                      fundo: c.ciente ? const Color(0xFF14713B) : const Color(0xFF8A5A00),
-                      borda: c.ciente ? const Color(0xFF14713B) : const Color(0xFF8A5A00),
-                      cor: Colors.white),
               ]),
-            ],
-            const SizedBox(height: 16),
-            CartaoVidro(
-              padding: const EdgeInsets.all(16),
-              child: SelectableText(c.texto, style: theme.textTheme.bodyLarge?.copyWith(height: 1.45)),
             ),
-            if (c.ciencia) ...[
-              const SizedBox(height: 20),
-              if (c.ciente)
-                Row(children: [
-                  Icon(Icons.verified_outlined, color: theme.colorScheme.primary),
-                  const SizedBox(width: 8),
-                  const Expanded(child: Text('Você já deu ciência deste comunicado.')),
-                ])
-              else
-                ElevatedButton.icon(
-                  onPressed: _enviando ? null : _ciente,
-                  icon: _enviando
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.task_alt),
-                  label: const Text('Estou ciente'),
-                ),
-            ],
-          ],
+          ),
         ),
       ),
     );
