@@ -176,16 +176,43 @@ que o usuário da API não lê. Situação de cada um:
 | `sccti.tipos_chamado`, `sccti.categorias_chamados` | **não** (sem `USAGE` no esquema) | sonda de 24/10/2026 |
 
 A sonda foi um PHP temporário que testou `SELECT ... LIMIT 0` e os
-privilégios com o usuário da API; rodou uma vez e foi apagado (o endereço
-responde 404). **Só falta o `sccti`.** Pelo plano do painel, ele serve à tela
-"Chamados no app" (escolher os tipos e categorias de "Novo chamado"); a sessão
-do painel confirma se mais alguma tela depende dele. Texto para o administrador do
-banco:
+privilégios com o usuário da API; rodou uma vez e foi apagada (o endereço
+responde 404).
+
+**Por que as tabelas do painel não existem.** Cada SQL do painel (P0 a P8)
+juntava, numa transação só, as tabelas `soupm_*` e o cadastro do módulo em
+`intranet.*`. A conta do cPanel não grava em `intranet`, e o erro desfazia a
+transação inteira. A sessão do painel separou em dois arquivos (intranet,
+commit d46197a3, pasta `painelsoupmrr/database/producao/`); os P* antigos foram
+para `substituidos/` e não devem ser rodados.
+
+**Ordem no phpPgAdmin:**
+
+1. Os SQL pendentes da API, nesta lista. Você, com a conta do cPanel.
+2. `A_tabelas_painel_producao.sql`: as 7 tabelas do painel e a linha `painel`
+   da `soupm_config`. Você, com a conta do cPanel.
+3. O `2026-10-24_soupm_painel_permissoes.sql` de novo (na primeira vez ele
+   pulou as tabelas que não existiam). Você, com a conta do cPanel.
+4. `B_intranet_acl_producao.sql`: o **administrador do banco**, dono de
+   `intranet` e `sccti`. Cadastra o módulo `soupm`, os 6 papéis e os recursos
+   do painel e concede ao usuário da API as leituras de `sccti` (as de
+   `intranet` ele já tem; o arquivo as repete sem efeito).
+
+**O que cai sem cada coisa** (resposta da sessão do painel):
+
+| Sem | O que acontece no painel |
+|---|---|
+| O arquivo B (o cadastro do módulo em `intranet`) | Ninguém entra, nem o administrador: a senha passa, mas não há perfil do módulo |
+| `sccti` | Só as listas de tipo e categoria de chamado na tela Suporte; o resto da tela funciona |
+
+Texto para o administrador do banco:
 
 > Prezado administrador, o painel do SouPMRR (`/painelsoupmrr`) usa o usuário
-> de banco da API do app. Peço conceder a esse usuário, no banco de produção,
-> `USAGE` no esquema `sccti` e `SELECT` em `sccti.tipos_chamado` e
-> `sccti.categorias_chamados` (só leitura). Obrigado. — DTI/PMRR
+> de banco da API do app. Peço rodar no banco de produção, com o usuário dono
+> dos esquemas `intranet` e `sccti`, o arquivo `B_intranet_acl_producao.sql`
+> (anexo). Ele cadastra o módulo do painel na ACL da intranet e dá ao usuário
+> da API leitura em `sccti.tipos_chamado` e `sccti.categorias_chamados`. Nada
+> é apagado. Obrigado. — DTI/PMRR
 
 ### 2. Arquivos de inclusão da API — feito em 24/10/2026
 
