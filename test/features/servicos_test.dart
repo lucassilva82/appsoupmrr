@@ -52,4 +52,20 @@ void main() {
   test('normalizar tira acento e caixa', () {
     expect(normalizar('Férias Ação ÇÃO'), 'ferias acao cao');
   });
+
+  group('busca tolerante a erro de digitação', () {
+    final menu = menuPadrao(gestor: false);
+    test('acha com uma ou duas letras erradas', () {
+      expect(buscarFuncoes(menu, 'contraxeque').map((r) => r.item.chave), contains('rh.contracheques'));
+      expect(buscarFuncoes(menu, 'cerridoes').map((r) => r.item.chave), contains('rh.certidoes'));
+    });
+    test('resultado exato vem sem os aproximados', () {
+      expect(buscarFuncoes(menu, 'ferias').map((r) => r.item.chave), contains('rh.ferias'));
+      expect(buscarFuncoes(menu, 'xyzw'), isEmpty);
+    });
+    test('distância de edição', () {
+      expect(distanciaEdicao('casa', 'caso'), 1);
+      expect(distanciaEdicao('abc', 'abcdef', limite: 1), 2);
+    });
+  });
 }

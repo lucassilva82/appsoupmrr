@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../core/log/registro_log.dart';
+import '../core/rede/api_client.dart';
 import '../features/servicos/servicos_page.dart';
 import '../models/auth_model.dart';
 import '../services/escala_service.dart';
@@ -39,7 +40,7 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   late int _currentIndex;
 
   /// Evita agendar a saída mais de uma vez: `build` roda várias vezes entre
@@ -50,11 +51,21 @@ class _MainShellState extends State<MainShell> {
 
   // Ordem das abas: Início, Serviços, Avisos, Perfil.
   static const _abaAvisos = 2;
-  static const _chavesAba = ['aba.inicio', 'aba.servicos', 'aba.avisos', 'aba.perfil'];
+  static const _chavesAba = [
+    'aba.inicio',
+    'aba.servicos',
+    'aba.avisos',
+    'aba.perfil'
+  ];
+
+  /// Última leitura do `app_config` pelo shell (§5.3: na volta ao app depois
+  /// de 5 minutos, relê).
+  DateTime _configLidoEm = DateTime.now();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _currentIndex = widget.initialIndex.clamp(0, 3);
     // Conecta o histórico de notificações do militar logado (stream Firestore).
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -67,6 +78,36 @@ class _MainShellState extends State<MainShell> {
         senhaApp: auth.password,
       );
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        DateTime.now().difference(_configLidoEm) > const Duration(minutes: 5)) {
+      _recarregarConfig();
+    }
+  }
+
+  /// Relê o `app_config` (volta ao app, ⌘R no iPad). Nunca lança.
+  Future<void> _recarregarConfig() async {
+    _configLidoEm = DateTime.now();
+    final auth = Provider.of<Auth>(context, listen: false);
+    await carregarAppConfig(
+        api: ApiClient(), matricula: auth.matricula, senha: auth.password);
+  }
+
+  /// Busca na aba atual (⌘F no iPad, Ctrl+F no Android com teclado).
+  void _abrirBusca() {
+    registrar('tela.abrir', chave: 'busca', dados: {'de': 'teclado'});
+    _navegadores[_currentIndex]
+        .currentState
+        ?.push(MaterialPageRoute(builder: (_) => const BuscaPage()));
   }
 
   void _irPara(int i) {
@@ -117,8 +158,8 @@ class _MainShellState extends State<MainShell> {
         child: Navigator(
           key: _navegadores[i],
           onGenerateRoute: (s) => _rota(s, raiz),
-          onUnknownRoute: (s) => MaterialPageRoute(
-              settings: s, builder: (_) => raiz),
+          onUnknownRoute: (s) =>
+              MaterialPageRoute(settings: s, builder: (_) => raiz),
         ),
       );
 
@@ -157,9 +198,14 @@ class _MainShellState extends State<MainShell> {
       index: _currentIndex,
       children: [
         _aba(0, _RaizAba(indice: 0, irPara: _irPara, child: const HomeBody())),
-        _aba(1, _RaizAba(indice: 1, irPara: _irPara, child: const ServicosBody())),
-        _aba(2, _RaizAba(indice: 2, irPara: _irPara, child: const NotificationsBody())),
-        _aba(3, _RaizAba(indice: 3, irPara: _irPara, child: const SettingsBody())),
+        _aba(1,
+            _RaizAba(indice: 1, irPara: _irPara, child: const ServicosBody())),
+        _aba(
+            2,
+            _RaizAba(
+                indice: 2, irPara: _irPara, child: const NotificationsBody())),
+        _aba(3,
+            _RaizAba(indice: 3, irPara: _irPara, child: const SettingsBody())),
       ],
     );
     final itens = [
@@ -191,31 +237,55 @@ class _MainShellState extends State<MainShell> {
     final largura = MediaQuery.sizeOf(context).width;
     final lateral = largura >= 600;
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _voltar();
+    // Atalhos de teclado (§15.4): ⌘F busca, ⌘1 a ⌘4 abas, ⌘R atualiza.
+    // No Android com teclado, Ctrl no lugar do ⌘.
+    final atalhos = <ShortcutActivator, VoidCallback>{
+      for (final ctrl in [false, true]) ...{
+        SingleActivator(LogicalKeyboardKey.keyF, meta: !ctrl, control: ctrl):
+            _abrirBusca,
+        SingleActivator(LogicalKeyboardKey.keyR, meta: !ctrl, control: ctrl):
+            _recarregarConfig,
+        for (final (i, tecla) in [
+          LogicalKeyboardKey.digit1,
+          LogicalKeyboardKey.digit2,
+          LogicalKeyboardKey.digit3,
+          LogicalKeyboardKey.digit4
+        ].indexed)
+          SingleActivator(tecla, meta: !ctrl, control: ctrl): () => _irPara(i),
       },
-      child: FundoSuave(
-        child: Scaffold(
-          body: lateral
-              ? Row(children: [
-                  BarraLateral(
-                    itens: itens,
-                    indice: _currentIndex,
-                    aoSelecionar: _irPara,
-                    estendida: largura >= 840,
-                  ),
-                  Expanded(child: abas),
-                ])
-              : abas,
-          bottomNavigationBar: lateral
-              ? null
-              : BarraNavegacao(
-                  indiceAtual: _currentIndex,
-                  aoSelecionar: _irPara,
-                  itens: itens,
-                ),
+    };
+
+    return CallbackShortcuts(
+      bindings: atalhos,
+      child: Focus(
+        autofocus: true,
+        child: PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) _voltar();
+          },
+          child: FundoSuave(
+            child: Scaffold(
+              body: lateral
+                  ? Row(children: [
+                      BarraLateral(
+                        itens: itens,
+                        indice: _currentIndex,
+                        aoSelecionar: _irPara,
+                        estendida: largura >= 840,
+                      ),
+                      Expanded(child: abas),
+                    ])
+                  : abas,
+              bottomNavigationBar: lateral
+                  ? null
+                  : BarraNavegacao(
+                      indiceAtual: _currentIndex,
+                      aoSelecionar: _irPara,
+                      itens: itens,
+                    ),
+            ),
+          ),
         ),
       ),
     );
@@ -225,7 +295,8 @@ class _MainShellState extends State<MainShell> {
 /// A tela raiz de cada aba: a barra de vidro com o título da aba e o
 /// conteúdo. As funções abertas por cima trazem a própria barra.
 class _RaizAba extends StatelessWidget {
-  const _RaizAba({required this.indice, required this.irPara, required this.child});
+  const _RaizAba(
+      {required this.indice, required this.irPara, required this.child});
 
   final int indice;
   final ValueChanged<int> irPara;
@@ -312,7 +383,8 @@ class _RaizAba extends StatelessWidget {
             IconButton(
               tooltip: 'Buscar',
               icon: const Icon(Icons.search, color: Colors.white),
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BuscaPage())),
+              onPressed: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const BuscaPage())),
             ),
           if (indice == 0) ...[
             _notificationBell(unread),
@@ -345,7 +417,8 @@ class _RaizAba extends StatelessWidget {
     // até lá, a regra de hoje.
     final nivel = RepositorioConfig.atual.nivel;
     final isSuperUser = nivel != null ? nivel.selo : isSuperUserLegado;
-    final label = nivel != null ? nivel.nomeCurto : (isAdmin ? 'Admin' : 'GESTOR');
+    final label =
+        nivel != null ? nivel.nomeCurto : (isAdmin ? 'Admin' : 'GESTOR');
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -420,5 +493,4 @@ class _RaizAba extends StatelessWidget {
       ],
     );
   }
-
 }

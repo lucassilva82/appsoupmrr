@@ -79,6 +79,7 @@ import 'widgets/dialogo_confirmacao.dart';
 import 'vitrine/vitrine.dart';
 import 'core/erros/captura_global.dart';
 import 'core/log/iniciar_log.dart';
+import 'core/config/app_config.dart';
 import 'core/rede/api_client.dart';
 import 'core/sessao/sessao.dart';
 import 'package:projetonovo/data/store.dart'; // Certifique-se de que Store está acessível
@@ -641,6 +642,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         } catch (e) {
           print('[DEBUG] Erro ao conectar provider no onMessage: $e');
         }
+      }
+      // Push silencioso de configuração (§4.6): o painel publicou algo;
+      // relê o app_config sem mostrar nada.
+      if (message.data['tipo'] == 'config') {
+        if (mounted) {
+          final auth = Provider.of<Auth>(context, listen: false);
+          await carregarAppConfig(api: ApiClient(), matricula: auth.matricula, senha: auth.password);
+        }
+        return;
       }
       registrar('push.receber', dados: {
         if (message.data['notificacao_soupm'] != null) 'notificacao_soupm': '${message.data['notificacao_soupm']}',

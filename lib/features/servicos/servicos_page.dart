@@ -41,25 +41,61 @@ String normalizar(String s) {
   return b.toString();
 }
 
+/// Distância de edição (inserir, apagar, trocar uma letra), parando cedo
+/// quando passa de [limite].
+int distanciaEdicao(String a, String b, {int limite = 2}) {
+  if ((a.length - b.length).abs() > limite) return limite + 1;
+  var anterior = List<int>.generate(b.length + 1, (j) => j);
+  for (var i = 1; i <= a.length; i++) {
+    final atual = List<int>.filled(b.length + 1, 0)..[0] = i;
+    var menor = atual[0];
+    for (var j = 1; j <= b.length; j++) {
+      final custo = a[i - 1] == b[j - 1] ? 0 : 1;
+      atual[j] = [anterior[j] + 1, atual[j - 1] + 1, anterior[j - 1] + custo].reduce((x, y) => x < y ? x : y);
+      if (atual[j] < menor) menor = atual[j];
+    }
+    if (menor > limite) return limite + 1;
+    anterior = atual;
+  }
+  return anterior[b.length];
+}
+
 /// Funções que casam com o [termo] pelo nome, pela descrição ou pelos
-/// sinônimos, com o caminho da área. Busca por prefixo de palavra.
+/// sinônimos, com o caminho da área. Busca por prefixo de palavra; sem
+/// nenhum resultado exato, tolera erro de digitação (§7: "contraxeque"):
+/// uma letra em palavras de 4 a 7 letras, duas a partir de 8.
 List<({ItemMenu item, ItemMenu area})> buscarFuncoes(
     List<ItemMenu> menu, String termo) {
   final t = normalizar(termo.trim());
   if (t.isEmpty) return const [];
-  bool casa(String? texto) {
+  bool casa(String? texto, {required bool tolerante}) {
     if (texto == null) return false;
     final n = normalizar(texto);
     if (t.contains(' ')) return n.contains(t);
-    return n.split(RegExp(r'[^a-z0-9]+')).any((p) => p.startsWith(t));
+    final palavras = n.split(RegExp(r'[^a-z0-9]+'));
+    if (!tolerante) return palavras.any((p) => p.startsWith(t));
+    if (t.length < 4) return false;
+    final limite = t.length >= 8 ? 2 : 1;
+    return palavras.any((p) {
+      for (var k = t.length - limite; k <= t.length + limite; k++) {
+        if (k < 1 || k > p.length) continue;
+        if (distanciaEdicao(t, p.substring(0, k), limite: limite) <= limite) return true;
+      }
+      return false;
+    });
   }
 
-  return [
-    for (final area in menu)
-      for (final f in area.filhos)
-        if (casa(f.rotulo) || casa(f.descricao) || f.sinonimos.any(casa))
-          (item: f, area: area),
-  ];
+  List<({ItemMenu item, ItemMenu area})> passar(bool tolerante) => [
+        for (final area in menu)
+          for (final f in area.filhos)
+            if (casa(f.rotulo, tolerante: tolerante) ||
+                casa(f.descricao, tolerante: tolerante) ||
+                f.sinonimos.any((s) => casa(s, tolerante: tolerante)))
+              (item: f, area: area),
+      ];
+
+  final exatos = passar(false);
+  return exatos.isNotEmpty ? exatos : passar(true);
 }
 
 /// A aba Serviços (§3.3): busca fixa no topo e as áreas em cartões com arte.
