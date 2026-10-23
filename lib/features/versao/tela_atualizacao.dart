@@ -11,6 +11,7 @@ import '../../core/config/app_config.dart';
 import '../../core/log/registro_log.dart';
 import '../../widgets/aviso_rapido.dart';
 import '../../widgets/vidro.dart';
+import '../../core/design/viatura.dart';
 
 /// Link da loja da própria plataforma (cada loja só fala de si, §31).
 String get urlLoja => Platform.isIOS
@@ -212,35 +213,7 @@ class _PintorCena extends CustomPainter {
     final salto = math.sin(troca * math.pi) * 18;
     canvas.save();
     canvas.translate(meio * 1.5, solo - salto);
-    const azul = Color(0xFF1E3A8A);
-    const verde = Color(0xFF15803D);
-    final carroceria = RRect.fromLTRBR(-74, -32, 74, 0, const Radius.circular(8));
-    canvas.drawRRect(carroceria, Paint()..color = Colors.white);
-    canvas.drawRect(const Rect.fromLTRB(-72, -20, 72, -14), Paint()..color = verde);
-    canvas.drawRect(const Rect.fromLTRB(-72, -14, 72, -12), Paint()..color = const Color(0xFFE0A100));
-    final cabine = RRect.fromLTRBR(-30, -58, 40, -30, const Radius.circular(9));
-    canvas.drawRRect(cabine, Paint()..color = azul);
-    canvas.drawRRect(RRect.fromLTRBR(-24, -54, 4, -36, const Radius.circular(4)), Paint()..color = const Color(0xFF0F172A));
-    canvas.drawRRect(RRect.fromLTRBR(8, -54, 34, -36, const Radius.circular(4)), Paint()..color = const Color(0xFF0F172A));
-    // Barra de giroflex em LED, vermelho e azul alternando.
-    final fase = (loop * 6).floor().isEven;
-    canvas.drawRRect(RRect.fromLTRBR(-20, -66, 0, -59, const Radius.circular(3)),
-        Paint()..color = fase ? const Color(0xFFEF4444) : const Color(0xFF7F1D1D));
-    canvas.drawRRect(RRect.fromLTRBR(0, -66, 20, -59, const Radius.circular(3)),
-        Paint()..color = fase ? const Color(0xFF1E3A8A) : const Color(0xFF60A5FA));
-    // Faróis em LED e rodas de liga com pinça vermelha.
-    canvas.drawRRect(RRect.fromLTRBR(66, -28, 74, -22, const Radius.circular(2)), Paint()..color = const Color(0xFFFFF7CC));
-    for (final x in [-46.0, 46.0]) {
-      canvas.save();
-      canvas.translate(x, 2);
-      canvas.rotate(troca * math.pi * 4);
-      canvas.drawCircle(Offset.zero, 13, Paint()..color = const Color(0xFF111827));
-      canvas.drawCircle(Offset.zero, 7, Paint()..color = const Color(0xFFCBD5E1));
-      canvas.drawRect(const Rect.fromLTRB(-1.5, -7, 1.5, 7), Paint()..color = const Color(0xFF64748B));
-      canvas.restore();
-      canvas.drawArc(Rect.fromCircle(center: Offset(x, 2), radius: 9), -2.4, 1.2, false,
-          Paint()..color = const Color(0xFFDC2626)..style = PaintingStyle.stroke..strokeWidth = 2);
-    }
+    desenharViatura(canvas, giroflexAceso: (loop * 6).floor().isEven, giroRodas: troca * math.pi * 4);
     canvas.restore();
 
     // Confete no salto.

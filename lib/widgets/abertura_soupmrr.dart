@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import '../core/design/viatura.dart';
 import '../utils/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -63,6 +64,9 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
   late final AnimationController _c;
   late final AnimationController _ambiente;
   late final AnimationController _camera;
+  // A viatura da §15.6: chega, freia, pisca o giroflex com a marca montando,
+  // espera um instante e arranca. Linha do tempo própria, de 4,2 s.
+  late final AnimationController _viatura;
 
   @override
   void initState() {
@@ -85,6 +89,10 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
       vsync: this,
       duration: const Duration(milliseconds: 6000),
     );
+    _viatura = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 4200),
+    );
   }
 
   @override
@@ -97,6 +105,7 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
       _c.forward();
       _ambiente.repeat();
       _camera.forward();
+      _viatura.forward();
     }
   }
 
@@ -105,6 +114,7 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
     _c.dispose();
     _ambiente.dispose();
     _camera.dispose();
+    _viatura.dispose();
     super.dispose();
   }
 
@@ -122,7 +132,7 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
       backgroundColor: AppColors.aberturaFundo,
       body: SizedBox.expand(
         child: AnimatedBuilder(
-          animation: Listenable.merge([_c, _ambiente, _camera]),
+          animation: Listenable.merge([_c, _ambiente, _camera, _viatura]),
           builder: (context, _) {
             final entrouFundo = _trecho(0.0, 0.22);
 
@@ -212,6 +222,14 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
                   ),
                 ),
 
+                // ── A viatura (§15.6) ─────────────────────────────────────
+                // Com "Reduzir movimento", só a marca aparece.
+                if (!MediaQuery.of(context).disableAnimations)
+                  CustomPaint(
+                    painter: _PinturaViatura(t: _viatura.value * 4.2),
+                    size: Size.infinite,
+                  ),
+
                 // ── A marca ───────────────────────────────────────────────
                 Center(
                   child: Column(
@@ -253,7 +271,7 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
                                 6 *
                                     _trecho(0.86, 1.0,
                                         curva: Curves.easeOutCubic),
-                            color: Colors.white.withValues(alpha: 0.62),
+                            color: Colors.white.withValues(alpha: 0.82),
                           ),
                         ),
                       ),
@@ -685,4 +703,89 @@ class _PinturaMoldura extends CustomPainter {
       antiga.trilha != trilha ||
       antiga.onda != onda ||
       antiga.corrente != corrente;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Viatura da abertura (§15.6), em segundos [t] de 0 a 4,2:
+//   0,15–1,10 entra pela esquerda e desacelera até o centro
+//   1,10–1,35 freia: a frente abaixa e volta, uma vez
+//   1,10–3,35 giroflex piscando, com a luz batendo no fundo
+//   3,05–3,35 rodas patinam no lugar, fumaça da roda de trás, frente sobe
+//   3,35–4,10 arranca para a direita, com marca de pneu e linhas de velocidade
+// ─────────────────────────────────────────────────────────────────────────────
+class _PinturaViatura extends CustomPainter {
+  _PinturaViatura({required this.t});
+  final double t;
+
+  double _f(double a, double b) => ((t - a) / (b - a)).clamp(0.0, 1.0);
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    if (t <= 0.15 || t >= 4.1) return;
+    final meio = s.width / 2;
+    final solo = s.height * 0.5 + 200;
+    final entrada = Curves.easeOutCubic.transform(_f(0.15, 1.10));
+    final saida = Curves.easeInCubic.transform(_f(3.35, 4.10));
+    final x = -110 + (meio + 110) * entrada + (s.width / 2 + 160) * saida;
+
+    // Freada: a frente abaixa ~2° e volta. Arrancada: a frente sobe ~4°.
+    final freada = math.sin(_f(1.10, 1.35) * math.pi) * grausParaRad(2.2);
+    final empina = math.sin(_f(3.05, 3.70) * math.pi) * grausParaRad(4);
+    final patina = _f(3.05, 3.35);
+
+    // Giroflex: pisca do momento da freada até sair.
+    final piscando = t >= 1.10 && t < 3.6;
+    final aceso = ((t - 1.10) / 0.14).floor().isEven;
+    if (piscando) {
+      desenharLuzGiroflex(canvas, Offset(x, solo - 66), aceso, t < 2.0 ? 1 : 0.5);
+    }
+
+    // Linhas de velocidade na chegada e na saída.
+    final vel = t < 1.10 ? 1 - entrada : (t > 3.35 ? saida : 0.0);
+    if (vel > 0.02) {
+      final linha = Paint()
+        ..color = Colors.white.withValues(alpha: 0.35 * vel)
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round;
+      for (var i = 0; i < 4; i++) {
+        final y = solo - 14 - i * 12.0;
+        final comp = 40 + 30 * vel + i * 8;
+        canvas.drawLine(Offset(x - 84 - i * 6, y), Offset(x - 84 - i * 6 - comp, y), linha);
+      }
+    }
+
+    // Marca de pneu e fumaça da roda de trás na arrancada.
+    if (t > 3.05) {
+      final inicio = meio - 46;
+      canvas.drawLine(Offset(inicio, solo + 14), Offset(math.max(inicio, x - 46), solo + 14),
+          Paint()
+            ..color = Colors.black.withValues(alpha: 0.45 * (1 - _f(3.6, 4.1)))
+            ..strokeWidth = 4);
+      for (var i = 0; i < 6; i++) {
+        final f = ((t - 3.05) * 1.6 + i / 6) % 1;
+        final forca = (1 - f) * (1 - _f(3.7, 4.1));
+        canvas.drawCircle(Offset(inicio - 10 - f * 60, solo + 4 - f * 34), 8 + f * 20,
+            Paint()..color = Colors.white.withValues(alpha: 0.30 * forca));
+      }
+    }
+
+    canvas.save();
+    canvas.translate(x, solo);
+    // Gira pela roda de trás ao empinar e pela da frente ao frear.
+    if (empina > 0) {
+      canvas.translate(-46, 0);
+      canvas.rotate(-empina);
+      canvas.translate(46, 0);
+    } else if (freada > 0) {
+      canvas.translate(46, 0);
+      canvas.rotate(freada);
+      canvas.translate(-46, 0);
+    }
+    final giro = (x / 13) + patina * math.pi * 10;
+    desenharViatura(canvas, giroflexAceso: aceso, giroflexLigado: piscando, giroRodas: giro);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_PinturaViatura old) => old.t != t;
 }
