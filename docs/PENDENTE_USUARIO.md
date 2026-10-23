@@ -195,15 +195,24 @@ para `substituidos/` e não devem ser rodados.
    pulou as tabelas que não existiam). Você, com a conta do cPanel.
 4. `B_intranet_acl_producao.sql`: o **administrador do banco**, dono de
    `intranet` e `sccti`. Cadastra o módulo `soupm`, os 6 papéis e os recursos
-   do painel e concede ao usuário da API as leituras de `sccti` (as de
-   `intranet` ele já tem; o arquivo as repete sem efeito).
+   do painel e concede ao usuário da API as leituras de `sccti`. O resto dos
+   GRANT dele (leitura em `intranet`, `INSERT` na auditoria e a sequência) o
+   usuário da API já tem pela sonda, e o arquivo os repete sem efeito. Pode
+   rodar mais de uma vez.
+5. Entrar no painel e salvar algo em Configurações. Se aparecer `PSP-DB-03`,
+   a mensagem diz qual tabela falta.
+
+Se o módulo `soupm` já estiver cadastrado na intranet (a conta do cPanel não
+consegue ver; só o administrador ou uma sonda com o usuário da API), o arquivo
+B só faz falta pelo `sccti`. Exceção que já vale hoje: quem é administrador da
+Administração da intranet entra no painel mesmo sem o cadastro.
 
 **O que cai sem cada coisa** (resposta da sessão do painel):
 
 | Sem | O que acontece no painel |
 |---|---|
-| O arquivo B (o cadastro do módulo em `intranet`) | Ninguém entra, nem o administrador: a senha passa, mas não há perfil do módulo |
-| `sccti` | Só as listas de tipo e categoria de chamado na tela Suporte; o resto da tela funciona |
+| O arquivo B (o cadastro do módulo em `intranet`) | Só o administrador da Administração da intranet entra; os outros veem "sem acesso" |
+| `sccti` | Só as listas de tipo e categoria de chamado na tela Suporte e textos (ficam vazias); o resto funciona |
 
 Texto para o administrador do banco:
 
