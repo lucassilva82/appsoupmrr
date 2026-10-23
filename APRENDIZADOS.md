@@ -1597,3 +1597,57 @@ não-ASCII, nunca em aspas ou chaves, então o JSON continua válido.
 - Antes de qualquer UPDATE assim, rodar o mesmo encadeado como `SELECT` com
   `length()` antes e depois (`Certid√µes` 10 → `Certidões` 9). Custa uma ida e
   prova a correção inteira.
+
+## 46. `SECURITY DEFINER` criado pelo phpPgAdmin aponta para quem lê menos
+
+**O sintoma.** Na 2.2, a área **Gestão sumiu do menu para todo mundo** —
+ninguém veria o Mapa da Força. O app dizia `isSuperUser: true` no log, e o
+servidor dizia que não. Nenhum erro em lugar nenhum.
+
+**A causa.** Onze funções `soupm_*` nasceram `SECURITY DEFINER`. Isso faz a
+função rodar com os privilégios do **dono**. Como todo SQL deste projeto é
+rodado pelo phpPgAdmin, o dono ficou sendo `pmrronline`, a conta do cPanel —
+que **não lê** `public.vw_users_unidade_comando_groups`, nem `qra`, nem
+`intranet`.
+
+Ou seja: a elevação de privilégio apontava para um usuário com **menos**
+acesso que o chamador. O `SECURITY DEFINER` foi escrito pensando que o dono
+seria um usuário privilegiado; na prática, quem cria é quem roda o script.
+
+**Por que ninguém viu.** A função terminava em
+
+```sql
+EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'soupm_e_gestor(%): %', p_matricula, SQLERRM;
+    RETURN false;
+```
+
+`RAISE WARNING` vai para o log do Postgres, que ninguém lê. Para quem usava o
+app, "não consegui consultar" virou "não é gestor" — exatamente o erro do §27
+e do §37, agora numa pergunta de permissão. Fechar por segurança está certo;
+o silêncio não.
+
+**A correção.** As nove funções que leem dados de fora do nosso domínio
+passaram a `SECURITY INVOKER`: rodam com os privilégios de quem chama. Medido
+antes de trocar: a API (`pmrronline_usr_erp_prod`) e o painel
+(`pmrronline_usr_erp`) têm SELECT nas quatro fontes; só a conta do cPanel não
+tem. Continuam `DEFINER` as duas em que a elevação é o objetivo —
+`soupm_cron_log`, que deixa a API chamar a limpeza sem ter DELETE, e
+`soupm_mais_usados_para`.
+
+**Regras.**
+- `SECURITY DEFINER` só quando a elevação é o objetivo, e aí o comentário diz
+  **quem precisa ser o dono**. Se o dono for quem rodou o script, não use.
+- Depois de rodar SQL em produção pelo phpPgAdmin, conferir o dono:
+  `SELECT proname, pg_get_userbyid(proowner), prosecdef FROM pg_proc ...`.
+- Corrigir no banco não basta: o `.sql` é a fonte de verdade, e re-rodar o
+  arquivo devolve o defeito. Corrigir nos dois, e no comentário também — o
+  comentário antigo estava ensinando o erro.
+
+**Um irmão do mesmo dia.** No mesmo lugar, `WHERE matricula::text = $1`
+comparava a matrícula como texto. A coluna da view é **integer**, e o militar
+digita a matrícula como quiser no login: quem usa zero à esquerda nunca casa.
+O `buscapormatricula.php` escapa porque deixa o Postgres converter o texto
+para número. Agora a comparação normaliza os dois lados
+(`ltrim(..., chr(48))`). `chr(48)` e não `'0'`: essas comparações moram dentro
+de strings do `EXECUTE`, e a aspa simples fecharia a string antes da hora.
