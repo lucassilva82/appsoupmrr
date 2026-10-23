@@ -233,37 +233,29 @@ Endpoint novo que seja só de inclusão entra na lista do `.htaccess`.
 
 ### 3. A virada para o esquema `soupm`
 
-Preparada e **não executada**: `sql/2026-10-23_soupm_esquema_proprio.sql` (o
-roteiro completo está no fim do arquivo) e
-`tools/reescrever_para_esquema_soupm.sh`.
+Pedido do usuário (24/10/2026): "tudo deve ficar no nosso esquema do soupm e
+nao no public". Feito até agora, sem janela de indisponibilidade:
 
-O administrador **não precisa fazer nada** — o usuário do phpPgAdmin pode
-criar esquema e é dono dos 53 tabelas, 26 sequências e 21 funções. O roteiro
-não tem janela de indisponibilidade: o PHP deixa de citar o esquema e passa a
-depender do `search_path`, que resolve para `public` antes e `soupm` depois.
+1. **Feito.** Backup dos 32 arquivos da API em
+   `/backups_api/virada-soupm-20261024/backup-virada-20261024.tgz`.
+2. **Feito.** `conexao.php` do servidor com `SET search_path TO soupm, public`
+   logo depois de criar o PDO (a cópia local, fora do git, também).
+3. **Feito.** Os 31 PHP da API sem o `public.` (commit 91284f9 da API),
+   publicados, conferidos com `cmp` e testados por HTTP.
+4. **Esperando o painel publicar** o código sem `public.` (commit df6a322c da
+   intranet). O painel em produção ainda cita `public.soupm_` e quebraria.
+5. Depois, num envio só pelo phpPgAdmin e numa transação só:
+   `2026-10-23_soupm_esquema_proprio.sql` (tabelas e sequências) +
+   `2026-10-24_soupm_funcoes_para_esquema.sql` (recria as funções em `soupm`
+   a partir da definição do banco, com as mesmas permissões e comentário,
+   refaz o gatilho do protocolo do feedback e apaga as velhas). Testado num
+   Postgres local: se algo falhar, nada muda.
+6. `2026-10-24_soupm_painel_permissoes.sql` (a concessão do painel no usuário
+   da API) e a conferência: `public` só com as duas `soupm_conceder_*`, o app
+   abrindo o menu, o painel entrando e o `error_log` de `sigrh/` limpo.
 
-São 163 referências no PHP, 417 nos `.sql` e 402 no painel.
-
-**Ordem combinada com o painel (23/10/2026), esperando o seu "pode":**
-
-0. Os SQL do painel (P0 a P8) rodam antes, ainda em `public`.
-1. `conexao.php` ganha `SET search_path TO soupm, public`. Sobe sozinho e
-   não muda nada enquanto `soupm` não existir.
-2. Sobem os 31 PHP sem o `public.` na frente. Continuam achando as tabelas em
-   `public`.
-3. Você roda `2026-10-23_soupm_esquema_proprio.sql`: as tabelas mudam de
-   esquema.
-4. Você roda os `.sql` reescritos da API. Eles recriam as funções em
-   `soupm`. Os do painel não entram aqui, porque não criam função; depois
-   do passo 3 não se roda mais nenhum deles como está.
-5. Você roda o bloco que apaga as funções velhas de `public`. As duas
-   `soupm_conceder_*` ficam.
-6. Você roda de novo a concessão do painel no usuário da API: a última
-   linha do `2026-10-24_soupm_painel_permissoes.sql` (o nome do usuário está
-   no repositório privado da API).
-7. Conferir que o app abre o menu e que o painel entra.
-
-Para voltar: os mesmos laços com `SET SCHEMA public` e os PHP do backup.
+Para voltar: os mesmos laços com `SET SCHEMA public`; as funções, re-rodando o
+script com os esquemas trocados; os PHP, do backup.
 
 ### O que já está no ar
 
