@@ -200,8 +200,9 @@ São 163 referências no PHP, 417 nos `.sql` e 402 no painel.
    `public`.
 3. Você roda `2026-10-23_soupm_esquema_proprio.sql`: as tabelas mudam de
    esquema.
-4. Você roda os `.sql` reescritos, da API e do painel. Eles recriam as
-   funções em `soupm`.
+4. Você roda os `.sql` reescritos da API. Eles recriam as funções em
+   `soupm`. Os do painel não entram aqui, porque não criam função; depois
+   do passo 3 não se roda mais nenhum deles como está.
 5. Você roda o bloco que apaga as funções velhas de `public`. As duas
    `soupm_conceder_*` ficam.
 6. Se o usuário do painel já existir, você roda de novo
