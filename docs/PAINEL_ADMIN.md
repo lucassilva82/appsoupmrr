@@ -1495,9 +1495,16 @@ levantamento de 21/10/2026:
    e nos endpoints JSON do painel.
 5. Auditoria de toda alteração e todo envio em `intranet.auditoria`, com antes
    e depois.
-6. **Usuário de banco próprio do painel**, com `INSERT/UPDATE/DELETE` só nas
-   `soupm_*` que ele edita e `SELECT` no que lê do SIGRH. O usuário da API do
-   app continua com `SELECT` na configuração e `INSERT` nos logs.
+6. **O painel usa o mesmo usuário de banco da API** (decisão do usuário,
+   24/10/2026: opção (a), "O mesmo do app"), com a escrita só nas `soupm_*` que
+   ele edita (`sql/2026-10-24_soupm_painel_permissoes.sql` da API) e `SELECT`
+   no que lê do SIGRH. O plano era um usuário próprio, e ele foi cancelado.
+   **Dívida: leitura e escrita no mesmo usuário.** Uma falha numa rota da API
+   (injeção de SQL, endpoint sem autenticação) passa a alcançar tudo o que o
+   painel grava: menu, comunicados, envios de push, níveis. Para pagar, criar
+   o usuário próprio do painel e tirar do usuário da API a escrita que só o
+   painel usa. Fica para quando a API tiver passado pela revisão de segurança
+   (§7, segunda lista).
 7. Upload conferido pelo conteúdo, fora da pasta pública quando for anexo.
 8. Ações de perigo (resetar senha, revogar, enviar para todos, mudar nível de
    muita gente) com confirmação que diz o que acontece e se dá para desfazer.

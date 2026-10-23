@@ -136,38 +136,26 @@ entra aqui, com o que faltou fazer.
 ## Onde paramos em 23/10/2026 (fim da tarde)
 
 Tudo o que foi feito está no git (app na `feature/soupm-2-2`, API na `main`) e
-no banco de produção. As decisões 1 e 2 foram tomadas em 23/10/2026; a 3
-espera o combinado entre a API e o painel.
+no banco de produção. As decisões 1 e 2 foram tomadas (a 1 mudou em 24/10/2026);
+a ordem da 3 está combinada com o painel e espera o seu "pode".
 
-### 1. Usuário de banco próprio para o painel — decidido: (b), em 23/10/2026
+### 1. Usuário de banco do painel — decidido: (a), "O mesmo do app", em 24/10/2026
 
-Falta você fazer, nesta ordem:
+O painel usa a mesma conexão da API (o `conexao.php`). O usuário próprio foi
+cancelado: não há nada para criar no cPanel. Falta um SQL só:
 
-1. **Criar o usuário no cPanel** (Bancos de dados PostgreSQL › Adicionar
-   usuário). O nome sugerido termina em `_painelsoupm`; o cPanel põe o prefixo
-   da conta na frente. **A senha é você quem digita** e gera (um gerador de
-   senhas, 24 caracteres ou mais). Na mesma tela, ligar o usuário ao banco do
-   app ("Adicionar usuário ao banco"), sem marcar privilégios: quem concede é o
-   SQL do passo 2.
-2. **Rodar no phpPgAdmin** o `sql/2026-10-24_soupm_painel_usuario.sql` do
-   repositório da API (com `LC_CTYPE=UTF-8 pbcopy`, APRENDIZADOS §45). A última
-   linha chama a função com o nome do usuário; se o cPanel deu outro nome,
-   troque só ali. O resultado é uma linha por permissão: `ok`, `pulado` (não
-   existe neste banco) ou `FALTOU`, com o motivo.
-3. **O que der `FALTOU (pedir ao dono do esquema)`** é leitura fora das tabelas
-   do SouPMRR (`qra.sec_users`, a visão do SIGRH, `recursoshumanos`,
-   `intranet`, `sccti`). A conta do cPanel não é dona desses esquemas e não
-   consegue conceder (APRENDIZADOS §46): mande essas linhas ao administrador do
-   banco. Atenção a uma delas: o login do painel confere a senha em
-   `qra.sec_users` (reusa o `sessao_app.php` da API), então **sem esse
-   SELECT o painel não entra** com o usuário novo.
-4. **Guardar a credencial** em `~/private/painel_banco.php` no servidor
-   (permissão 600), no formato que o painel lê:
-   `<?php return ['host' => 'localhost', 'porta' => 5432, 'banco' => '…', 'usuario' => '…', 'senha' => '…'];`
-   e uma cópia no Google Drive, em "Arquivos SouPMRR/servidor-api". **Nunca
-   no git.**
-5. Avisar a sessão do painel: ela confere com o usuário novo e só então tira a
-   conexão de transição (a da API).
+1. **Rodar no phpPgAdmin** o `sql/2026-10-24_soupm_painel_permissoes.sql` do
+   repositório da API (com `LC_CTYPE=UTF-8 pbcopy`, APRENDIZADOS §45). Ele dá
+   ao usuário da API a escrita que o painel precisa, só nas tabelas que o
+   painel grava, mais as sequências e o EXECUTE das funções. Não tira nada do
+   que a API já tem. O resultado é uma linha por permissão: `ok`, `pulado`
+   (não existe neste banco) ou `FALTOU`, com o motivo.
+2. **O que der `FALTOU (pedir ao dono do esquema)`** é algo fora das tabelas
+   do SouPMRR (`qra`, `intranet`, `sccti`, `recursoshumanos`). A conta do
+   cPanel não consegue conceder isso (APRENDIZADOS §46): mande essas linhas
+   ao administrador do banco.
+
+Fica a dívida "leitura e escrita no mesmo usuário" (PAINEL_ADMIN §7, item 6).
 
 ### 2. Arquivos de inclusão da API — feito em 24/10/2026
 
@@ -205,8 +193,8 @@ São 163 referências no PHP, 417 nos `.sql` e 402 no painel.
    do passo 3 não se roda mais nenhum deles como está.
 5. Você roda o bloco que apaga as funções velhas de `public`. As duas
    `soupm_conceder_*` ficam.
-6. Se o usuário do painel já existir, você roda de novo
-   `SELECT * FROM public.soupm_conceder_painel('…_painelsoupm');`.
+6. Você roda de novo a concessão do painel, agora no usuário da API:
+   `SELECT * FROM public.soupm_conceder_painel('pmrronline_usr_erp_prod');`.
 7. Conferir que o app abre o menu e que o painel entra.
 
 Para voltar: os mesmos laços com `SET SCHEMA public` e os PHP do backup.
