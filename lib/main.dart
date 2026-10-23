@@ -15,6 +15,7 @@ import 'package:projetonovo/features/avisos/avisos_api.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:projetonovo/core/navegacao/titulos_rota.dart';
 import 'widgets/vidro.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -794,6 +795,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         final isSuperUser = auth.isSuperUser;
         final theme = AppTheme.build(isDark: isDark, isSuperUser: isSuperUser);
         return MaterialApp(
+          navigatorObservers: [TitulosRota.novo()],
           navigatorKey: navigatorKey,
           scaffoldMessengerKey: scaffoldMessengerKey,
           debugShowCheckedModeBanner: false,

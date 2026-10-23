@@ -15,6 +15,7 @@ import '../utils/theme_provider.dart';
 import 'home_page.dart';
 import 'notifications_page.dart';
 import '../core/config/app_config.dart';
+import '../core/navegacao/titulos_rota.dart';
 import '../features/servicos/busca_page.dart';
 import 'configuracoes.dart';
 import '../widgets/barra_lateral.dart';
@@ -159,6 +160,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
         controller: MaterialApp.createMaterialHeroController(),
         child: Navigator(
           key: _navegadores[i],
+          observers: [TitulosRota.novo()],
           onGenerateRoute: (s) => _rota(s, raiz),
           onUnknownRoute: (s) => MaterialPageRoute(settings: s, builder: (_) => raiz),
         ),
@@ -306,6 +308,8 @@ class _RaizAba extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A raiz da aba dá o nome para o "‹ Serviços" das telas abertas nela.
+    TitulosRota.registrar(context, ['Início', 'Serviços', 'Avisos', 'Perfil'][indice]);
     final auth = Provider.of<Auth>(context);
     // Mantém a assinatura do tema: a barra muda de degradê no claro/escuro.
     Provider.of<ThemeProvider>(context);

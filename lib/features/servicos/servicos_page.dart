@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projetonovo/widgets/custom_appbar.dart';
 import 'package:projetonovo/features/inicio/linha_atalhos.dart' show rotuloCurto;
 import 'package:provider/provider.dart';
 
@@ -634,38 +635,47 @@ class AreaPage extends StatelessWidget {
     final arte = Arte.de(area.arte);
     return FundoSuave(
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: Text(area.rotulo),
-        ),
+        appBar: CustomAppBar(title: area.rotulo),
         body: CustomScrollView(slivers: [
+          // Cartão grande da área (protótipo `.sv-hero`): 164 de altura,
+          // ícone num quadrado de vidro de 44, nome de 21 e a descrição.
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             sliver: SliverToBoxAdapter(
               child: SizedBox(
-                height: 120,
+                height: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.3).scale(164),
                 child: FundoArte(
                   arte: arte,
-                  tamanhoIcone: 110,
+                  formato: FormatoArte.area,
+                  tamanhoIcone: 120,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
+                          ),
+                          child: Icon(iconePorChave(area.icone), color: Colors.white, size: AppIconSize.md),
+                        ),
+                        const Spacer(),
                         Text(area.rotulo,
                             style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800)),
+                                color: Colors.white, fontSize: 21, height: 1.2, fontWeight: FontWeight.w700)),
                         if (area.descricao != null)
-                          Text(area.descricao!,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  fontSize: 13)),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(area.descricao!,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.82), fontSize: 13, height: 1.35)),
+                          ),
                       ],
                     ),
                   ),
@@ -673,24 +683,33 @@ class AreaPage extends StatelessWidget {
               ),
             ),
           ),
+          // Ladrilhos em 2 colunas (3 no iPad), 10 entre eles; cada linha
+          // cresce até o ladrilho mais alto dela (como o grid do protótipo).
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             sliver: SliverLayoutBuilder(builder: (context, c) {
-              return SliverGrid(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: c.crossAxisExtent >= 600 ? 3 : 2,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  // Segue o tamanho de fonte do aparelho (Dynamic Type).
-                  mainAxisExtent:
-                      MediaQuery.textScalerOf(context).scale(116) + 36,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, i) => _LadrilhoFuncao(
-                    item: area.filhos[i],
-                    cor: arte.destaque,
-                  ),
-                  childCount: area.filhos.length,
+              final colunas = c.crossAxisExtent >= 600 ? 3 : 2;
+              final linhas = <List<ItemMenu>>[
+                for (var i = 0; i < area.filhos.length; i += colunas)
+                  area.filhos.sublist(i, (i + colunas).clamp(0, area.filhos.length)),
+              ];
+              return SliverList.separated(
+                itemCount: linhas.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (context, i) => IntrinsicHeight(
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    for (var j = 0; j < colunas; j++) ...[
+                      if (j > 0) const SizedBox(width: 10),
+                      Expanded(
+                        child: j < linhas[i].length
+                            ? ConstrainedBox(
+                                constraints: const BoxConstraints(minHeight: 127),
+                                child: _LadrilhoFuncao(item: linhas[i][j], cor: arte.destaque),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
+                  ]),
                 ),
               );
             }),
@@ -701,6 +720,9 @@ class AreaPage extends StatelessWidget {
   }
 }
 
+/// Ladrilho de função (protótipo `.sv-tile`): vidro, ícone num quadrado de
+/// 38 tingido pela cor da área, nome de 14, descrição de duas linhas e o
+/// selo no canto. Bloqueada fica apagada.
 class _LadrilhoFuncao extends StatelessWidget {
   const _LadrilhoFuncao({required this.item, required this.cor});
 
@@ -720,32 +742,34 @@ class _LadrilhoFuncao extends StatelessWidget {
           raio: 16,
           padding: const EdgeInsets.all(12),
           onTap: () => abrirFuncao(context, item),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                Icon(iconePorChave(item.icone), color: cor, size: AppIconSize.lg),
-                const Spacer(),
-                if (item.selo != null) SeloEstado(texto: item.selo!),
-              ]),
-              const SizedBox(height: 10),
-              Text(item.rotulo,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700)),
-              if (item.descricao != null) ...[
-                const SizedBox(height: 2),
-                Flexible(
-                  child: Text(item.descricao!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant)),
+          child: Stack(children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(color: cor.withValues(alpha: .18), borderRadius: BorderRadius.circular(12)),
+                  child: Icon(iconePorChave(item.icone), color: cor, size: AppIconSize.sm),
                 ),
+                const SizedBox(height: 10),
+                Text(item.rotulo,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 14, height: 1.25, fontWeight: FontWeight.w700, color: theme.colorScheme.onSurface)),
+                if (item.descricao != null) ...[
+                  const SizedBox(height: 4),
+                  Text(item.descricao!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            fontSize: 12, height: 1.3, color: theme.colorScheme.onSurface.withValues(alpha: .62))),
+                ],
               ],
-            ],
-          ),
+            ),
+            if (item.selo != null) Positioned(top: 0, right: 0, child: SeloEstado(texto: item.selo!)),
+          ]),
         ),
       ),
     );

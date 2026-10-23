@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 // ─── Paleta de cores PMRR ────────────────────────────────────────────────────
@@ -111,18 +112,21 @@ class AppTheme {
       scaffoldBackgroundColor: Colors.transparent,
 
       // ── AppBar ──────────────────────────────────────────────────────────────
+      // Barras internas do protótipo (`.cab-int`): o fundo é o vidro do
+      // FundoBarraVidro; o texto e os ícones seguem o tema.
       appBarTheme: AppBarTheme(
-        backgroundColor: isDark ? AppColors.darkSurface : primary,
-        foregroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xB8080C12) : const Color(0xC7F8FAFD),
+        foregroundColor: isDark ? const Color(0xFFE6EDF3) : const Color(0xFF1A1A2E),
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
-        titleTextStyle: const TextStyle(
-          fontSize: 17,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-          letterSpacing: 0.3,
+        scrolledUnderElevation: 0,
+        centerTitle: defaultTargetPlatform == TargetPlatform.iOS,
+        titleTextStyle: TextStyle(
+          fontSize: defaultTargetPlatform == TargetPlatform.iOS ? 17 : 22,
+          fontWeight: defaultTargetPlatform == TargetPlatform.iOS ? FontWeight.w600 : FontWeight.w400,
+          color: isDark ? const Color(0xFFE6EDF3) : const Color(0xFF1A1A2E),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: isDark ? const Color(0xFFE6EDF3) : const Color(0xFF1A1A2E)),
       ),
 
       // ── Bottom Nav ──────────────────────────────────────────────────────────

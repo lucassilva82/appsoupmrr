@@ -1,133 +1,107 @@
-import 'dart:ui';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:projetonovo/core/navegacao/titulos_rota.dart';
 import 'package:projetonovo/utils/app_theme.dart';
 import 'package:projetonovo/widgets/barra_vidro.dart';
-import 'package:projetonovo/utils/notification_provider.dart';
-import 'package:provider/provider.dart';
-import '../models/auth_model.dart';
 
+/// Barra das telas internas (protótipo `.cab-int`).
+///
+/// iOS: vidro com fio embaixo, "‹ Serviços" à esquerda (o nome da tela de
+/// onde se veio) e o título centralizado em 17. Android: a barra pequena do
+/// Material 3, seta de voltar e título de 22 à esquerda.
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
 
-  /// Botões à direita, antes do selo de gestor (ex.: "Minhas mensagens").
+  /// Botões à direita (ex.: "Minhas mensagens").
   final List<Widget> actions;
-  const CustomAppBar({Key? key, required this.title, this.actions = const []})
-      : super(key: key);
 
-  /// Badge de função: Admin ⭐ | ⭐ GESTOR | vazio
-  Widget _buildUserBadge(Auth auth) {
-    final isAdmin = auth.nivel == 1;
-    final isGestor = auth.isSuperUser && !isAdmin;
+  /// Para a tela abaixo dela, no lugar do título (ex.: título longo).
+  final String? rotuloVoltar;
 
-    if (!auth.isSuperUser) return const SizedBox.shrink();
+  /// Conteúdo abaixo da barra (abas, filtros), na mesma superfície.
+  final PreferredSizeWidget? bottom;
 
-    final label = isAdmin ? 'Admin' : 'GESTOR';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(20),
-        border:
-            Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.star_rounded,
-              color: AppColors.gold, size: AppIconSize.xxs),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.4,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotificationIcon(BuildContext context) {
-    return Consumer<NotificationProvider>(
-      builder: (context, notificationProvider, _) {
-        final count =
-            notificationProvider.notifications.where((n) => !n.clicked).length;
-        return Stack(
-          children: [
-            IconButton(
-              icon:
-                  const Icon(Icons.notifications_outlined, color: Colors.white),
-              onPressed: () =>
-                  Navigator.of(context).pushNamed('/notifications-page'),
-            ),
-            if (count > 0)
-              Positioned(
-                right: 4,
-                top: 4,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                  constraints:
-                      const BoxConstraints(minWidth: 16, minHeight: 16),
-                  child: Text(
-                    '$count',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
+  const CustomAppBar({
+    super.key,
+    required this.title,
+    this.actions = const [],
+    this.rotuloVoltar,
+    this.bottom,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<Auth>(context);
-    return AppBar(
-      iconTheme: const IconThemeData(color: Colors.white),
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      centerTitle: true,
-      // Mesmo fundo da barra da tela inicial e das demais telas.
-      flexibleSpace: const FundoBarraVidro(),
-      title: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: 1.2,
+    TitulosRota.registrar(context, rotuloVoltar ?? title);
+    final theme = Theme.of(context);
+    final ios = Platform.isIOS;
+    final podeVoltar = Navigator.of(context).canPop();
+    final anterior = TitulosRota.anterior(context);
+    final pri = theme.colorScheme.primary;
+
+    Widget? voltar;
+    if (podeVoltar && ios) {
+      voltar = Semantics(
+        button: true,
+        label: 'Voltar${anterior == null ? '' : ' para $anterior'}',
+        excludeSemantics: true,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () => Navigator.of(context).maybePop(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.chevron_left_rounded, size: 28, color: pri),
+              Flexible(
+                child: Text(
+                  anterior ?? 'Voltar',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 17, color: pri),
+                ),
+              ),
+            ]),
           ),
         ),
-      ),
-      actions: [
-        ...actions,
-        Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: Center(child: _buildUserBadge(auth)),
+      );
+    }
+
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      centerTitle: ios,
+      automaticallyImplyLeading: !ios,
+      leadingWidth: ios && podeVoltar ? 112 : null,
+      leading: voltar,
+      iconTheme: IconThemeData(color: theme.colorScheme.onSurface),
+      flexibleSpace: ios ? const FundoBarraVidro() : null,
+      title: Text(
+        title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: ios ? 17 : 22,
+          fontWeight: ios ? FontWeight.w600 : FontWeight.w400,
+          color: theme.colorScheme.onSurface,
         ),
-        if (title.toLowerCase().startsWith('olá'))
-          _buildNotificationIcon(context),
-      ],
+      ),
+      actions: [...actions, const SizedBox(width: 4)],
+      bottom: bottom,
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0));
 }
+
+/// Usado por telas que montam a própria AppBar: mesmas medidas da barra comum.
+TextStyle estiloTituloBarra(BuildContext context) => TextStyle(
+      fontSize: Platform.isIOS ? 17 : 22,
+      fontWeight: Platform.isIOS ? FontWeight.w600 : FontWeight.w400,
+      color: Theme.of(context).colorScheme.onSurface,
+    );
+
+/// Ícones das barras (cor do texto, tamanho do DESIGN.md).
+const double tamanhoIconeBarra = AppIconSize.md;
