@@ -46,6 +46,7 @@ class AppRoutes {
   static const CARREIRA = '/rh/carreira'; // Linha do tempo da carreira (2.2, P5)
   static const DOCUMENTOS = '/rh/documentos'; // Central de documentos (2.2, P4)
   static const VALIDAR = '/rh/validar'; // Validar documento (2.2, P6)
+  static const COMUNICADOS = '/com/central'; // Central de comunicados (2.2, §4.2)
   static const CONTRACHEQUE_GRAFICO_PAGE =
       "/contracheque-grafico-page"; // Evolução salarial
 }

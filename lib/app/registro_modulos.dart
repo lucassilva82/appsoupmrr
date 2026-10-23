@@ -156,7 +156,21 @@ final registroModulos = RegistroModulos(const [
       prefixoErro: 'MF',
       rota: AppRoutes.MAPA_DA_FORCA,
       apelidos: ['mapa_forca'],
-      sinonimosPadrao: ['efetivo', 'tropa', 'força']),
+      sinonimosPadrao: ['efetivo', 'tropa', 'força', 'comando', 'unidade']),
+  // Boletins e Patrimônio ainda não têm tela: entram no menu como "Em breve",
+  // com a chave já reservada, para o painel poder liberá-las sem versão nova.
+  ModuloApp(
+      chave: 'gestao.boletins',
+      rotuloPadrao: 'Boletins',
+      icone: 'boletim',
+      prefixoErro: 'BG',
+      sinonimosPadrao: ['boletim', 'bg', 'publicação']),
+  ModuloApp(
+      chave: 'gestao.patrimonio',
+      rotuloPadrao: 'Patrimônio e frota',
+      icone: 'patrimonio',
+      prefixoErro: 'PT',
+      sinonimosPadrao: ['viatura', 'patrimônio', 'frota', 'bens']),
   // ── Atendimento e abas ────────────────────────────────────────────────
   ModuloApp(
       chave: 'atend.ajuda',

@@ -1,6 +1,7 @@
 import 'package:projetonovo/core/log/registro_log.dart';
 import 'package:projetonovo/features/carreira/carreira_page.dart';
 import 'package:projetonovo/features/chamados/chamados_page.dart';
+import 'package:projetonovo/features/comunicados/comunicados_page.dart';
 import 'package:projetonovo/features/documentos/documentos_page.dart';
 import 'package:projetonovo/features/documentos/validar_page.dart';
 import 'dart:async';
@@ -849,6 +850,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             AppRoutes.CARREIRA: (_) => const CarreiraPage(),
             AppRoutes.DOCUMENTOS: (_) => const DocumentosPage(),
             AppRoutes.VALIDAR: (_) => const ValidarDocumentoPage(),
+            AppRoutes.COMUNICADOS: (_) => const CentralComunicadosPage(),
             AppRoutes.CONTRACHEQUE_PAGE: (_) => Contracheque(),
             AppRoutes.CONTRACHEQUE_GRAFICO_PAGE: (ctx) {
               final args =
