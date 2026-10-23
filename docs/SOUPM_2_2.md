@@ -1202,7 +1202,8 @@ Prefixos por módulo (o sufixo segue o padrão `LG-`: `REDE`, `FORA`,
 | `AJ` | "Preciso de ajuda" | `LOG` | envio do log (nunca vira log) |
 | `DO` | central de documentos | `NT` | notícias e agenda |
 | `CM` | comunicados | `CR` | linha do tempo da carreira |
-| `VD` | validar documento | | |
+| `VD` | validar documento | `BG` | boletins (reservado) |
+| `PT` | patrimônio e frota (reservado) | | |
 
 ### 9.2 Logs
 

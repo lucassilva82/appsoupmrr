@@ -214,5 +214,5 @@ final registroModulos = RegistroModulos(const [
 /// precisa entrar lá antes (e no `soupm_config`, chave `erros`).
 const prefixosConhecidos = {
   'LG', 'CF', 'CC', 'TS', 'CT', 'FE', 'FI', 'DC', 'NR', 'MF', 'AV', 'BU', //
-  'FB', 'CH', 'PD', 'MD', 'AP', 'ES', 'SV', 'AJ', 'DO', 'NT', 'CM', 'CR', 'VD', 'LOG',
+  'FB', 'CH', 'PD', 'MD', 'AP', 'ES', 'SV', 'AJ', 'DO', 'NT', 'CM', 'CR', 'VD', 'BG', 'PT', 'LOG',
 };

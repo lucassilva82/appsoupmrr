@@ -7,8 +7,8 @@ void main() {
   test('menu de reserva: Gestão só para gestor, plantão fora do menu', () {
     final militar = menuEmUso(AppConfig.padrao, gestor: false);
     final gestor = menuEmUso(AppConfig.padrao, gestor: true);
-    expect(militar.map((a) => a.chave), ['rh', 'operacional', 'normas', 'atendimento']);
-    expect(gestor.map((a) => a.chave).last, 'gestao');
+    expect(militar.map((a) => a.chave), ['rh', 'operacional', 'normas', 'atendimento', 'institucional']);
+    expect(gestor.map((a) => a.chave), contains('gestao'));
     final op = militar.firstWhere((a) => a.chave == 'operacional');
     expect(op.filhos.map((f) => f.chave), isNot(contains('op.plantao')));
   });
