@@ -122,6 +122,11 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
   §44).
 - **Ver a barra lateral no iPad:** liberar o iPad Air 11" no painel do
   simulador do Claude Code. Hoje ela só foi conferida por teste automático.
+- **"Avisar quando voltar" na folha de bloqueio:** o app já mostra o botão
+  quando o painel escolhe essa ação e grava o pedido no log
+  (`modulo.avisar_quando_voltar`, com o código `MD-` da função). Falta a API
+  mandar o push quando a função voltar a `ativo`. Até lá, o painel não deve
+  escolher essa ação.
 - **Pasta `sigrh/documentos/` no servidor:** três arquivos de uma tentativa que
   ficaram inacessíveis (o servidor bloqueia esse nome de pasta). Pode apagar a
   pasta pelo cPanel; o que vale está em `sigrh/doc/`.

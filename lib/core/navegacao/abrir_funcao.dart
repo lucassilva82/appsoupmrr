@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../app/registro_modulos.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../features/versao/tela_atualizacao.dart' show abrirLoja;
+import '../../utils/app_theme.dart';
 import '../../widgets/aviso_rapido.dart';
 import '../config/app_config.dart';
 import '../log/registro_log.dart';
@@ -60,13 +64,18 @@ Future<void> abrirFuncao(BuildContext context, ItemMenu item,
   }
 }
 
-/// Folha com a mensagem do painel (iOS: altura média com alça; Android:
-/// bottom sheet modal). O código fica à vista para o militar informar.
+/// Folha com a mensagem do painel (protótipo, folha "bloqueio"): ícone do
+/// motivo, título e texto centralizados, a previsão de volta, o botão da
+/// ação que o painel escolheu e o código à vista para o militar informar.
 Future<void> mostrarFolhaBloqueio(BuildContext context, MensagemBloqueio m) {
+  final escuro = Theme.of(context).brightness == Brightness.dark;
   return showModalBottomSheet<void>(
     context: context,
+    // Cobre também a barra de abas, como no protótipo.
+    useRootNavigator: true,
     showDragHandle: true,
     isScrollControlled: true,
+    backgroundColor: escuro ? const Color(0xFF10161F) : Colors.white,
     shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
     builder: (ctx) => FolhaBloqueio(mensagem: m),
@@ -88,54 +97,116 @@ class FolhaBloqueio extends StatelessWidget {
 
   static String _doisDigitos(int n) => n.toString().padLeft(2, '0');
 
+  /// "Volta hoje às 18h", "Volta amanhã às 7h30", "Volta em 30/10 às 18h".
+  static String previsaoTexto(DateTime p, [DateTime? agora]) {
+    final hoje = agora ?? DateTime.now();
+    final dia = DateTime(p.year, p.month, p.day);
+    final d0 = DateTime(hoje.year, hoje.month, hoje.day);
+    final hora = '${p.hour}h${p.minute == 0 ? '' : _doisDigitos(p.minute)}';
+    final dif = dia.difference(d0).inDays;
+    if (dif == 0) return 'Volta hoje às $hora';
+    if (dif == 1) return 'Volta amanhã às $hora';
+    return 'Volta em ${_doisDigitos(p.day)}/${_doisDigitos(p.month)} às $hora';
+  }
+
+  /// Rótulo e ícone do botão da ação (§3.2); nulo = só "Entendi".
+  ({String rotulo, IconData icone})? _acao() => switch (mensagem.acao) {
+        'avisar_quando_voltar' => (
+            rotulo: mensagem.motivo == 'em_breve' ? 'Avisar quando chegar' : 'Avisar quando voltar',
+            icone: Icons.notifications_active_outlined,
+          ),
+        'atualizar_app' => (rotulo: 'Atualizar o app', icone: Icons.system_update_rounded),
+        'abrir_link' when (mensagem.acaoDestino ?? '').startsWith('https://') =>
+          (rotulo: 'Saiba mais', icone: Icons.open_in_new_rounded),
+        _ => null,
+      };
+
+  Future<void> _executar(BuildContext context) async {
+    final nav = Navigator.of(context);
+    switch (mensagem.acao) {
+      case 'avisar_quando_voltar':
+        registrar('modulo.avisar_quando_voltar', codigo: mensagem.codigo);
+        nav.pop();
+        avisoSucesso(context, 'Pedido registrado',
+            texto: 'Você recebe uma notificação quando a função estiver disponível.');
+      case 'atualizar_app':
+        nav.pop();
+        await abrirLoja();
+      case 'abrir_link':
+        nav.pop();
+        await launchUrl(Uri.parse(mensagem.acaoDestino!), mode: LaunchMode.externalApplication);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cor = mensagem.motivo == 'restrito'
-        ? theme.colorScheme.error
-        : kCorAtencao;
+    final cor = switch (mensagem.motivo) {
+      'manutencao' || 'restrito' => theme.colorScheme.error,
+      'atualizar_app' => theme.colorScheme.primary,
+      _ => kCorAtencao,
+    };
+    final mudo = theme.colorScheme.onSurface.withValues(alpha: .62);
     final p = mensagem.previsao?.toLocal();
+    final acao = _acao();
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+        padding: const EdgeInsets.fromLTRB(18, 0, 18, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ExcludeSemantics(
-              child: CircleAvatar(
-                radius: 26,
-                backgroundColor: cor.withValues(alpha: 0.14),
-                child: Icon(iconeDoMotivo(mensagem.motivo), color: cor, size: 28),
+              child: Container(
+                width: 64,
+                height: 64,
+                margin: const EdgeInsets.only(top: 6, bottom: 10),
+                decoration: BoxDecoration(color: cor.withValues(alpha: .15), shape: BoxShape.circle),
+                child: Icon(iconeDoMotivo(mensagem.motivo), color: cor, size: AppIconSize.xl),
               ),
             ),
-            const SizedBox(height: 14),
             Text(mensagem.titulo,
-                style: theme.textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            Text(mensagem.texto, style: theme.textTheme.bodyLarge),
-            if (p != null) ...[
-              const SizedBox(height: 10),
-              Text(
-                  'Volta em ${_doisDigitos(p.day)}/${_doisDigitos(p.month)} '
-                  'às ${_doisDigitos(p.hour)}h${p.minute == 0 ? '' : _doisDigitos(p.minute)}',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: theme.colorScheme.primary)),
-            ],
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Entendi'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Text(mensagem.texto, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: mudo)),
+            if (p != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 10, bottom: 2),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(Icons.event_outlined, size: AppIconSize.xs, color: theme.colorScheme.onSurface),
+                  const SizedBox(width: 8),
+                  Text(previsaoTexto(p), style: const TextStyle(fontSize: 13.5)),
+                ]),
               ),
-            ),
-            const SizedBox(height: 10),
-            Center(
+            const SizedBox(height: 16),
+            if (acao != null) ...[
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _executar(context),
+                  icon: Icon(acao.icone, size: AppIconSize.sm),
+                  label: Text(acao.rotulo),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Entendi')),
+              ),
+            ] else
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Entendi')),
+              ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurface.withValues(alpha: .06),
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: SelectableText('Código ${mensagem.codigo}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant)),
+                  style: TextStyle(fontFamily: 'Menlo', fontFamilyFallback: const ['monospace'], fontSize: 12, color: mudo)),
             ),
           ],
         ),

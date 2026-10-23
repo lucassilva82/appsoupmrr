@@ -39,8 +39,9 @@ List<ItemMenu> menuPadrao({required bool gestor}) {
         mensagem: emBreve
             ? MensagemBloqueio(
                 motivo: 'em_breve',
-                titulo: tituloBloqueio ?? 'Em desenvolvimento',
-                texto: textoBloqueio ?? 'Este recurso estará disponível em breve.',
+                titulo: tituloBloqueio ?? '$rotulo: em breve',
+                texto: textoBloqueio ??
+                    'Esta função está sendo preparada com o sistema da PMRR e ainda não abre no app.',
                 codigo: 'MD-${chave.toUpperCase()}-EM_BREVE')
             : null,
       );

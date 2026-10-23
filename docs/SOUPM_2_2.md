@@ -1229,6 +1229,7 @@ cancelado, falhou + código).
 | `tela.abrir`, `tela.sair` | toda tela | chave, de onde veio (menu, busca, atalho, card, push, link), tempo na tela |
 | `funcao.tocar` | item de menu, atalho, card | chave, estado (ativo, bloqueado) |
 | `modulo.bloqueio_visto` | folha de bloqueio | chave, motivo |
+| `modulo.avisar_quando_voltar` | "Avisar quando voltar" na folha | código `MD-` da função |
 | `busca.executar`, `busca.abrir_resultado`, `busca.sem_resultado` | busca | termo, total, posição |
 | `ajuda.ver`, `ajuda.resolveu`, `ajuda.abriu_chamado` | "Preciso de ajuda" | assunto, id da pergunta |
 | `inicio.personalizar`, `inicio.card_tocar` | Início | ordem nova; chave do card |
