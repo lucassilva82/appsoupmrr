@@ -176,6 +176,34 @@ for para a intranet.
 
 Fica a dívida "leitura e escrita no mesmo usuário" (PAINEL_ADMIN §7, item 6).
 
+### Publicado em 24/10/2026
+
+- `sigrh/app_config.php` e `sigrh/sessao_app.php` (backup em
+  `/backups_api/sigrh/*.bak-20261024-v1`, conferidos com `cmp` depois do
+  envio, parte pública respondendo 200). Trazem: a lotação para a linha da
+  saudação, os textos de tela do painel (`soupm_config` 'textos'), a imagem
+  aprovada nas áreas do menu (quando o SQL D do painel tiver rodado) e a mídia
+  servida de `https://pmrr.online/`. A parte de quem entrou não foi testada
+  com conta real: conferir no app ou no `error_log` de `sigrh/`.
+- No `error_log` de `sigrh/` há um erro das 11:21 de 23/10:
+  `permission denied for function soupm_e_gestor_legado`. O passo 5 do
+  roteiro acima (permissões) dá EXECUTE em todas as funções `soupm_*`; se
+  voltar a aparecer depois dele, a função precisa de dono que leia o SIGRH
+  (APRENDIZADOS §46).
+
+### O que o painel ainda não mostra por falta da API ou do app
+
+- **Blocos do contracheque** (`soupm_documento_padrao`, campo `blocos`): o
+  painel grava, o `contracheque_doc.php` ainda não lê. Até ler, o PDF não muda.
+  Só importa quando o contracheque pela API for ligado.
+- **Chamados no app** (`soupm_config` 'chamados': `acesso_movel`,
+  `sessao_dias`, `tipos`): só valem quando o SISCHAMADOS voltar (2.3).
+- **Rede no `app.abrir`**: o app manda tempo de abertura, tema, tamanho da
+  fonte e modelo; a rede (Wi-Fi ou dados) pediria um pacote nativo novo.
+- **Sem fonte, mostrados como "—" no painel:** tempo e falhas do PDF do
+  contracheque, recusas `DC-FECHADA`, os números de chamados e as sessões
+  abertas do painel.
+
 ### Fase futura: quando o painel for para a intranet
 
 Nada disto entra agora. No app, as funções ficam "Em breve", com a folha de
