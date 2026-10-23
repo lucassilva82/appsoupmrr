@@ -787,15 +787,15 @@ class _PinturaViatura extends CustomPainter {
     canvas.translate(x, solo);
     // Gira pela roda de trás ao empinar e pela da frente ao frear.
     if (empina > 0) {
-      canvas.translate(-46, 0);
+      canvas.translate(viaturaEixoTraseiro, 0);
       canvas.rotate(-empina);
-      canvas.translate(46, 0);
+      canvas.translate(-viaturaEixoTraseiro, 0);
     } else if (freada > 0) {
-      canvas.translate(46, 0);
+      canvas.translate(viaturaEixoDianteiro, 0);
       canvas.rotate(freada);
-      canvas.translate(-46, 0);
+      canvas.translate(-viaturaEixoDianteiro, 0);
     }
-    final giro = (x / 13) + patina * math.pi * 10;
+    final giro = (x / viaturaRaioRoda) + patina * math.pi * 10;
     desenharViatura(canvas,
         giroflexAceso: aceso, giroflexLigado: piscando, giroRodas: giro);
     canvas.restore();

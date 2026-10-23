@@ -109,7 +109,11 @@ class _TelaAtualizacaoState extends State<TelaAtualizacao> with TickerProviderSt
                         animation: Listenable.merge([_loop, _troca]),
                         builder: (_, __) => CustomPaint(
                           size: const Size(double.infinity, 170),
-                          painter: _PintorCena(loop: _loop.value, troca: _troca.value),
+                          painter: _PintorCena(
+                              loop: _loop.value,
+                              troca: _troca.value,
+                              instalada: widget.instalada,
+                              nova: _nova),
                         ),
                       ),
                     ),
@@ -167,9 +171,19 @@ class _Etiqueta extends StatelessWidget {
 /// Fusca velho (esquerda) e viatura nova (direita), vetoriais e próprios: sem
 /// foto, placa ou pessoa real.
 class _PintorCena extends CustomPainter {
-  _PintorCena({required this.loop, required this.troca});
+  _PintorCena({
+    required this.loop,
+    required this.troca,
+    required this.instalada,
+    required this.nova,
+  });
   final double loop;
   final double troca;
+
+  /// As duas vão escritas na lateral, como o número da viatura: a instalada no
+  /// Fusca, a da loja na caminhonete.
+  final String instalada;
+  final String nova;
 
   @override
   void paint(Canvas canvas, Size s) {
@@ -193,6 +207,21 @@ class _PintorCena extends CustomPainter {
     canvas.drawRect(const Rect.fromLTRB(-60, -20, 60, -13), Paint()..color = const Color(0xFF6B7FA8).withValues(alpha: apagado));
     canvas.drawCircle(const Offset(-38, -8), 5, Paint()..color = const Color(0xFF9A5B2E).withValues(alpha: 0.7 * apagado));
     canvas.drawCircle(const Offset(30, -30), 4, Paint()..color = const Color(0xFF9A5B2E).withValues(alpha: 0.6 * apagado));
+    // O número da viatura é a versão instalada, como no protótipo.
+    (TextPainter(
+      text: TextSpan(
+        text: 'VTR $instalada',
+        style: TextStyle(
+          fontSize: 8,
+          height: 1,
+          fontWeight: FontWeight.w700,
+          fontStyle: FontStyle.italic,
+          color: const Color(0xFF3F4A5F).withValues(alpha: 0.8 * apagado),
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout())
+        .paint(canvas, const Offset(-52, -32));
     // Vidro trincado.
     canvas.drawRRect(RRect.fromLTRBR(-30, -50, 30, -30, const Radius.circular(10)), Paint()..color = const Color(0xFF334155));
     canvas.drawLine(const Offset(-10, -48), const Offset(4, -34), Paint()..color = Colors.white54..strokeWidth = 1);
@@ -216,7 +245,10 @@ class _PintorCena extends CustomPainter {
     final salto = math.sin(troca * math.pi) * 18;
     canvas.save();
     canvas.translate(meio * 1.5, solo - salto);
-    desenharViatura(canvas, giroflexAceso: (loop * 6).floor().isEven, giroRodas: troca * math.pi * 4);
+    desenharViatura(canvas,
+        giroflexAceso: (loop * 6).floor().isEven,
+        giroRodas: troca * math.pi * 4,
+        versao: nova);
     canvas.restore();
 
     // ── Policial genérico (sem semelhança com ninguém): triste ao lado do
@@ -279,7 +311,8 @@ class _PintorCena extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_PintorCena old) => old.loop != loop || old.troca != troca;
+  bool shouldRepaint(_PintorCena old) =>
+      old.loop != loop || old.troca != troca || old.nova != nova || old.instalada != instalada;
 }
 
 /// Cartão da versão recomendada no topo da Início (§10.2): dispensável, uma
