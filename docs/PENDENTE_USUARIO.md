@@ -1,0 +1,68 @@
+# O que só o usuário pode fazer — SouPM 2.2
+
+Lista do que depende do login, da senha ou da decisão do usuário. O resto do
+plano (`docs/SOUPM_2_2.md` §16) segue sem esperar por isto: cada função nova
+entra na API **desligada**, e nada muda para quem usa o app da loja até um
+item desta lista ser feito.
+
+Os SQL ficam na cópia local da API (`~/code/api-soupmrr/sql/`, fora do git
+por conter estrutura do banco de produção). Rodar no phpPgAdmin, com o login
+do usuário, **desmarcando "Paginar resultados"**, na ordem da tabela. Todos
+podem rodar mais de uma vez sem estragar nada.
+
+Última atualização: 22/10/2026, noite.
+
+## 1. SQL de produção (phpPgAdmin)
+
+| # | Arquivo | Para quê | Situação |
+|---|---|---|---|
+| 1 | `2026-10-22_soupm_log.sql`, `2026-10-22_soupm_servico_saude.sql`, `2026-10-23_soupm_cron_log.sql` | Fase 0 (log, sonda) | Feito |
+| 2 | `2026-10-23_soupm_app_config.sql` | Fase 1 (menu e app_config) | Feito |
+| 3 | `2026-10-23_soupm_inicio.sql` | Fase 2 (blocos da Início, atalhos, Mais usados) | Feito |
+| 4 | `2026-10-23_soupm_feedback.sql`, `2026-10-23_soupm_atendimento.sql` | Fase 3 (Sugestões e elogios, Preciso de ajuda, área Atendimento) | Feito |
+| 5 | `2026-10-23_soupm_documentos.sql` | Fase 3b (contracheque pela API, QR e conferência) | **Pendente** |
+| 6 | `2026-10-23_soupm_notificacoes.sql` | Fase 4 (aparelhos e Avisos pelo Postgres) | **Pendente** |
+| 7 | `2026-10-23_soupm_conta_resumo.sql` | Tela Militares do painel (bloco Conta) | **Pendente** — e depois `ALTER FUNCTION public.soupm_conta_resumo(TEXT) OWNER TO` um usuário que leia o esquema `qra` (o do cPanel não lê) |
+
+Os itens novos que forem entrando vão para o fim desta tabela, com o mesmo
+formato.
+
+## 2. Arquivos em `~/private` no servidor (cPanel › Gerenciador de arquivos)
+
+| Arquivo | Para quê | Como |
+|---|---|---|
+| `~/private/config_painel.php` | Segredo do link assinado dos anexos e da prévia do PDF (painel ↔ API) | `<?php return ['segredo' => '<64+ caracteres aleatórios>'];` — o **mesmo valor** vai no `conex/painelsoupmrr_local.php` do painel |
+| `~/private/soupm_fcm.json` | Conta de serviço do Firebase, para a API mandar push sem as Cloud Functions (fase 4) | Console do Firebase › Configurações do projeto › Contas de serviço › Gerar nova chave privada. Permissão 600. Nunca no git |
+
+## 3. Cron do cPanel
+
+| Comando | Quando | Para quê |
+|---|---|---|
+| `php ~/public_html/flutter/sigrh/cron/envio_push.php >> ~/logs/envio_push.log 2>&1` | A cada minuto | Fila de push (fase 4). Sem a conta de serviço e com `envio_fcm` desligado, sai sem fazer nada |
+
+## 4. Interruptores (depois dos itens acima)
+
+Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || '{...}' WHERE chave = '...'`):
+
+| Chave | Campo | Quando ligar |
+|---|---|---|
+| `contracheque` | `pdf_api_matriculas: ["<sua matrícula>"]` | Para comparar o PDF novo com a sua conta (piloto) |
+| `contracheque` | `pdf_api: true` | Depois de aprovar a comparação: o app passa a pedir o PDF à API |
+| `notificacoes` | `envio_fcm: true` | Depois da conta de serviço e do cron |
+| `notificacoes` | `fonte_app: "api"` | Depois de exportar o histórico do Firestore (§13, passo 4) e de a certidão e o feedback pedirem push pelo `soupmPedirPush` |
+
+## 5. Decisões e conferências
+
+- **Comparar o contracheque** novo com o de hoje com uma conta real (§12.3). O
+  modelo já está sem a Diretoria de Recursos Humanos e com o QR (APRENDIZADOS
+  §44).
+- **Ver a barra lateral no iPad:** liberar o iPad Air 11" no painel do
+  simulador do Claude Code. Hoje ela só foi conferida por teste automático.
+- **Pasta `sigrh/documentos/` no servidor:** três arquivos de uma tentativa que
+  ficaram inacessíveis (o servidor bloqueia esse nome de pasta). Pode apagar a
+  pasta pelo cPanel; o que vale está em `sigrh/doc/`.
+
+## 6. Bloqueios do modo automático
+
+Nada bloqueado até agora nesta etapa. Se o verificador barrar alguma ação, ela
+entra aqui, com o que faltou fazer.
