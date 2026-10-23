@@ -152,13 +152,15 @@ final registroModulos = RegistroModulos(const [
       prefixoErro: 'FB',
       rota: AppRoutes.FEEDBACK,
       sinonimosPadrao: ['sugestão', 'ideia', 'elogio', 'melhoria']),
-  // Chamados no app chegam na fase 3c (SISCHAMADOS): por enquanto o menu
-  // traz a função bloqueada "Em breve", e sem rota esta versão não a abre.
+  // Chamados (fase 3c, SISCHAMADOS do solicitante). O menu continua "Em
+  // breve" até o build ter a chave do app e o painel liberar a função.
   ModuloApp(
       chave: 'atend.chamados',
       rotuloPadrao: 'Meus chamados',
       icone: 'chamado',
-      prefixoErro: 'CH'),
+      prefixoErro: 'CH',
+      rota: AppRoutes.CHAMADOS,
+      sinonimosPadrao: ['chamado', 'suporte', 'técnico', 'dti']),
   ModuloApp(
       chave: 'avisos',
       rotuloPadrao: 'Avisos',

@@ -114,6 +114,41 @@ class ApiClient {
         return http.Response.fromStream(await _c.send(pedido));
       }, tempo: tempo);
 
+  /// Pedido a uma API que responde erro com corpo JSON e status HTTP próprio
+  /// (401, 422, 503…), como a API móvel do SISCHAMADOS: o status vem junto e
+  /// quem chama decide pelo corpo. Falha de rede continua virando [FalhaApp].
+  /// [json] manda corpo JSON; [campos]/[arquivos], multipart.
+  Future<({int status, dynamic corpo})> requisicao(
+    String metodo,
+    Uri url, {
+    required String prefixo,
+    Map<String, String> cabecalhos = const {},
+    Object? json,
+    Map<String, String>? campos,
+    List<({String caminho, String nome})> arquivos = const [],
+    Duration? tempo,
+  }) async {
+    final resposta = await _pedir(prefixo, () async {
+      final h = {..._cabecalhos, ...cabecalhos};
+      if (campos != null || arquivos.isNotEmpty) {
+        final pedido = http.MultipartRequest(metodo, url)
+          ..headers.addAll(h)
+          ..fields.addAll(campos ?? const {});
+        for (final a in arquivos) {
+          pedido.files.add(await http.MultipartFile.fromPath('anexos[]', a.caminho, filename: a.nome));
+        }
+        return http.Response.fromStream(await _c.send(pedido));
+      }
+      final pedido = http.Request(metodo, url)..headers.addAll(h);
+      if (json != null) {
+        pedido.headers['Content-Type'] = 'application/json; charset=utf-8';
+        pedido.body = jsonEncode(json);
+      }
+      return http.Response.fromStream(await _c.send(pedido));
+    }, aceitaErroHttp: true, tempo: tempo);
+    return (status: resposta.statusCode, corpo: _decodificar(prefixo, resposta));
+  }
+
   Future<dynamic> _enviar(
           String prefixo, Future<http.Response> Function() pedido,
           {Duration? tempo}) async =>
@@ -121,7 +156,7 @@ class ApiClient {
 
   Future<http.Response> _pedir(
       String prefixo, Future<http.Response> Function() pedido,
-      {bool aceita304 = false, Duration? tempo}) async {
+      {bool aceita304 = false, bool aceitaErroHttp = false, Duration? tempo}) async {
     final http.Response resposta;
     try {
       resposta = await pedido().timeout(tempo ?? tempoLimite);
@@ -136,7 +171,9 @@ class ApiClient {
     }
 
     if (resposta.statusCode != 200 &&
-        !(aceita304 && resposta.statusCode == 304)) {
+        !(aceita304 && resposta.statusCode == 304) &&
+        !(aceitaErroHttp && resposta.statusCode >= 200 && resposta.statusCode < 600 &&
+            (resposta.headers['content-type'] ?? '').contains('json'))) {
       throw FalhaApp.httpStatus(prefixo, resposta.statusCode,
           detalhe: 'HTTP ${resposta.statusCode}');
     }

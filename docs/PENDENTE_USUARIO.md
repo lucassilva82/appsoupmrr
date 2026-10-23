@@ -41,6 +41,16 @@ formato.
 | `~/private/config_painel.php` | Segredo do link assinado dos anexos e da prévia do PDF (painel ↔ API) | `<?php return ['segredo' => '<64+ caracteres aleatórios>'];` — o **mesmo valor** vai no `conex/painelsoupmrr_local.php` do painel |
 | `~/private/soupm_fcm.json` | Conta de serviço do Firebase, para a API mandar push sem as Cloud Functions (fase 4) | Console do Firebase › Configurações do projeto › Contas de serviço › Gerar nova chave privada. Permissão 600. Nunca no git |
 
+## 2b. Chave do app no SISCHAMADOS (Meus chamados, fase 3c)
+
+1. Na intranet, SISCHAMADOS › Configurações › API Mobile: criar a chave do
+   aplicativo "SouPM" (aparece uma vez só) e ligar a API Mobile.
+2. Pôr no `env.json` da máquina, na linha `SISCHAMADOS_APP_CHAVE` (modelo em
+   `env.example.json`), e guardar uma cópia no Drive, em "Arquivos SouPMRR".
+   **Nunca no git.**
+3. Só então liberar `atend.chamados` no painel (hoje fica "Em breve"). Sem a
+   chave no build, a tela explica e mostra o código `CH-CHAVE`.
+
 ## 3. Cron do cPanel
 
 | Comando | Quando | Para quê |

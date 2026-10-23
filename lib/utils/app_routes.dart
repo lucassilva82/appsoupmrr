@@ -42,6 +42,7 @@ class AppRoutes {
   static const CALCULO_INATIVIDADE_PAGE =
       "/calculo-inatividade-page"; // Simulador de inatividade (reserva remunerada)
   static const FEEDBACK = '/atend/feedback'; // Sugestões e elogios (2.2)
+  static const CHAMADOS = '/atend/chamados'; // Meus chamados, SISCHAMADOS (2.2)
   static const CONTRACHEQUE_GRAFICO_PAGE =
       "/contracheque-grafico-page"; // Evolução salarial
 }

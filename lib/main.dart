@@ -1,3 +1,4 @@
+import 'package:projetonovo/features/chamados/chamados_page.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
@@ -820,6 +821,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             // (WhatsApp e e-mail saíram: suporte é por chamado, §8).
             AppRoutes.AJUDA_PAGE: (_) => const PrecisoDeAjudaPage(),
             AppRoutes.FEEDBACK: (_) => const SugestoesPage(),
+            AppRoutes.CHAMADOS: (_) => const MeusChamadosPage(),
             AppRoutes.CONTRACHEQUE_PAGE: (_) => Contracheque(),
             AppRoutes.CONTRACHEQUE_GRAFICO_PAGE: (ctx) {
               final args =

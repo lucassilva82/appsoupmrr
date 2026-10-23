@@ -2260,6 +2260,19 @@ prevista, ou "o prazo terminou em …", `DC-FECHADA`), o que vale também para
 a 2.1.x. As pendências `sigrh.declaracao_*` só aparecem com campanha aberta e
 só para quem não enviou no ano.
 
+**SISCHAMADOS do solicitante (22/10/2026): app pronto, esperando a chave.**
+`lib/features/chamados/`: login na API móvel do SISCHAMADOS com a senha da
+intranet guardada pelas Escalas e, sem ela, a do app (se as duas forem
+recusadas, a tela pede a senha da intranet uma vez e guarda no cofre); token
+no Keychain/Keystore e novo login sozinho quando vence. Meus chamados com os
+filtros Em aberto, Aguardando você e Encerrados; abrir em 3 passos (assunto
+pelo catálogo, campos do assunto, até 5 anexos e 25 MB, revisar), com o
+recado por campo que a API devolve; detalhe com a conversa. Falha de rede no
+envio não repete sozinha (pode abrir dois chamados). A chave do app vem do
+`env.json` (`SISCHAMADOS_APP_CHAVE`). Ainda não dá para responder, confirmar a
+solução nem avaliar: faltam as rotas da API móvel (§8.3), pedidas à intranet.
+A função continua "Em breve" no menu até a chave existir.
+
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
 porque o contrato do `app_config` fica fixado antes. A fase 5 depende da
