@@ -454,8 +454,8 @@ class RodapeCartao extends StatelessWidget {
           Expanded(
             child: Text(
               texto!,
-              style: TextStyle(fontSize: 12, color: TomCartao.fraco(context)),
-              maxLines: 1,
+              style: TextStyle(fontSize: 12.5, height: 1.35, color: TomCartao.medio(context)),
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           )
