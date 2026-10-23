@@ -2178,6 +2178,23 @@ comum da conferência de senha e do limite de tentativas, usado também pelo
 abas (hoje a busca está em Serviços), o push "a equipe respondeu" (fase 4) e
 a limpeza dos anexos depois de 180 dias (no `cron_log`).
 
+**Fase 3b (22/10/2026): pronta e desligada.** `sigrh/contracheque_pdf.php`
+monta o PDF do contracheque no papel timbrado das certidões, confere os
+valores antes (rubrica sem nome, valor negativo ou impossível, mês sem
+provento) e devolve com SHA-256, registrando cada emissão com código. O CPF
+sai do SIGRH pela matrícula de quem entrou (o app não manda mais), então
+nunca sai o contracheque de outro militar. Folhas novas vêm da
+`vw_cc_novo2` (`mes_extenso` = 'AAAA/Mês'); as de até 2023, da
+`vw_contracheque3`. O padrão vem de `soupm_documento_padrao` (versão 0 = o do
+código). O app pede o PDF pronto e confere o hash. Enquanto
+`contracheque.pdf_api` estiver desligado, a API responde DESLIGADO e o app usa
+o PDF de hoje; `pdf_api_matriculas` é a lista piloto para comparar com uma
+conta real antes de ligar para todos. Testado com dados fictícios: caso curto
+(1 página) e longo (42 rubricas, 2 páginas, cabeçalho da tabela repetido e
+fecho junto). Falta: aprovar a comparação com o PDF de hoje, a página pública
+do QR (`qr_publico`, desligada até o usuário aprovar o que ela mostra) e a tela
+Documentos do painel.
+
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
 porque o contrato do `app_config` fica fixado antes. A fase 5 depende da
