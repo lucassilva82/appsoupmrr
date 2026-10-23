@@ -128,6 +128,35 @@ Object _comunicados(Map<String, String> c) {
   };
 }
 
+// Pendências fictícias (§4.3): a ciência some quando o militar dá ciência
+// no comunicado 1; o lembrete some quando é dispensado.
+final _pendDispensadas = <String>{};
+
+Object _pendencias(Map<String, String> c) {
+  if (c['acao'] == 'dispensar') {
+    _pendDispensadas.add('${c['tipo']}|${c['referencia']}');
+    return {'code': 1};
+  }
+  final prazo = DateTime.now().add(const Duration(days: 3)).toIso8601String();
+  return {
+    'code': 1,
+    'ligados': 3,
+    'itens': [
+      if (!_comCientes.contains(1))
+        {'tipo': 'soupm.ciencia_comunicado', 'sistema': 'SouPMRR', 'titulo': 'Ciência pendente: Operação Eleições 2026',
+         'obrigatoria': true, 'dispensavel': false, 'destino': 'com.central', 'referencia': 'comunicado:1',
+         'prazo': prazo, 'icone': 'campaign'},
+      {'tipo': 'sigrh.declaracao_bens', 'sistema': 'SIGRH', 'titulo': 'Declaração de bens de ${DateTime.now().year} não enviada',
+       'obrigatoria': true, 'dispensavel': false, 'destino': 'rh.declaracoes', 'referencia': 'ano:${DateTime.now().year}',
+       'prazo': DateTime.now().add(const Duration(days: 9)).toIso8601String(), 'icone': 'assignment_late'},
+      if (!_pendDispensadas.contains('soupm.certidao_vencendo|certidao:1'))
+        {'tipo': 'soupm.certidao_vencendo', 'sistema': 'SouPMRR', 'titulo': 'Sua certidão vence em 2 dias',
+         'obrigatoria': false, 'dispensavel': true, 'destino': 'rh.certidoes', 'referencia': 'certidao:1',
+         'prazo': DateTime.now().add(const Duration(days: 2)).toIso8601String(), 'icone': 'verified'},
+    ],
+  };
+}
+
 Object _feedback(Map<String, String> c) {
   Map<String, Object> resumo(Map<String, Object> f) => {
         'id': f['id']!, 'protocolo': f['protocolo']!, 'tipo': f['tipo']!,
@@ -187,6 +216,8 @@ Object? _responder(Uri url, http.Request req) {
       return _feedback(_camposMultipart(req));
     case 'comunicados.php':
       return _comunicados(req.bodyFields);
+    case 'pendencias.php':
+      return _pendencias(req.bodyFields);
     // Como em produção até a comparação ser aprovada: o PDF sai do aparelho.
     case 'contracheque_pdf.php':
       return {'code': 0, 'erro': 'DESLIGADO', 'message': 'PDF pela API ainda desligado.'};
@@ -222,6 +253,7 @@ Object? _responder(Uri url, http.Request req) {
             {'texto': 'Ative a biometria em Perfil para entrar mais rápido.', 'icone': 'fingerprint', 'tipo': 'dica'},
             {'texto': 'As certidões saem na hora, com QR Code de conferência.', 'icone': 'verified', 'tipo': 'novidade'},
           ]},
+          {'chave': 'home.pendencias', 'ordem': 40},
           {'chave': 'home.atalhos', 'ordem': 50},
           {'chave': 'home.livre.outubro_rosa', 'ordem': 55, 'modelo': 'campanha', 'arte': 'rosa',
            'dados': {'selo': 'Campanha', 'titulo': 'Outubro Rosa', 'texto': 'Exames preventivos na Diretoria de Saúde até 31/10.'},

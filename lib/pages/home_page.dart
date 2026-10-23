@@ -9,6 +9,7 @@ import 'package:projetonovo/widgets/card_tempo_servico.dart';
 import 'package:projetonovo/core/config/app_config.dart';
 import 'package:projetonovo/features/comunicados/comunicados_page.dart';
 import 'package:projetonovo/features/inicio/card_painel.dart';
+import 'package:projetonovo/features/pendencias/pendencias_page.dart';
 import 'package:projetonovo/features/inicio/faixa_comando.dart';
 import 'package:projetonovo/features/inicio/linha_atalhos.dart';
 import 'package:projetonovo/widgets/vidro.dart';
@@ -87,6 +88,7 @@ class _HomeBodyState extends State<HomeBody>
   /// devolve nulo.
   Widget? _bloco(String chave) => switch (chave) {
         'home.comandantes' => FaixaComando(),
+        'home.pendencias' => const BlocoPendencias(),
         'home.anuncio' when RepositorioConfig.atual.fonteComunicados == 'api' => const BlocoComunicados(),
         'home.dicas' => Padding(
             padding: const EdgeInsets.only(top: 8),

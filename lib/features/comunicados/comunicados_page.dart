@@ -15,6 +15,7 @@ import '../../models/auth_model.dart';
 import '../../widgets/aviso_rapido.dart';
 import '../../widgets/custom_appbar.dart';
 import '../../widgets/vidro.dart';
+import '../pendencias/pendencias_repositorio.dart';
 import 'comunicados_repositorio.dart';
 
 const _chave = 'com.central';
@@ -493,6 +494,7 @@ class _ComunicadoPageState extends State<ComunicadoPage> {
     try {
       await widget.repositorio.darCiencia(_c);
       registrar('comunicado.ciencia', chave: _chave, dados: {'id': _c.id, 'versao': _c.versao});
+      PendenciasRepositorio.algoMudou();
       if (!mounted) return;
       setState(() => _c = _c.copiar(lido: true, ciente: true));
       avisoSucesso(context, 'Ciência registrada');

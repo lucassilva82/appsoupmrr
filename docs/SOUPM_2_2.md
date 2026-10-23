@@ -2238,6 +2238,19 @@ aparece com o valor pronto, e modelo desconhecido não desenha nada); a faixa
 do Comando e as dicas leem o `app_config` e, sem nada aprovado, continuam no
 Firestore. No modo vitrine o Comando é fictício, sem foto.
 
+**Suas pendências (22/10/2026): prontas e desligadas.**
+`sql/2026-10-23_soupm_pendencias.sql` cadastra os 37 tipos do §4.3, todos
+desligados; o banco recusa ligar tipo sem fonte `confirmada`.
+`sigrh/pendencias.php` calcula os tipos do próprio SouPMRR (ciência de
+comunicado, e-mail não confirmado, certidão vencendo, sugestão aguardando
+resposta, app desatualizado); tipo ligado sem cálculo, ou fonte que falhou,
+vira o item "Não foi possível conferir" com `PD-<SISTEMA>-...`, nunca some.
+Lembrete pode ser dispensado; obrigatória, não. No app,
+`lib/features/pendencias/`: bloco na Início (some sem tipo ligado; com tipo
+ligado e nada pendente, "Sem pendências") e a lista completa; dar ciência num
+comunicado tira a pendência na hora. Os tipos do SIGRH, SIGE, SVI e
+SISCHAMADOS ganham cálculo quando as fontes forem conferidas no banco.
+
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
 porque o contrato do `app_config` fica fixado antes. A fase 5 depende da
