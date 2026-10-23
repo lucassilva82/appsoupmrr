@@ -2344,9 +2344,14 @@ aparece como "não foi possível conferir", `CR-<SEÇÃO>`). P6, Validar documen
 conferência (`verificar.php` ou `doc/conferir.php`); o leitor de QR dentro do
 app fica para depois, porque pede câmera e um pacote nativo novo. No menu:
 `sql/2026-10-23_soupm_funcoes_novas.sql`, com o selo "Novo" e versão mínima
-2.2.0. P3 (lembretes): `sigrh/cron/lembretes.php` calcula férias que começam e
-certidão que vence para os lembretes ligados no painel e põe na fila de push;
-`sql/2026-10-23_soupm_lembretes.sql` evita repetir.
+2.2.0. P3 (lembretes): `sigrh/cron/lembretes.php` calcula, para os lembretes ligados no painel,
+férias que começam, certidão que vence, prazo de declaração (campanha aberta,
+quem tem o app e não enviou) e ciência de comunicado (público do comunicado,
+ou quem tem o app, sem ciência), e põe na fila um envio por texto, com todos
+que recebem a mesma mensagem; `sql/2026-10-23_soupm_lembretes.sql` evita
+repetir. O contracheque disponível continua no `notificacoes/notifica_contracheque.php`,
+que espera a folha carregar: com o lembrete e o `envio_fcm` ligados, usa a
+fila e o texto do painel; senão, a Cloud Function de sempre.
 
 **Fase 6, acabamento (22/10/2026): feito o que não depende do usuário.**
 Esqueletos no lugar do círculo girando nas listas novas; número herói dos cards
