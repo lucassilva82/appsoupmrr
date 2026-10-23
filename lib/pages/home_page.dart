@@ -412,7 +412,8 @@ class _HomeBodyState extends State<HomeBody>
     return FundoSuave(
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 24),
+        // O fim passa da barra de abas de vidro (a altura dela vem no MediaQuery).
+        padding: EdgeInsets.only(bottom: 24 + MediaQuery.paddingOf(context).bottom),
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

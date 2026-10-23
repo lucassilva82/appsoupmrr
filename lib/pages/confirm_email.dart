@@ -380,8 +380,8 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
                 ? 'Até você confirmar o novo endereço, o atual '
                     '($_emailAtual) continua valendo para recuperar a senha.'
                 : 'Você pode continuar usando o app normalmente. '
-                    'A verificação fica pendente em Configurações até ser '
-                    'concluída.',
+                    'A verificação fica pendente em Perfil, na seção Conta, '
+                    'até ser concluída.',
           ),
         ],
       ),

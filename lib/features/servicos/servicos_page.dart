@@ -164,7 +164,8 @@ class _ServicosBodyState extends State<ServicosBody> {
                 SliverToBoxAdapter(child: _LinhaNovidades(itens: l)),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  // O fim passa da barra de abas de vidro (a altura dela vem no MediaQuery).
+                  padding: EdgeInsets.fromLTRB(16, 16, 16, 24 + MediaQuery.paddingOf(context).bottom),
                   child: _NaoAchou(aoTocar: () {
                     final ajuda = itemPorChave('atend.ajuda', menu: menu);
                     if (ajuda != null) {

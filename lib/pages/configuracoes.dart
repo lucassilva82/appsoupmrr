@@ -41,7 +41,8 @@ class SettingsBody extends StatelessWidget {
 
     return ListView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      // O fim passa da barra de abas de vidro (a altura dela vem no MediaQuery).
+      padding: EdgeInsets.fromLTRB(16, 8, 16, 24 + MediaQuery.paddingOf(context).bottom),
       children: [
         _CartaoMilitar(auth: auth, config: config),
         const SizedBox(height: 7),
@@ -170,9 +171,9 @@ class SettingsBody extends StatelessWidget {
   Future<void> _confirmLogout(BuildContext context, Auth auth) async {
     final confirm = await dialogoConfirmacao(
       context,
-      titulo: 'Sair da conta',
-      mensagem: 'Você precisará informar matrícula e senha para entrar '
-          'novamente.',
+      titulo: 'Sair da conta?',
+      mensagem: 'Você vai precisar da matrícula e da senha para entrar de novo. '
+          'As notificações deste aparelho param.',
       textoConfirmar: 'Sair',
       icone: Icons.logout_rounded,
       cor: const Color(0xFFC62828),

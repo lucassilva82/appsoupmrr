@@ -68,7 +68,7 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
     },
     {
       'texto':
-          'Ative a biometria em Configurações para um acesso mais rápido e seguro ao SouPMRR.',
+          'Ative a biometria em Perfil para um acesso mais rápido e seguro ao SouPMRR.',
       'icone': '🔐',
       'tipo': 'dica',
       'ordem': 3,

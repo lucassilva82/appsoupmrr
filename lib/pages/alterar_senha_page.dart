@@ -15,7 +15,7 @@ import 'confirm_email.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // AlterarSenhaPage
 //
-// Troca da senha de acesso, aberta em Configurações → Conta.
+// Troca da senha de acesso, aberta em Perfil → Conta.
 // A senha é a mesma do SIGRH e do SouPMRR, por isso o aviso em tela.
 //
 // Fluxo: senha atual + nova (duas vezes) → alterar_senha.php → e-mail de

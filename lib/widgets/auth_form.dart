@@ -75,7 +75,7 @@ class _AuthFormState extends State<AuthForm> {
     try {
       // O e-mail não verificado NÃO bloqueia mais o acesso: muitos militares
       // ficavam presos na tela de confirmação sem conseguir entrar. A pendência
-      // passou a aparecer em Configurações → Conta, de onde a verificação pode
+      // passou a aparecer em Perfil → Conta, de onde a verificação pode
       // ser feita a qualquer momento.
       await auth.loginSemNotificar(
           _authData['matricula']!, _authData['password']!);

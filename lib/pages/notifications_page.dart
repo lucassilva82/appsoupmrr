@@ -142,7 +142,8 @@ class NotificationsBody extends StatelessWidget {
           color: theme.colorScheme.primary,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            // O fim passa da barra de abas de vidro (a altura dela vem no MediaQuery).
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 24 + MediaQuery.paddingOf(context).bottom),
             children: [
               CartaoVidro(
                 padding: EdgeInsets.zero,

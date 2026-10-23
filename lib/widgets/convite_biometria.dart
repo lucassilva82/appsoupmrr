@@ -12,7 +12,7 @@ import '../utils/app_theme.dart';
 //
 // Pergunta uma vez, logo depois do primeiro login com senha, se a pessoa quer
 // usar Face ID ou digital nas próximas entradas. Antes disso a única forma de
-// ligar era achar o interruptor em Configurações.
+// ligar era achar o interruptor no Perfil.
 //
 // O símbolo pulsa devagar enquanto o convite está aberto — é o que os apps de
 // banco usam para dizer "encoste aqui" sem escrever. Com movimento reduzido
@@ -26,7 +26,11 @@ Future<bool> convidarParaBiometria(BuildContext context) async {
   if (!await servico.isBiometricAvailable()) return false;
 
   final tipos = await servico.getAvailableBiometrics();
-  final temRosto = tipos.contains(BiometricType.face);
+  // No iOS, só é Touch ID quando o sistema diz que é digital: a lista vem
+  // vazia em alguns casos (simulador, rosto ainda não cadastrado) e quase
+  // todo iPhone em uso tem Face ID. No Android, rosto só quando ele diz.
+  final temRosto = tipos.contains(BiometricType.face) ||
+      (Platform.isIOS && !tipos.contains(BiometricType.fingerprint));
   if (!context.mounted) return false;
 
   final aceitou = await showGeneralDialog<bool>(
@@ -156,7 +160,7 @@ class _ConviteState extends State<_Convite>
                     const SizedBox(height: 8),
                     Text(
                       'Nas próximas vezes você entra sem digitar a senha. '
-                      'Dá para desligar quando quiser em Configurações.',
+                      'Dá para desligar quando quiser em Perfil › ${Platform.isIOS ? 'Face ID' : 'Biometria'}.',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         height: 1.4,

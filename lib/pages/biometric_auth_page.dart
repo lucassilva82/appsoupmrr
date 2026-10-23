@@ -253,7 +253,7 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
           auth.finalizarLogin();
           if (mounted) Navigator.of(context).pop();
           // E-mail não verificado não interrompe mais o acesso: a pendência
-          // aparece em Configurações → Conta.
+          // aparece em Perfil → Conta.
           Navigator.of(context).pushReplacementNamed(AppRoutes.HOME_PAGE);
         }
       } else {
