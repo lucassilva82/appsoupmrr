@@ -27,6 +27,10 @@ class AuthOrHome extends StatefulWidget {
 
 class _AuthOrHomeState extends State<AuthOrHome> {
   late Future<void> _initFuture;
+
+  /// Um toque na abertura encerra o piso de tempo (§15.6); o trabalho de
+  /// verdade (login, versão) continua sendo esperado.
+  final _piso = Completer<void>();
   bool _needsForceUpdate = false;
   String _instalada = '';
   RegraVersao? _regra;
@@ -69,7 +73,10 @@ class _AuthOrHomeState extends State<AuthOrHome> {
       });
       await Future.wait([
         trabalho,
-        Future<void>.delayed(const Duration(milliseconds: 4200)),
+        Future.any([
+          Future<void>.delayed(const Duration(milliseconds: 4200)),
+          _piso.future
+        ]),
       ]);
     }();
   }
@@ -86,7 +93,8 @@ class _AuthOrHomeState extends State<AuthOrHome> {
       _instalada = AmbienteApp.versao;
     }
     _regra = regra;
-    if (config.situacaoVersao(AmbienteApp.plataforma, _instalada) == SituacaoVersao.obrigatoria) {
+    if (config.situacaoVersao(AmbienteApp.plataforma, _instalada) ==
+        SituacaoVersao.obrigatoria) {
       _needsForceUpdate = true;
     }
     return true;
@@ -188,7 +196,9 @@ class _AuthOrHomeState extends State<AuthOrHome> {
 
         if (snapshot.connectionState == ConnectionState.waiting) {
           debugPrint("[LOG] FutureBuilder: Loading...");
-          return const AberturaSouPMRR();
+          return AberturaSouPMRR(aoPular: () {
+            if (!_piso.isCompleted) _piso.complete();
+          });
         } else if (snapshot.hasError) {
           debugPrint(
               "[LOG] FutureBuilder: snapshot.hasError => ${snapshot.error}");
@@ -196,11 +206,15 @@ class _AuthOrHomeState extends State<AuthOrHome> {
             codigo: 'AP-ABERTURA',
             origem: OrigemFalha.app,
             titulo: 'O app não conseguiu abrir',
-            texto: 'Algo falhou ao preparar o app. Feche e abra de novo; se continuar, abra um chamado técnico com o código.',
+            texto:
+                'Algo falhou ao preparar o app. Feche e abra de novo; se continuar, abra um chamado técnico com o código.',
             detalhe: '${snapshot.error}',
           );
           registrarErro(falha, tela: 'abertura');
-          return FundoSuave(child: Scaffold(body: SafeArea(child: EstadoErro(falha: falha, tela: 'abertura'))));
+          return FundoSuave(
+              child: Scaffold(
+                  body: SafeArea(
+                      child: EstadoErro(falha: falha, tela: 'abertura'))));
         } else {
           // Se precisamos forçar update
           if (_needsForceUpdate) {

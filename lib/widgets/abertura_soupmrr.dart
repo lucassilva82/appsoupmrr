@@ -53,7 +53,10 @@ const Color _azulMarca = Color(0xFF2E7FBF);
 const Color _cianoCircuito = Color(0xFF4FD8F0);
 
 class AberturaSouPMRR extends StatefulWidget {
-  const AberturaSouPMRR({Key? key}) : super(key: key);
+  const AberturaSouPMRR({Key? key, this.aoPular}) : super(key: key);
+
+  /// Toque em qualquer lugar pula a animação.
+  final VoidCallback? aoPular;
 
   @override
   State<AberturaSouPMRR> createState() => _AberturaSouPMRRState();
@@ -130,157 +133,162 @@ class _AberturaSouPMRRState extends State<AberturaSouPMRR>
 
     return Scaffold(
       backgroundColor: AppColors.aberturaFundo,
-      body: SizedBox.expand(
-        child: AnimatedBuilder(
-          animation: Listenable.merge([_c, _ambiente, _camera, _viatura]),
-          builder: (context, _) {
-            final entrouFundo = _trecho(0.0, 0.22);
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.aoPular,
+        child: SizedBox.expand(
+          child: AnimatedBuilder(
+            animation: Listenable.merge([_c, _ambiente, _camera, _viatura]),
+            builder: (context, _) {
+              final entrouFundo = _trecho(0.0, 0.22);
 
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                // Base: o mesmo degradê da app bar no escuro. A tela nativa
-                // abre na cor do topo dele, então o Flutter assume sem
-                // emenda — e o militar reconhece a barra que vai ver em
-                // todas as telas. Sempre o degradê escuro: a abertura roda
-                // antes de o tema do usuário ser lido.
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: AppTheme.appBarGradient(
-                          isDark: true, isSuperUser: false),
-                    ),
-                  ),
-                  child: const SizedBox.expand(),
-                ),
-
-                // ── Fundo ─────────────────────────────────────────────────
-                // A imagem **e** o escurecimento entram juntos, no mesmo
-                // Opacity. Com o degradê fora dele, ele valia desde o
-                // primeiro quadro e o app abria preto, por mais que o
-                // Scaffold e a tela nativa fossem azuis — o azul existia e
-                // ficava coberto. Agora o primeiro quadro é a cor nativa
-                // limpa, e o escurecimento chega com a textura.
-                Opacity(
-                  opacity: entrouFundo,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Transform.scale(
-                        scale: 1.16 -
-                            0.16 * Curves.easeOutCubic.transform(_camera.value),
-                        child: Image.asset(
-                          'assets/imagens/fundo_abertura.jpg',
-                          fit: BoxFit.cover,
-                        ),
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Base: o mesmo degradê da app bar no escuro. A tela nativa
+                  // abre na cor do topo dele, então o Flutter assume sem
+                  // emenda — e o militar reconhece a barra que vai ver em
+                  // todas as telas. Sempre o degradê escuro: a abertura roda
+                  // antes de o tema do usuário ser lido.
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: AppTheme.appBarGradient(
+                            isDark: true, isSuperUser: false),
                       ),
-                      const DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Color(0xE6000810),
-                              Color(0x99001A33),
-                              Color(0xE6000810),
-                            ],
-                            stops: [0.0, 0.45, 1.0],
+                    ),
+                    child: const SizedBox.expand(),
+                  ),
+
+                  // ── Fundo ─────────────────────────────────────────────────
+                  // A imagem **e** o escurecimento entram juntos, no mesmo
+                  // Opacity. Com o degradê fora dele, ele valia desde o
+                  // primeiro quadro e o app abria preto, por mais que o
+                  // Scaffold e a tela nativa fossem azuis — o azul existia e
+                  // ficava coberto. Agora o primeiro quadro é a cor nativa
+                  // limpa, e o escurecimento chega com a textura.
+                  Opacity(
+                    opacity: entrouFundo,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Transform.scale(
+                          scale: 1.16 -
+                              0.16 *
+                                  Curves.easeOutCubic.transform(_camera.value),
+                          child: Image.asset(
+                            'assets/imagens/fundo_abertura.jpg',
+                            fit: BoxFit.cover,
                           ),
                         ),
-                        child: SizedBox.expand(),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ── Trilhas vivas ─────────────────────────────────────────
-                // Desenhadas por cima da foto, na mesma linguagem dela, para
-                // o circuito do fundo parecer energizado. Correr um pulso nas
-                // linhas da própria foto seria impossível: lá são pixels
-                // chapados, sem geometria para percorrer.
-                Opacity(
-                  opacity: entrouFundo * 0.9,
-                  child: CustomPaint(
-                    painter: _PinturaAmbiente(t: _ambiente.value),
-                    size: Size.infinite,
-                  ),
-                ),
-
-                Opacity(
-                  opacity: entrouFundo,
-                  child: const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        radius: 0.95,
-                        colors: [Colors.transparent, Color(0xCC000508)],
-                        stops: [0.45, 1.0],
-                      ),
+                        const DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Color(0xE6000810),
+                                Color(0x99001A33),
+                                Color(0xE6000810),
+                              ],
+                              stops: [0.0, 0.45, 1.0],
+                            ),
+                          ),
+                          child: SizedBox.expand(),
+                        ),
+                      ],
                     ),
-                    child: SizedBox.expand(),
-                  ),
-                ),
-
-                // ── A viatura (§15.6) ─────────────────────────────────────
-                // Com "Reduzir movimento", só a marca aparece.
-                if (!MediaQuery.of(context).disableAnimations)
-                  CustomPaint(
-                    painter: _PinturaViatura(t: _viatura.value * 4.2),
-                    size: Size.infinite,
                   ),
 
-                // ── A marca ───────────────────────────────────────────────
-                Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: larguraMarca,
-                        height: larguraMarca * _compH / _compW,
-                        child: FittedBox(
-                          fit: BoxFit.contain,
-                          child: SizedBox(
-                            width: _compW,
-                            height: _compH,
-                            child: _Marca(
-                              no: _trecho(0.08, 0.22,
-                                  curva: Curves.easeOutBack),
-                              trilha: _trecho(0.16, 0.56,
-                                  curva: Curves.easeInOutCubic),
-                              onda: _trecho(0.54, 0.95,
-                                  curva: Curves.easeOutQuart),
-                              corrente: _trecho(0.56, 0.90,
-                                  curva: Curves.easeInOutSine),
-                              letra: _trecho,
+                  // ── Trilhas vivas ─────────────────────────────────────────
+                  // Desenhadas por cima da foto, na mesma linguagem dela, para
+                  // o circuito do fundo parecer energizado. Correr um pulso nas
+                  // linhas da própria foto seria impossível: lá são pixels
+                  // chapados, sem geometria para percorrer.
+                  Opacity(
+                    opacity: entrouFundo * 0.9,
+                    child: CustomPaint(
+                      painter: _PinturaAmbiente(t: _ambiente.value),
+                      size: Size.infinite,
+                    ),
+                  ),
+
+                  Opacity(
+                    opacity: entrouFundo,
+                    child: const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          radius: 0.95,
+                          colors: [Colors.transparent, Color(0xCC000508)],
+                          stops: [0.45, 1.0],
+                        ),
+                      ),
+                      child: SizedBox.expand(),
+                    ),
+                  ),
+
+                  // ── A viatura (§15.6) ─────────────────────────────────────
+                  // Com "Reduzir movimento", só a marca aparece.
+                  if (!MediaQuery.of(context).disableAnimations)
+                    CustomPaint(
+                      painter: _PinturaViatura(t: _viatura.value * 4.2),
+                      size: Size.infinite,
+                    ),
+
+                  // ── A marca ───────────────────────────────────────────────
+                  Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: larguraMarca,
+                          height: larguraMarca * _compH / _compW,
+                          child: FittedBox(
+                            fit: BoxFit.contain,
+                            child: SizedBox(
+                              width: _compW,
+                              height: _compH,
+                              child: _Marca(
+                                no: _trecho(0.08, 0.22,
+                                    curva: Curves.easeOutBack),
+                                trilha: _trecho(0.16, 0.56,
+                                    curva: Curves.easeInOutCubic),
+                                onda: _trecho(0.54, 0.95,
+                                    curva: Curves.easeOutQuart),
+                                corrente: _trecho(0.56, 0.90,
+                                    curva: Curves.easeInOutSine),
+                                letra: _trecho,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 34),
-                      // O espaçamento fecha de 9 para 3: o texto "assenta",
-                      // que é o gesto das cartelas de abertura de cinema.
-                      Opacity(
-                        opacity: _trecho(0.86, 1.0),
-                        child: Text(
-                          'POLÍCIA MILITAR DE RORAIMA',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 9 -
-                                6 *
-                                    _trecho(0.86, 1.0,
-                                        curva: Curves.easeOutCubic),
-                            color: Colors.white.withValues(alpha: 0.82),
+                        const SizedBox(height: 34),
+                        // O espaçamento fecha de 9 para 3: o texto "assenta",
+                        // que é o gesto das cartelas de abertura de cinema.
+                        Opacity(
+                          opacity: _trecho(0.86, 1.0),
+                          child: Text(
+                            'POLÍCIA MILITAR DE RORAIMA',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 9 -
+                                  6 *
+                                      _trecho(0.86, 1.0,
+                                          curva: Curves.easeOutCubic),
+                              color: Colors.white.withValues(alpha: 0.82),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -737,7 +745,8 @@ class _PinturaViatura extends CustomPainter {
     final piscando = t >= 1.10 && t < 3.6;
     final aceso = ((t - 1.10) / 0.14).floor().isEven;
     if (piscando) {
-      desenharLuzGiroflex(canvas, Offset(x, solo - 66), aceso, t < 2.0 ? 1 : 0.5);
+      desenharLuzGiroflex(
+          canvas, Offset(x, solo - 66), aceso, t < 2.0 ? 1 : 0.5);
     }
 
     // Linhas de velocidade na chegada e na saída.
@@ -750,21 +759,26 @@ class _PinturaViatura extends CustomPainter {
       for (var i = 0; i < 4; i++) {
         final y = solo - 14 - i * 12.0;
         final comp = 40 + 30 * vel + i * 8;
-        canvas.drawLine(Offset(x - 84 - i * 6, y), Offset(x - 84 - i * 6 - comp, y), linha);
+        canvas.drawLine(
+            Offset(x - 84 - i * 6, y), Offset(x - 84 - i * 6 - comp, y), linha);
       }
     }
 
     // Marca de pneu e fumaça da roda de trás na arrancada.
     if (t > 3.05) {
       final inicio = meio - 46;
-      canvas.drawLine(Offset(inicio, solo + 14), Offset(math.max(inicio, x - 46), solo + 14),
+      canvas.drawLine(
+          Offset(inicio, solo + 14),
+          Offset(math.max(inicio, x - 46), solo + 14),
           Paint()
             ..color = Colors.black.withValues(alpha: 0.45 * (1 - _f(3.6, 4.1)))
             ..strokeWidth = 4);
       for (var i = 0; i < 6; i++) {
         final f = ((t - 3.05) * 1.6 + i / 6) % 1;
         final forca = (1 - f) * (1 - _f(3.7, 4.1));
-        canvas.drawCircle(Offset(inicio - 10 - f * 60, solo + 4 - f * 34), 8 + f * 20,
+        canvas.drawCircle(
+            Offset(inicio - 10 - f * 60, solo + 4 - f * 34),
+            8 + f * 20,
             Paint()..color = Colors.white.withValues(alpha: 0.30 * forca));
       }
     }
@@ -782,7 +796,8 @@ class _PinturaViatura extends CustomPainter {
       canvas.translate(-46, 0);
     }
     final giro = (x / 13) + patina * math.pi * 10;
-    desenharViatura(canvas, giroflexAceso: aceso, giroflexLigado: piscando, giroRodas: giro);
+    desenharViatura(canvas,
+        giroflexAceso: aceso, giroflexLigado: piscando, giroRodas: giro);
     canvas.restore();
   }
 

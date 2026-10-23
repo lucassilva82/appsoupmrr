@@ -2358,9 +2358,8 @@ sobreposta, "Reorganizar a tela inicial", tamanho do texto e o grupo Ajuda
 (Preciso de ajuda, Meus chamados, Sugestões e elogios), sem emoji e com o texto
 da biometria por plataforma; eventos `aparencia.tema`, `push.receber` e
 `push.abrir` (o `log.php` marca o "aberto" do envio); abertura nova com a
-viatura (§15.6), 4,2 s, desenho comum em `core/design/viatura.dart`. Fica:
-conferir no iPad (o simulador do iPad precisa ser liberado pelo usuário), o
-toque que pula a abertura e a migração das telas grandes para `features/`.
+viatura (§15.6), 4,2 s, que um toque pula; desenho comum em `core/design/viatura.dart`. Fica:
+conferir no iPad (o simulador do iPad precisa ser liberado pelo usuário) e a migração das telas grandes para `features/`.
 
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
