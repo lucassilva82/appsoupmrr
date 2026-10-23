@@ -71,7 +71,16 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<NotificationProvider>(context, listen: false).bindUser();
       // Entra na intranet em segundo plano, para Escalas, SVI e os avisos do
-      // SIGE já abrirem com a sessão pronta (sem pedir senha).
+      // SIGE já abrirem com a sessão pronta (sem pedir senha). Só quando o
+      // painel liberou Escalas ou SVI: na fase sem intranet (decisão do
+      // usuário, 24/10/2026) as duas ficam bloqueadas e a senha do app não
+      // vai para a intranet. Liberadas depois, a própria tela entra.
+      final config = RepositorioConfig.atual;
+      final intranetEmUso = ['op.escalas', 'op.svi'].any((chave) {
+        final item = config.item(chave);
+        return item != null && !item.bloqueado;
+      });
+      if (!intranetEmUso) return;
       final auth = Provider.of<Auth>(context, listen: false);
       EscalaService().entrarEmSegundoPlano(
         matricula: auth.matricula,
