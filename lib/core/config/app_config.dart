@@ -10,6 +10,7 @@ import '../erros/falha_app.dart';
 import '../log/registro_log.dart';
 import '../rede/api_client.dart';
 import '../../features/ajuda/ajuda_modelo.dart';
+import '../design/arte_cartao.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // O que o app desenha vem da API (docs/SOUPM_2_2.md §5, PAINEL_ADMIN §9).
@@ -271,6 +272,13 @@ class AppConfig {
 
   static AppConfig deJson(Map<String, dynamic> j,
       {required OrigemConfig origem, DateTime? recebidoEm}) {
+    // Artes do painel (§4.6): valem para todo o app a partir daqui.
+    if (j['artes'] is List) {
+      Arte.doPainel = {
+        for (final a in j['artes'] as List)
+          if (a is Map && a['chave'] is String && Arte.deJson(a) != null) a['chave'] as String: Arte.deJson(a)!,
+      };
+    }
     final versoes = <String, RegraVersao>{};
     final v = j['versao'];
     if (v is Map) {

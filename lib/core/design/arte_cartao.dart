@@ -38,7 +38,52 @@ class Arte {
         [Icons.account_balance_outlined, Icons.campaign_outlined, Icons.newspaper_outlined]),
   };
 
-  static Arte de(String? chave) => catalogo[chave] ?? catalogo['rh']!;
+  /// Artes do painel (app_config `artes`), por cima do catálogo do código.
+  /// Preenchido pelo AppConfig; arte nova ou editada vale sem versão nova.
+  static Map<String, Arte> doPainel = const {};
+
+  static Arte de(String? chave) => doPainel[chave] ?? catalogo[chave] ?? catalogo['rh']!;
+
+  /// Lê uma arte do app_config: três cores #RRGGBB e até três ícones por
+  /// nome. Cor inválida descarta a arte; ícone desconhecido usa o da arte do
+  /// catálogo de mesma chave (ou um neutro).
+  static Arte? deJson(Map j) {
+    final cores = j['cores'];
+    if (cores is! List || cores.length != 3) return null;
+    final c = <Color>[];
+    for (final hex in cores) {
+      final m = RegExp(r'^#([0-9A-Fa-f]{6})$').firstMatch('$hex');
+      if (m == null) return null;
+      c.add(Color(int.parse('FF${m.group(1)}', radix: 16)));
+    }
+    final base = catalogo['${j['chave']}'];
+    final nomes = j['icones'] is List ? (j['icones'] as List).map((e) => '$e').toList() : const <String>[];
+    final icones = [
+      for (var i = 0; i < 3; i++)
+        (i < nomes.length ? _iconesPorNome[nomes[i]] : null) ?? base?.icones[i] ?? Icons.apps_rounded,
+    ];
+    return Arte(c[0], c[1], c[2], icones);
+  }
+
+  /// Os nomes do catálogo de ícones do painel que este app sabe desenhar.
+  static const _iconesPorNome = <String, IconData>{
+    'payments': Icons.payments_outlined, 'receipt_long': Icons.receipt_long_outlined,
+    'savings': Icons.savings_outlined, 'military_tech': Icons.military_tech_outlined,
+    'hourglass_top': Icons.hourglass_top_outlined, 'workspace_premium': Icons.workspace_premium_outlined,
+    'beach_access': Icons.beach_access_outlined, 'flight': Icons.flight_outlined, 'wb_sunny': Icons.wb_sunny_outlined,
+    'tips_and_updates': Icons.tips_and_updates_outlined, 'search': Icons.search, 'lightbulb': Icons.lightbulb_outline,
+    'pending_actions': Icons.pending_actions_outlined, 'assignment_late': Icons.assignment_late_outlined,
+    'task_alt': Icons.task_alt, 'favorite': Icons.favorite_outline, 'volunteer_activism': Icons.volunteer_activism_outlined,
+    'health_and_safety': Icons.health_and_safety_outlined, 'badge': Icons.badge_outlined, 'verified': Icons.verified_outlined,
+    'local_police': Icons.local_police_outlined, 'calendar_month': Icons.calendar_month_outlined,
+    'shield': Icons.shield_outlined, 'gavel': Icons.gavel_outlined, 'menu_book': Icons.menu_book_outlined,
+    'balance': Icons.balance_outlined, 'monitoring': Icons.monitor_heart_outlined, 'groups': Icons.groups_outlined,
+    'support_agent': Icons.support_agent_outlined, 'forum': Icons.forum_outlined, 'build': Icons.build_outlined,
+    'account_balance': Icons.account_balance_outlined, 'campaign': Icons.campaign_outlined,
+    'newspaper': Icons.newspaper_outlined, 'celebration': Icons.celebration_outlined, 'flag': Icons.flag_outlined,
+    'emergency': Icons.emergency_outlined, 'radar': Icons.radar, 'psychology': Icons.psychology_outlined,
+    'diversity_1': Icons.diversity_1_outlined, 'man': Icons.man_outlined,
+  };
 }
 
 /// Fundo com a arte no estilo cheio. O conteúdo vai por cima, sobre um véu
