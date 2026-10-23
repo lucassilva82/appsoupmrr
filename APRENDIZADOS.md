@@ -1545,3 +1545,55 @@ como o `verificar.php` das certidões.
   (`curl -o /dev/null -w "%{http_code}"`). 404 é o esperado; 403 quer dizer
   que o servidor bloqueia aquele nome.
 
+
+## 45. `pbcopy` sem locale corrompeu 73 textos em produção (Mac Roman)
+
+**O sintoma.** O menu do app mostrava `Certidões` e `Plano de férias`. O mesmo
+em descrições, perguntas do FAQ, assuntos da ajuda e dentro do JSON de
+`soupm_config` (`Esta função não está disponível` virou
+`Esta fun√ß√£o n√£o est√° dispon√≠vel`).
+
+**O que eu checei primeiro e estava errado.** Suspeitei do `conexao.php` sem
+`client_encoding`. Uma consulta desfez isso em um passo:
+
+```sql
+SELECT current_setting('client_encoding'), pg_encoding_to_char(encoding)
+  FROM pg_database WHERE datname = current_database();
+```
+
+Os dois voltaram `UTF8`. Conexão e banco estavam certos; o estrago era no
+**dado gravado**.
+
+**A causa.** O SQL foi para o phpPgAdmin pela área de transferência, e o
+`pbcopy` do macOS, **sem `LANG`/`LC_CTYPE` de UTF-8, lê a entrada como Mac
+Roman**. O byte `C3` vira `√`, o `B5` vira `µ`, e `õ` (`C3 B5`) chega ao banco
+como `√µ`. O shell das ferramentas não tem locale (`LANG` vazio), então é o
+padrão aqui.
+
+A armadilha: `pbcopy | pbpaste` **parece correto**, porque os dois erram do
+mesmo jeito e o round-trip volta os bytes originais. O que está errado é o
+conteúdo Unicode da área de transferência, que é o que o navegador cola.
+Conferir assim não serve; conferir é olhar o texto já colado na caixa.
+
+**A regra.** Toda cópia para colar em formulário leva locale:
+
+```bash
+LC_CTYPE=UTF-8 pbcopy < arquivo.sql
+```
+
+E, antes de clicar em Executar, **ampliar a caixa de texto e ler uma linha com
+acento**. Foi isso que pegou o erro antes de ele virar UPDATE.
+
+**O conserto.** Postgres 13 não tem `MACROMAN` em `convert_from`, então não dá
+para desfazer com encoding. O caminho foi gerar as 19 trocas a partir dos
+próprios arquivos-fonte (`ch.encode('utf-8').decode('mac_roman')` em Python) e
+aplicar `replace()` encadeado. Em coluna `jsonb`, o mesmo encadeado sobre
+`valor::text`, voltando para `::jsonb`: as trocas só mexem em caractere
+não-ASCII, nunca em aspas ou chaves, então o JSON continua válido.
+
+**Duas lições de método.**
+- A varredura de corrupção precisa incluir `jsonb`. A primeira passou só em
+  `character varying` e `text` e deu "zero" com 2 registros ainda quebrados.
+- Antes de qualquer UPDATE assim, rodar o mesmo encadeado como `SELECT` com
+  `length()` antes e depois (`Certid√µes` 10 → `Certidões` 9). Custa uma ida e
+  prova a correção inteira.

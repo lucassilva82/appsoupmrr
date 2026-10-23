@@ -10,7 +10,7 @@ por conter estrutura do banco de produção). Rodar no phpPgAdmin, com o login
 do usuário, **desmarcando "Paginar resultados"**, na ordem da tabela. Todos
 podem rodar mais de uma vez sem estragar nada.
 
-Última atualização: 22/10/2026, noite.
+Última atualização: 23/10/2026, manhã.
 
 ## 1. SQL de produção (phpPgAdmin)
 
@@ -20,29 +20,55 @@ podem rodar mais de uma vez sem estragar nada.
 | 2 | `2026-10-23_soupm_app_config.sql` | Fase 1 (menu e app_config) | Feito |
 | 3 | `2026-10-23_soupm_inicio.sql` | Fase 2 (blocos da Início, atalhos, Mais usados) | Feito |
 | 4 | `2026-10-23_soupm_feedback.sql`, `2026-10-23_soupm_atendimento.sql` | Fase 3 (Sugestões e elogios, Preciso de ajuda, área Atendimento) | Feito |
-| 5 | `2026-10-23_soupm_documentos.sql` | Fase 3b (contracheque pela API, QR e conferência) | **Pendente** |
-| 6 | `2026-10-23_soupm_notificacoes.sql` | Fase 4 (aparelhos e Avisos pelo Postgres) | **Pendente** |
-| 7 | `2026-10-23_soupm_conta_resumo.sql` | Tela Militares do painel (bloco Conta) | **Pendente** — e depois `ALTER FUNCTION public.soupm_conta_resumo(TEXT) OWNER TO` um usuário que leia o esquema `qra` (o do cPanel não lê) |
+| 5 | `2026-10-23_soupm_documentos.sql` | Fase 3b (contracheque pela API, QR e conferência) | Feito (23/10/2026) |
+| 6 | `2026-10-23_soupm_notificacoes.sql` | Fase 4 (aparelhos e Avisos pelo Postgres) | Feito (23/10/2026) |
+| 7 | `2026-10-23_soupm_conta_resumo.sql` | Tela Militares do painel (bloco Conta) | Feito (23/10/2026) — e depois `ALTER FUNCTION public.soupm_conta_resumo(TEXT) OWNER TO` um usuário que leia o esquema `qra` (o do cPanel não lê) |
 
-| 8 | `2026-10-23_soupm_artes.sql` | Artes dos cards editáveis pelo painel, mídia aprovada e paleta fechada | **Pendente** |
-| 9 | `2026-10-23_soupm_comunicados.sql` | Central de comunicados (categorias, comunicados, leitura e ciência) | **Pendente** — o `comunicados.php` já está no ar e responde erro até este SQL rodar; o app 2.2 só usa com o interruptor abaixo |
-| 10 | `2026-10-23_soupm_painel_filas.sql` | Reset de senha pelo painel (fila), lembretes automáticos, modelos de mensagem e módulos da intranet que pedem push | **Pendente** |
-| 11 | `2026-10-23_soupm_cards.sql` | Cards criados no painel, Comando aprovado no painel e dicas (depois do 8, que cria as artes) | **Pendente** — sem ele, o Comando e as dicas continuam vindo do Firestore |
-| 12 | `2026-10-23_soupm_pendencias.sql` | Suas pendências: catálogo dos 37 tipos, **todos desligados**, dispensas e fontes de dados | **Pendente** — depois dele, cada tipo só liga pelo painel, depois de homologado |
-| 13 | `2026-10-23_soupm_declaracao_campanha.sql` | Declarações por campanha. Nasce **desligado** (`declaracoes.campanhas_ligadas = false`) | **Pendente** — antes de ligar, cadastrar pelo painel a campanha do ano em curso, senão ninguém consegue declarar |
-| 14 | `2026-10-23_soupm_inicio_preferencia.sql` | A tela inicial de cada militar guardada no servidor (vale em outro aparelho) | **Pendente** — sem ele, a escolha fica só no aparelho |
-| 15 | `2026-10-23_soupm_niveis.sql` | Níveis de acesso e papéis (fase 5). Nasce **desligado** (`niveis.ligado = false`): o app e o menu seguem com a regra de hoje | **Pendente** — ligar só depois da comparação no painel |
-| 16 | `2026-10-23_soupm_chamados_config.sql` | Textos e limites da tela "Meus chamados" pelo painel | **Pendente** |
-| 17 | `2026-10-23_soupm_funcoes_novas.sql` | Funções novas no menu com o selo "Novo" (só para o app 2.2): O que mudou no contracheque, Central de documentos, Linha do tempo da carreira e Validar documento | **Pendente** — sem ele, só o menu de reserva do app mostra essas funções |
-| 18 | `2026-10-23_soupm_lembretes.sql` | Lembretes automáticos (P3): controle para não repetir o mesmo lembrete | **Pendente** — os lembretes continuam desligados até alguém ligar no painel |
-| 19 | `2026-10-23_soupm_uso_hora.sql` | Aberturas por hora para o mapa de calor "Quando usam" do painel (refaz a rotina noturna do log com esse passo a mais) | **Pendente** |
-| 20 | `2026-10-23_soupm_niveis_rapido.sql` | Níveis de acesso mais rápidos: a prévia do painel caiu de cerca de 2 minutos para menos de 1 segundo, com o mesmo resultado; o `app_config` lê a visão do SIGRH uma vez só | **Pendente** — rodar depois do SQL 15 |
-| 21 | `2026-10-23_soupm_feedback_retencao.sql` | Deixa o cron noturno apagar os anexos de sugestões 180 dias depois de concluídas ou arquivadas (decisão de 21/10/2026) | **Pendente** — sem ele, os anexos ficam guardados e o cron só avisa no log |
+| 8 | `2026-10-23_soupm_artes.sql` | Artes dos cards editáveis pelo painel, mídia aprovada e paleta fechada | Feito (23/10/2026) |
+| 9 | `2026-10-23_soupm_comunicados.sql` | Central de comunicados (categorias, comunicados, leitura e ciência) | Feito (23/10/2026) — o `comunicados.php` já está no ar e responde erro até este SQL rodar; o app 2.2 só usa com o interruptor abaixo |
+| 10 | `2026-10-23_soupm_painel_filas.sql` | Reset de senha pelo painel (fila), lembretes automáticos, modelos de mensagem e módulos da intranet que pedem push | Feito (23/10/2026) |
+| 11 | `2026-10-23_soupm_cards.sql` | Cards criados no painel, Comando aprovado no painel e dicas (depois do 8, que cria as artes) | Feito (23/10/2026) — sem ele, o Comando e as dicas continuam vindo do Firestore |
+| 12 | `2026-10-23_soupm_pendencias.sql` | Suas pendências: catálogo dos 37 tipos, **todos desligados**, dispensas e fontes de dados | Feito (23/10/2026) — depois dele, cada tipo só liga pelo painel, depois de homologado |
+| 13 | `2026-10-23_soupm_declaracao_campanha.sql` | Declarações por campanha. Nasce **desligado** (`declaracoes.campanhas_ligadas = false`) | Feito (23/10/2026) — antes de ligar, cadastrar pelo painel a campanha do ano em curso, senão ninguém consegue declarar |
+| 14 | `2026-10-23_soupm_inicio_preferencia.sql` | A tela inicial de cada militar guardada no servidor (vale em outro aparelho) | Feito (23/10/2026) — sem ele, a escolha fica só no aparelho |
+| 15 | `2026-10-23_soupm_niveis.sql` | Níveis de acesso e papéis (fase 5). Nasce **desligado** (`niveis.ligado = false`): o app e o menu seguem com a regra de hoje | Feito (23/10/2026) — ligar só depois da comparação no painel |
+| 16 | `2026-10-23_soupm_chamados_config.sql` | Textos e limites da tela "Meus chamados" pelo painel | Feito (23/10/2026) |
+| 17 | `2026-10-23_soupm_funcoes_novas.sql` | Funções novas no menu com o selo "Novo" (só para o app 2.2): O que mudou no contracheque, Central de documentos, Linha do tempo da carreira e Validar documento | Feito (23/10/2026) — sem ele, só o menu de reserva do app mostra essas funções |
+| 18 | `2026-10-23_soupm_lembretes.sql` | Lembretes automáticos (P3): controle para não repetir o mesmo lembrete | Feito (23/10/2026) — os lembretes continuam desligados até alguém ligar no painel |
+| 19 | `2026-10-23_soupm_uso_hora.sql` | Aberturas por hora para o mapa de calor "Quando usam" do painel (refaz a rotina noturna do log com esse passo a mais) | Feito (23/10/2026) |
+| 20 | `2026-10-23_soupm_niveis_rapido.sql` | Níveis de acesso mais rápidos: a prévia do painel caiu de cerca de 2 minutos para menos de 1 segundo, com o mesmo resultado; o `app_config` lê a visão do SIGRH uma vez só | Feito (23/10/2026) — rodar depois do SQL 15 |
+| 21 | `2026-10-23_soupm_feedback_retencao.sql` | Deixa o cron noturno apagar os anexos de sugestões 180 dias depois de concluídas ou arquivadas (decisão de 21/10/2026) | Feito (23/10/2026) — sem ele, os anexos ficam guardados e o cron só avisa no log |
 
 O item 11 (`2026-10-23_soupm_cards.sql`) ganhou o que o Comando precisa: a matrícula de cada cargo (o painel grava) e o "Conferir no SIGRH agora". Se já tiver rodado, rode de novo: ele não estraga nada.
 
 Os itens novos que forem entrando vão para o fim desta tabela, com o mesmo
 formato.
+
+### Rodados em 23/10/2026
+
+Os 17 SQL acima foram para o banco de produção pelo phpPgAdmin, um a um, com
+"Paginar resultados" desmarcado. O banco foi de 24 para 53 tabelas `soupm_`.
+
+Na mesma passada apareceu e foi consertado um estrago antigo: 73 textos com
+acento gravados como Mac Roman (`Certidões`), 71 em colunas de texto e 2
+dentro do JSON de `soupm_config`. A causa e a regra para não repetir estão em
+`APRENDIZADOS.md` §45 — em resumo, **`LC_CTYPE=UTF-8 pbcopy`** e conferir o
+texto já colado antes de executar.
+
+**Os interruptores continuam todos desligados**, de propósito. Cada um muda o
+que o militar vê e tem uma condição antes:
+
+| Interruptor | Antes de ligar |
+|---|---|
+| `comunicados.fonte_app` (`firestore` → `api`) | cadastrar as categorias e ao menos um comunicado pelo painel |
+| `notificacoes.envio_fcm` | `~/private/soupm_fcm.json` no servidor e o cron `envio_push.php` de pé |
+| `notificacoes.fonte_app` (`firestore` → `api`) | só depois do corte, com a 2.2 na loja |
+| `declaracoes.campanhas_ligadas` | cadastrar a campanha do ano em curso, senão ninguém consegue declarar |
+| `niveis.ligado` | comparar no painel a regra nova com a de hoje |
+| contracheque pela API | homologar o PDF gerado pela API contra o de hoje |
+
+Falta ainda, do item 7: `ALTER FUNCTION public.soupm_conta_resumo(TEXT) OWNER
+TO` um usuário que leia o esquema `qra` — o do cPanel não lê.
 
 ## 2. Arquivos em `~/private` no servidor (cPanel › Gerenciador de arquivos)
 
