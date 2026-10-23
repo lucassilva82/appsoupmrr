@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/ambiente_app.dart';
 import '../../core/config/app_config.dart';
 import '../../core/erros/estado_erro.dart';
 import '../../core/erros/falha_app.dart';
@@ -57,6 +58,13 @@ class _SugestoesPageState extends State<SugestoesPage> {
   bool _enviando = false;
   String? _erroCampo;
 
+  /// "Enviar dados do aparelho": modelo, sistema e versão do app vão no
+  /// contexto da mensagem (sem senha nem CPF). Ligado por padrão.
+  bool _dadosAparelho = true;
+
+  /// Para a linha "Minhas mensagens": quantas enviou e quantas têm resposta.
+  late final Future<List<ResumoFeedback>> _resumo = repositorioFeedback(context).listar();
+
   @override
   void initState() {
     super.initState();
@@ -94,11 +102,12 @@ class _SugestoesPageState extends State<SugestoesPage> {
         ..addAll(cortados));
     } catch (e) {
       debugPrint('[FEEDBACK] FB-ANEXO-ABRIR $e');
-      registrarErro(const FalhaApp(
-          codigo: 'FB-ANEXO-ABRIR',
-          origem: OrigemFalha.aparelho,
-          titulo: 'Não foi possível abrir a galeria',
-          texto: 'Confira se o app pode acessar as fotos nos ajustes do aparelho.'),
+      registrarErro(
+          const FalhaApp(
+              codigo: 'FB-ANEXO-ABRIR',
+              origem: OrigemFalha.aparelho,
+              titulo: 'Não foi possível abrir a galeria',
+              texto: 'Confira se o app pode acessar as fotos nos ajustes do aparelho.'),
           tela: 'atend.feedback');
       if (mounted) {
         avisoErro(context, 'Não foi possível abrir a galeria',
@@ -127,14 +136,20 @@ class _SugestoesPageState extends State<SugestoesPage> {
         tipo: _tipo!,
         texto: texto,
         anexos: [for (final a in _anexos) (caminho: a.path!, nome: a.name)],
-        contexto: {'tela': 'atend.feedback', 'sistema': Platform.operatingSystem},
+        contexto: {
+          'tela': 'atend.feedback',
+          'sistema': Platform.operatingSystem,
+          if (_dadosAparelho) ...{
+            'aparelho': AmbienteApp.aparelho ?? Platform.operatingSystem,
+            'app_versao': AmbienteApp.versao,
+            'app_build': AmbienteApp.build,
+          },
+        },
       );
-      registrar('feedback.enviar',
-          chave: 'atend.feedback', dados: {'tipo': _tipo!.api, 'anexos': _anexos.length});
+      registrar('feedback.enviar', chave: 'atend.feedback', dados: {'tipo': _tipo!.api, 'anexos': _anexos.length});
       if (!mounted) return;
       avisoSucesso(context, 'Mensagem enviada', texto: 'Protocolo $protocolo. A resposta chega em Minhas mensagens.');
-      Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MinhasMensagensPage()));
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MinhasMensagensPage()));
     } on FalhaApp catch (f) {
       registrar('feedback.enviar', chave: 'atend.feedback', resultado: 'falhou', codigo: f.codigo);
       registrarErro(f, tela: 'atend.feedback');
@@ -144,110 +159,339 @@ class _SugestoesPageState extends State<SugestoesPage> {
     }
   }
 
+  void _abrirChamados() {
+    final gestor = context.read<Auth>().isSuperUser;
+    final item = itemPorChave('atend.chamados', menu: menuEmUso(RepositorioConfig.atual, gestor: gestor));
+    if (item != null) abrirFuncao(context, item, origem: 'feedback');
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final pri = theme.colorScheme.primary;
+    final mudo = theme.colorScheme.onSurface.withValues(alpha: .62);
+    final linha = theme.colorScheme.onSurface.withValues(alpha: .10);
+    final campo = theme.colorScheme.onSurface.withValues(alpha: .05);
     final n = _texto.text.trim().length;
+    Widget rotulo(String t, [String? apoio]) => Padding(
+          padding: const EdgeInsets.fromLTRB(2, 14, 2, 6),
+          child: Text.rich(
+              TextSpan(children: [
+                TextSpan(text: t, style: const TextStyle(fontWeight: FontWeight.w600)),
+                if (apoio != null) TextSpan(text: ' $apoio', style: TextStyle(color: mudo)),
+              ]),
+              style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface)),
+        );
+    Widget contador(String esq, String dir) => Padding(
+          padding: const EdgeInsets.fromLTRB(2, 4, 2, 0),
+          child: Row(children: [
+            Expanded(child: Text(esq, style: TextStyle(fontSize: 12, color: mudo))),
+            Text(dir, style: TextStyle(fontSize: 12, color: mudo)),
+          ]),
+        );
+    final borda = OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: linha));
+
     return FundoSuave(
       child: Scaffold(
-        appBar: CustomAppBar(title: 'Sugestões e elogios', actions: [
-          IconButton(
-            tooltip: 'Minhas mensagens',
-            icon: const Icon(Icons.forum_outlined, color: Colors.white),
-            onPressed: () => Navigator.of(context)
-                .push(MaterialPageRoute(builder: (_) => const MinhasMensagensPage())),
-          ),
-        ]),
+        appBar: const CustomAppBar(title: 'Sugestões e elogios'),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 2, 4, 4),
+              child: Text(
+                  'Ideias de melhoria, funções novas e elogios vão para a equipe do SouPMRR, que lê no painel e responde por aqui.',
+                  style: TextStyle(fontSize: 14, color: mudo)),
+            ),
+            const SizedBox(height: 8),
+            // Faixa informativa (protótipo `.aviso-faixa.info`).
+            Material(
+              color: pri.withValues(alpha: .10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: BorderSide(color: pri.withValues(alpha: .30)),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: _abrirChamados,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Icon(Icons.confirmation_number_outlined, color: pri),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text.rich(
+                        TextSpan(children: [
+                          const TextSpan(
+                              text: 'O app deu erro ou precisa de suporte?\n',
+                              style: TextStyle(fontWeight: FontWeight.w700)),
+                          TextSpan(
+                              text: 'Isso vai por chamado técnico, no Meus chamados.',
+                              style: TextStyle(fontSize: 12.5, color: mudo)),
+                        ]),
+                        style: TextStyle(fontSize: 13.5, color: theme.colorScheme.onSurface),
+                      ),
+                    ),
+                  ]),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            // "Minhas mensagens" com as contagens (protótipo `fb.lista`).
             CartaoVidro(
               raio: 14,
-              padding: const EdgeInsets.all(14),
-              onTap: () {
-                final gestor = context.read<Auth>().isSuperUser;
-                final item = itemPorChave('atend.chamados',
-                    menu: menuEmUso(RepositorioConfig.atual, gestor: gestor));
-                if (item != null) abrirFuncao(context, item, origem: 'feedback');
-              },
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MinhasMensagensPage())),
               child: Row(children: [
-                Icon(Icons.support_agent_outlined, color: theme.colorScheme.primary, size: AppIconSize.md),
+                Icon(Icons.forum_outlined, color: pri, size: AppIconSize.md),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text('O app deu erro ou você precisa de suporte? Isso vai por chamado técnico.',
-                      style: theme.textTheme.bodyMedium),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Minhas mensagens',
+                        style:
+                            TextStyle(fontSize: 15.5, fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface)),
+                    FutureBuilder<List<ResumoFeedback>>(
+                      future: _resumo,
+                      builder: (_, snap) {
+                        final l = snap.data;
+                        final texto = l == null
+                            ? 'Suas sugestões e as respostas da equipe'
+                            : '${l.length} ${l.length == 1 ? 'enviada' : 'enviadas'}'
+                                '${l.any((m) => m.respostasNovas > 0) ? ' · ${l.where((m) => m.respostasNovas > 0).length} com resposta nova' : ''}';
+                        return Text(texto, style: TextStyle(fontSize: 12.5, color: mudo));
+                      },
+                    ),
+                  ]),
                 ),
-                Icon(Icons.chevron_right_rounded, size: AppIconSize.sm, color: theme.colorScheme.onSurfaceVariant),
+                Icon(Icons.chevron_right_rounded,
+                    size: AppIconSize.sm, color: theme.colorScheme.onSurface.withValues(alpha: .38)),
               ]),
             ),
-            const SizedBox(height: 20),
-            Text('Tipo', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
+            rotulo('Sobre o que é?'),
             Wrap(spacing: 8, runSpacing: 8, children: [
-              for (final t in TipoFeedback.values)
-                ChoiceChip(
-                  label: Text(t.rotulo),
-                  selected: _tipo == t,
-                  onSelected: _enviando ? null : (_) => setState(() => _tipo = t),
+              for (final (t, icone) in [
+                (TipoFeedback.melhoria, Icons.auto_awesome_outlined),
+                (TipoFeedback.funcaoNova, Icons.add_box_outlined),
+                (TipoFeedback.elogio, Icons.favorite_border_rounded),
+              ])
+                _ChipTipo(
+                  rotulo: t.rotulo,
+                  icone: icone,
+                  ativo: _tipo == t,
+                  aoTocar: _enviando ? null : () => setState(() => _tipo = t),
                 ),
             ]),
-            const SizedBox(height: 20),
+            rotulo('Conte para a gente'),
             TextField(
               controller: _texto,
               enabled: !_enviando,
               minLines: 5,
               maxLines: 12,
               maxLength: _maxTexto,
+              buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
               onChanged: (_) => setState(() {}),
+              style: const TextStyle(fontSize: 15),
               decoration: InputDecoration(
-                labelText: 'Sua mensagem',
-                alignLabelWithHint: true,
-                helperText: n < _minTexto ? 'Mínimo de $_minTexto caracteres' : null,
+                hintText: 'O que você gostaria que o app fizesse?',
+                hintStyle: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: .45)),
                 errorText: _erroCampo,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                filled: true,
+                fillColor: campo,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: borda,
+                enabledBorder: borda,
+                focusedBorder: borda.copyWith(borderSide: BorderSide(color: pri, width: 2)),
               ),
             ),
+            contador(n < _minTexto ? 'Escreva pelo menos $_minTexto caracteres' : 'Pronto para enviar',
+                '${_texto.text.length}/$_maxTexto'),
+            rotulo('Prints e vídeos', '(até $_maxAnexos, 25 MB no total)'),
+            LayoutBuilder(builder: (context, c) {
+              final lado = (c.maxWidth - 16) / 3;
+              return Wrap(spacing: 8, runSpacing: 8, children: [
+                for (final a in _anexos)
+                  _Anexo(
+                    lado: lado,
+                    arquivo: a,
+                    aoTirar: _enviando ? null : () => setState(() => _anexos.remove(a)),
+                  ),
+                if (_anexos.length < _maxAnexos)
+                  SizedBox(
+                    width: lado,
+                    height: lado,
+                    child: Material(
+                      color: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: pri.withValues(alpha: .5), width: 1.5),
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: _enviando ? null : _escolherAnexos,
+                        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          Icon(Icons.add_photo_alternate_outlined, color: pri, size: 28),
+                          const SizedBox(height: 4),
+                          Text('Adicionar', style: TextStyle(fontSize: 11, color: pri)),
+                        ]),
+                      ),
+                    ),
+                  ),
+              ]);
+            }),
+            contador('${_anexos.length} de $_maxAnexos', '${(_bytes / 1048576).toStringAsFixed(1)} de 25 MB'),
             const SizedBox(height: 12),
-            Row(children: [
-              Expanded(
-                child: Text(
-                  _anexos.isEmpty
-                      ? 'Anexos (opcional): até $_maxAnexos fotos ou vídeos, 25 MB no total'
-                      : '${_anexos.length} de $_maxAnexos anexos · ${(_bytes / 1048576).toStringAsFixed(1)} MB',
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            CartaoVidro(
+              raio: 14,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('Enviar dados do aparelho',
+                        style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 2),
+                    Text(
+                        '${_aparelhoLegivel()} · SouPMRR ${AmbienteApp.versao} · tela de origem. Sem senha nem CPF.',
+                        style: TextStyle(fontSize: 12.5, color: mudo)),
+                  ]),
                 ),
-              ),
-              TextButton.icon(
-                onPressed: _enviando || _anexos.length >= _maxAnexos ? null : _escolherAnexos,
-                icon: const Icon(Icons.attach_file_rounded, size: AppIconSize.sm),
-                label: const Text('Anexar'),
-              ),
-            ]),
-            for (final a in _anexos)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-                leading: const Icon(Icons.insert_drive_file_outlined, size: AppIconSize.sm),
-                title: Text(a.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                trailing: IconButton(
-                  tooltip: 'Tirar anexo',
-                  icon: const Icon(Icons.close_rounded, size: AppIconSize.sm),
-                  onPressed: _enviando ? null : () => setState(() => _anexos.remove(a)),
+                const SizedBox(width: 10),
+                Switch.adaptive(
+                  value: _dadosAparelho,
+                  onChanged: _enviando ? null : (v) => setState(() => _dadosAparelho = v),
                 ),
-              ),
-            const SizedBox(height: 20),
+              ]),
+            ),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                 onPressed: _enviando ? null : _enviar,
-                child: _enviando
-                    ? const SizedBox(
-                        width: 20, height: 20, child: CircularProgressIndicator.adaptive(strokeWidth: 2))
-                    : const Text('Enviar'),
+                icon: _enviando
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator.adaptive(strokeWidth: 2))
+                    : const Icon(Icons.send_rounded, size: AppIconSize.sm),
+                label: const Text('Enviar'),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// "iPhone · iOS 27.1" ou "Android 16": o sistema com a versão, sem o
+/// número de build que o `Platform` traz junto.
+String _aparelhoLegivel() {
+  final v = RegExp(r'\d+(\.\d+)*').firstMatch(Platform.operatingSystemVersion)?.group(0) ?? '';
+  return Platform.isIOS ? 'iPhone · iOS $v'.trim() : 'Android $v'.trim();
+}
+
+/// Tipo da mensagem em chip (protótipo `.chip`, com ícone; o escolhido fica
+/// com o fundo da primária).
+class _ChipTipo extends StatelessWidget {
+  const _ChipTipo({required this.rotulo, required this.icone, required this.ativo, required this.aoTocar});
+  final String rotulo;
+  final IconData icone;
+  final bool ativo;
+  final VoidCallback? aoTocar;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final pri = theme.colorScheme.primary;
+    final cor = ativo ? pri : theme.colorScheme.onSurface;
+    return Semantics(
+      inMutuallyExclusiveGroup: true,
+      checked: ativo,
+      child: Material(
+        color: ativo ? pri.withValues(alpha: .16) : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(color: ativo ? Colors.transparent : theme.colorScheme.onSurface.withValues(alpha: .12)),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: aoTocar,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 36),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(icone, size: AppIconSize.xs, color: cor),
+                const SizedBox(width: 6),
+                Text(rotulo,
+                    style:
+                        TextStyle(fontSize: 13.5, fontWeight: ativo ? FontWeight.w600 : FontWeight.w400, color: cor)),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Anexo em miniatura (protótipo `.anexo`): a foto, ou o ícone do vídeo com
+/// o nome, e o "×" para tirar.
+class _Anexo extends StatelessWidget {
+  const _Anexo({required this.lado, required this.arquivo, required this.aoTirar});
+  final double lado;
+  final PlatformFile arquivo;
+  final VoidCallback? aoTirar;
+
+  static const _imagens = {'jpg', 'jpeg', 'png', 'heic', 'heif', 'gif', 'webp'};
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final mudo = theme.colorScheme.onSurface.withValues(alpha: .62);
+    final imagem = _imagens.contains((arquivo.extension ?? '').toLowerCase()) && arquivo.path != null;
+    return SizedBox(
+      width: lado,
+      height: lado,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(fit: StackFit.expand, children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.onSurface.withValues(alpha: .05),
+              border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: .10)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: imagem
+                ? Image.file(File(arquivo.path!), fit: BoxFit.cover, cacheWidth: 300)
+                : Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(Icons.movie_outlined, size: 28, color: mudo),
+                      Text(arquivo.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 11, color: mudo)),
+                    ]),
+                  ),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: Semantics(
+              button: true,
+              label: 'Tirar ${arquivo.name}',
+              excludeSemantics: true,
+              child: Material(
+                color: const Color(0x8C000000),
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: aoTirar,
+                  child: const SizedBox(
+                      width: 28, height: 28, child: Icon(Icons.close_rounded, size: 16, color: Colors.white)),
+                ),
+              ),
+            ),
+          ),
+        ]),
       ),
     );
   }
@@ -314,8 +558,8 @@ class _MinhasMensagensPageState extends State<MinhasMensagensPage> {
                     raio: 12,
                     padding: const EdgeInsets.all(14),
                     onTap: () async {
-                      await Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => MensagemDetalhePage(id: it.id)));
+                      await Navigator.of(context)
+                          .push(MaterialPageRoute(builder: (_) => MensagemDetalhePage(id: it.id)));
                       if (mounted) _recarregar();
                     },
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -407,8 +651,7 @@ class _MensagemDetalhePageState extends State<MensagemDetalhePage> {
               final f = snap.error is FalhaApp ? snap.error as FalhaApp : FalhaApp.inesperada('FB', snap.error!);
               registrarErro(f, tela: 'atend.feedback.detalhe');
               return EstadoErro(
-                  falha: f,
-                  aoTentar: () => setState(() => _detalhe = repositorioFeedback(context).ver(widget.id)));
+                  falha: f, aoTentar: () => setState(() => _detalhe = repositorioFeedback(context).ver(widget.id)));
             }
             final d = snap.data!;
             return ListView(
@@ -443,8 +686,8 @@ class _MensagemDetalhePageState extends State<MensagemDetalhePage> {
                         onPressed: () {
                           registrar('funcao.tocar', chave: 'atend.chamados', dados: {'origem': 'feedback'});
                           final gestor = context.read<Auth>().isSuperUser;
-                          final item = itemPorChave('atend.chamados',
-                              menu: menuEmUso(RepositorioConfig.atual, gestor: gestor));
+                          final item =
+                              itemPorChave('atend.chamados', menu: menuEmUso(RepositorioConfig.atual, gestor: gestor));
                           if (item != null) abrirFuncao(context, item, origem: 'feedback');
                         },
                       ),
