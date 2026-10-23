@@ -265,6 +265,11 @@ Object? _responder(Uri url, http.Request req) {
         'rede': {'timeout_s': 15},
         'comunicados': {'fonte': 'api'},
         'lotacao': {'subunidade': '2ª Cia', 'unidade': '1º BPM', 'comando': 'CPC'},
+        'lotacao_extenso': {
+          'subunidade': '2ª Companhia',
+          'unidade': '1º Batalhão de Polícia Militar',
+          'comando': 'Comando de Policiamento da Capital',
+        },
         // Início com Comando fictício (sem foto) e um card do painel: as
         // capturas e os vídeos não mostram os comandantes reais.
         'home': [

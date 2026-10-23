@@ -819,33 +819,19 @@ class SeloEstado extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final novo = texto.toLowerCase() == 'novo';
-    if (sobreArte) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.94),
-            borderRadius: BorderRadius.circular(8)),
-        child: Text(texto,
-            style: const TextStyle(
-                fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.navy)),
-      );
-    }
-    // Tons do DESIGN §3 por tema: o verde e o âmbar fortes não fecham 4,5:1
-    // sobre o vidro escuro.
-    final escuro = Theme.of(context).brightness == Brightness.dark;
+    // Protótipo `.selo`: fundo de 14% e o texto na cor, sem borda. Sobre a
+    // arte o fundo é sempre escuro, então valem os tons claros.
+    final escuro = sobreArte || Theme.of(context).brightness == Brightness.dark;
     final cor = novo
         ? (escuro ? const Color(0xFF6EE7A0) : const Color(0xFF14713B))
         : (escuro ? const Color(0xFFFFC233) : const Color(0xFF8A5A00));
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
         color: cor.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: cor.withValues(alpha: 0.5)),
       ),
-      child: Text(texto,
-          style: TextStyle(
-              fontSize: 11, fontWeight: FontWeight.w700, color: cor)),
+      child: Text(texto, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cor)),
     );
   }
 }

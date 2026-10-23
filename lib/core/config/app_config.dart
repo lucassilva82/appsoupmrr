@@ -280,6 +280,7 @@ class AppConfig {
     this.nivel,
     this.chamados = const {},
     this.lotacao = const [],
+    this.lotacaoExtensa = const [],
     this.recebidoEm,
   });
 
@@ -337,6 +338,11 @@ class AppConfig {
   /// "2ª Cia · 1º BPM · CPC"; vazio quando o servidor não mandou.
   String get lotacaoCurta => lotacao.join(' · ');
 
+  /// A lotação por extenso, para o Perfil (§6.2); sem ela, vale a curta.
+  final List<String> lotacaoExtensa;
+
+  String get lotacaoPorExtenso => (lotacaoExtensa.isEmpty ? lotacao : lotacaoExtensa).join(' · ');
+
   /// Quando a cópia em uso chegou do servidor ("Atualizado hoje às 07:30").
   final DateTime? recebidoEm;
 
@@ -382,6 +388,12 @@ class AppConfig {
           for (final k in const ['subunidade', 'unidade', 'comando'])
             if (j['lotacao'][k] is String && (j['lotacao'][k] as String).trim().isNotEmpty)
               (j['lotacao'][k] as String).trim(),
+      ],
+      lotacaoExtensa: [
+        if (j['lotacao_extenso'] is Map)
+          for (final k in const ['subunidade', 'unidade', 'comando'])
+            if (j['lotacao_extenso'][k] is String && (j['lotacao_extenso'][k] as String).trim().isNotEmpty)
+              (j['lotacao_extenso'][k] as String).trim(),
       ],
       recebidoEm: recebidoEm,
     );

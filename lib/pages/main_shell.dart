@@ -51,12 +51,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   // Ordem das abas: Início, Serviços, Avisos, Perfil.
   static const _abaAvisos = 2;
-  static const _chavesAba = [
-    'aba.inicio',
-    'aba.servicos',
-    'aba.avisos',
-    'aba.perfil'
-  ];
+  static const _chavesAba = ['aba.inicio', 'aba.servicos', 'aba.avisos', 'aba.perfil'];
 
   /// Última leitura do `app_config` pelo shell (§5.3: na volta ao app depois
   /// de 5 minutos, relê).
@@ -107,8 +102,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   Future<void> _recarregarConfig() async {
     _configLidoEm = DateTime.now();
     final auth = Provider.of<Auth>(context, listen: false);
-    await carregarAppConfig(
-        api: ApiClient(), matricula: auth.matricula, senha: auth.password);
+    await carregarAppConfig(api: ApiClient(), matricula: auth.matricula, senha: auth.password);
   }
 
   /// Busca na aba atual (⌘F no iPad, Ctrl+F no Android com teclado).
@@ -149,8 +143,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     final nome = settings.name;
     if (_rotasDaRaiz.contains(nome)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(context, rootNavigator: true)
-            .pushNamed(nome!, arguments: settings.arguments);
+        Navigator.of(context, rootNavigator: true).pushNamed(nome!, arguments: settings.arguments);
       });
       return null;
     }
@@ -167,8 +160,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
         child: Navigator(
           key: _navegadores[i],
           onGenerateRoute: (s) => _rota(s, raiz),
-          onUnknownRoute: (s) =>
-              MaterialPageRoute(settings: s, builder: (_) => raiz),
+          onUnknownRoute: (s) => MaterialPageRoute(settings: s, builder: (_) => raiz),
         ),
       );
 
@@ -207,14 +199,9 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       index: _currentIndex,
       children: [
         _aba(0, _RaizAba(indice: 0, irPara: _irPara, child: const HomeBody())),
-        _aba(1,
-            _RaizAba(indice: 1, irPara: _irPara, child: const ServicosBody())),
-        _aba(
-            2,
-            _RaizAba(
-                indice: 2, irPara: _irPara, child: const NotificationsBody())),
-        _aba(3,
-            _RaizAba(indice: 3, irPara: _irPara, child: const SettingsBody())),
+        _aba(1, _RaizAba(indice: 1, irPara: _irPara, child: const ServicosBody())),
+        _aba(2, _RaizAba(indice: 2, irPara: _irPara, child: const NotificationsBody())),
+        _aba(3, _RaizAba(indice: 3, irPara: _irPara, child: const SettingsBody())),
       ],
     );
     final itens = [
@@ -250,10 +237,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     // No Android com teclado, Ctrl no lugar do ⌘.
     final atalhos = <ShortcutActivator, VoidCallback>{
       for (final ctrl in [false, true]) ...{
-        SingleActivator(LogicalKeyboardKey.keyF, meta: !ctrl, control: ctrl):
-            _abrirBusca,
-        SingleActivator(LogicalKeyboardKey.keyR, meta: !ctrl, control: ctrl):
-            _recarregarConfig,
+        SingleActivator(LogicalKeyboardKey.keyF, meta: !ctrl, control: ctrl): _abrirBusca,
+        SingleActivator(LogicalKeyboardKey.keyR, meta: !ctrl, control: ctrl): _recarregarConfig,
         for (final (i, tecla) in [
           LogicalKeyboardKey.digit1,
           LogicalKeyboardKey.digit2,
@@ -308,8 +293,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 /// A tela raiz de cada aba: a barra de vidro com o título da aba e o
 /// conteúdo. As funções abertas por cima trazem a própria barra.
 class _RaizAba extends StatelessWidget {
-  const _RaizAba(
-      {required this.indice, required this.irPara, required this.child});
+  const _RaizAba({required this.indice, required this.irPara, required this.child});
 
   final int indice;
   final ValueChanged<int> irPara;
@@ -374,77 +358,77 @@ class _RaizAba extends StatelessWidget {
     required NotificationProvider notifProvider,
   }) {
     final cor = Theme.of(context).colorScheme.onSurface;
+    final linha = Row(
+      children: [
+        // Título dinâmico por aba
+        Expanded(
+          child: indice == 0
+              ? _titleHome(context, nome, isSuperUser, isAdmin)
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      ['Início', 'Serviços', 'Avisos', 'Perfil'][indice],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      // iOS: título grande (32, negrito); Android: o da
+                      // TopAppBar média do Material 3 (24, regular).
+                      style: TextStyle(
+                        fontSize: _ios ? 32 : 24,
+                        fontWeight: _ios ? FontWeight.w700 : FontWeight.w400,
+                        letterSpacing: _ios ? -0.64 : 0,
+                        height: 1.1,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+
+        // Ações à direita, como no protótipo: Início com lupa e sino,
+        // Serviços com o sino (a busca já fica no topo da tela), Avisos
+        // com "Marcar todos" e Perfil com a lupa.
+        if (indice == 0 || indice == 3)
+          IconButton(
+            tooltip: 'Buscar',
+            icon: Icon(Icons.search, color: cor),
+            onPressed: () =>
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BuscaPage())),
+          ),
+        if (indice == 0 || indice == 1) _notificationBell(unread, cor),
+        if (indice == _abaAvisos && unread > 0)
+          TextButton(
+            onPressed: () => notifProvider.markAllAsRead(),
+            child: Text(
+              'Marcar todos',
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600),
+            ),
+          ),
+      ],
+    );
     return Padding(
       padding: const EdgeInsets.only(left: 18, right: 6),
-      child: Row(
-        children: [
-          // Título dinâmico por aba
-          Expanded(
-            child: indice == 0
-                ? _titleHome(context, nome, isSuperUser, isAdmin)
-                : Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        ['Início', 'Serviços', 'Avisos', 'Perfil'][indice],
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        // iOS: título grande (32, negrito); Android: o da
-                        // TopAppBar média do Material 3 (24, regular).
-                        style: TextStyle(
-                          fontSize: _ios ? 32 : 24,
-                          fontWeight: _ios ? FontWeight.w700 : FontWeight.w400,
-                          letterSpacing: _ios ? -0.64 : 0,
-                          height: 1.1,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      // Avisos diz numa linha o que é a aba (§3.1).
-                      if (indice == _abaAvisos)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(
-                            'Mensagens do SouPMRR para você'
-                            '${unread > 0 ? ' · $unread ${unread == 1 ? 'não lido' : 'não lidos'}' : ''}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                fontSize: 13,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.62)),
-                          ),
-                        ),
-                    ],
-                  ),
-          ),
-
-          // Ações à direita, como no protótipo: Início com lupa e sino,
-          // Serviços com o sino (a busca já fica no topo da tela), Avisos
-          // com "Marcar todos" e Perfil com a lupa.
-          if (indice == 0 || indice == 3)
-            IconButton(
-              tooltip: 'Buscar',
-              icon: Icon(Icons.search, color: cor),
-              onPressed: () => Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => const BuscaPage())),
+      child: indice != _abaAvisos
+          ? linha
+          // Avisos diz numa linha, na largura toda, o que é a aba (§3.1).
+          : Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 42, child: linha),
+                Text(
+                  'Mensagens do SouPMRR para você'
+                  '${unread > 0 ? ' · $unread ${unread == 1 ? 'não lido' : 'não lidos'}' : ''}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, color: cor.withValues(alpha: 0.62)),
+                ),
+              ],
             ),
-          if (indice == 0 || indice == 1) _notificationBell(unread, cor),
-          if (indice == _abaAvisos && unread > 0)
-            TextButton(
-              onPressed: () => notifProvider.markAllAsRead(),
-              child: Text(
-                'Marcar todos',
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600),
-              ),
-            ),
-        ],
-      ),
     );
   }
 
@@ -460,16 +444,14 @@ class _RaizAba extends StatelessWidget {
 
   /// Saudação grande e, embaixo, a lotação em siglas com o selo do nível
   /// (§6.2; protótipo `.ola`).
-  Widget _titleHome(
-      BuildContext context, String nome, bool isSuperUserLegado, bool isAdmin) {
+  Widget _titleHome(BuildContext context, String nome, bool isSuperUserLegado, bool isAdmin) {
     final theme = Theme.of(context);
     final config = RepositorioConfig.atual;
     // Com os níveis ligados no painel, o selo é o nome curto do nível (§6.2);
     // até lá, a regra de hoje.
     final nivel = config.nivel;
     final isSuperUser = nivel != null ? nivel.selo : isSuperUserLegado;
-    final label =
-        nivel != null ? nivel.nomeCurto : (isAdmin ? 'Admin' : 'Gestor');
+    final label = nivel != null ? nivel.nomeCurto : (isAdmin ? 'Admin' : 'Gestor');
     final lotacao = config.lotacaoCurta;
     final mudo = theme.colorScheme.onSurface.withValues(alpha: 0.62);
     return Column(
@@ -505,12 +487,10 @@ class _RaizAba extends StatelessWidget {
                 if (isSuperUser) ...[
                   if (lotacao.isNotEmpty) const SizedBox(width: 6),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
                     decoration: BoxDecoration(
                       color: AppColors.gold.withValues(alpha: 0.12),
-                      border: Border.all(
-                          color: AppColors.gold.withValues(alpha: 0.30)),
+                      border: Border.all(color: AppColors.gold.withValues(alpha: 0.30)),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(

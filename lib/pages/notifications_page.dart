@@ -31,7 +31,7 @@ _NotifCategoria _categoriaDe(NotificationModel n, ThemeData theme) {
   }
   if (r.contains('contracheque')) {
     return const _NotifCategoria(
-        Icons.request_quote_rounded, Color(0xFF7C3AED), 'Contracheque');
+        Icons.receipt_long_rounded, Color(0xFF7C3AED), 'Contracheque');
   }
   if (r.contains('feria')) {
     return const _NotifCategoria(
@@ -43,7 +43,10 @@ _NotifCategoria _categoriaDe(NotificationModel n, ThemeData theme) {
   }
   if (r.contains('certid')) {
     return const _NotifCategoria(
-        Icons.edit_document, Color(0xFF6366F1), 'Certidões');
+        Icons.verified_outlined, Color(0xFF6366F1), 'Certidões');
+  }
+  if (r.contains('feedback') || r.contains('sugest')) {
+    return _NotifCategoria(Icons.rate_review_outlined, theme.colorScheme.primary, 'Sugestões');
   }
   if (r.contains('legisla')) {
     return const _NotifCategoria(
