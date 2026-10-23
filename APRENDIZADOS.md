@@ -1512,3 +1512,36 @@ apareceu porque o `conexao.php` falso só criava o `$conexaoPdo`.
 (`$pedMatricula`, `$pedSenha`) ou são lidas depois do `require`. E o
 `conexao.php` falso dos testes locais define as mesmas variáveis do de
 produção (`$host`, `$usuario`, `$senha`, `$banco`), só com valores de teste.
+
+---
+
+## 44. Contracheque não é da DRH, e a pasta "documentos" dá 403 no servidor
+
+**O contracheque (22/10/2026).** A primeira versão do PDF montado na API
+(fase 3b) usava o papel timbrado das certidões, com "DIRETORIA DE RECURSOS
+HUMANOS - PMRR" no cabeçalho e no rodapé, e as mensagens de erro diziam
+"Procure a Diretoria de Recursos Humanos". O usuário recusou: **o contracheque
+não tem relação com a DRH**. Ficou o papel próprio (`ContrachequePapel`, em
+`sigrh/doc/contracheque_pdf_classe.php`): brasão, "GOVERNO DO ESTADO DE
+RORAIMA", "POLÍCIA MILITAR DO ESTADO DE RORAIMA", filete duplo e rodapé
+"Polícia Militar do Estado de Roraima · Documento emitido eletronicamente pelo
+SouPMRR". As mensagens dizem "Procure a seção responsável pela folha de
+pagamento". O usuário pediu também o **QR Code**, que leva à conferência
+pública (`sigrh/doc/conferir.php`: situação, mês, folha, nome com o meio
+abreviado, matrícula parcial e os totais; nunca rubricas, CPF nem conta).
+
+**A pasta.** A conferência foi criada em `sigrh/documentos/` e respondia 403
+a qualquer pedido, até a arquivo que não existe. As permissões estavam certas
+e nenhum `.htaccess` nosso bloqueava: é uma regra do servidor pelo nome
+`documentos`. `doc/`, `conferencia/` e `contracheque/` passam (404 para arquivo
+inexistente). A pasta virou `sigrh/doc/`, e o endereço do QR
+(`https://pmrr.online/flutter/sigrh/doc/conferir.php`) **nunca pode mudar**,
+como o `verificar.php` das certidões.
+
+**Regras.**
+- Documento novo: conferir com o usuário de que unidade ele é antes de copiar
+  o papel timbrado de outro documento.
+- Pasta nova na API: antes de subir, testar o nome com um arquivo inexistente
+  (`curl -o /dev/null -w "%{http_code}"`). 404 é o esperado; 403 quer dizer
+  que o servidor bloqueia aquele nome.
+

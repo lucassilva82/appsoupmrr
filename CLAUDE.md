@@ -64,6 +64,10 @@ que depende dela.
   "Diretoria de Recursos Humanos - PMRR". PDF: "GOVERNO DO ESTADO DE RORAIMA" /
   "POLÍCIA MILITAR DO ESTADO DE RORAIMA" / "DIRETORIA DE RECURSOS HUMANOS - PMRR".
   Nunca "Diretoria/Departamento de Pessoal". Suporte técnico é o DTI.
+  **Exceção: o contracheque não é da DRH** e não cita a Diretoria de Recursos
+  Humanos em lugar nenhum (cabeçalho, rodapé, ressalva, mensagens): só
+  "GOVERNO DO ESTADO DE RORAIMA" / "POLÍCIA MILITAR DO ESTADO DE RORAIMA"
+  (APRENDIZADOS §44).
 - **Nada de texto ou configuração fixa no app.** Nomes, descrições, títulos,
   textos de tela e liga/desliga vêm da API, que lê do banco (`soupm_*`) por cima
   dos padrões do código, porque tudo isso vai ser gerenciado pelo painel de
