@@ -6,10 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../core/ambiente_app.dart';
 import '../../core/config/app_config.dart';
 import '../../core/log/registro_log.dart';
 import '../../widgets/aviso_rapido.dart';
+import '../../utils/app_theme.dart';
 import '../../widgets/vidro.dart';
 import '../../core/design/viatura.dart';
 
@@ -85,66 +85,146 @@ class _TelaAtualizacaoState extends State<TelaAtualizacao> with TickerProviderSt
     }
   }
 
+  /// Padrão do app quando o painel não escreveu as novidades desta loja.
+  static const _novidadesPadrao = [
+    (Icons.dashboard_outlined, 'Menu novo, organizado por áreas'),
+    (Icons.campaign_outlined, 'Comunicados oficiais na tela inicial'),
+    (Icons.shield_outlined, 'Mais segurança para seus dados'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final escuro = theme.brightness == Brightness.dark;
+    final cs = theme.colorScheme;
+    final apoio = cs.onSurface.withValues(alpha: 0.68);
     final titulo = widget.regra?.titulo ?? 'Essa versão já deu baixa';
+    final artigo = Platform.isIOS ? 'na' : 'no';
     final texto = widget.regra?.texto ??
-        'A ${widget.instalada} está velha demais para rodar. A $_nova já está na $nomeLoja, revisada e de tanque cheio.';
+        'A ${widget.instalada} está velha demais para rodar. A $_nova já está $artigo $nomeLoja, revisada e de tanque cheio.';
+    final doPainel = widget.regra?.novidades ?? const <String>[];
+    final novidades = doPainel.isEmpty
+        ? _novidadesPadrao
+        : [for (final t in doPainel) (Icons.check_circle_outline_rounded, t)];
+    final erro = escuro ? AppColors.falhaEscuro : AppColors.falha;
+    final ok = escuro ? AppColors.sucessoEscuro : AppColors.sucesso;
+
     return FundoSuave(
       child: Scaffold(
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.fromLTRB(28, 24, 28, 24),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 480),
+                constraints: const BoxConstraints(maxWidth: 420),
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Semantics(
-                    label: 'Ilustração: uma viatura velha, com a versão ${widget.instalada}, e um policial triste ao lado de uma viatura nova, com a versão $_nova.',
+                    label: 'Um Fusca velho da polícia, com a versão ${widget.instalada}, e um policial triste ao lado; à direita, uma viatura nova, com a versão $_nova.',
                     excludeSemantics: true,
-                    child: SizedBox(
-                      height: 170,
-                      child: AnimatedBuilder(
-                        animation: Listenable.merge([_loop, _troca]),
-                        builder: (_, __) => CustomPaint(
-                          size: const Size(double.infinity, 170),
-                          painter: _PintorCena(
-                              loop: _loop.value,
-                              troca: _troca.value,
-                              instalada: widget.instalada,
-                              nova: _nova),
-                        ),
+                    // A cena tem a medida do protótipo (360 × 206) e só encolhe.
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: SizedBox(
+                        width: _PintorCena.largura,
+                        height: _PintorCena.altura,
+                        child: Stack(clipBehavior: Clip.none, children: [
+                          Positioned.fill(
+                            child: AnimatedBuilder(
+                              animation: Listenable.merge([_loop, _troca]),
+                              builder: (_, __) => CustomPaint(
+                                painter: _PintorCena(
+                                  loop: _loop.value,
+                                  troca: _troca.value,
+                                  instalada: widget.instalada,
+                                  nova: _nova,
+                                  chao: cs.onSurface,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            left: -4, width: 164, top: 190,
+                            child: Center(child: _Etiqueta(texto: 'Sua versão · ${widget.instalada}', cor: erro)),
+                          ),
+                          Positioned(
+                            right: -4, width: 164, top: 190,
+                            child: Center(child: _Etiqueta(texto: 'Nova · $_nova', cor: ok, icone: Icons.check_circle_rounded)),
+                          ),
+                        ]),
                       ),
                     ),
                   ),
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                    // Com fonte grande, encolhe em vez de estourar a linha.
-                    Flexible(child: FittedBox(fit: BoxFit.scaleDown,
-                        child: _Etiqueta(texto: 'Sua versão · ${widget.instalada}', cor: theme.colorScheme.error))),
-                    Flexible(child: FittedBox(fit: BoxFit.scaleDown,
-                        child: _Etiqueta(texto: 'Nova · $_nova', cor: const Color(0xFF14713B)))),
-                  ]),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 30),
                   Text('ATUALIZAÇÃO OBRIGATÓRIA',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.primary, letterSpacing: 1.4, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 6),
-                  Text(titulo, textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 11.5,
+                          letterSpacing: 2,
+                          fontWeight: FontWeight.w700,
+                          color: escuro ? AppColors.gold : const Color(0xFF8A5A00))),
+                  const SizedBox(height: 10),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 260),
+                    child: Text(titulo,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 25, height: 1.15, fontWeight: FontWeight.w800, letterSpacing: -0.4)),
+                  ),
+                  const SizedBox(height: 10),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 320),
+                    child: Text(texto, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: apoio)),
+                  ),
+                  const SizedBox(height: 16),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 310),
+                    child: Column(children: [
+                      for (final n in novidades)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: cs.onSurface.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: cs.onSurface.withValues(alpha: 0.10)),
+                            ),
+                            child: Row(children: [
+                              ExcludeSemantics(child: Icon(n.$1, size: AppIconSize.sm, color: cs.primary)),
+                              const SizedBox(width: 10),
+                              Expanded(child: Text(n.$2, style: const TextStyle(fontSize: 14.5))),
+                            ]),
+                          ),
+                        ),
+                    ]),
+                  ),
                   const SizedBox(height: 8),
-                  Text(texto, textAlign: TextAlign.center, style: theme.textTheme.bodyLarge),
-                  const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: _troca.isAnimating ? null : _atualizar,
-                      icon: const Icon(Icons.system_update_alt_rounded),
-                      label: Text('Atualizar na $nomeLoja'),
+                      icon: Icon(Platform.isIOS ? Icons.apps_rounded : Icons.shop_rounded, size: AppIconSize.sm),
+                      label: Text('Atualizar $artigo $nomeLoja'),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Text('Código $_codigo · ${AmbienteApp.plataforma}', style: theme.textTheme.bodySmall),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 4,
+                    children: [
+                      Text('Leva menos de um minuto ·', style: TextStyle(fontSize: 12, color: apoio)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: cs.onSurface.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(_codigo,
+                            style: TextStyle(fontSize: 11.5, fontFamily: 'Menlo', fontFamilyFallback: const ['monospace'], color: apoio)),
+                      ),
+                    ],
+                  ),
                 ]),
               ),
             ),
@@ -156,163 +236,256 @@ class _TelaAtualizacaoState extends State<TelaAtualizacao> with TickerProviderSt
 }
 
 class _Etiqueta extends StatelessWidget {
-  const _Etiqueta({required this.texto, required this.cor});
+  const _Etiqueta({required this.texto, required this.cor, this.icone});
   final String texto;
   final Color cor;
+  final IconData? icone;
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(border: Border.all(color: cor), borderRadius: BorderRadius.circular(10)),
-        child: Text(texto, style: TextStyle(color: cor, fontWeight: FontWeight.w700, fontSize: 12)),
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
+        decoration: BoxDecoration(color: cor.withValues(alpha: 0.13), borderRadius: BorderRadius.circular(12)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          if (icone != null) ...[Icon(icone, size: 14, color: cor), const SizedBox(width: 4)],
+          Text(texto, style: TextStyle(color: cor, fontWeight: FontWeight.w700, fontSize: 11.5)),
+        ]),
       );
 }
 
-/// Fusca velho (esquerda) e viatura nova (direita), vetoriais e próprios: sem
-/// foto, placa ou pessoa real.
+/// A cena do protótipo (`telaAtualizar`), em vetor próprio: o Fusca velho da
+/// PMRR (esquerda), o policial e a viatura nova (direita). Sem foto, placa ou
+/// pessoa real. As medidas são as do protótipo, num quadro de 360 × 206.
 class _PintorCena extends CustomPainter {
   _PintorCena({
     required this.loop,
     required this.troca,
     required this.instalada,
     required this.nova,
+    required this.chao,
   });
+  static const largura = 360.0;
+  static const altura = 206.0;
+
   final double loop;
   final double troca;
 
-  /// As duas vão escritas na lateral, como o número da viatura: a instalada no
-  /// Fusca, a da loja na caminhonete.
+  /// As duas vão escritas na lateral, como o número da viatura.
   final String instalada;
   final String nova;
+  final Color chao;
+
+  // Os desenhos do protótipo têm 200 × 112 e aparecem com 164 de largura.
+  static const _k = 164 / 200;
 
   @override
   void paint(Canvas canvas, Size s) {
-    final solo = s.height - 18;
-    canvas.drawLine(Offset(0, solo + 14), Offset(s.width, solo + 14),
-        Paint()..color = Colors.white24..strokeWidth = 2);
-    final meio = s.width / 2;
+    // Chão: um fio que some nas pontas.
+    canvas.drawRect(
+      const Rect.fromLTWH(0, altura - 23, largura, 2),
+      Paint()
+        ..shader = LinearGradient(colors: [
+          chao.withValues(alpha: 0),
+          chao.withValues(alpha: 0.25),
+          chao.withValues(alpha: 0.25),
+          chao.withValues(alpha: 0),
+        ], stops: const [0, 0.2, 0.8, 1]).createShader(const Rect.fromLTWH(0, 0, largura, 2)),
+    );
 
-    // ── Fusca: treme, fumaça atrás; na troca perde a cor e afunda ──────────
-    final tremor = math.sin(loop * math.pi * 16) * 1.2 * (1 - troca);
+    // ── Fusca: treme e solta fumaça; na troca perde a cor e afunda ─────────
+    final tremor = math.sin(loop * math.pi * 16) * 0.8 * (1 - troca);
     canvas.save();
-    canvas.translate(meio * 0.5 + tremor, solo + troca * 6);
-    final apagado = 1 - troca * 0.7;
-    final corpo = Path()
-      ..moveTo(-62, 0)
-      ..cubicTo(-62, -34, -36, -58, 0, -58)
-      ..cubicTo(36, -58, 62, -34, 62, 0)
-      ..close();
-    canvas.drawPath(corpo, Paint()..color = const Color(0xFFD6D3C4).withValues(alpha: apagado));
-    // Faixa azul desbotada e ferrugem.
-    canvas.drawRect(const Rect.fromLTRB(-60, -20, 60, -13), Paint()..color = const Color(0xFF6B7FA8).withValues(alpha: apagado));
-    canvas.drawCircle(const Offset(-38, -8), 5, Paint()..color = const Color(0xFF9A5B2E).withValues(alpha: 0.7 * apagado));
-    canvas.drawCircle(const Offset(30, -30), 4, Paint()..color = const Color(0xFF9A5B2E).withValues(alpha: 0.6 * apagado));
-    // O número da viatura é a versão instalada, como no protótipo.
-    (TextPainter(
-      text: TextSpan(
-        text: 'VTR $instalada',
-        style: TextStyle(
-          fontSize: 8,
-          height: 1,
-          fontWeight: FontWeight.w700,
-          fontStyle: FontStyle.italic,
-          color: const Color(0xFF3F4A5F).withValues(alpha: 0.8 * apagado),
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout())
-        .paint(canvas, const Offset(-52, -32));
-    // Vidro trincado.
-    canvas.drawRRect(RRect.fromLTRBR(-30, -50, 30, -30, const Radius.circular(10)), Paint()..color = const Color(0xFF334155));
-    canvas.drawLine(const Offset(-10, -48), const Offset(4, -34), Paint()..color = Colors.white54..strokeWidth = 1);
-    canvas.drawLine(const Offset(4, -34), const Offset(14, -44), Paint()..color = Colors.white54..strokeWidth = 1);
-    // Giroflex redondo apagado e antena torta.
-    canvas.drawCircle(const Offset(0, -62), 6, Paint()..color = const Color(0xFF64748B));
-    canvas.drawLine(const Offset(40, -40), const Offset(58, -64), Paint()..color = Colors.white38..strokeWidth = 1.5);
-    // Rodas: a de trás murcha.
-    final roda = Paint()..color = const Color(0xFF111827);
-    canvas.drawCircle(const Offset(36, 2), 12, roda);
-    canvas.drawOval(Rect.fromCenter(center: const Offset(-36, 6), width: 28, height: 15), roda);
+    canvas.translate(-4 + tremor, altura - 20 - 92 + Curves.easeIn.transform(troca) * 8);
+    canvas.scale(_k);
+    _fusca(canvas, apagado: troca);
     canvas.restore();
-    // Fumaça do Fusca.
-    for (var i = 0; i < 3; i++) {
-      final f = (loop + i / 3) % 1;
-      canvas.drawCircle(Offset(meio * 0.5 - 70 - f * 24, solo - 8 - f * 26), 6 + f * 9,
-          Paint()..color = Colors.white.withValues(alpha: 0.28 * (1 - f) * (1 - troca)));
-    }
 
-    // ── Viatura nova: caminhonete com barra de LED; na troca, salto ────────
-    final salto = math.sin(troca * math.pi) * 18;
+    // ── Viatura nova: o meio dos eixos do desenho fica em (105, 88) ────────
+    final salto = troca > 0.75 ? math.sin((troca - 0.75) / 0.25 * math.pi) * 14 : 0.0;
     canvas.save();
-    canvas.translate(meio * 1.5, solo - salto);
+    canvas.translate(largura + 4 - 164 + 105 * _k, altura - 20 - 92 + 88 * _k - salto);
     desenharViatura(canvas,
         giroflexAceso: (loop * 6).floor().isEven,
         giroRodas: troca * math.pi * 4,
         versao: nova);
     canvas.restore();
 
-    // ── Policial genérico (sem semelhança com ninguém): triste ao lado do
-    // Fusca; na troca, dois pulinhos até a viatura nova e fica feliz.
+    // ── Policial: triste ao lado do Fusca; na troca, dois pulinhos até a
+    // viatura nova e fica feliz.
     final passo = Curves.easeInOut.transform(troca.clamp(0.0, 1.0));
-    final px = meio * 0.95 + (meio * 1.5 - 96 - meio * 0.95) * passo;
+    final px = 142 + 40 * passo;
     final pulo = (math.sin(troca * math.pi * 2).abs()) * 14 * (troca < 1 ? 1 : 0);
-    _policial(canvas, Offset(px, solo + 12 - pulo), feliz: troca > 0.5, loop: loop);
+    canvas.save();
+    canvas.translate(px, altura - 22 - 94 - pulo);
+    canvas.scale(52 / 44);
+    _policial(canvas, feliz: troca > 0.42);
+    canvas.restore();
 
     // Confete no salto.
-    if (troca > 0.3 && troca < 1) {
+    if (troca > 0.75 && troca < 1) {
       final r = math.Random(7);
-      for (var i = 0; i < 18; i++) {
-        final ang = r.nextDouble() * math.pi;
-        final d = (troca - 0.3) * 120 * (0.5 + r.nextDouble());
+      final t = (troca - 0.75) / 0.25;
+      const cores = [Color(0xFFFFD54F), Color(0xFF22A64A), Color(0xFF1F4FCF), Color(0xFFE5484D), Color(0xFFFFFFFF)];
+      for (var i = 0; i < 14; i++) {
+        final dx = ((i * 37) % 120 - 60).toDouble();
         canvas.drawRect(
-          Rect.fromCenter(center: Offset(meio * 1.5 + math.cos(ang) * d, solo - 70 - math.sin(ang) * d), width: 4, height: 7),
-          Paint()..color = [const Color(0xFFEF4444), const Color(0xFF60A5FA), const Color(0xFFFACC15), const Color(0xFF22C55E)][i % 4]
-              .withValues(alpha: 1 - troca),
+          Rect.fromCenter(center: Offset(282 + dx * t, 70 - 40 * t + 90 * t * t * r.nextDouble()), width: 4, height: 7),
+          Paint()..color = cores[i % 5].withValues(alpha: 1 - t),
         );
       }
     }
   }
 
-  /// Policial em desenho, com os pés em [pe]: farda e boina azuis da PMRR.
-  void _policial(Canvas canvas, Offset pe, {required bool feliz, required double loop}) {
-    const farda = Color(0xFF1E3A8A);
-    const pele = Color(0xFFD9A57B);
-    const tinta = Color(0xFF0F172A);
-    final traco = Paint()..color = tinta..strokeWidth = 2..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
-    // Pernas e corpo.
-    canvas.drawLine(pe + const Offset(-5, 0), pe + const Offset(-5, -14), Paint()..color = tinta..strokeWidth = 4);
-    canvas.drawLine(pe + const Offset(5, 0), pe + const Offset(5, -14), Paint()..color = tinta..strokeWidth = 4);
-    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: pe + const Offset(0, -26), width: 22, height: 26),
-        const Radius.circular(6)), Paint()..color = farda);
-    // Braços: caídos quando triste, para cima quando feliz.
-    final braco = Paint()..color = farda..strokeWidth = 5..strokeCap = StrokeCap.round;
-    for (final lado in [-1.0, 1.0]) {
-      final ombro = pe + Offset(10 * lado, -34);
-      final mao = feliz ? ombro + Offset(8 * lado, -16) : ombro + Offset(3 * lado, 16);
-      canvas.drawLine(ombro, mao, braco);
-      canvas.drawCircle(mao, 3, Paint()..color = pele);
+  /// O Fusca do protótipo (`fusca()`), no quadro de 200 × 112.
+  void _fusca(Canvas c, {required double apagado}) {
+    final a = 1 - apagado * 0.7;
+    Paint cor(int v, [double op = 1]) => Paint()..color = Color(v).withValues(alpha: op * a);
+    Paint traco(int v, double w) => Paint()
+      ..color = Color(v).withValues(alpha: a)
+      ..strokeWidth = w
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    // Fumaça saindo de trás.
+    for (var i = 0; i < 3; i++) {
+      final f = (loop + i / 3) % 1;
+      c.drawCircle(Offset(10 - f * 16, 80 - f * 30), 6 + f * 6,
+          Paint()..color = const Color(0xFFB9BEC6).withValues(alpha: 0.45 * (1 - f) * (1 - apagado)));
     }
-    // Cabeça e boina.
-    final cabeca = pe + const Offset(0, -48);
-    canvas.drawCircle(cabeca, 10, Paint()..color = pele);
-    canvas.drawOval(Rect.fromCenter(center: cabeca + const Offset(-2, -8), width: 24, height: 9), Paint()..color = farda);
-    canvas.drawCircle(cabeca + const Offset(6, -9), 2.2, Paint()..color = const Color(0xFFE0A100));
-    // Olhos e boca.
-    canvas.drawCircle(cabeca + const Offset(-3.5, -1), 1.3, Paint()..color = tinta);
-    canvas.drawCircle(cabeca + const Offset(3.5, -1), 1.3, Paint()..color = tinta);
-    final boca = Rect.fromCenter(center: cabeca + Offset(0, feliz ? 3 : 7), width: 8, height: 6);
-    canvas.drawArc(boca, feliz ? 0.2 : math.pi + 0.2, math.pi - 0.4, false, traco);
-    // Lágrima, caindo devagar.
-    if (!feliz) {
+    // Antena entortada.
+    c.drawPath(Path()..moveTo(150, 30)..lineTo(164, 8)..lineTo(170, 10), traco(0xFF8A8F96, 1.4));
+    // Carroceria.
+    c.drawPath(
+        Path()
+          ..moveTo(18, 86)
+          ..cubicTo(18, 64, 34, 48, 62, 42)
+          ..cubicTo(76, 24, 118, 20, 138, 34)
+          ..cubicTo(160, 40, 182, 56, 184, 86)
+          ..close(),
+        cor(0xFFE4DECF));
+    c.drawOval(Rect.fromCenter(center: const Offset(52, 80), width: 54, height: 34), cor(0xFFDCD5C4));
+    c.drawOval(Rect.fromCenter(center: const Offset(152, 80), width: 52, height: 32), cor(0xFFDCD5C4));
+    // Faixa azul desbotada.
+    c.drawPath(
+        Path()
+          ..moveTo(20, 70)
+          ..cubicTo(60, 62, 140, 62, 184, 70)
+          ..lineTo(184, 76)
+          ..cubicTo(140, 68, 60, 68, 20, 76)
+          ..close(),
+        cor(0xFF6F86B2));
+    // Vidro, com a coluna e a trinca.
+    c.drawPath(
+        Path()
+          ..moveTo(70, 44)
+          ..cubicTo(82, 30, 110, 27, 124, 36)
+          ..lineTo(126, 54)
+          ..lineTo(68, 54)
+          ..close(),
+        cor(0xFF59616C));
+    c.drawLine(const Offset(96, 31), const Offset(96, 54), traco(0xFFE4DECF, 3)..strokeCap = StrokeCap.butt);
+    c.drawPath(Path()..moveTo(102, 34)..lineTo(108, 42)..lineTo(103, 44)..lineTo(109, 51), traco(0xFFD5DBE3, 1.1));
+    // Giroflex redondo de antigamente, apagado.
+    c.drawRRect(RRect.fromLTRBR(92, 18, 102, 23, const Radius.circular(1)), cor(0xFF7E838B));
+    c.drawArc(Rect.fromCircle(center: const Offset(97, 18), radius: 4), math.pi, math.pi, true, cor(0xFF9B9FA6));
+    // "POLÍCIA" e a versão instalada como número da viatura.
+    _texto(c, 'POLÍCIA', const Offset(72, 66), 8, FontWeight.w900, const Color(0xFF5E7098).withValues(alpha: a));
+    _texto(c, 'VTR $instalada', const Offset(108, 84), 6, FontWeight.w700, const Color(0xFF5E7098).withValues(alpha: a));
+    // Farol, estribo e ferrugem.
+    c.drawCircle(const Offset(177, 62), 5, cor(0xFFCFC9A8));
+    c.drawCircle(const Offset(177, 62), 5, traco(0xFF9B9FA6, 1));
+    c.drawLine(const Offset(60, 86), const Offset(140, 86), traco(0xFF4A4F57, 4));
+    c.drawCircle(const Offset(40, 58), 3.2, cor(0xFF9B6B3D, 0.75));
+    c.drawCircle(const Offset(132, 78), 2.6, cor(0xFF9B6B3D, 0.75));
+    c.drawCircle(const Offset(160, 50), 2, cor(0xFF9B6B3D, 0.7));
+    // Para-choques: o da frente torto.
+    c.save();
+    c.translate(186, 84);
+    c.rotate(20 * math.pi / 180);
+    c.translate(-186, -84);
+    c.drawRRect(RRect.fromLTRBR(182, 80, 192, 84, const Radius.circular(2)), cor(0xFFA7ADB5));
+    c.restore();
+    c.drawRRect(RRect.fromLTRBR(10, 80, 20, 84, const Radius.circular(2)), cor(0xFFA7ADB5));
+    // Rodas: a de trás murcha.
+    c.drawOval(Rect.fromCenter(center: const Offset(52, 95), width: 30, height: 16.1), cor(0xFF1A1C20));
+    c.drawOval(Rect.fromCenter(center: const Offset(52, 95), width: 13, height: 7.8), cor(0xFF8A8F96));
+    c.drawCircle(const Offset(152, 90), 13, cor(0xFF1A1C20));
+    c.drawCircle(const Offset(152, 90), 7.15, cor(0xFFB9BEC6));
+    c.drawCircle(const Offset(152, 90), 2.86, cor(0xFF7A8089));
+  }
+
+  void _texto(Canvas c, String t, Offset base, double tam, FontWeight peso, Color cor) {
+    final tp = TextPainter(
+      text: TextSpan(text: t, style: TextStyle(fontSize: tam, height: 1, fontWeight: peso, color: cor)),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    // O SVG posiciona pela linha de base.
+    tp.paint(c, base - Offset(0, tp.computeDistanceToActualBaseline(TextBaseline.alphabetic)));
+  }
+
+  /// O policial do protótipo (`militar()`), no quadro de 44 × 80: farda e
+  /// boina da PMRR, rosto de desenho, sem semelhança com ninguém.
+  void _policial(Canvas c, {required bool feliz}) {
+    const farda = Color(0xFF2F3D33);
+    const tinta = Color(0xFF3B2A1E);
+    final linha = Paint()
+      ..color = tinta
+      ..strokeWidth = 1.3
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    c.drawOval(Rect.fromCenter(center: const Offset(22, 78), width: 26, height: 5), Paint()..color = const Color(0x33000000));
+    c.drawRRect(RRect.fromLTRBR(14, 54, 21, 76, const Radius.circular(3)), Paint()..color = const Color(0xFF1E2A22));
+    c.drawRRect(RRect.fromLTRBR(23, 54, 30, 76, const Radius.circular(3)), Paint()..color = const Color(0xFF1E2A22));
+    c.drawPath(
+        Path()
+          ..moveTo(10, 30)
+          ..quadraticBezierTo(22, 25, 34, 30)
+          ..lineTo(33, 57)
+          ..lineTo(11, 57)
+          ..close(),
+        Paint()..color = farda);
+    c.drawRect(const Rect.fromLTWH(11, 44, 22, 3), Paint()..color = const Color(0xFF1A1A1A));
+    c.drawRRect(RRect.fromLTRBR(20, 43, 24, 48, const Radius.circular(1)), Paint()..color = const Color(0xFFC9A227));
+    final braco = Paint()
+      ..color = farda
+      ..strokeWidth = 6
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    if (feliz) {
+      c.drawPath(Path()..moveTo(11, 32)..quadraticBezierTo(2, 22, 6, 12), braco);
+      c.drawPath(Path()..moveTo(33, 32)..quadraticBezierTo(42, 22, 38, 12), braco);
+    } else {
+      c.drawPath(Path()..moveTo(11, 32)..quadraticBezierTo(4, 44, 8, 54), braco);
+      c.drawPath(Path()..moveTo(33, 32)..quadraticBezierTo(40, 44, 36, 54), braco);
+    }
+    c.drawCircle(const Offset(22, 19), 10, Paint()..color = const Color(0xFFD9A877));
+    c.drawPath(Path()..moveTo(11, 13)..quadraticBezierTo(22, 3, 33, 13)..close(), Paint()..color = const Color(0xFF1F4FCF));
+    c.drawRRect(RRect.fromLTRBR(9, 12, 35, 15, const Radius.circular(1.5)), Paint()..color = const Color(0xFF132F80));
+    c.drawCircle(const Offset(22, 9), 1.6, Paint()..color = const Color(0xFFC9A227));
+    if (feliz) {
+      c.drawCircle(const Offset(18.5, 19), 1.2, Paint()..color = tinta);
+      c.drawCircle(const Offset(25.5, 19), 1.2, Paint()..color = tinta);
+      c.drawPath(Path()..moveTo(17, 23)..quadraticBezierTo(22, 28, 27, 23), linha..strokeWidth = 1.4);
+    } else {
+      c.drawPath(Path()..moveTo(17, 19)..quadraticBezierTo(18.5, 17.5, 20, 19), linha);
+      c.drawPath(Path()..moveTo(24, 19)..quadraticBezierTo(25.5, 17.5, 27, 19), linha);
+      c.drawPath(Path()..moveTo(18, 26)..quadraticBezierTo(22, 23, 26, 26), linha);
+      // Lágrima, caindo devagar.
       final f = (loop * 2) % 1;
-      canvas.drawCircle(cabeca + Offset(-5, 2 + f * 8), 1.8,
-          Paint()..color = const Color(0xFF60A5FA).withValues(alpha: 1 - f));
+      c.save();
+      c.translate(0, f * 6);
+      c.drawPath(
+          Path()
+            ..moveTo(17.5, 21)
+            ..quadraticBezierTo(16.5, 23, 17.5, 24)
+            ..quadraticBezierTo(18.5, 23, 17.5, 21),
+          Paint()..color = const Color(0xFF7CC4FF).withValues(alpha: 1 - f));
+      c.restore();
     }
   }
 
   @override
   bool shouldRepaint(_PintorCena old) =>
-      old.loop != loop || old.troca != troca || old.nova != nova || old.instalada != instalada;
+      old.loop != loop || old.troca != troca || old.nova != nova || old.instalada != instalada || old.chao != chao;
 }
 
 /// Cartão da versão recomendada no topo da Início (§10.2): dispensável, uma

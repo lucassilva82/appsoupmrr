@@ -163,12 +163,16 @@ class RegraVersao {
       {required this.minima,
       required this.recomendada,
       this.titulo,
-      this.texto});
+      this.texto,
+      this.novidades = const []});
 
   final String minima;
   final String recomendada;
   final String? titulo;
   final String? texto;
+
+  /// "O que há de novo" desta loja, uma novidade por linha (painel).
+  final List<String> novidades;
 
   static RegraVersao? deJson(Object? j) {
     if (j is! Map || j['minima'] is! String) return null;
@@ -177,6 +181,12 @@ class RegraVersao {
       recomendada: '${j['recomendada'] ?? j['minima']}',
       titulo: j['titulo'] as String?,
       texto: j['texto'] as String?,
+      novidades: '${j['novidades'] ?? ''}'
+          .split('\n')
+          .map((l) => l.replaceFirst(RegExp(r'^[\s•·*-]+'), '').trim())
+          .where((l) => l.isNotEmpty)
+          .take(3)
+          .toList(),
     );
   }
 }

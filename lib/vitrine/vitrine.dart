@@ -34,6 +34,10 @@ const _liberados = ['/mapadaforca/listacomandos.php'];
 /// falha como "sem internet" (`--dart-define=VITRINE_FALHA=carreira.php`).
 const _falhaVitrine = String.fromEnvironment('VITRINE_FALHA');
 
+/// Para fotografar a tela de atualização obrigatória: a versão mínima que o
+/// "servidor" exige (`--dart-define=VITRINE_MINIMA=2.2.0`).
+const _minimaVitrine = String.fromEnvironment('VITRINE_MINIMA', defaultValue: '2.1.5');
+
 /// Cliente HTTP do modo vitrine (ver `http.runWithClient` no main).
 http.Client clienteVitrine() {
   final real = IOClient();
@@ -267,8 +271,8 @@ Object? _responder(Uri url, http.Request req) {
         'versao_config': 1,
         'sessao': 'ok',
         'versao': {
-          'android': {'minima': '2.1.5', 'recomendada': '2.1.5'},
-          'ios': {'minima': '2.1.5', 'recomendada': '2.1.5'},
+          'android': {'minima': _minimaVitrine, 'recomendada': _minimaVitrine},
+          'ios': {'minima': _minimaVitrine, 'recomendada': _minimaVitrine},
         },
         'rede': {'timeout_s': 15},
         'comunicados': {'fonte': 'api'},
