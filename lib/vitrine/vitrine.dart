@@ -280,10 +280,12 @@ Object? _responder(Uri url, http.Request req) {
             'arte': 'estrelas',
             'dados': [
               {'cargo': 'Comandante-Geral', 'posto': 'CEL QOC PM', 'nome': 'FULANO DE TAL EXEMPLO',
-               'nome_guerra': 'EXEMPLO', 'quadro': 'QOC', 'desde': '2025-01-02', 'estrelas': 3,
+               'nome_guerra': 'EXEMPLO', 'quadro': 'Quadro de Oficiais Combatentes', 'desde': '2025-01-02',
+               'inclusao': '1998-02-01', 'lotacao': 'Quartel do Comando-Geral', 'cursos': ['CSP', 'CAO', 'CFO'], 'estrelas': 3,
                'mensagem': 'Mensagem fictícia do modo vitrine.'},
               {'cargo': 'Subcomandante-Geral', 'posto': 'CEL QOC PM', 'nome': 'BELTRANO DA SILVA EXEMPLO',
-               'nome_guerra': 'BELTRANO', 'quadro': 'QOC', 'estrelas': 3},
+               'nome_guerra': 'BELTRANO', 'quadro': 'Quadro de Oficiais Combatentes', 'desde': '2025-01-02',
+               'inclusao': '1999-02-01', 'lotacao': 'Quartel do Comando-Geral', 'cursos': ['CSP', 'CAO', 'CFO'], 'estrelas': 3},
             ],
           },
           {'chave': 'home.anuncio', 'ordem': 20, 'escondivel': false},
@@ -890,22 +892,6 @@ http.Response _responderIntranet(Uri url, http.Request req) {
   }
   return _intranetJson({'erro': 'Endpoint nao encontrado'}, 404);
 }
-
-/// Avisos do SIGE na lista, como a Cloud Function grava no Firestore.
-List<NotificationModel> _avisosSigeNaLista(DateTime agora) => [
-      for (final e in _avisosSige.entries)
-        NotificationModel(
-          id: 'sige${e.key}',
-          title: e.value[1]! as String,
-          body: e.value[2]! as String,
-          timestamp: agora.subtract(Duration(minutes: 9020 - e.key)),
-          clicked: false,
-          route: '/escalas',
-          tipoEvento: e.value[0]! as String,
-          referenciaId: '346',
-          notificacaoId: '${e.key}',
-        ),
-    ];
 
 // ── Notificações ────────────────────────────────────────────────────────────
 

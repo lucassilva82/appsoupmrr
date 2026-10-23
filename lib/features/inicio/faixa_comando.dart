@@ -19,10 +19,8 @@ class FaixaComando extends StatelessWidget {
 
   // Uma assinatura só para o app: a Início redesenha a faixa quando o
   // app_config chega, e um stream novo a cada vez fazia a faixa piscar.
-  static final Stream<List<Map<String, dynamic>>> _slides = FirebaseFirestore.instance
-      .collection('stores')
-      .snapshots()
-      .map((s) => s.docs.map((d) => d.data()).toList());
+  static final Stream<List<Map<String, dynamic>>> _slides =
+      FirebaseFirestore.instance.collection('stores').snapshots().map((s) => s.docs.map((d) => d.data()).toList());
 
   static const _cargos = ['Comandante-Geral', 'Subcomandante-Geral'];
 
@@ -34,19 +32,22 @@ class FaixaComando extends StatelessWidget {
       final d = DateTime.tryParse('${v ?? ''}');
       return d == null ? '' : '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
     }
-    final cursos = c['cursos'] is List ? (c['cursos'] as List).map((e) => '$e').join(', ') : '';
+
+    final cursos = c['cursos'] is List ? (c['cursos'] as List).map((e) => '$e').join(' · ') : '';
+    final completo = '${c['nome'] ?? ''}'.trim();
     return {
       'img': c['foto'] ?? '',
       'title': [posto, nome].where((e) => e.isNotEmpty).join(' '),
+      'posto': posto,
+      'nome_completo': c['nome_guerra'] != null ? completo : '',
       'cargo': c['cargo'],
       'subtitle': '${c['mensagem'] ?? ''}'.trim(),
       'detalhes': [
-        if ('${c['nome'] ?? ''}'.trim().isNotEmpty && c['nome_guerra'] != null) ('Nome', '${c['nome']}'),
-        if ('${c['quadro'] ?? ''}'.trim().isNotEmpty) ('Quadro', '${c['quadro']}'),
-        if (data(c['desde']).isNotEmpty) ('No cargo desde', data(c['desde'])),
-        if (data(c['inclusao']).isNotEmpty) ('Na PMRR desde', data(c['inclusao'])),
-        if ('${c['lotacao'] ?? ''}'.trim().isNotEmpty) ('Lotação', '${c['lotacao']}'),
-        if (cursos.isNotEmpty) ('Cursos', cursos),
+        if ('${c['quadro'] ?? ''}'.trim().isNotEmpty) (Icons.military_tech_outlined, 'Quadro', '${c['quadro']}'),
+        if (data(c['desde']).isNotEmpty) (Icons.event_outlined, 'No cargo desde', data(c['desde'])),
+        if (data(c['inclusao']).isNotEmpty) (Icons.badge_outlined, 'Na PMRR desde', data(c['inclusao'])),
+        if ('${c['lotacao'] ?? ''}'.trim().isNotEmpty) (Icons.location_city_outlined, 'Lotação', '${c['lotacao']}'),
+        if (cursos.isNotEmpty) (Icons.school_outlined, 'Cursos', cursos),
       ],
     };
   }
@@ -116,8 +117,7 @@ const _navyMeio = Color(0xFF16396B);
 const _dourado = Color(0xFFE0A100);
 
 class _CartaoComandante extends StatelessWidget {
-  const _CartaoComandante(
-      {required this.dados, required this.cargo, required this.tag});
+  const _CartaoComandante({required this.dados, required this.cargo, required this.tag});
 
   final Map<String, dynamic> dados;
   final String cargo;
@@ -138,18 +138,16 @@ class _CartaoComandante extends StatelessWidget {
           type: MaterialType.transparency,
           child: InkWell(
             onTap: () {
-              registrar('inicio.card_tocar',
-                  chave: 'home.comandantes', dados: {'cargo': cargo});
-              Navigator.of(context).push(PageRouteBuilder(
+              registrar('inicio.card_tocar', chave: 'home.comandantes', dados: {'cargo': cargo});
+              Navigator.of(context, rootNavigator: true).push(PageRouteBuilder(
                 opaque: false,
                 barrierDismissible: true,
-                barrierColor: Colors.black54,
+                barrierColor: const Color(0x6B000000),
                 transitionDuration: const Duration(milliseconds: 400),
                 reverseTransitionDuration: const Duration(milliseconds: 300),
                 pageBuilder: (_, a, __) => FadeTransition(
                   opacity: CurvedAnimation(parent: a, curve: Curves.easeOutCubic),
-                  child: _ComandanteAberto(
-                      dados: dados, cargo: cargo, tag: tag),
+                  child: _ComandanteAberto(dados: dados, cargo: cargo, tag: tag),
                 ),
               ));
             },
@@ -170,19 +168,13 @@ class _CartaoComandante extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Text(_nome,
                             maxLines: 1,
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700)),
+                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
                       ),
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
                         child: Text(cargo,
-                            maxLines: 1,
-                            style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.85),
-                                fontSize: 11)),
+                            maxLines: 1, style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 11)),
                       ),
                     ],
                   ),
@@ -196,11 +188,11 @@ class _CartaoComandante extends StatelessWidget {
   }
 }
 
-/// O cartão aberto: foto grande com aro dourado, cargo, nome e o texto
-/// que o Firestore traz. Fecha tocando fora ou no botão.
+/// O cartão aberto (protótipo `.cmd-modal`): capa azul-marinho com as três
+/// estrelas douradas, foto de 112 com aro dourado, cargo, posto, nome
+/// completo, mensagem à tropa e os dados do SIGRH aprovados no painel.
 class _ComandanteAberto extends StatelessWidget {
-  const _ComandanteAberto(
-      {required this.dados, required this.cargo, required this.tag});
+  const _ComandanteAberto({required this.dados, required this.cargo, required this.tag});
 
   final Map<String, dynamic> dados;
   final String cargo;
@@ -208,66 +200,117 @@ class _ComandanteAberto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subtitulo = '${dados['subtitle'] ?? ''}'.trim();
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: _FundoEstrelas(
-            raio: 22,
-            grande: true,
-            child: Material(
-              type: MaterialType.transparency,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Hero(
-                      tag: tag,
-                      child: _Foto(url: '${dados['img'] ?? ''}', tamanho: 112)),
-                  const SizedBox(height: 14),
-                  Text(cargo.toUpperCase(),
-                      style: const TextStyle(
-                          color: _dourado,
-                          fontSize: 12,
-                          letterSpacing: 1.2,
-                          fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 6),
-                  Text('${dados['title'] ?? ''}'.trim(),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800)),
-                  if (subtitulo.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(subtitulo,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.85),
-                            fontSize: 13)),
-                  ],
-                  for (final (rotulo, valor) in (dados['detalhes'] is List
-                      ? (dados['detalhes'] as List).whereType<(String, String)>()
-                      : const <(String, String)>[]))
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        SizedBox(
-                          width: 110,
-                          child: Text(rotulo,
-                              style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12)),
+    final theme = Theme.of(context);
+    final escuro = theme.brightness == Brightness.dark;
+    final fundo = escuro ? const Color(0xFF10161F) : Colors.white;
+    final ouro = escuro ? const Color(0xFFFFB300) : const Color(0xFFB07700);
+    final mudo = theme.colorScheme.onSurface.withValues(alpha: .62);
+    final linhaCor = theme.colorScheme.onSurface.withValues(alpha: .10);
+    final posto = '${dados['posto'] ?? ''}'.trim();
+    final completo = '${dados['nome_completo'] ?? ''}'.trim();
+    final titulo = posto.isNotEmpty ? posto : '${dados['title'] ?? ''}'.trim();
+    final mensagem = '${dados['subtitle'] ?? ''}'.trim();
+    final linhas = dados['detalhes'] is List
+        ? (dados['detalhes'] as List).whereType<(IconData, String, String)>().toList()
+        : const <(IconData, String, String)>[];
+    final mq = MediaQuery.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(14, mq.padding.top + 24, 14, mq.padding.bottom + 12),
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 620),
+          child: Material(
+            color: fundo,
+            elevation: 12,
+            shadowColor: Colors.black,
+            borderRadius: BorderRadius.circular(26),
+            clipBehavior: Clip.antiAlias,
+            child: Semantics(
+              scopesRoute: true,
+              explicitChildNodes: true,
+              namesRoute: true,
+              label: cargo,
+              child: SingleChildScrollView(
+                child: Stack(children: [
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    height: 132,
+                    child: _CapaComando(escuro: escuro, fundo: fundo),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: IconButton(
+                          tooltip: 'Fechar',
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: Icon(Icons.close_rounded, color: escuro ? Colors.white : theme.colorScheme.onSurface),
                         ),
-                        Expanded(
-                          child: Text(valor, style: const TextStyle(color: Colors.white, fontSize: 13)),
+                      ),
+                      Hero(tag: tag, child: _Foto(url: '${dados['img'] ?? ''}', tamanho: 112, ouro: ouro)),
+                      const SizedBox(height: 12),
+                      Text(cargo.toUpperCase(),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: ouro, fontSize: 12, letterSpacing: .96, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 4),
+                      Text(titulo,
+                          textAlign: TextAlign.center,
+                          style:
+                              TextStyle(color: theme.colorScheme.onSurface, fontSize: 19, fontWeight: FontWeight.w700)),
+                      if (completo.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(completo,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                color: theme.colorScheme.onSurface, fontSize: 17, fontWeight: FontWeight.w600)),
+                      ],
+                      if (mensagem.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 300),
+                            child: Text('"$mensagem"',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 13.5, fontStyle: FontStyle.italic, color: theme.colorScheme.onSurface)),
+                          ),
                         ),
-                      ]),
-                    ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Fechar',
-                        style: TextStyle(color: Colors.white)),
+                      if (linhas.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.onSurface.withValues(alpha: .04),
+                            border: Border.all(color: linhaCor),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(children: [
+                            for (final (i, (icone, rotulo, valor)) in linhas.indexed)
+                              Container(
+                                decoration:
+                                    i == 0 ? null : BoxDecoration(border: Border(top: BorderSide(color: linhaCor))),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                child: Row(children: [
+                                  Icon(icone, size: 20, color: ouro),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                      Text(rotulo, style: TextStyle(fontSize: 11.5, color: mudo)),
+                                      Text(valor, style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface)),
+                                    ]),
+                                  ),
+                                ]),
+                              ),
+                          ]),
+                        ),
+                      ],
+                      const SizedBox(height: 10),
+                      Text('Dados do SIGRH, aprovados no painel.',
+                          textAlign: TextAlign.center, style: TextStyle(fontSize: 11.5, color: mudo)),
+                    ]),
                   ),
                 ]),
               ),
@@ -279,11 +322,113 @@ class _ComandanteAberto extends StatelessWidget {
   }
 }
 
+/// Capa do cartão aberto: degradê azul-marinho (claro no tema claro),
+/// brilho dourado em cima e as três estrelas de coronel douradas.
+class _CapaComando extends StatelessWidget {
+  const _CapaComando({required this.escuro, required this.fundo});
+  final bool escuro;
+  final Color fundo;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(fit: StackFit.expand, children: [
+      DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: const Alignment(-0.5, -1),
+            end: const Alignment(0.5, 1),
+            colors:
+                escuro ? const [Color(0xFF0A1A33), Color(0xFF13294A)] : const [Color(0xFFDCE6F3), Color(0xFFEEF3FA)],
+          ),
+        ),
+      ),
+      DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment.topCenter,
+            radius: 1.2,
+            stops: const [0, .65],
+            colors: [_dourado.withValues(alpha: escuro ? .28 : .22), _dourado.withValues(alpha: 0)],
+          ),
+        ),
+      ),
+      Positioned(
+        top: 18,
+        left: 0,
+        right: 0,
+        height: 74,
+        child: Center(
+          child: Opacity(
+            opacity: escuro ? .28 : .5,
+            child: const SizedBox(width: 220, height: 74, child: CustomPaint(painter: _EstrelasCoronel())),
+          ),
+        ),
+      ),
+      Positioned(
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: 40,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [fundo.withValues(alpha: 0), fundo],
+            ),
+          ),
+        ),
+      ),
+    ]);
+  }
+}
+
+/// Três estrelas de cinco pontas douradas (o `estrelasCel` do protótipo,
+/// caixa 120×40 com raio 15).
+class _EstrelasCoronel extends CustomPainter {
+  const _EstrelasCoronel();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final k = math.min(size.width / 120, size.height / 40);
+    final dx = (size.width - 120 * k) / 2;
+    final dy = (size.height - 40 * k) / 2;
+    final ouro = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFFFFE7A3), Color(0xFFE0A100), Color(0xFF9A6A00)],
+        stops: [0, .5, 1],
+      ).createShader(Offset.zero & size);
+    final traco = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = .6 * k
+      ..color = const Color(0xFFFFF3CC).withValues(alpha: .55);
+    for (final cx in [20.0, 60.0, 100.0]) {
+      final p = Path();
+      for (var i = 0; i < 10; i++) {
+        final a = -math.pi / 2 + i * math.pi / 5;
+        final r = (i.isOdd ? 15 * .42 : 15) * k;
+        final x = dx + cx * k + math.cos(a) * r;
+        final y = dy + 20 * k + math.sin(a) * r;
+        i == 0 ? p.moveTo(x, y) : p.lineTo(x, y);
+      }
+      p.close();
+      canvas.drawPath(p, ouro);
+      canvas.drawPath(p, traco);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 class _Foto extends StatelessWidget {
-  const _Foto({required this.url, required this.tamanho});
+  const _Foto({required this.url, required this.tamanho, this.ouro = _dourado});
 
   final String url;
   final double tamanho;
+  final Color ouro;
 
   @override
   Widget build(BuildContext context) {
@@ -292,14 +437,17 @@ class _Foto extends StatelessWidget {
       width: tamanho,
       height: tamanho,
       padding: EdgeInsets.all(tamanho > 60 ? 3 : 1.5),
-      decoration: const BoxDecoration(shape: BoxShape.circle, color: _dourado),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: ouro,
+        // Halo de 6 do protótipo (`.cmd-foto`) só na foto grande.
+        boxShadow: tamanho > 60 ? [BoxShadow(color: ouro.withValues(alpha: .16), spreadRadius: 6)] : null,
+      ),
       child: ClipOval(
         child: ok
             ? CachedImageFromPrefs(imageUrl: url)
             : Container(
-                color: _navyMeio,
-                child: Icon(Icons.person_rounded,
-                    color: Colors.white70, size: tamanho * 0.6)),
+                color: _navyMeio, child: Icon(Icons.person_rounded, color: Colors.white70, size: tamanho * 0.6)),
       ),
     );
   }
@@ -308,24 +456,19 @@ class _Foto extends StatelessWidget {
 /// A arte especial `estrelas` (PAINEL_ADMIN §5.3b): degradê azul-marinho,
 /// brilho dourado e três estrelas brancas apagadas no canto direito.
 class _FundoEstrelas extends StatelessWidget {
-  const _FundoEstrelas(
-      {required this.child, required this.raio, this.grande = false});
+  const _FundoEstrelas({required this.child, required this.raio});
 
   final Widget child;
   final double raio;
-  final bool grande;
 
   @override
   Widget build(BuildContext context) {
-    final t = grande ? 120.0 : 46.0;
+    const t = 46.0;
     return ClipRRect(
       borderRadius: BorderRadius.circular(raio),
       child: DecoratedBox(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [_navy, _navyMeio]),
+          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [_navy, _navyMeio]),
         ),
         child: Stack(children: [
           Positioned.fill(
@@ -347,21 +490,18 @@ class _FundoEstrelas extends StatelessWidget {
             top: -t * 0.2,
             child: Transform.rotate(
               angle: 0.25,
-              child: Icon(Icons.star_rounded,
-                  size: t, color: Colors.white.withValues(alpha: 0.18)),
+              child: Icon(Icons.star_rounded, size: t, color: Colors.white.withValues(alpha: 0.18)),
             ),
           ),
           Positioned(
             right: t * 0.75,
             top: t * 0.05,
-            child: Icon(Icons.star_rounded,
-                size: t * 0.4, color: Colors.white.withValues(alpha: 0.14)),
+            child: Icon(Icons.star_rounded, size: t * 0.4, color: Colors.white.withValues(alpha: 0.14)),
           ),
           Positioned(
             right: t * 0.55,
             bottom: -t * 0.08,
-            child: Icon(Icons.star_rounded,
-                size: t * 0.34, color: Colors.white.withValues(alpha: 0.12)),
+            child: Icon(Icons.star_rounded, size: t * 0.34, color: Colors.white.withValues(alpha: 0.12)),
           ),
           child,
         ]),
