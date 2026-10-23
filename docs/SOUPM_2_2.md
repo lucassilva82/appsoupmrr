@@ -2212,8 +2212,9 @@ login e na renovação do token e sai no logout (antes, o aparelho continuava
 recebendo os avisos da conta anterior); a aba Avisos lê da API quando o
 `app_config` disser `notificacoes.fonte = api`. Desligado até: o usuário pôr a
 conta de serviço em `/private`, criar o cron (a cada minuto) e ligar
-`envio_fcm`; depois, mudar a certidão e o feedback para `soupmPedirPush`, exportar
-o histórico do Firestore e trocar `fonte_app` para `api`.
+`envio_fcm`; depois, copiar o histórico do Firestore (`cron/exportar_firestore.php`, só conta sem
+`--gravar`) e trocar `fonte_app` para `api`. A certidão já pede push pela fila quando `envio_fcm` está ligado; a
+resposta ao feedback é do painel, que já grava na fila.
 
 **Central de comunicados (22/10/2026): pronta e desligada.**
 `sql/2026-10-23_soupm_comunicados.sql` (categorias, comunicados com o público já
