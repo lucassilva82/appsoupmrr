@@ -3,12 +3,19 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/config/app_config.dart';
+import '../core/design/arte_cartao.dart';
+import '../core/log/registro_log.dart';
+import '../core/navegacao/abrir_funcao.dart';
+import '../features/inicio/personalizar_inicio_page.dart';
+import '../features/servicos/servicos_page.dart';
 import '../models/auth_model.dart';
 import '../utils/api_services.dart';
 import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 import '../utils/theme_provider.dart';
 import '../widgets/custom_appbar.dart';
+import '../widgets/aviso_rapido.dart';
 import '../widgets/dialogo_confirmacao.dart';
 import '../widgets/vidro.dart';
 import '../widgets/versao_app.dart';
@@ -69,6 +76,26 @@ class SettingsBody extends StatelessWidget {
                 children: [
                   _ThemeModeSelector(
                       themeProvider: themeProvider, theme: theme),
+                  const Divider(height: 1, indent: 56),
+                  ListTile(
+                    leading: Icon(Icons.dashboard_customize_outlined,
+                        color: theme.colorScheme.primary),
+                    title: const Text('Reorganizar a tela inicial'),
+                    subtitle: const Text(
+                        'Ordem dos blocos, blocos escondidos e atalhos'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const PersonalizarInicioPage())),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  ListTile(
+                    leading: Icon(Icons.text_fields_rounded,
+                        color: theme.colorScheme.primary),
+                    title: const Text('Tamanho do texto'),
+                    subtitle: Text(Platform.isIOS
+                        ? 'Segue os Ajustes do iPhone (Tela e Brilho › Tamanho do Texto)'
+                        : 'Segue as configurações do aparelho (Tela › Tamanho da fonte)'),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -85,8 +112,9 @@ class SettingsBody extends StatelessWidget {
                       color: theme.colorScheme.primary,
                     ),
                     title: const Text('Biometria'),
-                    subtitle:
-                        const Text('Login com impressão digital / Face ID'),
+                    subtitle: Text(Platform.isIOS
+                        ? 'Entrar com Face ID ou Touch ID'
+                        : 'Entrar com a digital ou o rosto'),
                   ),
                 ],
               ),
@@ -166,7 +194,7 @@ class SettingsBody extends StatelessWidget {
                   subtitle: Text(
                     auth.notificationsEnabled
                         ? 'Receba alertas de escala, comunicados e avisos'
-                        : '⚠ Notificações desativadas — você pode perder avisos importantes',
+                        : 'Notificações desativadas: você pode perder avisos importantes',
                     style: TextStyle(
                       color: auth.notificationsEnabled
                           ? null
@@ -174,6 +202,43 @@ class SettingsBody extends StatelessWidget {
                     ),
                   ),
                 ),
+              ),
+              const SizedBox(height: 16),
+
+              // ── Seção: Ajuda (§8: todo suporte é chamado técnico) ─────────────
+              _SectionTitle(label: 'Ajuda'),
+              _SettingsCard(
+                children: [
+                  for (final (i, (chave, icone, titulo, texto)) in const [
+                    (
+                      'atend.ajuda',
+                      Icons.help_outline_rounded,
+                      'Preciso de ajuda',
+                      'Respostas rápidas para as dúvidas comuns'
+                    ),
+                    (
+                      'atend.chamados',
+                      Icons.support_agent_rounded,
+                      'Meus chamados',
+                      'Suporte técnico do DTI'
+                    ),
+                    (
+                      'atend.feedback',
+                      Icons.lightbulb_outline_rounded,
+                      'Sugestões e elogios',
+                      'Ideias para o app e elogios'
+                    ),
+                  ].indexed) ...[
+                    if (i > 0) const Divider(height: 1, indent: 56),
+                    ListTile(
+                      leading: Icon(icone, color: theme.colorScheme.primary),
+                      title: Text(titulo),
+                      subtitle: Text(texto),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => _abrirAjuda(context, auth, chave),
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: 16),
 
@@ -206,16 +271,6 @@ class SettingsBody extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Divider(height: 1, indent: 56),
-                  ListTile(
-                    leading: Icon(Icons.support_agent_rounded,
-                        color: theme.colorScheme.primary),
-                    title: const Text('Suporte Técnico'),
-                    subtitle: const Text('DTI/PMRR'),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () =>
-                        Navigator.of(context).pushNamed(AppRoutes.AJUDA_PAGE),
-                  ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -245,6 +300,22 @@ class SettingsBody extends StatelessWidget {
         );
       }),
     );
+  }
+
+  /// Abre pelo menu, para valer o estado do painel (Meus chamados "Em
+  /// breve", por exemplo, mostra a folha de bloqueio).
+  void _abrirAjuda(BuildContext context, Auth auth, String chave) {
+    final item = itemPorChave(chave,
+        menu: menuEmUso(RepositorioConfig.atual, gestor: auth.isSuperUser));
+    if (item != null) {
+      abrirFuncao(context, item, origem: 'perfil');
+    } else if (chave == 'atend.ajuda') {
+      Navigator.of(context).pushNamed(AppRoutes.AJUDA_PAGE);
+    } else {
+      avisoAtencao(context, 'Função indisponível',
+          texto: 'Esta função não está disponível para você agora. '
+              'Código MD-${chave.toUpperCase()}-RESTRITO.');
+    }
   }
 
   Future<void> _confirmLogout(BuildContext context, Auth auth) async {
@@ -301,8 +372,9 @@ class _UserHeader extends StatelessWidget {
             ? name[0].toUpperCase()
             : '?';
 
+    // Capa com a arte da área (SOUPM_2_2 §4.6) e a foto sobreposta na borda.
     return Container(
-      padding: const EdgeInsets.all(20),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -318,155 +390,183 @@ class _UserHeader extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: Row(
-        children: [
-          // ── Avatar com badge de admin ─────────────────────────────────
-          Stack(
-            clipBehavior: Clip.none,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        SizedBox(
+          height: 78,
+          child: FundoArte(
+            arte: Arte.de('rh'),
+            raio: 0,
+            tamanhoIcone: 70,
+            child: const SizedBox.expand(),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.colorScheme.primary.withOpacity(0.25),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+              // ── Avatar com badge de admin ─────────────────────────────────
+              Transform.translate(
+                offset: const Offset(0, -30),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      // Fundo e aro opacos: a foto fica sobre a capa.
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: theme.colorScheme.surface,
+                        border: Border.all(
+                            color: theme.colorScheme.surface, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: theme.colorScheme.primary.withOpacity(0.25),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: avatarImage != null
+                            ? Image(
+                                image: avatarImage,
+                                width: 72,
+                                height: 72,
+                                fit: BoxFit.cover,
+                                alignment: Alignment.topCenter,
+                                errorBuilder: (ctx, error, stack) => Container(
+                                  width: 72,
+                                  height: 72,
+                                  color: theme.colorScheme.primary
+                                      .withOpacity(0.15),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    initials,
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                width: 72,
+                                height: 72,
+                                color:
+                                    theme.colorScheme.primary.withOpacity(0.15),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  initials,
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                              ),
+                      ),
                     ),
+                    if (isSuperUser)
+                      Positioned(
+                        bottom: 0,
+                        right: -2,
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: AppColors.gold,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color:
+                                  theme.colorScheme.surface.withOpacity(0.72),
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.gold.withOpacity(0.5),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.shield_rounded,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
-                child: ClipOval(
-                  child: avatarImage != null
-                      ? Image(
-                          image: avatarImage,
-                          width: 72,
-                          height: 72,
-                          fit: BoxFit.cover,
-                          alignment: Alignment.topCenter,
-                          errorBuilder: (ctx, error, stack) => Container(
-                            width: 72,
-                            height: 72,
-                            color: theme.colorScheme.primary.withOpacity(0.15),
-                            alignment: Alignment.center,
-                            child: Text(
-                              initials,
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 16),
+              // ── Informações do usuário ────────────────────────────────────
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      auth.nomeMilitar ?? 'Militar',
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Mat. ${auth.matricula ?? '-'}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.70),
+                      ),
+                    ),
+                    if (isSuperUser) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.gold.withOpacity(0.35),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(
+                              Icons.shield_rounded,
+                              size: 10,
+                              color: AppColors.gold,
+                            ),
+                            SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                'Administrador',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.gold,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
                             ),
-                          ),
-                        )
-                      : Container(
-                          width: 72,
-                          height: 72,
-                          color: theme.colorScheme.primary.withOpacity(0.15),
-                          alignment: Alignment.center,
-                          child: Text(
-                            initials,
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
+                          ],
                         ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              if (isSuperUser)
-                Positioned(
-                  bottom: 0,
-                  right: -2,
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: AppColors.gold,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: theme.colorScheme.surface.withOpacity(0.72),
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.gold.withOpacity(0.5),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.shield_rounded,
-                      size: 12,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
             ],
           ),
-          const SizedBox(width: 16),
-          // ── Informações do usuário ────────────────────────────────────
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  auth.nomeMilitar ?? 'Militar',
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Mat. ${auth.matricula ?? '-'}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.70),
-                  ),
-                ),
-                if (isSuperUser) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.gold.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: AppColors.gold.withOpacity(0.35),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(
-                          Icons.shield_rounded,
-                          size: 10,
-                          color: AppColors.gold,
-                        ),
-                        SizedBox(width: 5),
-                        Flexible(
-                          child: Text(
-                            'Administrador',
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.gold,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+        // A foto sobe 30 pt para a capa; o espaço que sobra embaixo fica
+        // como respiro.
+        const SizedBox(height: 0),
+      ]),
     );
   }
 }
@@ -679,7 +779,11 @@ class _ThemeModeSelector extends StatelessWidget {
                 ),
               ],
               selected: {current},
-              onSelectionChanged: (s) => themeProvider.setMode(s.first),
+              onSelectionChanged: (s) {
+                themeProvider.setMode(s.first);
+                registrar('aparencia.tema',
+                    chave: 'apar.tema', dados: {'tema': s.first.name});
+              },
             ),
           ),
           if (current == AppThemeMode.auto) ...[
@@ -728,7 +832,8 @@ class Configuracoes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FundoSuave(child: Scaffold(
+    return FundoSuave(
+        child: Scaffold(
       appBar: CustomAppBar(title: 'Configurações'),
       body: const SettingsBody(),
     ));
