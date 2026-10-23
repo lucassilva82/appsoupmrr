@@ -1606,8 +1606,7 @@ servidor dizia que não. Nenhum erro em lugar nenhum.
 
 **A causa.** Onze funções `soupm_*` nasceram `SECURITY DEFINER`. Isso faz a
 função rodar com os privilégios do **dono**. Como todo SQL deste projeto é
-rodado pelo phpPgAdmin, o dono ficou sendo `pmrronline`, a conta do cPanel —
-que **não lê** `public.vw_users_unidade_comando_groups`, nem `qra`, nem
+rodado pelo phpPgAdmin, o dono ficou sendo a conta do cPanel — que **não lê** `public.vw_users_unidade_comando_groups`, nem `qra`, nem
 `intranet`.
 
 Ou seja: a elevação de privilégio apontava para um usuário com **menos**
@@ -1629,9 +1628,8 @@ o silêncio não.
 
 **A correção.** As nove funções que leem dados de fora do nosso domínio
 passaram a `SECURITY INVOKER`: rodam com os privilégios de quem chama. Medido
-antes de trocar: a API (`pmrronline_usr_erp_prod`) e o painel
-(`pmrronline_usr_erp`) têm SELECT nas quatro fontes; só a conta do cPanel não
-tem. Continuam `DEFINER` as duas em que a elevação é o objetivo —
+antes de trocar: o usuário de banco da API e o do painel têm SELECT nas
+quatro fontes; só a conta do cPanel não tem. Continuam `DEFINER` as duas em que a elevação é o objetivo —
 `soupm_cron_log`, que deixa a API chamar a limpeza sem ter DELETE, e
 `soupm_mais_usados_para`.
 
