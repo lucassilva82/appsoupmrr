@@ -15,6 +15,7 @@ import '../../widgets/aviso_rapido.dart';
 import '../../widgets/custom_appbar.dart';
 import '../../widgets/vidro.dart';
 import 'chamados_api.dart';
+import '../../core/design/esqueleto.dart';
 
 const _chave = 'atend.chamados';
 const _maxAnexos = 5;
@@ -151,7 +152,7 @@ class _MeusChamadosPageState extends State<MeusChamadosPage> {
         body: _falha != null && lista == null
             ? _ErroChamados(falha: _falha!, api: _api, aoTentar: _carregar)
             : lista == null
-                ? const Center(child: CircularProgressIndicator())
+                ? const EsqueletoLista()
                 : RefreshIndicator(
                     onRefresh: _carregar,
                     child: ListView(
@@ -642,7 +643,7 @@ class _NovoChamadoPageState extends State<NovoChamadoPage> {
           body: _falha != null && _catalogo == null
               ? _ErroChamados(falha: _falha!, api: widget.api, aoTentar: _carregar)
               : _catalogo == null
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const EsqueletoLista()
                   : switch (_passo) {
                       0 => _passo1(theme),
                       1 => _passo2(theme),

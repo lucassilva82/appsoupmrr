@@ -19,6 +19,7 @@ import '../../widgets/vidro.dart';
 import '../comunicados/comunicados_page.dart';
 import '../servicos/servicos_page.dart';
 import 'pendencias_repositorio.dart';
+import '../../core/design/esqueleto.dart';
 
 const _chave = 'pend.lista';
 
@@ -297,7 +298,7 @@ class _PendenciasPageState extends State<PendenciasPage> {
           valueListenable: PendenciasRepositorio.emUso,
           builder: (context, s, _) {
             if (_falha != null && s == null) return EstadoErro(falha: _falha!, aoTentar: _carregar);
-            if (s == null) return const Center(child: CircularProgressIndicator());
+            if (s == null) return const EsqueletoLista();
             final obrig = s.itens.where((p) => p.obrigatoria).toList();
             final lembretes = s.itens.where((p) => !p.obrigatoria).toList();
             return RefreshIndicator(

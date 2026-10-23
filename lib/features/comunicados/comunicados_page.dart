@@ -17,6 +17,7 @@ import '../../widgets/custom_appbar.dart';
 import '../../widgets/vidro.dart';
 import '../pendencias/pendencias_repositorio.dart';
 import 'comunicados_repositorio.dart';
+import '../../core/design/esqueleto.dart';
 
 const _chave = 'com.central';
 
@@ -391,7 +392,7 @@ class _CentralComunicadosPageState extends State<CentralComunicadosPage> {
           valueListenable: ComunicadosRepositorio.emUso,
           builder: (context, lista, _) {
             if (_falha != null && lista == null) return EstadoErro(falha: _falha!, aoTentar: _carregar);
-            if (lista == null) return const Center(child: CircularProgressIndicator());
+            if (lista == null) return const EsqueletoLista();
             final filtrada = switch (_filtro) {
               _Filtro.todos => lista,
               _Filtro.naoLidos => lista.where((c) => !c.lido).toList(),

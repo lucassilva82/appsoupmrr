@@ -19,6 +19,7 @@ import '../../widgets/custom_appbar.dart';
 import '../../widgets/vidro.dart';
 import '../servicos/servicos_page.dart';
 import 'feedback_repositorio.dart';
+import '../../core/design/esqueleto.dart';
 
 const _maxAnexos = 5;
 const _maxBytes = 25 * 1024 * 1024;
@@ -275,7 +276,7 @@ class _MinhasMensagensPageState extends State<MinhasMensagensPage> {
           future: _lista,
           builder: (context, snap) {
             if (snap.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator.adaptive());
+              return const EsqueletoLista();
             }
             if (snap.hasError) {
               final f = snap.error is FalhaApp ? snap.error as FalhaApp : FalhaApp.inesperada('FB', snap.error!);
@@ -391,7 +392,7 @@ class _MensagemDetalhePageState extends State<MensagemDetalhePage> {
           future: _detalhe,
           builder: (context, snap) {
             if (snap.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator.adaptive());
+              return const EsqueletoLista();
             }
             if (snap.hasError) {
               final f = snap.error is FalhaApp ? snap.error as FalhaApp : FalhaApp.inesperada('FB', snap.error!);

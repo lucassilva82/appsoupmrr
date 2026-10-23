@@ -16,6 +16,7 @@ import '../../widgets/custom_appbar.dart';
 import '../../widgets/dialogo_confirmacao.dart';
 import '../../widgets/vidro.dart';
 import 'documentos_locais.dart';
+import '../../core/design/esqueleto.dart';
 
 const _chave = 'rh.documentos';
 
@@ -147,7 +148,7 @@ class _DocumentosPageState extends State<DocumentosPage> {
       child: Scaffold(
         appBar: const CustomAppBar(title: 'Documentos'),
         body: itens == null
-            ? const Center(child: CircularProgressIndicator())
+            ? const EsqueletoLista()
             : RefreshIndicator(
                 onRefresh: _carregar,
                 child: ListView(

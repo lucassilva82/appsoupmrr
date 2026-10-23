@@ -13,6 +13,7 @@ import '../../models/auth_model.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/custom_appbar.dart';
 import '../../widgets/vidro.dart';
+import '../../core/design/esqueleto.dart';
 
 const _chave = 'rh.carreira';
 
@@ -137,7 +138,7 @@ class _CarreiraPageState extends State<CarreiraPage> {
         body: _falha != null && linha == null
             ? EstadoErro(falha: _falha!, aoTentar: _carregar, tela: _chave, chave: _chave)
             : linha == null
-                ? const Center(child: CircularProgressIndicator())
+                ? const EsqueletoLista()
                 : RefreshIndicator(onRefresh: _carregar, child: _Conteudo(linha: linha)),
       ),
     );
