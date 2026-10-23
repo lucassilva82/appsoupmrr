@@ -1651,3 +1651,11 @@ O `buscapormatricula.php` escapa porque deixa o Postgres converter o texto
 para número. Agora a comparação normaliza os dois lados
 (`ltrim(..., chr(48))`). `chr(48)` e não `'0'`: essas comparações moram dentro
 de strings do `EXECUTE`, e a aspa simples fecharia a string antes da hora.
+
+A sessão do painel mediu o banco antes de corrigir o lado dela e achou a
+frase que fecha o assunto: **nenhuma matrícula é guardada com zero à
+esquerda** — 0 de 581 vínculos em `intranet.usuarios_perfis` e 0 de 3.878
+contas em `qra.sec_users`. O banco está limpo; o problema é só o que a pessoa
+digita. Por isso a normalização tem de estar em **quem recebe o que foi
+digitado** (login do app, login do painel), não só em quem consulta — senão
+alguém é aceito pela senha e recusado pelo perfil, sem nada que possa fazer.
