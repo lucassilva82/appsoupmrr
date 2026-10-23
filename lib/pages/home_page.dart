@@ -510,6 +510,14 @@ class _HomeBodyState extends State<HomeBody>
               ),
             ),
           ),
+          // Texto do rodapé editado no painel (soupm_config 'textos').
+          if (RepositorioConfig.atual.texto('rodape_inicio') case final r?)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+              child: Text(r,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .62))),
+            ),
         ],
           ),
         ),

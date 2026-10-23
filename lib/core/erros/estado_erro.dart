@@ -81,7 +81,7 @@ class EstadoErro extends StatelessWidget {
               const SizedBox(height: 8),
               OutlinedButton.icon(
                 icon: const Icon(Icons.support_agent_outlined),
-                label: const Text('Abrir chamado técnico'),
+                label: Text(RepositorioConfig.atual.texto('botao_erro') ?? 'Abrir chamado técnico'),
                 onPressed: () {
                   registrar('funcao.tocar', chave: 'atend.chamados', codigo: falha.codigo, dados: {'origem': 'erro'});
                   Navigator.of(context).push(MaterialPageRoute(

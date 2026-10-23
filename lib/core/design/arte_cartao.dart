@@ -126,11 +126,17 @@ class FundoArte extends StatelessWidget {
     this.raio = 18,
     this.tamanhoIcone,
     this.formato = FormatoArte.card,
+    this.imagem,
   });
 
   final Arte arte;
   final Widget child;
   final double raio;
+
+  /// Imagem aprovada no painel (https). Vence a arte: some o desenho, fica o
+  /// degradê de fundo (enquanto carrega ou se falhar) e um véu mais forte,
+  /// para o texto branco passar de 4,5:1 sobre qualquer foto.
+  final String? imagem;
 
   /// Tamanho do ícone grande; os outros dois e as posições acompanham.
   /// Nulo: o do formato (120 no card, 84 na área).
@@ -164,64 +170,88 @@ class FundoArte extends StatelessWidget {
           ),
         ),
         child: Stack(
-          children: [
-            // Brilho: radial-gradient(120% 90% at 100% 0%, destaque .45, 0 55%).
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(1, -1),
-                    radius: 1.2,
-                    stops: const [0, .55],
-                    colors: [
-                      arte.destaque.withValues(alpha: 0.45),
-                      arte.destaque.withValues(alpha: 0),
-                    ],
-                    transform: const _Elipse(.75),
+          children: imagem != null
+              ? [
+                  Positioned.fill(
+                    child: Image.network(
+                      imagem!,
+                      fit: BoxFit.cover,
+                      excludeFromSemantics: true,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
                   ),
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: CustomPaint(painter: _Trilhas(arte.destaque)),
-            ),
-            Positioned(
-              right: i1[1] * k,
-              top: i1[2] * k,
-              child: icone(arte.icones[0], i1[0], -12, .20),
-            ),
-            Positioned(
-              right: i2[1] * k,
-              top: i2[2] * k,
-              child: icone(arte.icones[1], i2[0], 10, .16),
-            ),
-            Positioned(
-              right: i3[1] * k,
-              bottom: i3[2] * k,
-              child: icone(arte.icones[2], i3[0], -6, .13),
-            ),
-            // Véu escuro, do lado do texto.
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: area
-                      ? const LinearGradient(
+                  const Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          stops: [0.35, 1],
-                          colors: [Color(0x00000000), Color(0x8C000000)],
-                        )
-                      : const LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          stops: [0, 0.7],
-                          colors: [Color(0x61000000), Color(0x0D000000)],
+                          stops: [0.1, 1],
+                          colors: [Color(0x33000000), Color(0xC7000000)],
                         ),
-                ),
-              ),
-            ),
-            child,
-          ],
+                      ),
+                    ),
+                  ),
+                  child,
+                ]
+              : [
+                  // Brilho: radial-gradient(120% 90% at 100% 0%, destaque .45, 0 55%).
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: const Alignment(1, -1),
+                          radius: 1.2,
+                          stops: const [0, .55],
+                          colors: [
+                            arte.destaque.withValues(alpha: 0.45),
+                            arte.destaque.withValues(alpha: 0),
+                          ],
+                          transform: const _Elipse(.75),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned.fill(
+                    child: CustomPaint(painter: _Trilhas(arte.destaque)),
+                  ),
+                  Positioned(
+                    right: i1[1] * k,
+                    top: i1[2] * k,
+                    child: icone(arte.icones[0], i1[0], -12, .20),
+                  ),
+                  Positioned(
+                    right: i2[1] * k,
+                    top: i2[2] * k,
+                    child: icone(arte.icones[1], i2[0], 10, .16),
+                  ),
+                  Positioned(
+                    right: i3[1] * k,
+                    bottom: i3[2] * k,
+                    child: icone(arte.icones[2], i3[0], -6, .13),
+                  ),
+                  // Véu escuro, do lado do texto.
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: area
+                            ? const LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                stops: [0.35, 1],
+                                colors: [Color(0x00000000), Color(0x8C000000)],
+                              )
+                            : const LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                stops: [0, 0.7],
+                                colors: [Color(0x61000000), Color(0x0D000000)],
+                              ),
+                      ),
+                    ),
+                  ),
+                  child,
+                ],
         ),
       ),
     );

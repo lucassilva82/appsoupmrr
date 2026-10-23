@@ -312,6 +312,7 @@ class _LinhaNovidades extends StatelessWidget {
                 excludeSemantics: true,
                 child: FundoArte(
                   arte: Arte.de(r.area.arte),
+                  imagem: r.area.arteImagem,
                   formato: FormatoArte.area,
                   child: Material(
                     type: MaterialType.transparency,
@@ -501,6 +502,7 @@ class CartaoArea extends StatelessWidget {
       excludeSemantics: true,
       child: FundoArte(
         arte: Arte.de(area.arte),
+        imagem: area.arteImagem,
         formato: FormatoArte.area,
         child: Material(
           type: MaterialType.transparency,
@@ -564,6 +566,7 @@ class AreaPage extends StatelessWidget {
                 height: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.3).scale(164),
                 child: FundoArte(
                   arte: arte,
+                  imagem: area.arteImagem,
                   formato: FormatoArte.area,
                   tamanhoIcone: 120,
                   child: Padding(

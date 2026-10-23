@@ -72,6 +72,7 @@ class ItemMenu {
     this.icone,
     this.rota,
     this.arte,
+    this.arteImagem,
     this.visivel = true,
     this.bloqueado = false,
     this.selo,
@@ -88,6 +89,10 @@ class ItemMenu {
   final String? icone;
   final String? rota;
   final String? arte;
+
+  /// Imagem aprovada no painel para a área (endereço https). Vence a arte;
+  /// o app põe o mesmo véu por cima para o texto continuar legível.
+  final String? arteImagem;
 
   /// Aparece no menu e na busca (§3.0). Fora do menu continua abrindo por
   /// card, push e link.
@@ -116,6 +121,9 @@ class ItemMenu {
       icone: j['icone'] as String?,
       rota: j['rota'] as String?,
       arte: j['arte'] as String?,
+      arteImagem: j['arte_imagem'] is String && (j['arte_imagem'] as String).startsWith('https://')
+          ? j['arte_imagem'] as String
+          : null,
       visivel: j['visivel'] != false,
       bloqueado: j['estado'] == 'bloqueado',
       selo: j['selo'] as String?,
@@ -135,6 +143,7 @@ class ItemMenu {
         icone: icone,
         rota: rota,
         arte: arte,
+        arteImagem: arteImagem,
         visivel: visivel,
         bloqueado: bloqueado,
         selo: selo,
@@ -274,6 +283,7 @@ class AppConfig {
     this.home,
     this.maisUsados,
     this.maisProcurados,
+    this.textos = const {},
     this.ajuda,
     this.fonteAvisos = 'firestore',
     this.fonteComunicados = 'firestore',
@@ -329,6 +339,15 @@ class AppConfig {
   /// Chamados no app (T3c): `textos` e `anexos` do painel.
   final Map<String, dynamic> chamados;
 
+  /// Textos de tela editados no painel (`textos`: `rodape_inicio`,
+  /// `botao_erro`). Chave ausente: vale o texto do app.
+  final Map<String, String> textos;
+
+  String? texto(String chave) {
+    final v = textos[chave]?.trim();
+    return v == null || v.isEmpty ? null : v;
+  }
+
   /// Texto da tela de chamados vindo do painel, ou nulo (vale o do app).
   String? textoChamados(String chave) {
     final t = chamados['textos'];
@@ -379,6 +398,12 @@ class AppConfig {
           : const Duration(seconds: 15),
       menu: ItemMenu.lista(j['menu']),
       home: j['home'] is List ? BlocoInicio.lista(j['home']) : null,
+      textos: j['textos'] is Map
+          ? {
+              for (final e in (j['textos'] as Map).entries)
+                if (e.value is String) '${e.key}': e.value as String,
+            }
+          : const {},
       maisProcurados: j['busca'] is Map && j['busca']['mais_procurados'] is List
           ? [for (final c in j['busca']['mais_procurados'] as List) '$c']
           : null,
