@@ -54,11 +54,17 @@ void main() {
       'code': 1,
       'feedback': {'id': 1, 'protocolo': 'FB-2026-00001', 'tipo': 'elogio', 'texto': 'Ótimo',
                    'situacao': 'concluido', 'aguarda_militar': false, 'anexos': 2},
-      'mensagens': [{'autor': 'equipe', 'texto': 'Obrigado!'}],
+      'mensagens': [
+        {'autor': 'equipe', 'texto': 'Obrigado!'},
+        {'autor': 'equipe', 'texto': 'Isso é técnico.', 'acao': 'abrir_chamado'},
+        {'autor': 'militar', 'texto': 'ok', 'acao': 'abrir_chamado'},
+      ],
     }).ver(1);
     expect(d.encerrado, isTrue);
     expect(d.anexos, 2);
-    expect(d.mensagens.single.daEquipe, isTrue);
+    expect(d.mensagens.first.daEquipe, isTrue);
+    expect(d.mensagens.map((m) => m.abrirChamado), [false, true, false],
+        reason: 'só mensagem da equipe oferece o chamado');
     expect(d.resumo.tipo, TipoFeedback.elogio);
   });
 

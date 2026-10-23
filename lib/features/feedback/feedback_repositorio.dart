@@ -44,12 +44,17 @@ class ResumoFeedback {
 }
 
 class MensagemFeedback {
-  const MensagemFeedback({required this.daEquipe, required this.texto, this.criadoEm, this.anexos = 0});
+  const MensagemFeedback(
+      {required this.daEquipe, required this.texto, this.criadoEm, this.anexos = 0, this.abrirChamado = false});
 
   final bool daEquipe;
   final String texto;
   final DateTime? criadoEm;
   final int anexos;
+
+  /// A equipe respondeu "isso é um problema técnico": o app oferece o botão
+  /// "Abrir chamado técnico" (`acao: abrir_chamado`, PAINEL_ADMIN §5.9).
+  final bool abrirChamado;
 }
 
 class DetalheFeedback {
@@ -143,6 +148,7 @@ class FeedbackRepositorio {
               texto: '${m['texto']}',
               criadoEm: DateTime.tryParse('${m['criado_em']}'),
               anexos: (m['anexos'] as num?)?.toInt() ?? 0,
+              abrirChamado: m['autor'] == 'equipe' && m['acao'] == 'abrir_chamado',
             ),
       ],
     );

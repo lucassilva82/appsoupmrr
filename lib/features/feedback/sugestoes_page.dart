@@ -422,7 +422,24 @@ class _MensagemDetalhePageState extends State<MensagemDetalhePage> {
                     ),
                   ),
                 _Balao(daEquipe: false, texto: d.texto, anexos: d.anexos),
-                for (final m in d.mensagens) _Balao(daEquipe: m.daEquipe, texto: m.texto, anexos: m.anexos),
+                for (final m in d.mensagens) ...[
+                  _Balao(daEquipe: m.daEquipe, texto: m.texto, anexos: m.anexos),
+                  if (m.abrirChamado)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.support_agent_outlined, size: AppIconSize.sm),
+                        label: const Text('Abrir chamado técnico'),
+                        onPressed: () {
+                          registrar('funcao.tocar', chave: 'atend.chamados', dados: {'origem': 'feedback'});
+                          final gestor = context.read<Auth>().isSuperUser;
+                          final item = itemPorChave('atend.chamados',
+                              menu: menuEmUso(RepositorioConfig.atual, gestor: gestor));
+                          if (item != null) abrirFuncao(context, item, origem: 'feedback');
+                        },
+                      ),
+                    ),
+                ],
                 const SizedBox(height: 16),
                 if (d.encerrado)
                   Text('Esta mensagem foi encerrada. Se tiver outra ideia, mande uma nova sugestão.',
