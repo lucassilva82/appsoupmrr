@@ -224,8 +224,9 @@ São 163 referências no PHP, 417 nos `.sql` e 402 no painel.
    do passo 3 não se roda mais nenhum deles como está.
 5. Você roda o bloco que apaga as funções velhas de `public`. As duas
    `soupm_conceder_*` ficam.
-6. Você roda de novo a concessão do painel, agora no usuário da API:
-   `SELECT * FROM public.soupm_conceder_painel('pmrronline_usr_erp_prod');`.
+6. Você roda de novo a concessão do painel no usuário da API: a última
+   linha do `2026-10-24_soupm_painel_permissoes.sql` (o nome do usuário está
+   no repositório privado da API).
 7. Conferir que o app abre o menu e que o painel entra.
 
 Para voltar: os mesmos laços com `SET SCHEMA public` e os PHP do backup.
