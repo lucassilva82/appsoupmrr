@@ -7,6 +7,7 @@ import 'package:projetonovo/utils/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/vidro.dart';
+import '../core/erros/falha_de.dart';
 
 class DeclaracaoAcumuloCargosPage extends StatefulWidget {
   final String ano;
@@ -89,7 +90,7 @@ class _DeclaracaoAcumuloCargosPageState
     } catch (e) {
       await _showNotice(
         title: 'Erro',
-        message: 'Erro inesperado: $e',
+        message: textoFalha('DC', e, tela: 'rh.declaracoes.acumulo'),
         isError: true,
       );
     } finally {
@@ -164,7 +165,7 @@ class _DeclaracaoAcumuloCargosPageState
     } catch (e) {
       await _showNotice(
         title: 'Erro',
-        message: 'Erro inesperado: $e',
+        message: textoFalha('DC', e, tela: 'rh.declaracoes.acumulo'),
         isError: true,
       );
     } finally {
@@ -218,7 +219,7 @@ class _DeclaracaoAcumuloCargosPageState
       _dismissDialogIfOpen();
       await _showNotice(
         title: 'Erro',
-        message: 'Erro inesperado: $e',
+        message: textoFalha('DC', e, tela: 'rh.declaracoes.acumulo'),
         isError: true,
       );
     }

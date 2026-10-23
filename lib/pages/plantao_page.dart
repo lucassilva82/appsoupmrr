@@ -7,6 +7,8 @@ import '../utils/app_routes.dart';
 import '../widgets/calendar_widget.dart';
 import '../widgets/drawer_personalizado.dart';
 import '../widgets/vidro.dart';
+import '../core/erros/falha_de.dart';
+import '../core/erros/estado_erro.dart';
 
 // ignore: must_be_immutable
 class PlantaoPage extends StatefulWidget {
@@ -51,7 +53,10 @@ class _PlantaoPageState extends State<PlantaoPage> {
               child: CircularProgressIndicator.adaptive(),
             );
           } else if (snapshot.hasError) {
-            return Text('Ocorreu um erro');
+            return FundoSuave(
+                child: Scaffold(
+                    appBar: CustomAppBar(title: 'Meu Plantao'),
+                    body: EstadoErro(falha: falhaDe('ES', snapshot.error, tela: 'op.plantao'), tela: 'op.plantao')));
           } else {
             return FundoSuave(child: Scaffold(
               appBar: CustomAppBar(title: 'Meu Plantao'),

@@ -7,6 +7,7 @@ import 'package:projetonovo/utils/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/vidro.dart';
+import '../core/erros/falha_de.dart';
 
 class DeclaracaoParentescoPage extends StatefulWidget {
   final String ano;
@@ -104,7 +105,7 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
     } catch (e) {
       await _showNotice(
         title: 'Erro',
-        message: 'Erro inesperado: $e',
+        message: textoFalha('DC', e, tela: 'rh.declaracoes.parentesco'),
         isError: true,
       );
     } finally {
@@ -184,7 +185,7 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
     } catch (e) {
       await _showNotice(
         title: 'Erro',
-        message: 'Erro inesperado: $e',
+        message: textoFalha('DC', e, tela: 'rh.declaracoes.parentesco'),
         isError: true,
       );
     } finally {
@@ -239,7 +240,7 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
       _dismissDialogIfOpen();
       await _showNotice(
         title: 'Erro',
-        message: 'Erro inesperado: $e',
+        message: textoFalha('DC', e, tela: 'rh.declaracoes.parentesco'),
         isError: true,
       );
     }

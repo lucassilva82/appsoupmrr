@@ -15,6 +15,8 @@ import '../models/auth_model.dart';
 import '../pages/militar_detalhe_full_page.dart';
 import '../widgets/custom_appbar.dart';
 import '../widgets/vidro.dart';
+import '../core/erros/falha_de.dart';
+import '../core/erros/estado_erro.dart';
 
 class DetalhesMapaForcaPage extends StatefulWidget {
   final MapBuscaDetalhesModel dadosBusca;
@@ -135,7 +137,7 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
             return const Center(child: CircularProgressIndicator());
           }
           if (s.hasError) {
-            return Center(child: Text('Erro: ${s.error}'));
+            return EstadoErro(falha: falhaDe('MF', s.error, tela: 'gestao.mapa_forca'), tela: 'gestao.mapa_forca');
           }
           final dados = s.hasData ? _filtrados() : [];
 

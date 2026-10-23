@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:projetonovo/utils/app_routes.dart';
+import '../core/erros/falha_de.dart';
 
 class DeclaracaoWidget extends StatefulWidget {
   final String cpf;
@@ -87,7 +88,7 @@ class _DeclaracaoWidgetState extends State<DeclaracaoWidget> {
     } catch (e) {
       setState(() {
         _itens = const [];
-        _errorMessage = 'Erro inesperado: $e';
+        _errorMessage = textoFalha('DC', e, tela: 'rh.declaracoes');
       });
     } finally {
       if (firstLoad && mounted) setState(() => _isLoading = false);
@@ -150,7 +151,7 @@ class _DeclaracaoWidgetState extends State<DeclaracaoWidget> {
       _dismissIfOpen();
       await _showInfoDialog(
         title: 'Erro',
-        message: 'Erro inesperado: $e',
+        message: textoFalha('DC', e, tela: 'rh.declaracoes'),
         isError: true,
       );
     }

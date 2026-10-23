@@ -15,6 +15,8 @@ import '../models/map_busca_detalhes_model.dart';
 import '../pages/militar_detalhe_full_page.dart';
 import '../widgets/custom_appbar.dart';
 import '../widgets/vidro.dart';
+import '../core/erros/falha_de.dart';
+import '../core/erros/estado_erro.dart';
 
 class DetalhesMapaForcaComandoPage extends StatefulWidget {
   final MapBuscaDetalhesModel dadosBusca;
@@ -379,7 +381,7 @@ class _DetalhesMapaForcaComandoPageState
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snap.hasError) {
-                  return Center(child: Text('Erro: ${snap.error}'));
+                  return EstadoErro(falha: falhaDe('MF', snap.error, tela: 'gestao.mapa_forca'), tela: 'gestao.mapa_forca');
                 }
 
                 final baseMapa = snap.data ?? {};

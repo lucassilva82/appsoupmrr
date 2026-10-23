@@ -11,6 +11,7 @@ import 'package:projetonovo/utils/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/vidro.dart';
+import '../core/erros/falha_de.dart';
 
 String statusText(int status) {
   switch (status) {
@@ -126,7 +127,7 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
     } catch (e) {
       await _showNotice(
         title: 'Erro',
-        message: 'Erro inesperado: $e',
+        message: textoFalha('DC', e, tela: 'rh.declaracoes.irpf'),
         isError: true,
       );
     } finally {
@@ -223,7 +224,7 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
       _dismissDialogIfOpen();
       await _showNotice(
         title: 'Erro',
-        message: 'Erro inesperado: $e',
+        message: textoFalha('DC', e, tela: 'rh.declaracoes.irpf'),
         isError: true,
       );
     }

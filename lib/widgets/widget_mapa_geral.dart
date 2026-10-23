@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:projetonovo/models/map_busca_detalhes_model.dart';
 import 'package:projetonovo/pages/detalhes_mapa_forca_page.dart';
 import 'package:projetonovo/utils/app_theme.dart';
+import '../core/erros/falha_de.dart';
 
 class WidgetMapaGeral extends StatefulWidget {
   const WidgetMapaGeral({super.key});
@@ -364,8 +365,11 @@ class _WidgetMapaGeralState extends State<WidgetMapaGeral> {
                             size: 32,
                             color: Colors.redAccent.withValues(alpha: 0.7)),
                         const SizedBox(height: 8),
-                        Text('Erro ao carregar dados.',
+                        Text('Não foi possível carregar o Mapa da Força.',
                             style: theme.textTheme.bodyMedium),
+                        Text('Tente de novo em instantes. Código ${falhaDe('MF', s.error, tela: 'gestao.mapa_forca').codigo}.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodySmall),
                       ],
                     ),
                   );

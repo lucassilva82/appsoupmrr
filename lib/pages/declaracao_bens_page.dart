@@ -21,6 +21,7 @@ import '../utils/app_theme.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/alerta.dart';
 import '../widgets/vidro.dart';
+import '../core/erros/falha_de.dart';
 
 class DeclaracaoBensPage extends StatefulWidget {
   final String ano;
@@ -152,7 +153,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
         _alerta('Erro ao buscar bens', erro: true);
       }
     } catch (e) {
-      _alerta('Erro inesperado: $e', erro: true);
+      _alerta(textoFalha('DC', e, tela: 'rh.declaracoes.bens'), erro: true);
     }
   }
 
@@ -191,7 +192,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
       }
     } catch (e) {
       Navigator.of(context).pop();
-      _alerta('Erro inesperado: $e', erro: true);
+      _alerta(textoFalha('DC', e, tela: 'rh.declaracoes.bens'), erro: true);
     }
   }
 
@@ -212,7 +213,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
       }
     } catch (e) {
       Navigator.of(context).pop();
-      _alerta('Erro inesperado: $e', erro: true);
+      _alerta(textoFalha('DC', e, tela: 'rh.declaracoes.bens'), erro: true);
     }
   }
 
@@ -244,7 +245,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
       }
     } catch (e) {
       Navigator.of(context).pop();
-      _alerta('Erro inesperado: $e', erro: true);
+      _alerta(textoFalha('DC', e, tela: 'rh.declaracoes.bens'), erro: true);
     }
   }
 
@@ -270,7 +271,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
       }
     } catch (e) {
       Navigator.of(context).pop();
-      _alerta('Erro inesperado: $e', erro: true);
+      _alerta(textoFalha('DC', e, tela: 'rh.declaracoes.bens'), erro: true);
     }
   }
 

@@ -28,6 +28,8 @@ import '../widgets/aviso_rapido.dart';
 import '../models/auth_model.dart'; // fornece auth.matricula, auth.cpf
 import '../utils/app_theme.dart';
 import '../utils/protecao_tela.dart';
+import '../core/erros/falha_de.dart';
+import '../core/erros/estado_erro.dart';
 
 class MilitarDetalheFullPage extends StatefulWidget {
   final String matricula;
@@ -154,7 +156,9 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
           if (s.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (s.hasError) return Center(child: Text('Erro: ${s.error}'));
+          if (s.hasError) {
+            return EstadoErro(falha: falhaDe('MF', s.error, tela: 'gestao.mapa_forca'), tela: 'gestao.mapa_forca');
+          }
 
           final tuple = s.data!;
           final m = tuple.pessoal;

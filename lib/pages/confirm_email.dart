@@ -9,6 +9,7 @@ import '../utils/api_services.dart';
 import '../utils/app_theme.dart';
 import '../widgets/custom_appbar.dart';
 import '../widgets/vidro.dart';
+import '../core/erros/falha_de.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ConfirmEmailScreen
@@ -238,7 +239,7 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _erro = 'Ocorreu um erro inesperado. Tente novamente.');
+        setState(() => _erro = textoFalha('LG', e, tela: 'conta.email'));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
