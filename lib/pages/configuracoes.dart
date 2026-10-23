@@ -8,7 +8,6 @@ import '../core/design/arte_cartao.dart';
 import '../core/log/registro_log.dart';
 import '../core/navegacao/abrir_funcao.dart';
 import '../features/inicio/personalizar_inicio_page.dart';
-import '../features/inicio/preferencias_inicio.dart';
 import '../features/servicos/servicos_page.dart';
 import '../models/auth_model.dart';
 import '../utils/api_services.dart';
