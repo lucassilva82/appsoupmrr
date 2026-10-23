@@ -157,6 +157,37 @@ cancelado: não há nada para criar no cPanel. Falta um SQL só:
 
 Fica a dívida "leitura e escrita no mesmo usuário" (PAINEL_ADMIN §7, item 6).
 
+**Resultado em produção (24/10/2026).** Todas as `soupm_*` deram `ok`. Seis
+tabelas do painel vieram `pulado` porque ainda não existem lá
+(`soupm_painel_aviso`, `soupm_painel_cache`, `soupm_painel_navegador`,
+`soupm_alerta_disparo`, `soupm_alerta_regra`, `soupm_log_filtro`): os SQL do
+painel (P0 a P8) não rodaram em produção. A ordem deles vem da sessão do
+painel; depois deles, o `_painel_permissoes.sql` roda de novo.
+
+O `FALTOU` só diz que a **conta do cPanel** não enxerga o esquema; não prova
+que o usuário da API não lê. Situação de cada um:
+
+| Objeto | O usuário da API lê? | Como se sabe |
+|---|---|---|
+| `qra.sec_users` | sim | o login do app (`login.php`) lê em produção |
+| `recursoshumanos.policial_militar` | sim | e-mail e declarações leem em produção |
+| `public.vw_users_unidade_comando_groups` | sim | a ficha (`buscapormatricula.php`) lê em produção |
+| `intranet.*` (8 objetos) e `sccti.*` (2) | **não medido** | a API não usa nenhum deles hoje |
+
+Para medir os 10 que faltam é preciso uma sonda temporária no servidor (um
+PHP que só testa `SELECT ... LIMIT 0` com o usuário da API e é apagado em
+seguida). O modo automático barrou essa sonda por ser leitura de produção: ela
+espera a sua autorização. Só depois sai o texto para o administrador do banco,
+com o que faltar de verdade. Rascunho, a completar:
+
+> Prezado administrador, o painel do SouPMRR (`/painelsoupmrr`) usa o usuário
+> de banco da API do app. Peço conceder a esse usuário, no banco de produção:
+> `USAGE` nos esquemas `intranet` e `sccti`; `SELECT` em `intranet.modulos`,
+> `intranet.perfis`, `intranet.perfis_recursos`, `intranet.recursos`,
+> `intranet.usuarios_perfis`, `intranet.vw_policial`, `sccti.tipos_chamado` e
+> `sccti.categorias_chamados`; `SELECT, INSERT` em `intranet.auditoria` e
+> `USAGE` em `intranet.auditoria_id_seq`. Obrigado. — DTI/PMRR
+
 ### 2. Arquivos de inclusão da API — feito em 24/10/2026
 
 Um `.htaccess` na raiz da API bloqueia pela web os arquivos que só são
