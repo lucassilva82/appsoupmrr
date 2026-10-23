@@ -1157,8 +1157,8 @@ administração vai editar (regra no CLAUDE.md).
   (gravado no índice). A certidão guardada antes disso usa o nome curto do
   painel e, sem ele, o nome oficial.
 - **Teste:** Postgres local com as tabelas de `2026-10-16_soupm_config.sql`
-  (criar antes os usuários `pmrronline_usr_erp_prod` e `pmrronline_erp_prod`,
-  senão o GRANT aborta o script). Conferido sem a tabela, sem a coluna, com a
+  (criar antes, no Postgres local, os mesmos usuários de banco que os GRANT
+  do script citam, senão o GRANT aborta o script). Conferido sem a tabela, sem a coluna, com a
   coluna nula e com valor no banco. O app foi conferido no simulador, em modo
   vitrine.
 - Backup do deploy: `/backups_api/certidoes/*.bak-20261019-v2`.

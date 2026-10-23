@@ -1530,8 +1530,8 @@ As tabelas do app estão no SOUPM_2_2 §12.2 e **não se repetem aqui**
 Abaixo, só o que o painel acrescenta e o que ele pede para mudar.
 
 **Regras para todo DDL novo** (`postgresql-code-review`). Versões medidas em
-22/10/2026: **produção 13.23** (`pmrronline_erp_prod`, onde a API grava) e
-**desenvolvimento 9.6.6** (`gitpmrrl_pmrr_erp`, onde a intranet nova e o painel
+22/10/2026: **produção 13.23** (o banco onde a API grava) e
+**desenvolvimento 9.6.6** (o banco onde a intranet nova e o painel
 rodam). Escreve-se para a **menor** das duas (9.6), porque toda migração passa
 primeiro por dev; a regra é revista quando o dev subir de versão:
 
