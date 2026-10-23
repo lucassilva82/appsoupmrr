@@ -2299,6 +2299,18 @@ detalhes") e "Abrir chamado técnico", que abre o chamado já preenchido com
 esses detalhes. O botão só aparece com a função de chamados liberada e a chave
 do SISCHAMADOS no build.
 
+**Versão por plataforma (22/10/2026).** Na abertura, o app espera até 3 s pelo
+`app_config` e aplica a regra da própria plataforma (`versao.ios` ou
+`versao.android`); sem regra (sem rede e sem cópia), continua valendo o
+`min_version` do Firestore, como na 2.1.x. Abaixo da mínima, a nova tela de
+atualização obrigatória (§10.3: o Fusca velho com a versão instalada e a
+viatura nova com a da loja; ao tocar, a velha apaga, a nova salta e a loja da
+plataforma abre; parada com "Reduzir movimento"; textos do painel e código
+`CF-VERSAO-IOS`/`CF-VERSAO-ANDROID`). Abaixo da recomendada, um cartão
+dispensável no topo da Início, uma vez por versão. A falha na abertura deixou
+de ser "Ocorreu um erro": vira a tela de erro com `AP-ABERTURA`. Fica para
+depois: o policial ilustrado da cena.
+
 **Níveis de acesso (fase 5): bloqueados.** O SIGRH ainda não tem a tabela de
 função e cargo (a própria intranet deixou isso pendente para o DBA, em
 `vw_lotacao_sigrh`), e os perfis da intranet só existem no banco de

@@ -8,7 +8,9 @@ import 'package:projetonovo/widgets/anuncio_institucional.dart';
 import 'package:projetonovo/widgets/card_tempo_servico.dart';
 import 'package:projetonovo/core/config/app_config.dart';
 import 'package:projetonovo/features/comunicados/comunicados_page.dart';
+import 'package:projetonovo/core/ambiente_app.dart';
 import 'package:projetonovo/features/inicio/card_painel.dart';
+import 'package:projetonovo/features/versao/tela_atualizacao.dart';
 import 'package:projetonovo/features/inicio/personalizar_inicio_page.dart';
 import 'package:projetonovo/features/inicio/preferencias_inicio.dart';
 import 'package:projetonovo/features/pendencias/pendencias_page.dart';
@@ -150,6 +152,15 @@ class _HomeBodyState extends State<HomeBody>
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // ── Versão recomendada (§10.2): cartão dispensável, uma vez por versão
+          ValueListenableBuilder<AppConfig>(
+            valueListenable: RepositorioConfig.emUso,
+            builder: (context, config, _) =>
+                config.situacaoVersao(AmbienteApp.plataforma, AmbienteApp.versao) == SituacaoVersao.recomendada
+                    ? CartaoVersaoRecomendada(recomendada: config.versoes[AmbienteApp.plataforma]!.recomendada)
+                    : const SizedBox.shrink(),
+          ),
+
           // ── Blocos na ordem do painel (§4); sem `home`, a do app ──────
           ListenableBuilder(
             listenable: Listenable.merge([RepositorioConfig.emUso, InicioPreferenciasRepositorio.emUso]),

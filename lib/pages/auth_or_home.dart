@@ -1,12 +1,15 @@
 import 'dart:async';
-import 'dart:io'; // Para detectar iOS/Android
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../core/ambiente_app.dart';
 import '../core/config/app_config.dart';
+import '../core/erros/estado_erro.dart';
+import '../core/erros/falha_app.dart';
+import '../core/log/registro_log.dart';
+import '../features/versao/tela_atualizacao.dart';
 import '../core/rede/api_client.dart';
 import '../models/auth_model.dart';
 import '../widgets/abertura_soupmrr.dart';
@@ -25,6 +28,8 @@ class AuthOrHome extends StatefulWidget {
 class _AuthOrHomeState extends State<AuthOrHome> {
   late Future<void> _initFuture;
   bool _needsForceUpdate = false;
+  String _instalada = '';
+  RegraVersao? _regra;
 
   @override
   void initState() {
@@ -42,25 +47,49 @@ class _AuthOrHomeState extends State<AuthOrHome> {
     // E sem piso nenhum, numa sessão já autenticada o carregamento termina em
     // ~300ms e a animação vira um tremor, pior do que não ter animação.
     _initFuture = () async {
-      final trabalho = auth.tryAutoLogin().then((_) {
+      final trabalho = auth.tryAutoLogin().then((_) async {
         debugPrint(
             "[LOG] initState: tryAutoLogin finalizado, agora checkVersion...");
         // Abre com a cópia guardada e, sem esperar, busca a ficha de novo no
         // SIGRH (nome de guerra, posto, foto trocados lá).
         unawaited(auth.atualizarPerfilEmSegundoPlano());
-        // O que o app desenha vem da API (fase 1 da 2.2). Por enquanto só lê
-        // e guarda; as telas passam a usar na fase 2.
-        unawaited(carregarAppConfig(
+        // O que o app desenha vem da API (fase 1 da 2.2). A versão mínima
+        // por plataforma também (§10.2): espera até 3 s; sem resposta, vale a
+        // cópia guardada e, sem regra nenhuma, a do Firestore (2.1.x).
+        final config = carregarAppConfig(
             api: ApiClient(),
             matricula: auth.isAuth ? auth.matricula : null,
-            senha: auth.isAuth ? auth.password : null));
-        return _checkVersionFromFirestore();
+            senha: auth.isAuth ? auth.password : null);
+        try {
+          await config.timeout(const Duration(seconds: 3));
+        } catch (_) {}
+        if (!await _checarVersaoPorPlataforma()) {
+          await _checkVersionFromFirestore();
+        }
       });
       await Future.wait([
         trabalho,
         Future<void>.delayed(const Duration(milliseconds: 3600)),
       ]);
     }();
+  }
+
+  /// Regra da plataforma vinda do `app_config` (§10.2). Devolve falso quando
+  /// não há regra (sem rede e sem cópia), para cair no Firestore.
+  Future<bool> _checarVersaoPorPlataforma() async {
+    final config = RepositorioConfig.atual;
+    final regra = config.versoes[AmbienteApp.plataforma];
+    if (regra == null) return false;
+    try {
+      _instalada = (await PackageInfo.fromPlatform()).version;
+    } catch (_) {
+      _instalada = AmbienteApp.versao;
+    }
+    _regra = regra;
+    if (config.situacaoVersao(AmbienteApp.plataforma, _instalada) == SituacaoVersao.obrigatoria) {
+      _needsForceUpdate = true;
+    }
+    return true;
   }
 
   /// Busca a `min_version` no Firestore (coleção 'appConfig', doc 'versions')
@@ -103,6 +132,7 @@ class _AuthOrHomeState extends State<AuthOrHome> {
           "[LOG] _checkVersionFromFirestore: Antes de obter PackageInfo...");
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
+      _instalada = currentVersion;
       debugPrint(
           "[LOG] _checkVersionFromFirestore: currentVersion do app: $currentVersion");
 
@@ -162,15 +192,21 @@ class _AuthOrHomeState extends State<AuthOrHome> {
         } else if (snapshot.hasError) {
           debugPrint(
               "[LOG] FutureBuilder: snapshot.hasError => ${snapshot.error}");
-          return const Scaffold(
-            body: Center(child: Text('Ocorreu um erro')),
+          final falha = FalhaApp(
+            codigo: 'AP-ABERTURA',
+            origem: OrigemFalha.app,
+            titulo: 'O app não conseguiu abrir',
+            texto: 'Algo falhou ao preparar o app. Feche e abra de novo; se continuar, abra um chamado técnico com o código.',
+            detalhe: '${snapshot.error}',
           );
+          registrarErro(falha, tela: 'abertura');
+          return FundoSuave(child: Scaffold(body: SafeArea(child: EstadoErro(falha: falha, tela: 'abertura'))));
         } else {
           // Se precisamos forçar update
           if (_needsForceUpdate) {
             debugPrint(
                 "[LOG] FutureBuilder: _needsForceUpdate=true => ForceUpdateScreen...");
-            return _buildForceUpdateScreen();
+            return TelaAtualizacao(instalada: _instalada, regra: _regra);
           }
 
           // Caso contrário, exibe a lógica normal
@@ -188,95 +224,5 @@ class _AuthOrHomeState extends State<AuthOrHome> {
         }
       },
     );
-  }
-
-  /// Tela de "forçar atualização" com:
-  /// - Fundo: assets/imagens/entradacapa.png
-  /// - Caixa degradê em tons de azul
-  /// - Botão "Acessar agora" para redirecionar iOS/Android
-  Widget _buildForceUpdateScreen() {
-    debugPrint(
-        "[LOG] _buildForceUpdateScreen: Exibindo tela de atualização...");
-
-    return FundoSuave(
-        child: Scaffold(
-      // Fundo com imagem
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/imagens/entradacapa.png'),
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: Center(
-          child: Container(
-            margin: const EdgeInsets.all(20),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFF0D47A1), // Azul escuro
-                  Color(0xFF1976D2), // Azul mais claro
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Nova versão disponível!',
-                  style: TextStyle(
-                    fontSize: 24,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Para continuar usando o app, atualize agora para a versão mais recente.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF0D47A1),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 24,
-                    ),
-                  ),
-                  onPressed: () async {
-                    debugPrint("[LOG] Botão 'Acessar agora' clicado...");
-
-                    final storeUrl = Platform.isIOS
-                        ? 'https://apps.apple.com/us/app/soupmrr/id6466815434'
-                        : 'https://play.google.com/store/apps/details?id=pm.rr.soupmrr';
-
-                    final uri = Uri.parse(storeUrl);
-                    if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri,
-                          mode: LaunchMode.externalApplication);
-                    } else {
-                      debugPrint(
-                          "[ERRO] Não foi possível abrir a URL: $storeUrl");
-                    }
-                  },
-                  child: const Text('Acessar agora'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    ));
   }
 }
