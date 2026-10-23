@@ -172,21 +172,20 @@ que o usuário da API não lê. Situação de cada um:
 | `qra.sec_users` | sim | o login do app (`login.php`) lê em produção |
 | `recursoshumanos.policial_militar` | sim | e-mail e declarações leem em produção |
 | `public.vw_users_unidade_comando_groups` | sim | a ficha (`buscapormatricula.php`) lê em produção |
-| `intranet.*` (8 objetos) e `sccti.*` (2) | **não medido** | a API não usa nenhum deles hoje |
+| `intranet.*` (os 8, inclusive `INSERT` na auditoria e a sequência) | sim | sonda de 24/10/2026 |
+| `sccti.tipos_chamado`, `sccti.categorias_chamados` | **não** (sem `USAGE` no esquema) | sonda de 24/10/2026 |
 
-Para medir os 10 que faltam é preciso uma sonda temporária no servidor (um
-PHP que só testa `SELECT ... LIMIT 0` com o usuário da API e é apagado em
-seguida). O modo automático barrou essa sonda por ser leitura de produção: ela
-espera a sua autorização. Só depois sai o texto para o administrador do banco,
-com o que faltar de verdade. Rascunho, a completar:
+A sonda foi um PHP temporário que testou `SELECT ... LIMIT 0` e os
+privilégios com o usuário da API; rodou uma vez e foi apagado (o endereço
+responde 404). **Só falta o `sccti`.** Pelo plano do painel, ele serve à tela
+"Chamados no app" (escolher os tipos e categorias de "Novo chamado"); a sessão
+do painel confirma se mais alguma tela depende dele. Texto para o administrador do
+banco:
 
 > Prezado administrador, o painel do SouPMRR (`/painelsoupmrr`) usa o usuário
-> de banco da API do app. Peço conceder a esse usuário, no banco de produção:
-> `USAGE` nos esquemas `intranet` e `sccti`; `SELECT` em `intranet.modulos`,
-> `intranet.perfis`, `intranet.perfis_recursos`, `intranet.recursos`,
-> `intranet.usuarios_perfis`, `intranet.vw_policial`, `sccti.tipos_chamado` e
-> `sccti.categorias_chamados`; `SELECT, INSERT` em `intranet.auditoria` e
-> `USAGE` em `intranet.auditoria_id_seq`. Obrigado. — DTI/PMRR
+> de banco da API do app. Peço conceder a esse usuário, no banco de produção,
+> `USAGE` no esquema `sccti` e `SELECT` em `sccti.tipos_chamado` e
+> `sccti.categorias_chamados` (só leitura). Obrigado. — DTI/PMRR
 
 ### 2. Arquivos de inclusão da API — feito em 24/10/2026
 
