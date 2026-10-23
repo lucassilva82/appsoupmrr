@@ -2431,6 +2431,32 @@ combinam toda mudança no contrato antes do código (PAINEL_ADMIN §10).
 
 ---
 
+## 16b. Versão 2.3: o que volta com a intranet
+
+Decisão do usuário (24/10/2026): a 2.2 vai para produção **hoje**, sem
+SISCHAMADOS nem SIGE (Escalas e SVI). Eles voltam na 2.3, em três passos:
+
+1. **Login silencioso na API da intranet de desenvolvimento.** Depois do login
+   do SouPMRR, o app entra sozinho na intranet de desenvolvimento, sem pedir
+   nada ao militar.
+2. **SISCHAMADOS e SIGE (Escalas e SVI) apontam para o desenvolvimento**, só
+   para teste.
+3. **Quando a intranet for para produção**, os mesmos módulos passam a
+   apontar para lá. O app muda só o endereço, que vem do `app_config`.
+
+**Cuidados:**
+
+- **O banco de desenvolvimento é uma cópia do SIGRH.** Senha trocada e dado
+  novo depois da cópia não estão lá: o login silencioso pode falhar para quem
+  trocou a senha. Essa falha tem código e mensagem próprios (prefixo `LG-`,
+  por exemplo `LG-INTRANET-SENHA`, a definir), aparece só na função que
+  depende da intranet e **nunca derruba o login do app**.
+- **Build de loja nunca aponta para o desenvolvimento.** O teste é só no
+  TestFlight ou em APK de teste, como já foi feito com Escalas e SVI na 2.1.7
+  (o endereço vem do `env.json` e só o de teste leva o de desenvolvimento).
+- Até lá, no app, as funções continuam "Em breve" com a folha de bloqueio e o
+  código `MD-` (§16, "Fase sem intranet").
+
 ## 17. Decisões que dependem do usuário
 
 **Todas as decisões do plano foram tomadas** (20 e 21/10/2026):

@@ -73,6 +73,39 @@ qualquer skill.
 | Pendências: todos os tipos **começam desligados** | `soupm_pendencia_tipo.ativo DEFAULT FALSE` (muda o rascunho do SOUPM_2_2 §12.2) |
 | Publicar comunicados: no início, só o administrador | Papel "Publicar comunicados" existe, sem ninguém |
 
+### 1.1b Fase sem intranet (diretriz do usuário, 24/10/2026)
+
+> "Nesse momento vai ser só painel e app tudo no mesmo banco, sem precisar da
+> intranet (...) Eu quero fazer tudo com esse usuário que tenho do cpanel."
+
+Até o painel voltar para dentro da intranet, vale isto, por cima do que o
+resto deste documento diz sobre a intranet:
+
+- **Endereço:** `https://pmrr.online/painelsoupmrr/`, no mesmo servidor da
+  API do app.
+- **Login:** matrícula e senha do app (`sessao_app.php` da API), sem 2FA.
+- **Quem entra e o que pode:** `soupm_papel`, `soupm_papel_regra` (quem tem
+  o papel, por matrícula ou por nível do SIGRH) e `soupm_papel_recurso` (o que
+  cada papel pode). O Administrador pode tudo.
+- **Administradores:** o nível 1 do SIGRH, copiado à mão na carga inicial,
+  mais a matrícula que o usuário indicou. Daí em diante, são dados e tirados
+  na tela Papéis, com auditoria.
+- **Auditoria:** `soupm_painel_auditoria`, no lugar de `intranet.auditoria`.
+- **Nomes de militar:** `recursoshumanos.vw_buscar_policial`, no lugar de
+  `intranet.vw_policial`.
+- **SISCHAMADOS:** não é lido. A tela Suporte avisa com o código
+  `PSP-FONTE-01`, e os tipos de chamado liberados no app ficam em
+  `soupm_config`, chave `chamados`.
+- **Mídia:** as imagens aprovadas ficam em
+  `~/public_html/painelsoupmrr/midia/<sha256>.<ext>`, e o app monta o endereço
+  com a base `https://pmrr.online/` (`soupm_config`, chave `midia`).
+- **Banco:** o mesmo usuário da API (§7, item 6), e **todo SQL de produção
+  roda com a conta do cPanel**, na ordem do `docs/PENDENTE_USUARIO.md` §1.
+- **Caminho de volta (pronto, não feito):** o administrador do banco roda o
+  `intranet_depois/B_intranet_acl_producao.sql` do painel e define
+  `SOUPM_ACL_FONTE = 'intranet'`. As telas não mudam. Detalhe na spec P9 do
+  painel, §6.
+
 ### 1.2 Onde cada peça roda
 
 ```
@@ -1495,7 +1528,8 @@ levantamento de 21/10/2026:
    e nos endpoints JSON do painel.
 5. Auditoria de toda alteração e todo envio em `intranet.auditoria`, com antes
    e depois.
-6. **O painel usa o mesmo usuário de banco da API** (decisão do usuário,
+6. **O painel usa o mesmo usuário de banco da API** (fase sem intranet,
+   §1.1b; decisão do usuário,
    24/10/2026: opção (a), "O mesmo do app"), com a escrita só nas `soupm_*` que
    ele edita (`sql/2026-10-24_soupm_painel_permissoes.sql` da API) e `SELECT`
    no que lê do SIGRH. O plano era um usuário próprio, e ele foi cancelado.

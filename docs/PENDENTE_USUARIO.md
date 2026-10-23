@@ -10,7 +10,7 @@ por conter estrutura do banco de produção). Rodar no phpPgAdmin, com o login
 do usuário, **desmarcando "Paginar resultados"**, na ordem da tabela. Todos
 podem rodar mais de uma vez sem estragar nada.
 
-Última atualização: 24/10/2026 (fase sem intranet).
+Última atualização: 24/10/2026 (fase sem intranet; roteiro com os SQL A, C e D do painel).
 
 ## 1. SQL de produção (phpPgAdmin)
 
@@ -154,17 +154,25 @@ mais de uma vez. Ordem:
 
 | # | Arquivo | Onde está | Para quê |
 |---|---|---|---|
-| 1 | Os SQL da tabela do §1 acima que ainda não rodaram | `sql/` da API | Tudo do app 2.2 |
-| 2 | `A_tabelas_painel_producao.sql` | `painelsoupmrr/database/producao/` (intranet, commit d46197a3) | As 7 tabelas do painel e a linha `painel` da `soupm_config`. Termina com uma conferência: as 7 têm de aparecer como "existe" |
-| 3 | O SQL do acesso próprio do painel (papéis, recursos e auditoria em `soupm_*`) | a sessão do painel entrega | Substitui o cadastro na intranet |
-| 4 | `2026-10-24_soupm_painel_permissoes.sql`, de novo | `sql/` da API | Dá ao usuário da API a escrita nas tabelas novas dos passos 2 e 3. As leituras do SIGRH que ele já tem aparecem como `ok (já tinha)` |
+| 1 | Os SQL da tabela do §1 acima que ainda não rodaram, **com o `_niveis.sql` e o `_niveis_rapido.sql`** | `sql/` da API | Tudo do app 2.2. O passo 3 usa `soupm_papel`, `soupm_papel_regra` e `soupm_papeis_para`, que nascem nos SQL de níveis |
+| 2 | `A_tabelas_painel_producao.sql` | `painelsoupmrr/database/producao/` da intranet | As 7 tabelas do painel. Termina com uma conferência: as 7 têm de aparecer como "existe" |
+| 3 | `C_acesso_proprio_producao.sql` | mesma pasta (commit b3f37d83) | Quem entra no painel e o que pode: 58 recursos, 33 permissões, a auditoria própria (`soupm_painel_auditoria`) e os Administradores (o nível 1 do SIGRH e a matrícula que o usuário indicou). No fim, lista os Administradores. Se a conta do cPanel não ler a visão do SIGRH, ele avisa e segue só com a matrícula indicada |
+| 4 | `D_telas_prototipo_producao.sql` | mesma pasta (commit c497f463) | A imagem aprovada nas áreas do menu (`arte_imagem`) e os textos do rodapé e do botão das telas de erro |
+| 5 | `2026-10-24_soupm_painel_permissoes.sql`, de novo | `sql/` da API | Dá ao usuário da API a escrita nas tabelas novas dos passos 2 a 4 (auditoria, papéis) e a leitura de `recursoshumanos.vw_buscar_policial`. O que ele já tinha aparece como `ok (já tinha)`; tabela que ainda não existe aparece como "pulado" |
 
-Depois: entrar no painel e salvar algo em Configurações. Se aparecer
-`PSP-DB-03`, a mensagem diz qual tabela falta.
+Depois:
+- Entrar no painel com a **matrícula e a senha do app** e conferir a tela
+  Papéis. Se aparecer `PSP-DB-03`, a mensagem diz qual tabela falta.
+- Publicar em pmrr.online os dois arquivos que o painel corrigiu (as telas
+  abriam sem estilo e o tema escuro não pegava): `nucleo/casca.php` e
+  `assets/nexus/nexus2-componentes.css`.
+- Criar `~/public_html/painelsoupmrr/midia/`, com gravação pelo PHP, e
+  publicar o `midia/.htaccess` do painel. As imagens aprovadas ficam lá e o
+  app as busca em `https://pmrr.online/painelsoupmrr/midia/`.
 
 **Não rodar:** os P0 a P8 antigos do painel (estão em `substituidos/`) e o
-`B_intranet_acl_producao.sql`, que fica para quando o painel for para a
-intranet.
+`intranet_depois/B_intranet_acl_producao.sql`, que fica para quando o painel
+for para a intranet.
 
 Fica a dívida "leitura e escrita no mesmo usuário" (PAINEL_ADMIN §7, item 6).
 
