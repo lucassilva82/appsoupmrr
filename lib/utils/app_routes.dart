@@ -44,6 +44,8 @@ class AppRoutes {
   static const FEEDBACK = '/atend/feedback'; // Sugestões e elogios (2.2)
   static const CHAMADOS = '/atend/chamados'; // Meus chamados, SISCHAMADOS (2.2)
   static const CARREIRA = '/rh/carreira'; // Linha do tempo da carreira (2.2, P5)
+  static const DOCUMENTOS = '/rh/documentos'; // Central de documentos (2.2, P4)
+  static const VALIDAR = '/rh/validar'; // Validar documento (2.2, P6)
   static const CONTRACHEQUE_GRAFICO_PAGE =
       "/contracheque-grafico-page"; // Evolução salarial
 }

@@ -1201,7 +1201,8 @@ Prefixos por módulo (o sufixo segue o padrão `LG-`: `REDE`, `FORA`,
 | `ES` | Minhas escalas (SIGE) | `SV` | serviço voluntário (SVI) |
 | `AJ` | "Preciso de ajuda" | `LOG` | envio do log (nunca vira log) |
 | `DO` | central de documentos | `NT` | notícias e agenda |
-| `CM` | comunicados | | |
+| `CM` | comunicados | `CR` | linha do tempo da carreira |
+| `VD` | validar documento | | |
 
 ### 9.2 Logs
 

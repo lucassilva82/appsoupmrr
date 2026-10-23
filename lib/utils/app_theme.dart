@@ -217,10 +217,10 @@ class AppTheme {
         ),
       ),
 
+      // Folha opaca: a 86% o texto da tela de trás aparecia no meio do
+      // texto da folha (visto no "O que mudou" do contracheque, 2.2).
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: isDark
-            ? card.withOpacity(0.86)
-            : Colors.white.withOpacity(0.90),
+        backgroundColor: isDark ? card : Colors.white,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         shape: const RoundedRectangleBorder(

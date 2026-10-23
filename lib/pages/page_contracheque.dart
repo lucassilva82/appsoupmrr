@@ -24,6 +24,7 @@ import '../models/auth_model.dart';
 import '../models/contracheque_model.dart';
 import '../models/meses_contracheque_model.dart';
 import '../features/contracheque/o_que_mudou.dart';
+import '../features/documentos/documentos_locais.dart';
 import '../services/dados_sql.dart';
 import '../utils/app_theme.dart';
 import '../view/second_screen.dart';
@@ -712,6 +713,15 @@ class _PageContrachequeState extends State<PageContracheque> {
     ).pedir(widget.mesSelecionado, pasta: await getTemporaryDirectory());
     final file = daApi ?? await _generatePdf(auth);
     _pdfPronto = file;
+    // Fica também na Central de documentos (P4), sem esperar.
+    final m = widget.mesSelecionado;
+    final folha = '${m.tipo}${m.folha}'.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
+    DocumentosLocais().guardarContracheque(auth.matricula ?? '', file,
+        id: '${_nomeArquivo}_${folha.length > 20 ? folha.substring(0, 20) : folha}',
+        titulo: 'Contracheque ${m.mesExtenso}/${m.ano}'
+            '${m.tipo == 'A' ? '' : (m.folha.isNotEmpty ? ' · ${m.folha}' : '')}',
+        ano: int.tryParse(m.ano) ?? 0,
+        mes: int.tryParse(m.mes) ?? 0);
     return file;
   }
 

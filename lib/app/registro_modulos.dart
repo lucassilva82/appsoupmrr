@@ -24,6 +24,20 @@ final registroModulos = RegistroModulos(const [
       apelidos: ['contracheques'],
       sinonimosPadrao: ['salário', 'pagamento', 'holerite', 'folha']),
   ModuloApp(
+      chave: 'rh.documentos',
+      rotuloPadrao: 'Central de documentos',
+      icone: 'documento',
+      prefixoErro: 'DO',
+      rota: AppRoutes.DOCUMENTOS,
+      sinonimosPadrao: ['documentos', 'pdf', 'arquivos', 'baixados']),
+  ModuloApp(
+      chave: 'rh.validar',
+      rotuloPadrao: 'Validar documento',
+      icone: 'validar',
+      prefixoErro: 'VD',
+      rota: AppRoutes.VALIDAR,
+      sinonimosPadrao: ['validar', 'conferir', 'autenticidade', 'qr code']),
+  ModuloApp(
       chave: 'rh.carreira',
       rotuloPadrao: 'Linha do tempo da carreira',
       icone: 'carreira',
@@ -186,5 +200,5 @@ final registroModulos = RegistroModulos(const [
 /// precisa entrar lá antes (e no `soupm_config`, chave `erros`).
 const prefixosConhecidos = {
   'LG', 'CF', 'CC', 'TS', 'CT', 'FE', 'FI', 'DC', 'NR', 'MF', 'AV', 'BU', //
-  'FB', 'CH', 'PD', 'MD', 'AP', 'ES', 'SV', 'AJ', 'DO', 'NT', 'CM', 'LOG',
+  'FB', 'CH', 'PD', 'MD', 'AP', 'ES', 'SV', 'AJ', 'DO', 'NT', 'CM', 'CR', 'VD', 'LOG',
 };
