@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/erros/estado_erro.dart';
 import '../../core/erros/falha_app.dart';
 import '../../core/log/registro_log.dart';
@@ -156,7 +157,9 @@ class _MeusChamadosPageState extends State<MeusChamadosPage> {
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
                       children: [
-                        Text('Suporte técnico do DTI pelo SISCHAMADOS. O atendimento continua na intranet.',
+                        Text(
+                            RepositorioConfig.atual.textoChamados('topo') ??
+                                'Suporte técnico do DTI pelo SISCHAMADOS. O atendimento continua na intranet.',
                             style: theme.textTheme.bodySmall),
                         const SizedBox(height: 10),
                         Wrap(spacing: 8, runSpacing: 6, children: [
@@ -184,7 +187,9 @@ class _MeusChamadosPageState extends State<MeusChamadosPage> {
                             child: Column(children: [
                               Icon(Icons.support_agent_outlined, size: AppIconSize.xl, color: theme.colorScheme.onSurfaceVariant),
                               const SizedBox(height: 8),
-                              Text(lista.isEmpty ? 'Você ainda não abriu nenhum chamado.' : 'Nada neste filtro.'),
+                              Text(lista.isEmpty
+                                  ? RepositorioConfig.atual.textoChamados('lista_vazia') ?? 'Você ainda não abriu nenhum chamado.'
+                                  : 'Nada neste filtro.'),
                             ]),
                           ),
                         if (visiveis.isNotEmpty)
@@ -444,7 +449,7 @@ class _NovoChamadoPageState extends State<NovoChamadoPage> {
         builder: (ctx) => AlertDialog(
           icon: const Icon(Icons.task_alt),
           title: Text('Chamado ${r.protocolo} aberto'),
-          content: Text('Situação: ${r.situacao}. Você acompanha por Meus chamados e recebe aviso quando a equipe responder.'),
+          content: Text('Situação: ${r.situacao}. ${RepositorioConfig.atual.textoChamados('confirmacao') ?? 'Você acompanha por Meus chamados e recebe aviso quando a equipe responder.'}'),
           actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Acompanhar'))],
         ),
       );

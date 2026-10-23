@@ -172,6 +172,27 @@ class RegraVersao {
   }
 }
 
+/// Nível do militar (§6), só para mostrar o selo: quem decide o acesso é o
+/// servidor. Vem no app_config apenas com os níveis ligados no painel.
+class NivelApp {
+  const NivelApp({required this.chave, required this.nome, required this.nomeCurto, this.selo = false, this.escopo});
+  final String chave;
+  final String nome;
+  final String nomeCurto;
+  final bool selo;
+  final String? escopo;
+
+  static NivelApp? deJson(Object? j) => j is Map && j['chave'] is String
+      ? NivelApp(
+          chave: j['chave'] as String,
+          nome: '${j['nome'] ?? ''}',
+          nomeCurto: '${j['nome_curto'] ?? j['nome'] ?? ''}',
+          selo: j['selo'] == true,
+          escopo: j['escopo'] as String?,
+        )
+      : null;
+}
+
 /// Situação da versão instalada diante da regra da plataforma (§10.2).
 enum SituacaoVersao { emDia, recomendada, obrigatoria }
 
@@ -256,6 +277,8 @@ class AppConfig {
     this.fonteAvisos = 'firestore',
     this.fonteComunicados = 'firestore',
     this.preferencias,
+    this.nivel,
+    this.chamados = const {},
     this.recebidoEm,
   });
 
@@ -292,6 +315,19 @@ class AppConfig {
 
   /// A Início do militar guardada no servidor (§4.5); nula = nunca personalizou.
   final PreferenciasInicio? preferencias;
+
+  /// Nível do militar (selo da Início); nulo = níveis desligados no painel.
+  final NivelApp? nivel;
+
+  /// Chamados no app (T3c): `textos` e `anexos` do painel.
+  final Map<String, dynamic> chamados;
+
+  /// Texto da tela de chamados vindo do painel, ou nulo (vale o do app).
+  String? textoChamados(String chave) {
+    final t = chamados['textos'];
+    final v = t is Map ? t[chave] : null;
+    return v is String && v.trim().isNotEmpty ? v : null;
+  }
 
   /// Quando a cópia em uso chegou do servidor ("Atualizado hoje às 07:30").
   final DateTime? recebidoEm;
@@ -331,6 +367,8 @@ class AppConfig {
       fonteAvisos: j['notificacoes'] is Map && j['notificacoes']['fonte'] == 'api' ? 'api' : 'firestore',
       fonteComunicados: j['comunicados'] is Map && j['comunicados']['fonte'] == 'api' ? 'api' : 'firestore',
       preferencias: PreferenciasInicio.deJson(j['preferencias']),
+      nivel: NivelApp.deJson(j['nivel']),
+      chamados: j['chamados'] is Map ? Map<String, dynamic>.from(j['chamados'] as Map) : const {},
       recebidoEm: recebidoEm,
     );
   }

@@ -2311,11 +2311,21 @@ dispensável no topo da Início, uma vez por versão. A falha na abertura deixou
 de ser "Ocorreu um erro": vira a tela de erro com `AP-ABERTURA`. Fica para
 depois: o policial ilustrado da cena.
 
-**Níveis de acesso (fase 5): bloqueados.** O SIGRH ainda não tem a tabela de
-função e cargo (a própria intranet deixou isso pendente para o DBA, em
-`vw_lotacao_sigrh`), e os perfis da intranet só existem no banco de
-desenvolvimento. Sem isso, o nível "por função" não tem de onde sair. Até lá,
-o Mapa da Força segue a regra de hoje (`isSuperUser`).
+**Níveis de acesso (fase 5): estrutura pronta e desligada.**
+`sql/2026-10-23_soupm_niveis.sql` cria a escada (os 5 níveis), as regras, os
+papéis e a função `soupm_nivel_para` (o mais alto em que uma regra vale e
+nenhuma exceção vale, com o porquê). Hoje só valem as regras que têm fonte no
+banco: matrícula (com data de fim), o "nivel" e o posto do SIGRH, a regra
+antiga do app e o perfil da intranet (onde existir). "Função no SIGRH",
+lotação e quadro ficam cadastráveis, mas não valem até o SIGRH ter a tabela
+de função (a intranet deixou isso para o DBA). `soupm_niveis_calculados()` dá
+ao painel a lista de quem fica acima do primeiro nível, para comparar antes e
+depois. Com `niveis.ligado`, o "gestor" do menu e da Início passa a ser
+"nível acima do primeiro", e o `app_config` manda o nível para o selo; até lá,
+nada muda. Também prontos: o Comando lido do SIGRH (cron
+`comando_sigrh.php`, pela matrícula que o painel grava em cada cargo) e a
+simulação de pendências para o painel (`pendencias_simular.php`, link
+assinado).
 
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),

@@ -12,6 +12,7 @@ import '../utils/notification_provider.dart';
 import '../utils/theme_provider.dart';
 import 'home_page.dart';
 import 'notifications_page.dart';
+import '../core/config/app_config.dart';
 import '../features/servicos/busca_page.dart';
 import 'configuracoes.dart';
 import '../widgets/barra_lateral.dart';
@@ -339,8 +340,12 @@ class _RaizAba extends StatelessWidget {
     );
   }
 
-  Widget _titleHome(String nome, bool isSuperUser, bool isAdmin) {
-    final label = isAdmin ? 'Admin' : 'GESTOR';
+  Widget _titleHome(String nome, bool isSuperUserLegado, bool isAdmin) {
+    // Com os níveis ligados no painel, o selo é o nome curto do nível (§6.2);
+    // até lá, a regra de hoje.
+    final nivel = RepositorioConfig.atual.nivel;
+    final isSuperUser = nivel != null ? nivel.selo : isSuperUserLegado;
+    final label = nivel != null ? nivel.nomeCurto : (isAdmin ? 'Admin' : 'GESTOR');
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
