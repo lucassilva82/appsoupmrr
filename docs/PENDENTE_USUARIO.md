@@ -189,8 +189,26 @@ criar esquema e é dono dos 53 tabelas, 26 sequências e 21 funções. O roteiro
 não tem janela de indisponibilidade: o PHP deixa de citar o esquema e passa a
 depender do `search_path`, que resolve para `public` antes e `soupm` depois.
 
-São 163 referências no PHP, 417 nos `.sql` e 402 no painel. Combinar a ordem
-com a sessão do painel antes de mover.
+São 163 referências no PHP, 417 nos `.sql` e 402 no painel.
+
+**Ordem combinada com o painel (23/10/2026), esperando o seu "pode":**
+
+0. Os SQL do painel (P0 a P8) rodam antes, ainda em `public`.
+1. `conexao.php` ganha `SET search_path TO soupm, public`. Sobe sozinho e
+   não muda nada enquanto `soupm` não existir.
+2. Sobem os 31 PHP sem o `public.` na frente. Continuam achando as tabelas em
+   `public`.
+3. Você roda `2026-10-23_soupm_esquema_proprio.sql`: as tabelas mudam de
+   esquema.
+4. Você roda os `.sql` reescritos, da API e do painel. Eles recriam as
+   funções em `soupm`.
+5. Você roda o bloco que apaga as funções velhas de `public`. As duas
+   `soupm_conceder_*` ficam.
+6. Se o usuário do painel já existir, você roda de novo
+   `SELECT * FROM public.soupm_conceder_painel('…_painelsoupm');`.
+7. Conferir que o app abre o menu e que o painel entra.
+
+Para voltar: os mesmos laços com `SET SCHEMA public` e os PHP do backup.
 
 ### O que já está no ar
 
