@@ -250,8 +250,10 @@ nao no public". Feito até agora, sem janela de indisponibilidade:
    a partir da definição do banco, com as mesmas permissões e comentário,
    refaz o gatilho do protocolo do feedback e apaga as velhas). Testado num
    Postgres local: se algo falhar, nada muda.
-6. `2026-10-24_soupm_painel_permissoes.sql` (a concessão do painel no usuário
-   da API) e a conferência: `public` só com as duas `soupm_conceder_*`, o app
+6. **Feito (24/10/2026, antes da virada).** A, C e D do painel conferidos no
+   banco por nome (63 tabelas `soupm_`, 1 Administrador) e
+   `2026-10-24_soupm_painel_permissoes.sql` rodado: 159 permissões, todas ok.
+   Depois da virada, rodar de novo só a última linha (a concessão) e conferir: `public` só com as duas `soupm_conceder_*`, o app
    abrindo o menu, o painel entrando e o `error_log` de `sigrh/` limpo.
 
 Para voltar: os mesmos laços com `SET SCHEMA public`; as funções, re-rodando o
