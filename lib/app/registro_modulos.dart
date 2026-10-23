@@ -208,6 +208,43 @@ final registroModulos = RegistroModulos(const [
       icone: 'config',
       prefixoErro: 'AP',
       rota: AppRoutes.CONFIGURACOES),
+  // Funções do Perfil (§3.2): fora do menu de Serviços, mas a ajuda e a
+  // busca levam direto a elas.
+  ModuloApp(
+      chave: 'conta.email',
+      rotuloPadrao: 'E-mail',
+      icone: 'email',
+      prefixoErro: 'LG',
+      rota: AppRoutes.CONTA_EMAIL,
+      apelidos: ['config.email']),
+  ModuloApp(
+      chave: 'conta.senha',
+      rotuloPadrao: 'Alterar senha',
+      icone: 'senha',
+      prefixoErro: 'LG',
+      rota: AppRoutes.CONTA_SENHA,
+      apelidos: ['config.alterar_senha']),
+  ModuloApp(
+      chave: 'seg.biometria',
+      rotuloPadrao: 'Face ID e biometria',
+      icone: 'biometria',
+      prefixoErro: 'LG',
+      rota: AppRoutes.BIOMETRIA,
+      apelidos: ['config.biometria']),
+  ModuloApp(
+      chave: 'notif.preferencias',
+      rotuloPadrao: 'Notificações',
+      icone: 'notificacao',
+      prefixoErro: 'AV',
+      rota: AppRoutes.NOTIF_PREFERENCIAS,
+      apelidos: ['config.notificacoes']),
+  ModuloApp(
+      chave: 'apar.tema',
+      rotuloPadrao: 'Aparência',
+      icone: 'tema',
+      prefixoErro: 'AP',
+      rota: AppRoutes.APARENCIA,
+      apelidos: ['config.tema']),
 ]);
 
 /// Prefixos de erro da tabela do §9.1. Módulo novo com prefixo fora dela

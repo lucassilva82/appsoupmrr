@@ -47,6 +47,12 @@ class AppRoutes {
   static const DOCUMENTOS = '/rh/documentos'; // Central de documentos (2.2, P4)
   static const VALIDAR = '/rh/validar'; // Validar documento (2.2, P6)
   static const COMUNICADOS = '/com/central'; // Central de comunicados (2.2, §4.2)
+  // Funções do Perfil, para a ajuda e a busca levarem direto a elas (2.2)
+  static const CONTA_EMAIL = '/conta/email';
+  static const CONTA_SENHA = '/conta/senha';
+  static const BIOMETRIA = '/seg/biometria';
+  static const NOTIF_PREFERENCIAS = '/notif/preferencias';
+  static const APARENCIA = '/apar/tema';
   static const CONTRACHEQUE_GRAFICO_PAGE =
       "/contracheque-grafico-page"; // Evolução salarial
 }

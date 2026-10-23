@@ -46,7 +46,9 @@ import 'package:projetonovo/pages/auth_or_home.dart';
 import 'package:projetonovo/pages/auth_page.dart';
 import 'package:projetonovo/pages/biometric_auth_page.dart';
 import 'package:projetonovo/pages/configura_plantao.dart';
+import 'package:projetonovo/pages/alterar_senha_page.dart';
 import 'package:projetonovo/pages/configuracoes.dart';
+import 'package:projetonovo/pages/confirm_email.dart';
 import 'package:projetonovo/pages/contracheque_grafico_page.dart';
 import 'package:projetonovo/pages/contracheque.dart';
 import 'package:projetonovo/pages/declaracao_acumulo_cargos_page.dart';
@@ -832,6 +834,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             AppRoutes.BIOMETRIC_AUTH_PAGE: (_) => const BiometricAuthPage(),
             AppRoutes.PAGE_MILITAR: (_) => const PageMilitar(),
             AppRoutes.CONFIGURACOES: (_) => const Configuracoes(),
+            AppRoutes.CONTA_EMAIL: (_) => const ConfirmEmailScreen(),
+            AppRoutes.CONTA_SENHA: (_) => const AlterarSenhaPage(),
+            AppRoutes.BIOMETRIA: (_) => const BiometriaPage(),
+            AppRoutes.NOTIF_PREFERENCIAS: (_) => const NotificacoesPreferenciasPage(),
+            AppRoutes.APARENCIA: (_) => const AparenciaPage(),
             AppRoutes.PLANODEFERIAS: (_) => const PlanoDeFerias(),
             AppRoutes.HOME_PAGE: (_) => MainShell(),
             AppRoutes.PLANTAO: (_) => PlantaoPage(),

@@ -39,6 +39,19 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final anterior = TitulosRota.anterior(context);
     final pri = theme.colorScheme.primary;
 
+    // Como no iOS: o nome da tela anterior, ou "Voltar" quando ele não cabe
+    // ao lado da seta (112 de largura: 6 + 28 da seta + 6 de cada lado).
+    String rotulo = anterior ?? 'Voltar';
+    if (anterior != null) {
+      final medida = TextPainter(
+        text: TextSpan(text: anterior, style: const TextStyle(fontSize: 17)),
+        textDirection: TextDirection.ltr,
+        textScaler: MediaQuery.textScalerOf(context),
+        maxLines: 1,
+      )..layout();
+      if (medida.width > 112 - 6 - 28 - 6) rotulo = 'Voltar';
+    }
+
     Widget? voltar;
     if (podeVoltar && ios) {
       voltar = Semantics(
@@ -54,7 +67,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               Icon(Icons.chevron_left_rounded, size: 28, color: pri),
               Flexible(
                 child: Text(
-                  anterior ?? 'Voltar',
+                  rotulo,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(fontSize: 17, color: pri),

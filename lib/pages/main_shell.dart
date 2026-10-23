@@ -54,6 +54,26 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   final _navegadores = List.generate(4, (_) => GlobalKey<NavigatorState>());
 
+  /// Quantas telas há em cada aba. Na raiz, o conteúdo passa por baixo da
+  /// barra de vidro (as raízes já somam a altura dela no fim das listas);
+  /// dentro de uma função, o corpo termina acima da barra, para o fim das
+  /// listas nunca ficar escondido atrás dela.
+  final _profundidade = List.filled(4, 1);
+
+  /// Criados uma vez: um observador novo a cada `build` perderia a conta.
+  late final _observadores = [
+    for (var i = 0; i < 4; i++) <NavigatorObserver>[TitulosRota.novo(), _ObservaPilha((n) => _aoMudarPilha(i, n))],
+  ];
+
+  void _aoMudarPilha(int aba, int n) {
+    if (_profundidade[aba] == n) return;
+    _profundidade[aba] = n;
+    // O observador avisa no meio do push/pop: muda no quadro seguinte.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
   // Ordem das abas: Início, Serviços, Avisos, Perfil.
   static const _abaAvisos = 2;
   static const _chavesAba = ['aba.inicio', 'aba.servicos', 'aba.avisos', 'aba.perfil'];
@@ -173,7 +193,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
         controller: MaterialApp.createMaterialHeroController(),
         child: Navigator(
           key: _navegadores[i],
-          observers: [TitulosRota.novo()],
+          observers: _observadores[i],
           onGenerateRoute: (s) => _rota(s, raiz),
           onUnknownRoute: (s) => MaterialPageRoute(settings: s, builder: (_) => raiz),
         ),
@@ -278,7 +298,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
               // No iOS a barra é solta, de vidro: o conteúdo passa por baixo
               // dela (o MediaQuery já soma a altura da barra no fim das
               // listas).
-              extendBody: !lateral && BarraNavegacao.plataformaIos,
+              extendBody: !lateral && BarraNavegacao.plataformaIos && _profundidade[_currentIndex] <= 1,
               body: lateral
                   ? Row(children: [
                       BarraLateral(
@@ -560,4 +580,25 @@ class _RaizAba extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Conta as telas de uma aba (para o shell saber se está na raiz).
+class _ObservaPilha extends NavigatorObserver {
+  _ObservaPilha(this.aoMudar);
+  final ValueChanged<int> aoMudar;
+  int _n = 0;
+
+  void _avisar(int delta) {
+    _n = (_n + delta).clamp(0, 999);
+    aoMudar(_n);
+  }
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) => _avisar(1);
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) => _avisar(-1);
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) => _avisar(-1);
 }

@@ -342,6 +342,14 @@ IconData iconePorChave(String? chave) => switch (chave) {
       'noticia' => Icons.newspaper_outlined,
       'aviso' => Icons.notifications_outlined,
       'config' => Icons.settings_outlined,
+      'email' => Icons.mail_outline_rounded,
+      'senha' => Icons.lock_reset_rounded,
+      'biometria' => Icons.face_rounded,
+      'notificacao' => Icons.notifications_outlined,
+      'tema' => Icons.palette_outlined,
+      // Assuntos do "Preciso de ajuda" (protótipo `AJ`).
+      'chave' => Icons.key_rounded,
+      'erro' => Icons.bug_report_outlined,
       _ => Icons.apps_rounded,
     };
 
