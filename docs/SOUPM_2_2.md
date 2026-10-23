@@ -2162,6 +2162,22 @@ pelo `app_config` (fase 4). API: `sql/2026-10-23_soupm_inicio.sql` (blocos
 `soupm_mais_usados_para`), e o `app_config.php` passa a mandar `home` e
 `servicos.mais_usados` quando o SQL existe.
 
+**Fase 3 (22/10/2026): app pronto na branch, API no ar, falta o SQL em
+produção.** "Preciso de ajuda" guiado (assunto, perguntas, resposta com o
+botão da função que resolve, "Isso resolveu?" e, se não, o chamado técnico,
+"Em breve" até a 3c), com os assuntos do `app_config` e a mesma carga como
+reserva no app. Sugestões e elogios: tipo, texto, até 5 anexos (25 MB),
+protocolo `FB-`, Minhas mensagens e conversa com a equipe. API:
+`sigrh/feedback.php` (enviar, listar, ver, responder; anexos fora da pasta
+pública, tipo conferido pelo conteúdo) e `sigrh/sessao_app.php`, o arquivo
+comum da conferência de senha e do limite de tentativas, usado também pelo
+`app_config.php` (que passou a aceitar matrícula com letra, como o
+`login.php`). SQL: `2026-10-23_soupm_feedback.sql` e
+`2026-10-23_soupm_atendimento.sql` (área Atendimento DTI no menu e carga do
+"Preciso de ajuda"). Ficam para depois: a lupa da busca no topo das outras
+abas (hoje a busca está em Serviços), o push "a equipe respondeu" (fase 4) e
+a limpeza dos anexos depois de 180 dias (no `cron_log`).
+
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
 porque o contrato do `app_config` fica fixado antes. A fase 5 depende da
