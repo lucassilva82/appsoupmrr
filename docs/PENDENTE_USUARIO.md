@@ -10,7 +10,7 @@ por conter estrutura do banco de produção). Rodar no phpPgAdmin, com o login
 do usuário, **desmarcando "Paginar resultados"**, na ordem da tabela. Todos
 podem rodar mais de uma vez sem estragar nada.
 
-Última atualização: 23/10/2026, manhã.
+Última atualização: 24/10/2026 (fase sem intranet).
 
 ## 1. SQL de produção (phpPgAdmin)
 
@@ -77,7 +77,7 @@ TO` um usuário que leia o esquema `qra` — o do cPanel não lê.
 | `~/private/config_painel.php` | Segredo do link assinado dos anexos e da prévia do PDF (painel ↔ API) | `<?php return ['segredo' => '<64+ caracteres aleatórios>'];` — o **mesmo valor** vai no `conex/painelsoupmrr_local.php` do painel |
 | `~/private/soupm_fcm.json` | Conta de serviço do Firebase, para a API mandar push sem as Cloud Functions (fase 4) | Console do Firebase › Configurações do projeto › Contas de serviço › Gerar nova chave privada. Permissão 600. Nunca no git |
 
-## 2b. Chave do app no SISCHAMADOS (Meus chamados, fase 3c)
+## 2b. Chave do app no SISCHAMADOS (Meus chamados, fase 3c) — fase futura, quando o painel for para a intranet
 
 1. Na intranet, SISCHAMADOS › Configurações › API Mobile: criar a chave do
    aplicativo "SouPM" (aparece uma vez só) e ligar a API Mobile.
@@ -113,7 +113,7 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
 
 ## 5. Decisões e conferências
 
-- **Notícias e agenda (P7):** decidir o que da agenda da intranet pode aparecer
+- **Notícias e agenda (P7), fase futura:** decidir o que da agenda da intranet pode aparecer
   para toda a tropa (hoje a API só tem a agenda dos comandantes, com permissão
   própria) e pedir à intranet uma rota de notícias publicadas. Sem isso a P7
   não entra.
@@ -139,89 +139,47 @@ Tudo o que foi feito está no git (app na `feature/soupm-2-2`, API na `main`) e
 no banco de produção. As decisões 1 e 2 foram tomadas (a 1 mudou em 24/10/2026);
 a ordem da 3 está combinada com o painel e espera o seu "pode".
 
-### 1. Usuário de banco do painel — decidido: (a), "O mesmo do app", em 24/10/2026
+### 1. Roteiro único de SQL de produção (fase sem intranet, 24/10/2026)
 
-O painel usa a mesma conexão da API (o `conexao.php`). O usuário próprio foi
-cancelado: não há nada para criar no cPanel. Falta um SQL só:
+Decisão do usuário: "Esqueça intranet por enquanto." Painel e app ficam no
+mesmo banco, com o usuário de banco da API, e **tudo roda com a conta do
+cPanel** no phpPgAdmin. Nada depende dos esquemas `intranet` nem `sccti`, e
+não há nada para pedir ao administrador do banco. Cada arquivo pode rodar
+mais de uma vez. Ordem:
 
-1. **Rodar no phpPgAdmin** o `sql/2026-10-24_soupm_painel_permissoes.sql` do
-   repositório da API (com `LC_CTYPE=UTF-8 pbcopy`, APRENDIZADOS §45). Ele dá
-   ao usuário da API a escrita que o painel precisa, só nas tabelas que o
-   painel grava, mais as sequências e o EXECUTE das funções. Não tira nada do
-   que a API já tem. O resultado é uma linha por permissão: `ok`, `pulado`
-   (não existe neste banco) ou `FALTOU`, com o motivo.
-2. **O que der `FALTOU (pedir ao dono do esquema)`** é algo fora das tabelas
-   do SouPMRR (`qra`, `intranet`, `sccti`, `recursoshumanos`). A conta do
-   cPanel não consegue conceder isso (APRENDIZADOS §46): mande essas linhas
-   ao administrador do banco.
+| # | Arquivo | Onde está | Para quê |
+|---|---|---|---|
+| 1 | Os SQL da tabela do §1 acima que ainda não rodaram | `sql/` da API | Tudo do app 2.2 |
+| 2 | `A_tabelas_painel_producao.sql` | `painelsoupmrr/database/producao/` (intranet, commit d46197a3) | As 7 tabelas do painel e a linha `painel` da `soupm_config`. Termina com uma conferência: as 7 têm de aparecer como "existe" |
+| 3 | O SQL do acesso próprio do painel (papéis, recursos e auditoria em `soupm_*`) | a sessão do painel entrega | Substitui o cadastro na intranet |
+| 4 | `2026-10-24_soupm_painel_permissoes.sql`, de novo | `sql/` da API | Dá ao usuário da API a escrita nas tabelas novas dos passos 2 e 3. As leituras do SIGRH que ele já tem aparecem como `ok (já tinha)` |
+
+Depois: entrar no painel e salvar algo em Configurações. Se aparecer
+`PSP-DB-03`, a mensagem diz qual tabela falta.
+
+**Não rodar:** os P0 a P8 antigos do painel (estão em `substituidos/`) e o
+`B_intranet_acl_producao.sql`, que fica para quando o painel for para a
+intranet.
 
 Fica a dívida "leitura e escrita no mesmo usuário" (PAINEL_ADMIN §7, item 6).
 
-**Resultado em produção (24/10/2026).** Todas as `soupm_*` deram `ok`. Seis
-tabelas do painel vieram `pulado` porque ainda não existem lá
-(`soupm_painel_aviso`, `soupm_painel_cache`, `soupm_painel_navegador`,
-`soupm_alerta_disparo`, `soupm_alerta_regra`, `soupm_log_filtro`): os SQL do
-painel (P0 a P8) não rodaram em produção. A ordem deles vem da sessão do
-painel; depois deles, o `_painel_permissoes.sql` roda de novo.
+### Fase futura: quando o painel for para a intranet
 
-O `FALTOU` só diz que a **conta do cPanel** não enxerga o esquema; não prova
-que o usuário da API não lê. Situação de cada um:
+Nada disto entra agora. No app, as funções ficam "Em breve", com a folha de
+bloqueio e o código `MD-`:
 
-| Objeto | O usuário da API lê? | Como se sabe |
-|---|---|---|
-| `qra.sec_users` | sim | o login do app (`login.php`) lê em produção |
-| `recursoshumanos.policial_militar` | sim | e-mail e declarações leem em produção |
-| `public.vw_users_unidade_comando_groups` | sim | a ficha (`buscapormatricula.php`) lê em produção |
-| `intranet.*` (os 8, inclusive `INSERT` na auditoria e a sequência) | sim | sonda de 24/10/2026 |
-| `sccti.tipos_chamado`, `sccti.categorias_chamados` | **não** (sem `USAGE` no esquema) | sonda de 24/10/2026 |
-
-A sonda foi um PHP temporário que testou `SELECT ... LIMIT 0` e os
-privilégios com o usuário da API; rodou uma vez e foi apagada (o endereço
-responde 404).
-
-**Por que as tabelas do painel não existem.** Cada SQL do painel (P0 a P8)
-juntava, numa transação só, as tabelas `soupm_*` e o cadastro do módulo em
-`intranet.*`. A conta do cPanel não grava em `intranet`, e o erro desfazia a
-transação inteira. A sessão do painel separou em dois arquivos (intranet,
-commit d46197a3, pasta `painelsoupmrr/database/producao/`); os P* antigos foram
-para `substituidos/` e não devem ser rodados.
-
-**Ordem no phpPgAdmin:**
-
-1. Os SQL pendentes da API, nesta lista. Você, com a conta do cPanel.
-2. `A_tabelas_painel_producao.sql`: as 7 tabelas do painel e a linha `painel`
-   da `soupm_config`. Você, com a conta do cPanel.
-3. O `2026-10-24_soupm_painel_permissoes.sql` de novo (na primeira vez ele
-   pulou as tabelas que não existiam). Você, com a conta do cPanel.
-4. `B_intranet_acl_producao.sql`: o **administrador do banco**, dono de
-   `intranet` e `sccti`. Cadastra o módulo `soupm`, os 6 papéis e os recursos
-   do painel e concede ao usuário da API as leituras de `sccti`. O resto dos
-   GRANT dele (leitura em `intranet`, `INSERT` na auditoria e a sequência) o
-   usuário da API já tem pela sonda, e o arquivo os repete sem efeito. Pode
-   rodar mais de uma vez.
-5. Entrar no painel e salvar algo em Configurações. Se aparecer `PSP-DB-03`,
-   a mensagem diz qual tabela falta.
-
-Se o módulo `soupm` já estiver cadastrado na intranet (a conta do cPanel não
-consegue ver; só o administrador ou uma sonda com o usuário da API), o arquivo
-B só faz falta pelo `sccti`. Exceção que já vale hoje: quem é administrador da
-Administração da intranet entra no painel mesmo sem o cadastro.
-
-**O que cai sem cada coisa** (resposta da sessão do painel):
-
-| Sem | O que acontece no painel |
-|---|---|
-| O arquivo B (o cadastro do módulo em `intranet`) | Só o administrador da Administração da intranet entra; os outros veem "sem acesso" |
-| `sccti` | Só as listas de tipo e categoria de chamado na tela Suporte e textos (ficam vazias); o resto funciona |
-
-Texto para o administrador do banco:
-
-> Prezado administrador, o painel do SouPMRR (`/painelsoupmrr`) usa o usuário
-> de banco da API do app. Peço rodar no banco de produção, com o usuário dono
-> dos esquemas `intranet` e `sccti`, o arquivo `B_intranet_acl_producao.sql`
-> (anexo). Ele cadastra o módulo do painel na ACL da intranet e dá ao usuário
-> da API leitura em `sccti.tipos_chamado` e `sccti.categorias_chamados`. Nada
-> é apagado. Obrigado. — DTI/PMRR
+- **Login único pela intranet** (2.3, SOUPM_2_2 §6.6).
+- **Minhas escalas e SVI** (`op.escalas`, `op.svi`) e os avisos do SIGE: usam a
+  API da intranet. Desde o commit 0a7e485 o app não entra mais na intranet em
+  segundo plano enquanto as duas estiverem bloqueadas.
+- **Meus chamados** (SISCHAMADOS, `atend.chamados`) e o "Abrir chamado
+  técnico" das telas de erro e do "Preciso de ajuda": a chave do app (§2b
+  abaixo) e as rotas da API móvel.
+- **Notícias e agenda** (P7, `inst.noticias`): rotas da intranet (§5).
+- **No banco:** o `B_intranet_acl_producao.sql` (cadastro do módulo na ACL da
+  intranet) e a leitura de `sccti` (medido em 24/10: o usuário da API não tem;
+  as de `intranet` ele já tem). A regra de nível "perfil da intranet"
+  (`soupm_nivel_para`) só vale quando a intranet existir no banco.
 
 ### 2. Arquivos de inclusão da API — feito em 24/10/2026
 

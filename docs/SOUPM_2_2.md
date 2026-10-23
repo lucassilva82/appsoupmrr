@@ -2398,6 +2398,25 @@ módulo de notícias não tem API. Precisa de duas decisões e de rotas na
 intranet: o que da agenda pode ser mostrado a todos e uma rota de notícias
 publicadas.
 
+**Fase sem intranet (decisão do usuário, 24/10/2026), que vale mais que o
+resto deste plano onde houver conflito.** "Nós não vamos usar a intranet
+agora... Nesse momento vai ser só painel e app tudo no mesmo banco... Eu
+quero fazer tudo com esse usuário que tenho do cPanel." Consequências:
+
+- Painel e app usam o mesmo banco e o usuário de banco da API; todo SQL de
+  produção roda pela conta do cPanel (roteiro em `docs/PENDENTE_USUARIO.md`
+  §1). Nada em produção depende dos esquemas `intranet` nem `sccti`: o acesso
+  do painel (papéis, recursos, auditoria) passa para tabelas `soupm_*`.
+- Ficam para quando o painel for para a intranet, e no app continuam
+  bloqueadas com a folha e o código `MD-`: o login único (2.3, §6.6), Minhas
+  escalas e SVI e os avisos do SIGE, Meus chamados (SISCHAMADOS, §8.3, e o
+  "Abrir chamado técnico" das telas de erro), Notícias e agenda (P7) e a regra
+  de nível "perfil da intranet" (§6.4, item 2). O app só entra na intranet em
+  segundo plano se o painel liberar Escalas ou SVI.
+- O resto da 2.2 segue, **fiel ao protótipo** (`prototipos/soupm-2-2.html`):
+  a próxima etapa é comparar o app com ele tela a tela, no modo vitrine, e
+  fechar as diferenças.
+
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
 porque o contrato do `app_config` fica fixado antes. A fase 5 depende da
