@@ -7,6 +7,7 @@ import '../../core/log/registro_log.dart';
 import '../../core/navegacao/abrir_funcao.dart';
 import '../../core/navegacao/menu_padrao.dart';
 import '../../models/auth_model.dart';
+import '../../utils/app_routes.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/vidro.dart';
 
@@ -145,6 +146,27 @@ class _ServicosBodyState extends State<ServicosBody> {
                   );
                 }),
               ),
+              if (_novidades(menu) case final l when l.isNotEmpty)
+                SliverToBoxAdapter(child: _LinhaNovidades(itens: l)),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                  child: Center(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        final ajuda = itemPorChave('atend.ajuda', menu: menu);
+                        if (ajuda != null) {
+                          abrirFuncao(context, ajuda, origem: 'servicos');
+                        } else {
+                          Navigator.of(context).pushNamed(AppRoutes.AJUDA_PAGE);
+                        }
+                      },
+                      icon: const Icon(Icons.help_outline_rounded, size: AppIconSize.sm),
+                      label: const Text('Não achou o que procurava?'),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ],
         );
@@ -167,6 +189,13 @@ class _ServicosBodyState extends State<ServicosBody> {
     ];
   }
 
+  /// "Novidades no SouPMRR" (§3.3): as funções com o selo "Novo".
+  List<({ItemMenu item, ItemMenu area})> _novidades(List<ItemMenu> menu) => [
+        for (final a in menu)
+          for (final f in a.filhos)
+            if (f.selo == 'Novo' && !f.bloqueado) (item: f, area: a),
+      ];
+
   void _abrirArea(BuildContext context, ItemMenu area) {
     // Área com uma só função abre a função direto (§3.2).
     if (area.filhos.length == 1) {
@@ -178,6 +207,81 @@ class _ServicosBodyState extends State<ServicosBody> {
       settings: RouteSettings(name: '/servicos/${area.chave}'),
       builder: (_) => AreaPage(area: area),
     ));
+  }
+}
+
+/// Faixa de cartões que rola de lado, cada um com a arte da sua área.
+class _LinhaNovidades extends StatelessWidget {
+  const _LinhaNovidades({required this.itens});
+
+  final List<({ItemMenu item, ItemMenu area})> itens;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final escala = MediaQuery.textScalerOf(context);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        child: Semantics(
+          header: true,
+          child: Text('Novidades no SouPMRR',
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+        ),
+      ),
+      SizedBox(
+        height: escala.scale(56) + 74,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: itens.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          itemBuilder: (context, i) {
+            final r = itens[i];
+            return SizedBox(
+              width: 220,
+              child: Semantics(
+                button: true,
+                label: '${r.item.rotulo}, novo. ${r.item.descricao ?? ''}',
+                excludeSemantics: true,
+                child: FundoArte(
+                  arte: Arte.de(r.area.arte),
+                  tamanhoIcone: 64,
+                  raio: 16,
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: InkWell(
+                      onTap: () => abrirFuncao(context, r.item, origem: 'novidades'),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Row(children: [
+                            Icon(iconePorChave(r.item.icone), color: Colors.white, size: AppIconSize.md),
+                            const Spacer(),
+                            const SeloEstado(texto: 'Novo', sobreArte: true),
+                          ]),
+                          const Spacer(),
+                          Text(r.item.rotulo,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+                          if (r.item.descricao != null)
+                            Text(r.item.descricao!,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(color: Colors.white.withValues(alpha: 0.88), fontSize: 12, height: 1.2)),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+      const SizedBox(height: 16),
+    ]);
   }
 }
 
@@ -354,9 +458,11 @@ class CartaoArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final n = area.filhos.length;
+    final novidade = area.filhos.any((f) => f.selo == 'Novo');
+    final contagem = '$n ${n == 1 ? 'serviço' : 'serviços'}${novidade ? ' · com novidade' : ''}';
     return Semantics(
       button: true,
-      label: '${area.rotulo}, $n ${n == 1 ? 'serviço' : 'serviços'}',
+      label: '${area.rotulo}, $contagem',
       excludeSemantics: true,
       child: FundoArte(
         arte: Arte.de(area.arte),
@@ -392,7 +498,7 @@ class CartaoArea extends StatelessWidget {
                           height: 1.2,
                           fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
-                  Text('$n ${n == 1 ? 'serviço' : 'serviços'}',
+                  Text(contagem,
                       style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.85),
                           fontSize: 12)),
@@ -593,18 +699,37 @@ class LinhaFuncao extends StatelessWidget {
 
 /// Selo curto de estado: Em breve, Manutenção, Novo…
 class SeloEstado extends StatelessWidget {
-  const SeloEstado({super.key, required this.texto});
+  const SeloEstado({super.key, required this.texto, this.sobreArte = false});
 
   final String texto;
+
+  /// Sobre a arte colorida dos cartões: pílula branca com texto escuro.
+  final bool sobreArte;
 
   @override
   Widget build(BuildContext context) {
     final novo = texto.toLowerCase() == 'novo';
-    final cor = novo ? AppColors.sucesso : const Color(0xFFC77800);
+    if (sobreArte) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.94),
+            borderRadius: BorderRadius.circular(8)),
+        child: Text(texto,
+            style: const TextStyle(
+                fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.navy)),
+      );
+    }
+    // Tons do DESIGN §3 por tema: o verde e o âmbar fortes não fecham 4,5:1
+    // sobre o vidro escuro.
+    final escuro = Theme.of(context).brightness == Brightness.dark;
+    final cor = novo
+        ? (escuro ? const Color(0xFF6EE7A0) : const Color(0xFF14713B))
+        : (escuro ? const Color(0xFFFFC233) : const Color(0xFF8A5A00));
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: cor.withValues(alpha: 0.16),
+        color: cor.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: cor.withValues(alpha: 0.5)),
       ),
