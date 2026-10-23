@@ -2174,8 +2174,7 @@ comum da conferência de senha e do limite de tentativas, usado também pelo
 `app_config.php` (que passou a aceitar matrícula com letra, como o
 `login.php`). SQL: `2026-10-23_soupm_feedback.sql` e
 `2026-10-23_soupm_atendimento.sql` (área Atendimento DTI no menu e carga do
-"Preciso de ajuda"). Ficam para depois: a lupa da busca no topo das outras
-abas (hoje a busca está em Serviços), o push "a equipe respondeu" (fase 4) e
+"Preciso de ajuda"). Ficam para depois: o push "a equipe respondeu" (fase 4) e
 a limpeza dos anexos depois de 180 dias (no `cron_log`).
 
 **Fase 3b (22/10/2026): pronta e desligada.** `sigrh/contracheque_pdf.php`
@@ -2284,6 +2283,12 @@ o `app_config` devolve a escolha em `preferencias`. A regra de junção
 escondido continua escondido, o fixo nunca some e o bloco desligado volta para
 onde estava. Fica para depois: o modo de edição dentro da própria Início, com
 o tremor do iOS.
+
+**Busca global (22/10/2026).** Lupa no topo da Início, de Avisos e de Perfil
+(em Serviços a busca já fica no topo), abrindo a busca dentro da aba: acha
+por nome, descrição e sinônimo, guarda as 5 últimas buscas no aparelho e, sem
+resultado, oferece "Sugerir esta função" e "Ver todos os serviços" (eventos
+`busca.*`). Fica para depois: tolerância a um erro de digitação e `⌘F` no iPad.
 
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),

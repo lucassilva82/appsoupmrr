@@ -12,6 +12,7 @@ import '../utils/notification_provider.dart';
 import '../utils/theme_provider.dart';
 import 'home_page.dart';
 import 'notifications_page.dart';
+import '../features/servicos/busca_page.dart';
 import 'configuracoes.dart';
 import '../widgets/barra_lateral.dart';
 import '../widgets/barra_navegacao.dart';
@@ -304,7 +305,14 @@ class _RaizAba extends StatelessWidget {
                   ),
           ),
 
-          // Ações à direita
+          // Ações à direita. A lupa abre a busca dentro da aba (§7); em
+          // Serviços a busca já está no topo da tela.
+          if (indice != 1)
+            IconButton(
+              tooltip: 'Buscar',
+              icon: const Icon(Icons.search, color: Colors.white),
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BuscaPage())),
+            ),
           if (indice == 0) ...[
             _notificationBell(unread),
           ],
