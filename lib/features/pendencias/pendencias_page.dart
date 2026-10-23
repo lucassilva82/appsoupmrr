@@ -179,9 +179,13 @@ class _SemPendencias extends StatelessWidget {
 /// tingido, o quê, o prazo (ou o texto) e, embaixo, o selo Obrigatória ou
 /// Lembrete com o sistema de origem. Cor nunca sozinha: o selo diz em texto.
 class LinhaPendencia extends StatelessWidget {
-  const LinhaPendencia({super.key, required this.pendencia, required this.aoTocar});
+  const LinhaPendencia({super.key, required this.pendencia, required this.aoTocar, this.fim});
   final Pendencia pendencia;
   final VoidCallback aoTocar;
+
+  /// O que vai no fim da linha; nulo = a seta. Na lista completa: o cadeado
+  /// da obrigatória ou o "Dispensar" do lembrete (protótipo `linhaPend`).
+  final Widget? fim;
 
   @override
   Widget build(BuildContext context) {
@@ -253,7 +257,7 @@ class LinhaPendencia extends StatelessWidget {
             ]),
           ),
           const SizedBox(width: 12),
-          Icon(Icons.chevron_right_rounded, size: 20, color: theme.colorScheme.onSurface.withValues(alpha: .45)),
+          fim ?? Icon(Icons.chevron_right_rounded, size: 20, color: theme.colorScheme.onSurface.withValues(alpha: .45)),
         ]),
       ),
     );
@@ -324,44 +328,54 @@ class _PendenciasPageState extends State<PendenciasPage> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                 children: [
-                  Text('O que falta você fazer em algum sistema da PMRR.', style: theme.textTheme.bodySmall),
-                  const SizedBox(height: 12),
-                  if (s.itens.isEmpty) const CartaoVidro(child: _SemPendencias()),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 2, 4, 4),
+                    child: Text(
+                        'Cada sistema da PMRR informa o que falta você fazer. As obrigatórias só saem daqui quando forem resolvidas.',
+                        style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface.withValues(alpha: .62))),
+                  ),
+                  if (s.itens.isEmpty) ...[const SizedBox(height: 10), const CartaoVidro(child: _SemPendencias())],
                   for (final (titulo, lista) in [('Obrigatórias', obrig), ('Lembretes', lembretes)])
                     if (lista.isNotEmpty) ...[
                       Padding(
-                        padding: const EdgeInsets.only(top: 8, bottom: 6),
+                        padding: const EdgeInsets.fromLTRB(4, 14, 4, 6),
                         child: Text(titulo.toUpperCase(),
-                            style: theme.textTheme.labelSmall
-                                ?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.w700, letterSpacing: 1)),
+                            style: TextStyle(
+                                fontSize: 11,
+                                letterSpacing: .9,
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.primary)),
                       ),
                       CartaoVidro(
+                        raio: 16,
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Column(children: [
-                          for (final (i, p) in lista.indexed) ...[
-                            if (i > 0) const Divider(height: 1, indent: 52),
-                            p.dispensavel
-                                ? Dismissible(
-                                    key: ValueKey('${p.tipo}|${p.referencia}'),
-                                    direction: DismissDirection.endToStart,
-                                    background: Container(
-                                      alignment: Alignment.centerRight,
-                                      padding: const EdgeInsets.only(right: 16),
-                                      child: Text('Dispensar', style: TextStyle(color: theme.colorScheme.primary)),
-                                    ),
-                                    onDismissed: (_) => _dispensar(p),
-                                    child: LinhaPendencia(pendencia: p, aoTocar: () => abrirPendencia(context, p, origem: 'lista')),
-                                  )
-                                : LinhaPendencia(pendencia: p, aoTocar: () => abrirPendencia(context, p, origem: 'lista')),
-                          ],
+                          for (final p in lista)
+                            LinhaPendencia(
+                              pendencia: p,
+                              aoTocar: () => abrirPendencia(context, p, origem: 'lista'),
+                              fim: p.obrigatoria
+                                  ? Tooltip(
+                                      message: 'Obrigatória: só some quando for resolvida',
+                                      child: Icon(Icons.lock_outline_rounded,
+                                          size: AppIconSize.xs,
+                                          color: theme.colorScheme.onSurface.withValues(alpha: .45)),
+                                    )
+                                  : p.dispensavel
+                                      ? TextButton(
+                                          onPressed: () => _dispensar(p),
+                                          style: TextButton.styleFrom(
+                                            minimumSize: const Size(44, 44),
+                                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                                            textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                                          ),
+                                          child: const Text('Dispensar'),
+                                        )
+                                      : const SizedBox.shrink(),
+                            ),
                         ]),
                       ),
                     ],
-                  if (lembretes.any((p) => p.dispensavel))
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: Text('Deslize um lembrete para a esquerda para dispensar.', style: theme.textTheme.bodySmall),
-                    ),
                 ],
               ),
             );
