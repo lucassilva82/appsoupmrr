@@ -9,15 +9,18 @@ import 'package:projetonovo/widgets/card_tempo_servico.dart';
 import 'package:projetonovo/core/config/app_config.dart';
 import 'package:projetonovo/features/comunicados/comunicados_page.dart';
 import 'package:projetonovo/features/inicio/card_painel.dart';
+import 'package:projetonovo/features/inicio/personalizar_inicio_page.dart';
+import 'package:projetonovo/features/inicio/preferencias_inicio.dart';
 import 'package:projetonovo/features/pendencias/pendencias_page.dart';
 import 'package:projetonovo/features/inicio/faixa_comando.dart';
 import 'package:projetonovo/features/inicio/linha_atalhos.dart';
 import 'package:projetonovo/widgets/vidro.dart';
 import 'package:projetonovo/widgets/widget_dicas_app.dart';
 
-/// Ordem dos blocos: a do painel, ou a padrão do app (§4).
-List<String> blocosDaInicio(AppConfig config) => config.home == null
-    ? const [
+/// Blocos da Início sem o painel (§4): a ordem padrão do app. Comando,
+/// Comunicados e Suas pendências são fixos (o militar não esconde).
+List<BlocoInicio> blocosPadrao() => [
+      for (final (i, c) in const [
         'home.comandantes',
         'home.anuncio',
         'home.dicas',
@@ -26,8 +29,16 @@ List<String> blocosDaInicio(AppConfig config) => config.home == null
         'home.contracheque',
         'home.tempo_servico',
         'home.ferias',
-      ]
-    : [for (final b in [...config.home!]..sort((x, y) => x.ordem.compareTo(y.ordem))) b.chave];
+      ].indexed)
+        BlocoInicio(
+            chave: c,
+            ordem: (i + 1) * 10,
+            escondivel: !const {'home.comandantes', 'home.anuncio', 'home.pendencias'}.contains(c)),
+    ];
+
+/// Ordem dos blocos: a do painel (ou a padrão do app) com a escolha do militar.
+List<String> blocosDaInicio(AppConfig config, [PreferenciasInicio? pref]) =>
+    ordenarBlocos(config.home ?? blocosPadrao(), pref);
 
 class _Card extends StatelessWidget {
   const _Card(this.child);
@@ -55,9 +66,31 @@ class _HomeBodyState extends State<HomeBody>
   @override
   bool get wantKeepAlive => true; // preserva estado ao trocar de aba
 
+  PreferenciasInicio? _prefServidor;
+
+  /// A Início do militar: a do servidor (no app_config) vence; sem ela, a
+  /// guardada no aparelho. Relê quando chega um app_config novo.
+  void _carregarPreferencias() {
+    final doServidor = RepositorioConfig.atual.preferencias;
+    if (_prefServidor != null && identical(doServidor, _prefServidor)) return;
+    _prefServidor = doServidor;
+    repositorioPreferencias(context).carregar(doServidor);
+  }
+
+  @override
+  void dispose() {
+    RepositorioConfig.emUso.removeListener(_carregarPreferencias);
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _carregarPreferencias();
+      RepositorioConfig.emUso.addListener(_carregarPreferencias);
+    });
     _requestPermissions();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // O anúncio de abertura respeita o bloco desligado no painel.
@@ -118,14 +151,24 @@ class _HomeBodyState extends State<HomeBody>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ── Blocos na ordem do painel (§4); sem `home`, a do app ──────
-          ValueListenableBuilder<AppConfig>(
-            valueListenable: RepositorioConfig.emUso,
-            builder: (context, config, _) => Column(
+          ListenableBuilder(
+            listenable: Listenable.merge([RepositorioConfig.emUso, InicioPreferenciasRepositorio.emUso]),
+            builder: (context, _) => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                for (final chave in blocosDaInicio(config))
+                for (final chave in blocosDaInicio(RepositorioConfig.atual, InicioPreferenciasRepositorio.emUso.value))
                   if (_bloco(chave) case final w?) w,
               ],
+            ),
+          ),
+
+          // ── Personalizar (§4.5) ──────────────────────────────────────────
+          Center(
+            child: TextButton.icon(
+              onPressed: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const PersonalizarInicioPage())),
+              icon: const Icon(Icons.dashboard_customize_outlined),
+              label: const Text('Personalizar início'),
             ),
           ),
 

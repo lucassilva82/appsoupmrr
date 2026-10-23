@@ -218,6 +218,9 @@ Object? _responder(Uri url, http.Request req) {
       return _comunicados(req.bodyFields);
     case 'pendencias.php':
       return _pendencias(req.bodyFields);
+    // A escolha fica no aparelho; o "servidor" do modo vitrine só confirma.
+    case 'inicio_preferencias.php':
+      return {'code': 1};
     // Como em produção até a comparação ser aprovada: o PDF sai do aparelho.
     case 'contracheque_pdf.php':
       return {'code': 0, 'erro': 'DESLIGADO', 'message': 'PDF pela API ainda desligado.'};
@@ -239,6 +242,7 @@ Object? _responder(Uri url, http.Request req) {
           {
             'chave': 'home.comandantes',
             'ordem': 10,
+            'escondivel': false,
             'arte': 'estrelas',
             'dados': [
               {'cargo': 'Comandante-Geral', 'posto': 'CEL QOC PM', 'nome': 'FULANO DE TAL EXEMPLO',
@@ -248,12 +252,12 @@ Object? _responder(Uri url, http.Request req) {
                'nome_guerra': 'BELTRANO', 'quadro': 'QOC', 'estrelas': 3},
             ],
           },
-          {'chave': 'home.anuncio', 'ordem': 20},
+          {'chave': 'home.anuncio', 'ordem': 20, 'escondivel': false},
           {'chave': 'home.dicas', 'ordem': 30, 'dados': [
             {'texto': 'Ative a biometria em Perfil para entrar mais rápido.', 'icone': 'fingerprint', 'tipo': 'dica'},
             {'texto': 'As certidões saem na hora, com QR Code de conferência.', 'icone': 'verified', 'tipo': 'novidade'},
           ]},
-          {'chave': 'home.pendencias', 'ordem': 40},
+          {'chave': 'home.pendencias', 'ordem': 40, 'escondivel': false},
           {'chave': 'home.atalhos', 'ordem': 50},
           {'chave': 'home.livre.outubro_rosa', 'ordem': 55, 'modelo': 'campanha', 'arte': 'rosa',
            'dados': {'selo': 'Campanha', 'titulo': 'Outubro Rosa', 'texto': 'Exames preventivos na Diretoria de Saúde até 31/10.'},

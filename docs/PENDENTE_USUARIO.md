@@ -30,6 +30,7 @@ podem rodar mais de uma vez sem estragar nada.
 | 11 | `2026-10-23_soupm_cards.sql` | Cards criados no painel, Comando aprovado no painel e dicas (depois do 8, que cria as artes) | **Pendente** — sem ele, o Comando e as dicas continuam vindo do Firestore |
 | 12 | `2026-10-23_soupm_pendencias.sql` | Suas pendências: catálogo dos 37 tipos, **todos desligados**, dispensas e fontes de dados | **Pendente** — depois dele, cada tipo só liga pelo painel, depois de homologado |
 | 13 | `2026-10-23_soupm_declaracao_campanha.sql` | Declarações por campanha. Nasce **desligado** (`declaracoes.campanhas_ligadas = false`) | **Pendente** — antes de ligar, cadastrar pelo painel a campanha do ano em curso, senão ninguém consegue declarar |
+| 14 | `2026-10-23_soupm_inicio_preferencia.sql` | A tela inicial de cada militar guardada no servidor (vale em outro aparelho) | **Pendente** — sem ele, a escolha fica só no aparelho |
 
 Os itens novos que forem entrando vão para o fim desta tabela, com o mesmo
 formato.

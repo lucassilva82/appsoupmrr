@@ -7,6 +7,8 @@ import '../../core/navegacao/abrir_funcao.dart';
 import '../../models/auth_model.dart';
 import '../../utils/app_theme.dart';
 import '../servicos/servicos_page.dart';
+import 'personalizar_inicio_page.dart';
+import 'preferencias_inicio.dart';
 
 /// Atalhos padrão até o painel mandar os de cada nível (`home.atalhos`).
 /// O gestor troca o último pelo Mapa da Força (§4.4).
@@ -52,12 +54,16 @@ class LinhaAtalhos extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final gestor = context.select<Auth, bool>((a) => a.isSuperUser);
-    return ValueListenableBuilder<AppConfig>(
-      valueListenable: RepositorioConfig.emUso,
-      builder: (context, config, _) {
+    return ListenableBuilder(
+      listenable: Listenable.merge([RepositorioConfig.emUso, InicioPreferenciasRepositorio.emUso]),
+      builder: (context, _) {
+        final config = RepositorioConfig.atual;
+        final doMilitar = InicioPreferenciasRepositorio.emUso.value?.atalhos;
         final doPainel = config.bloco('home.atalhos')?.dados;
-        final atalhos = resolverAtalhos(menuEmUso(config, gestor: gestor),
-            doPainel == null || doPainel.isEmpty ? atalhosPadrao(gestor: gestor) : doPainel);
+        final atalhos = resolverAtalhos(
+            menuEmUso(config, gestor: gestor),
+            doMilitar ??
+                (doPainel == null || doPainel.isEmpty ? atalhosPadrao(gestor: gestor) : doPainel));
         if (atalhos.isEmpty) return const SizedBox.shrink();
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -101,6 +107,17 @@ class LinhaAtalhos extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Wrap(runSpacing: 12, children: [
+            SizedBox(
+              width: double.infinity,
+              child: TextButton.icon(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PersonalizarInicioPage()));
+                },
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('Editar atalhos'),
+              ),
+            ),
             for (final a in l)
               SizedBox(
                 width: (MediaQuery.sizeOf(ctx).width - 32) / 4,

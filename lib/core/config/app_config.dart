@@ -11,6 +11,7 @@ import '../log/registro_log.dart';
 import '../rede/api_client.dart';
 import '../../features/ajuda/ajuda_modelo.dart';
 import '../design/arte_cartao.dart';
+import '../../features/inicio/preferencias_inicio.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // O que o app desenha vem da API (docs/SOUPM_2_2.md §5, PAINEL_ADMIN §9).
@@ -254,6 +255,7 @@ class AppConfig {
     this.ajuda,
     this.fonteAvisos = 'firestore',
     this.fonteComunicados = 'firestore',
+    this.preferencias,
     this.recebidoEm,
   });
 
@@ -287,6 +289,9 @@ class AppConfig {
   /// De onde vêm os comunicados da Início: 'firestore' (o anúncio único de
   /// hoje) até o painel trocar para 'api' (comunicados.php, §4.2).
   final String fonteComunicados;
+
+  /// A Início do militar guardada no servidor (§4.5); nula = nunca personalizou.
+  final PreferenciasInicio? preferencias;
 
   /// Quando a cópia em uso chegou do servidor ("Atualizado hoje às 07:30").
   final DateTime? recebidoEm;
@@ -325,6 +330,7 @@ class AppConfig {
       ajuda: AjudaAssunto.lista(j['ajuda']),
       fonteAvisos: j['notificacoes'] is Map && j['notificacoes']['fonte'] == 'api' ? 'api' : 'firestore',
       fonteComunicados: j['comunicados'] is Map && j['comunicados']['fonte'] == 'api' ? 'api' : 'firestore',
+      preferencias: PreferenciasInicio.deJson(j['preferencias']),
       recebidoEm: recebidoEm,
     );
   }

@@ -2273,6 +2273,18 @@ envio não repete sozinha (pode abrir dois chamados). A chave do app vem do
 solução nem avaliar: faltam as rotas da API móvel (§8.3), pedidas à intranet.
 A função continua "Em breve" no menu até a chave existir.
 
+**Personalizar a Início (22/10/2026): pronta.** "Personalizar início" (no fim
+da Início e em "Mais" dos atalhos) abre a tela de arrastar pela alça (também
+"subir/descer" pelo leitor de tela), esconder com o interruptor (bloco fixo
+mostra o cadeado) e escolher até 12 atalhos, com busca, e "Restaurar o padrão
+da PMRR". Guarda no aparelho na hora e no servidor
+(`sigrh/inicio_preferencias.php`, `sql/2026-10-23_soupm_inicio_preferencia.sql`);
+o `app_config` devolve a escolha em `preferencias`. A regra de junção
+(`ordenarBlocos`): bloco novo do painel entra depois do vizinho de cima, o
+escondido continua escondido, o fixo nunca some e o bloco desligado volta para
+onde estava. Fica para depois: o modo de edição dentro da própria Início, com
+o tremor do iOS.
+
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
 porque o contrato do `app_config` fica fixado antes. A fase 5 depende da
