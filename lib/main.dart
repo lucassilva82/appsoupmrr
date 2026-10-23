@@ -1,3 +1,4 @@
+import 'package:projetonovo/features/carreira/carreira_page.dart';
 import 'package:projetonovo/features/chamados/chamados_page.dart';
 import 'dart:async';
 import 'dart:io';
@@ -822,6 +823,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             AppRoutes.AJUDA_PAGE: (_) => const PrecisoDeAjudaPage(),
             AppRoutes.FEEDBACK: (_) => const SugestoesPage(),
             AppRoutes.CHAMADOS: (_) => const MeusChamadosPage(),
+            AppRoutes.CARREIRA: (_) => const CarreiraPage(),
             AppRoutes.CONTRACHEQUE_PAGE: (_) => Contracheque(),
             AppRoutes.CONTRACHEQUE_GRAFICO_PAGE: (ctx) {
               final args =

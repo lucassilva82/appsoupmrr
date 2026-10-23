@@ -23,6 +23,7 @@ import '../features/contracheque/contracheque_pdf_repositorio.dart';
 import '../models/auth_model.dart';
 import '../models/contracheque_model.dart';
 import '../models/meses_contracheque_model.dart';
+import '../features/contracheque/o_que_mudou.dart';
 import '../services/dados_sql.dart';
 import '../utils/app_theme.dart';
 import '../view/second_screen.dart';
@@ -1091,6 +1092,11 @@ class _PageContrachequeState extends State<PageContracheque> {
                   const SizedBox(height: 10),
                   _blocoRubricas(theme, descontosLista, _vermelho),
                 ],
+                const SizedBox(height: 18),
+                BotaoOQueMudou(
+                    mes: widget.mesSelecionado,
+                    contracheque: contracheque,
+                    valoresVisiveis: _valoresVisiveis),
                 const SizedBox(height: 18),
                 _rodapeAviso(theme),
               ],

@@ -218,6 +218,18 @@ Object? _responder(Uri url, http.Request req) {
       return _comunicados(req.bodyFields);
     case 'pendencias.php':
       return _pendencias(req.bodyFields);
+    // Carreira fictícia do SD STIVES DA SILVA.
+    case 'carreira.php':
+      return {
+        'code': 1,
+        'eventos': [
+          {'data': '2019-03-11', 'tipo': 'incorporacao', 'titulo': 'Incorporação na PMRR'},
+          {'data': '2019-03-11', 'tipo': 'promocao', 'titulo': 'Primeiro posto: Soldado (QPPM)', 'detalhe': 'BG 045/2019'},
+          {'data': '2022-07-01', 'tipo': 'escolaridade', 'titulo': 'Escolaridade: superior completo'},
+          {'data': '2023-03-11', 'tipo': 'comportamento', 'titulo': 'Comportamento ótimo'},
+        ],
+        'falhas': <String>[],
+      };
     // A escolha fica no aparelho; o "servidor" do modo vitrine só confirma.
     case 'inicio_preferencias.php':
       return {'code': 1};

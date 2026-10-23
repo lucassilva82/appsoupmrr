@@ -10,6 +10,7 @@ List<ItemMenu> menuPadrao({required bool gestor}) {
           List<String> sinonimos = const [],
           List<String> apelidos = const [],
           bool emBreve = false,
+          bool novo = false,
           bool visivel = true}) =>
       ItemMenu(
         chave: chave,
@@ -22,7 +23,7 @@ List<ItemMenu> menuPadrao({required bool gestor}) {
         apelidos: apelidos,
         visivel: visivel,
         bloqueado: emBreve,
-        selo: emBreve ? 'Em breve' : null,
+        selo: emBreve ? 'Em breve' : (novo ? 'Novo' : null),
         mensagem: emBreve
             ? MensagemBloqueio(
                 motivo: 'em_breve',
@@ -67,6 +68,10 @@ List<ItemMenu> menuPadrao({required bool gestor}) {
             descricao: 'Simule sua reserva remunerada',
             sinonimos: ['reserva', 'aposentadoria', 'inatividade'],
             apelidos: ['calculo_inatividade']),
+        f('rh.carreira', 'Linha do tempo da carreira', 'carreira', '/rh/carreira',
+            descricao: 'Incorporação, promoções e outros marcos',
+            sinonimos: ['carreira', 'promoção', 'histórico', 'linha do tempo'],
+            novo: true),
       ],
     ),
     ItemMenu(

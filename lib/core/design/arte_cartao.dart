@@ -231,6 +231,7 @@ IconData iconePorChave(String? chave) => switch (chave) {
       'ferias' => Icons.beach_access_outlined,
       'declaracao' => Icons.description_outlined,
       'tempo' => Icons.hourglass_bottom_rounded,
+      'carreira' => Icons.timeline_rounded,
       'escala' => Icons.calendar_month_outlined,
       'svi' => Icons.more_time_rounded,
       'lei' => Icons.library_books_outlined,

@@ -24,6 +24,13 @@ final registroModulos = RegistroModulos(const [
       apelidos: ['contracheques'],
       sinonimosPadrao: ['salário', 'pagamento', 'holerite', 'folha']),
   ModuloApp(
+      chave: 'rh.carreira',
+      rotuloPadrao: 'Linha do tempo da carreira',
+      icone: 'carreira',
+      prefixoErro: 'CR',
+      rota: AppRoutes.CARREIRA,
+      sinonimosPadrao: ['carreira', 'promoção', 'histórico', 'linha do tempo']),
+  ModuloApp(
       chave: 'rh.contracheques.grafico',
       rotuloPadrao: 'Análise salarial',
       icone: 'grafico',
