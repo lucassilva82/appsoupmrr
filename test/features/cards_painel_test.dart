@@ -47,9 +47,11 @@ void main() {
     expect(c['title'], 'CEL QOC PM FICTICIO');
     expect(c['img'], 'https://exemplo/foto.jpg');
     expect(c['subtitle'], 'Bom serviço.');
-    final detalhes = c['detalhes'] as List;
+    expect(c['posto'], 'CEL QOC PM');
+    expect(c['nome_completo'], 'FULANO DE TAL FICTICIO');
+    final detalhes = [for (final (_, r, v) in (c['detalhes'] as List).cast<(IconData, String, String)>()) (r, v)];
     expect(detalhes, contains(('No cargo desde', '02/01/2025')));
-    expect(detalhes, contains(('Cursos', 'CSP, CAO')));
+    expect(detalhes, contains(('Cursos', 'CSP · CAO')));
   });
 
   testWidgets('card de campanha mostra selo, título, texto e o rótulo da ação', (t) async {
