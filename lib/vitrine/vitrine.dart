@@ -141,6 +141,9 @@ Object? _responder(Uri url, http.Request req) {
       return {'code': 1, 'aceitos': 0, 'recusados': 0};
     case 'feedback.php':
       return _feedback(_camposMultipart(req));
+    // Como em produção até a comparação ser aprovada: o PDF sai do aparelho.
+    case 'contracheque_pdf.php':
+      return {'code': 0, 'erro': 'DESLIGADO', 'message': 'PDF pela API ainda desligado.'};
     // Sem menu: o app usa o menu do código, como na loja (fase 1 da 2.2).
     case 'app_config.php':
       return {

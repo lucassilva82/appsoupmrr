@@ -1,8 +1,10 @@
 // ignore_for_file: must_be_immutable
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' show ImageFilter;
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:currency_formatter/currency_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -14,6 +16,10 @@ import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../core/erros/falha_app.dart';
+import '../core/log/registro_log.dart';
+import '../core/rede/api_client.dart';
+import '../features/contracheque/contracheque_pdf_repositorio.dart';
 import '../models/auth_model.dart';
 import '../models/contracheque_model.dart';
 import '../models/meses_contracheque_model.dart';
@@ -693,11 +699,17 @@ class _PageContrachequeState extends State<PageContracheque> {
   // guardado e a próxima tentativa abre na hora. O usuário também não fica
   // olhando para uma folha vazia enquanto o PDF ainda está sendo montado.
 
-  /// Gera o PDF, ou devolve o que já foi gerado para este mês.
+  /// O PDF do mês: pronto da API (2.2, §12.3) ou, enquanto ela não emite
+  /// (`contracheque.pdf_api` desligado no painel), o montado no aparelho.
   Future<File> _arquivoPdf(Auth auth) async {
     final pronto = _pdfPronto;
     if (pronto != null && await pronto.exists()) return pronto;
-    final file = await _generatePdf(auth);
+    final daApi = await ContrachequePdfRepositorio(
+      api: ApiClient(),
+      matricula: auth.matricula ?? '',
+      senhaMd5: md5.convert(utf8.encode(auth.password ?? '')).toString(),
+    ).pedir(widget.mesSelecionado, pasta: await getTemporaryDirectory());
+    final file = daApi ?? await _generatePdf(auth);
     _pdfPronto = file;
     return file;
   }
@@ -975,11 +987,13 @@ class _PageContrachequeState extends State<PageContracheque> {
       // mentiria para metade dos usuários.
     } catch (e) {
       debugPrint('[CONTRACHEQUE] erro ao compartilhar: $e');
+      final falha = e is FalhaApp ? e : FalhaApp.inesperada('CC', e);
+      registrarErro(falha, tela: 'rh.contracheques');
       if (!mounted) return;
       alertaErro(
         context,
-        titulo: 'Erro',
-        texto: 'Não foi possível gerar o contracheque para compartilhar.',
+        titulo: falha.titulo,
+        texto: '${falha.texto}\n\n${falha.deQuem} · Código ${falha.codigo}',
         confirmar: 'OK',
       );
     } finally {
