@@ -2361,6 +2361,25 @@ da biometria por plataforma; eventos `aparencia.tema`, `push.receber` e
 viatura (§15.6), 4,2 s, que um toque pula; desenho comum em `core/design/viatura.dart`. Fica:
 conferir no iPad (o simulador do iPad precisa ser liberado pelo usuário) e a migração das telas grandes para `features/`.
 
+**Mais itens prontos (22/10/2026).** Busca com tolerância a erro de
+digitação (uma letra em palavras de 4 a 7 letras, duas a partir de 8, só
+quando não há resultado exato); atalhos de teclado no iPad e no Android com
+teclado (⌘F ou Ctrl+F busca, ⌘1 a ⌘4 abas, ⌘R relê o `app_config`); o
+`app_config` é relido ao voltar ao app depois de 5 minutos e no push
+silencioso de configuração, que o `envio_push.php` agora manda só com dados
+(`{"tipo":"config"}`, para o tópico, sem aviso na tela). O cron
+`cron/versao_legada.php` leva o mínimo legado ao Firestore das 2.1.x, nunca
+acima das mínimas da 2.2 nem da última versão publicada em cada loja. O cron
+noturno apaga os anexos de sugestões 180 dias depois de concluídas ou
+arquivadas (SQL `2026-10-23_soupm_feedback_retencao.sql`).
+
+**P7, notícias e agenda: travada fora do app.** A API da intranet só tem a
+agenda **dos comandantes** (`/api/v1/agenda/eventos`, com a permissão
+`agenda.api.listar`), que não é uma agenda institucional para a tropa, e o
+módulo de notícias não tem API. Precisa de duas decisões e de rotas na
+intranet: o que da agenda pode ser mostrado a todos e uma rota de notícias
+publicadas.
+
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
 porque o contrato do `app_config` fica fixado antes. A fase 5 depende da
