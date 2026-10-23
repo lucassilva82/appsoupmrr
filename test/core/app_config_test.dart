@@ -127,6 +127,16 @@ void main() {
     expect(c.versaoConfig, 7);
   });
 
+  test('falha marca "sem conexão"; 304 e rede desmarcam (§5.3)', () async {
+    await repo((_) async => http.Response('erro', 503)).carregar();
+    expect(RepositorioConfig.semConexao.value, isTrue);
+    await repo((_) async => _json(_resposta, headers: {'etag': '"abc"'})).carregar();
+    expect(RepositorioConfig.semConexao.value, isFalse);
+    await repo((_) async => http.Response('erro', 503)).carregar();
+    await repo((_) async => http.Response('', 304)).carregar();
+    expect(RepositorioConfig.semConexao.value, isFalse);
+  });
+
   test('a cópia de um militar não vale para outro no mesmo aparelho', () async {
     await repo((_) async => _json(_resposta))
         .carregar(matricula: '1111111', senhaMd5: 'a' * 32);

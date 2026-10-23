@@ -18,6 +18,7 @@ import 'package:projetonovo/features/inicio/faixa_comando.dart';
 import 'package:projetonovo/features/inicio/linha_atalhos.dart';
 import 'package:projetonovo/widgets/vidro.dart';
 import 'package:projetonovo/widgets/widget_dicas_app.dart';
+import '../widgets/faixa_sem_conexao.dart';
 
 /// Blocos da Início sem o painel (§4): a ordem padrão do app. Comando,
 /// Comunicados e Suas pendências são fixos (o militar não esconde).
@@ -152,6 +153,9 @@ class _HomeBodyState extends State<HomeBody>
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // ── Sem conexão: o que aparece é o guardado (§5.3)
+          const FaixaSemConexao(),
+
           // ── Versão recomendada (§10.2): cartão dispensável, uma vez por versão
           ValueListenableBuilder<AppConfig>(
             valueListenable: RepositorioConfig.emUso,

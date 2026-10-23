@@ -87,6 +87,10 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
 
 ## 5. Decisões e conferências
 
+- **Notícias e agenda (P7):** decidir o que da agenda da intranet pode aparecer
+  para toda a tropa (hoje a API só tem a agenda dos comandantes, com permissão
+  própria) e pedir à intranet uma rota de notícias publicadas. Sem isso a P7
+  não entra.
 - **Comparar o contracheque** novo com o de hoje com uma conta real (§12.3). O
   modelo já está sem a Diretoria de Recursos Humanos e com o QR (APRENDIZADOS
   §44).

@@ -485,6 +485,10 @@ class RepositorioConfig {
   /// `app_config` chega depois que elas abriram.
   static final emUso = ValueNotifier<AppConfig>(AppConfig.padrao);
 
+  /// A última leitura falhou e a tela usa o que estava guardado (§5.3: dado
+  /// guardado não se passa por atual).
+  static final semConexao = ValueNotifier<bool>(false);
+
   /// [matricula] e [senhaMd5] nulos: só a parte pública (antes do login).
   Future<AppConfig> carregar({String? matricula, String? senhaMd5}) async {
     // A cópia só vale para o mesmo pedido (pública ou desta matrícula).
@@ -531,11 +535,13 @@ class RepositorioConfig {
         'versao': config.versaoConfig,
         'origem': r.naoMudou ? 'cache' : 'rede',
       });
+      semConexao.value = false;
       return atual = config;
     } on FalhaApp catch (f) {
       registrarErro(f, tela: 'app_config', mostrado: false);
       registrar('config.recebida',
           resultado: 'falhou', codigo: f.codigo, dados: {'origem': 'cache'});
+      semConexao.value = true;
       return atual = daCopia() ?? AppConfig.padrao;
     }
   }
