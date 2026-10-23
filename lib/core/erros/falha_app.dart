@@ -56,6 +56,37 @@ class FalhaApp implements Exception {
         OrigemFalha.app => 'Problema do app',
       };
 
+  /// Os passos do "O que fazer" da tela de erro (protótipo `telaErro`), pela
+  /// origem e pela ação que a falha pede.
+  List<String> get oQueFazer {
+    final chamado = acao == AcaoFalha.tentarDeNovo ? 'Se continuar, abra um chamado técnico' : null;
+    return switch (origem) {
+      OrigemFalha.rede || OrigemFalha.aparelho => [
+          'Confira o Wi-Fi ou os dados móveis',
+          'Desligue o modo avião',
+          if (acao == AcaoFalha.tentarDeNovo) 'Toque em Tentar de novo',
+        ],
+      OrigemFalha.servidor => [
+          'Aguarde alguns minutos',
+          if (acao == AcaoFalha.tentarDeNovo) 'Toque em Tentar de novo',
+          if (chamado != null) chamado,
+        ],
+      OrigemFalha.conta => [
+          if (acao == AcaoFalha.entrarDeNovo) 'Saia e entre de novo na sua conta',
+          'Se continuar, procure a seção de pessoal da sua OPM',
+        ],
+      OrigemFalha.dado => [
+          'Os dados vêm do SIGRH: peça a correção à Diretoria de Recursos Humanos - PMRR',
+          if (chamado != null) chamado,
+        ],
+      OrigemFalha.app => [
+          if (acao == AcaoFalha.atualizarApp) 'Atualize o app na loja',
+          if (acao == AcaoFalha.tentarDeNovo) 'Toque em Tentar de novo',
+          'Se repetir, abra um chamado técnico: o código e o registro vão junto',
+        ],
+    };
+  }
+
   // ── Fábricas das falhas comuns de rede ────────────────────────────────────
 
   factory FalhaApp.semInternet(String prefixo, {String? detalhe}) => FalhaApp(

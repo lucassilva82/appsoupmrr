@@ -17,10 +17,14 @@ void main() {
     ));
     await t.pump(const Duration(milliseconds: 100));
     expect(find.byType(ViaturaQuebrada), findsOneWidget);
-    expect(find.text('Código CC-LENTO'), findsOneWidget);
+    expect(find.text('CC-LENTO'), findsOneWidget);
+    expect(find.text('O que fazer'), findsOneWidget);
     expect(find.text('Abrir chamado técnico'), findsNothing, reason: 'sem a chave do SISCHAMADOS no build');
+    await t.ensureVisible(find.text('Tentar de novo'));
     await t.tap(find.text('Tentar de novo'));
     expect(tentou, isTrue);
+    await t.ensureVisible(find.text('Detalhes técnicos'));
+    await t.pump();
     await t.tap(find.text('Detalhes técnicos'));
     await t.pumpAndSettle(const Duration(milliseconds: 100), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 2))
         .catchError((_) => 0);

@@ -1,3 +1,4 @@
+import 'dart:io' show SocketException;
 // Modo vitrine: o app inteiro com um militar fictício, para as capturas de
 // tela das lojas. Liga só na compilação:
 //
@@ -29,11 +30,18 @@ const vitrineMatricula = '1234567';
 /// dados públicos (comandantes da corporação).
 const _liberados = ['/mapadaforca/listacomandos.php'];
 
+/// Para fotografar a tela de erro: o endereço do SIGRH que contém este texto
+/// falha como "sem internet" (`--dart-define=VITRINE_FALHA=carreira.php`).
+const _falhaVitrine = String.fromEnvironment('VITRINE_FALHA');
+
 /// Cliente HTTP do modo vitrine (ver `http.runWithClient` no main).
 http.Client clienteVitrine() {
   final real = IOClient();
   return MockClient((req) async {
     final url = req.url;
+    if (_falhaVitrine.isNotEmpty && url.path.contains(_falhaVitrine)) {
+      throw const SocketException('vitrine: falha simulada');
+    }
     if (url.host.startsWith('intranet.') && url.path.contains('/api/v1/')) {
       return _responderIntranet(url, req);
     }

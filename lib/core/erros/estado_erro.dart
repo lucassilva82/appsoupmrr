@@ -10,6 +10,7 @@ import '../../models/auth_model.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/aviso_rapido.dart';
 import '../ambiente_app.dart';
+import '../design/viatura.dart';
 import '../config/app_config.dart';
 import '../log/registro_log.dart';
 import '../navegacao/abrir_funcao.dart';
@@ -56,26 +57,66 @@ class EstadoErro extends StatelessWidget {
     final quando = DateTime.now();
     final detalhes = _detalhes(quando);
     final chamado = _podeAbrirChamado(context);
+    final mudo = theme.colorScheme.onSurface.withValues(alpha: .62);
+    final linha = theme.colorScheme.onSurface.withValues(alpha: .10);
+    final passos = falha.oQueFazer;
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            ViaturaQuebrada(origem: falha.origem),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Center(child: ViaturaQuebrada(origem: falha.origem)),
             const SizedBox(height: 12),
             Text(falha.titulo,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 4),
-            Text(falha.deQuem,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Text(falha.texto, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: mudo)),
             const SizedBox(height: 10),
-            Text(falha.texto, textAlign: TextAlign.center, style: theme.textTheme.bodyMedium),
+            // De quem é o problema (protótipo `.quem`).
+            Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(border: Border.all(color: linha), borderRadius: BorderRadius.circular(20)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.info_outline_rounded, size: AppIconSize.xs, color: mudo),
+                  const SizedBox(width: 6),
+                  Flexible(child: Text(falha.deQuem, style: TextStyle(fontSize: 12.5, color: mudo))),
+                ]),
+              ),
+            ),
+            if (passos.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              // O que fazer (protótipo `.oque`).
+              Container(
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurface.withValues(alpha: .04),
+                  border: Border.all(color: linha),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('O que fazer',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: theme.colorScheme.primary)),
+                  const SizedBox(height: 6),
+                  for (final p in passos)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('•  ', style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface)),
+                        Expanded(child: Text(p, style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface))),
+                      ]),
+                    ),
+                ]),
+              ),
+            ],
             if (aoTentar != null && falha.acao == AcaoFalha.tentarDeNovo) ...[
               const SizedBox(height: 16),
-              ElevatedButton(onPressed: aoTentar, child: const Text('Tentar de novo')),
+              ElevatedButton.icon(
+                onPressed: aoTentar,
+                icon: const Icon(Icons.refresh_rounded, size: AppIconSize.sm),
+                label: const Text('Tentar de novo'),
+              ),
             ],
             if (chamado) ...[
               const SizedBox(height: 8),
@@ -88,33 +129,43 @@ class EstadoErro extends StatelessWidget {
                     builder: (_) => NovoChamadoPage(
                       api: apiChamados(context),
                       tituloInicial: 'Erro ${falha.codigo} no SouPMRR',
-                      descricaoInicial: '${falha.titulo}.\n\nO que eu estava fazendo: \n\n--- Detalhes técnicos ---\n$detalhes',
+                      descricaoInicial:
+                          '${falha.titulo}.\n\nO que eu estava fazendo: \n\n--- Detalhes técnicos ---\n$detalhes',
                     ),
                   ));
                 },
               ),
             ],
-            const SizedBox(height: 10),
-            SelectableText('Código ${falha.codigo}',
-                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-            Theme(
-              data: theme.copyWith(dividerColor: Colors.transparent),
-              child: ExpansionTile(
-                title: Text('Detalhes técnicos', style: theme.textTheme.bodySmall),
-                tilePadding: EdgeInsets.zero,
-                childrenPadding: const EdgeInsets.only(bottom: 8),
-                expandedCrossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SelectableText(detalhes, style: theme.textTheme.bodySmall),
-                  TextButton.icon(
-                    icon: const Icon(Icons.copy, size: AppIconSize.xs),
-                    label: const Text('Copiar detalhes'),
-                    onPressed: () async {
-                      await Clipboard.setData(ClipboardData(text: detalhes));
-                      if (context.mounted) avisoSucesso(context, 'Detalhes copiados');
-                    },
-                  ),
-                ],
+            const SizedBox(height: 12),
+            // Detalhes técnicos, fechados, com o código à vista (protótipo).
+            Material(
+              color: theme.colorScheme.onSurface.withValues(alpha: .04),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: linha)),
+              clipBehavior: Clip.antiAlias,
+              child: Theme(
+                data: theme.copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  leading: Icon(Icons.bug_report_outlined, size: AppIconSize.sm, color: mudo),
+                  title: Text('Detalhes técnicos',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
+                  trailing: Text(falha.codigo,
+                      style: TextStyle(
+                          fontFamily: 'Menlo', fontFamilyFallback: const ['monospace'], fontSize: 12, color: mudo)),
+                  tilePadding: const EdgeInsets.symmetric(horizontal: 12),
+                  childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                  expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SelectableText(detalhes, style: TextStyle(fontSize: 12.5, height: 1.5, color: mudo)),
+                    TextButton.icon(
+                      icon: const Icon(Icons.copy, size: AppIconSize.xs),
+                      label: const Text('Copiar detalhes'),
+                      onPressed: () async {
+                        await Clipboard.setData(ClipboardData(text: detalhes));
+                        if (context.mounted) avisoSucesso(context, 'Detalhes copiados');
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ]),
@@ -207,8 +258,6 @@ class _PintorViatura extends CustomPainter {
   final bool escuro;
   final Color chao;
 
-  static const _azul = Color(0xFF1E3A8A);
-  static const _verde = Color(0xFF15803D);
   static const _ambar = Color(0xFFF59E0B);
 
   @override
@@ -216,7 +265,12 @@ class _PintorViatura extends CustomPainter {
     final p = Paint()..isAntiAlias = true;
     final solo = s.height - 18;
     // Chão.
-    canvas.drawLine(Offset(8, solo + 12), Offset(s.width - 8, solo + 12), p..color = chao..strokeWidth = 2);
+    canvas.drawLine(
+        Offset(8, solo + 12),
+        Offset(s.width - 8, solo + 12),
+        p
+          ..color = chao
+          ..strokeWidth = 2);
 
     // Triângulo de sinalização no chão, atrás da viatura.
     final tri = Path()
@@ -224,50 +278,38 @@ class _PintorViatura extends CustomPainter {
       ..lineTo(32, solo - 10)
       ..lineTo(44, solo + 11)
       ..close();
-    canvas.drawPath(tri, Paint()..color = const Color(0xFFDC2626)..style = PaintingStyle.stroke..strokeWidth = 3);
+    canvas.drawPath(
+        tri,
+        Paint()
+          ..color = const Color(0xFFDC2626)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3);
 
+    // A viatura nova da abertura (o mesmo desenho, giroflex apagado),
+    // inclinada para a frente: o pneu dianteiro está murcho.
+    final centro = Offset(s.width * 0.55, solo - viaturaRaioRoda + 4);
     canvas.save();
-    // Inclinada para a frente: o pneu dianteiro (direita) está murcho.
-    canvas.translate(s.width * 0.55, solo);
-    canvas.rotate(0.06);
-    canvas.translate(-s.width * 0.55, -solo);
-
-    final x0 = 54.0, x1 = s.width - 18;
-    final base = solo - 2;
-    // Carroceria: parte de baixo branca, de cima azul, faixa verde.
-    final corpo = RRect.fromLTRBR(x0, base - 30, x1, base, const Radius.circular(8));
-    canvas.drawRRect(corpo, Paint()..color = escuro ? const Color(0xFFE5E7EB) : Colors.white);
-    canvas.drawRRect(corpo, Paint()..color = const Color(0xFF94A3B8)..style = PaintingStyle.stroke..strokeWidth = 1);
-    canvas.drawRect(Rect.fromLTRB(x0 + 2, base - 18, x1 - 2, base - 13), Paint()..color = _verde);
-    final cabine = RRect.fromLTRBR(x0 + 22, base - 50, x1 - 46, base - 28, const Radius.circular(8));
-    canvas.drawRRect(cabine, Paint()..color = _azul);
-    // Vidros escuros.
-    canvas.drawRRect(RRect.fromLTRBR(x0 + 28, base - 46, x0 + 58, base - 32, const Radius.circular(4)),
-        Paint()..color = const Color(0xFF0F172A));
-    canvas.drawRRect(RRect.fromLTRBR(x0 + 62, base - 46, x1 - 52, base - 32, const Radius.circular(4)),
-        Paint()..color = const Color(0xFF0F172A));
-    // Giroflex apagado.
-    canvas.drawRRect(RRect.fromLTRBR(x0 + 40, base - 56, x0 + 80, base - 50, const Radius.circular(3)),
-        Paint()..color = const Color(0xFF64748B));
-    // Pisca-alerta âmbar, piscando.
+    canvas.translate(centro.dx + viaturaEixoDianteiro, centro.dy);
+    canvas.rotate(0.07);
+    canvas.translate(-viaturaEixoDianteiro, 0);
+    desenharViatura(canvas, giroflexLigado: false);
+    // Pisca-alerta âmbar nas lanternas, piscando.
     final aceso = (t * 4).floor().isEven;
     final pisca = Paint()..color = _ambar.withValues(alpha: aceso ? 1 : 0.25);
-    canvas.drawCircle(Offset(x1 - 3, base - 22), 3.5, pisca);
-    canvas.drawCircle(Offset(x0 + 3, base - 22), 3.5, pisca);
-
-    // Rodas: a de trás inteira, a da frente murcha (achatada).
-    final roda = Paint()..color = const Color(0xFF111827);
-    canvas.drawCircle(Offset(x0 + 22, base + 2), 11, roda);
-    canvas.drawCircle(Offset(x0 + 22, base + 2), 4, Paint()..color = const Color(0xFF9CA3AF));
-    canvas.drawOval(Rect.fromCenter(center: Offset(x1 - 26, base + 6), width: 26, height: 14), roda);
-    canvas.drawCircle(Offset(x1 - 26, base + 4), 3.5, Paint()..color = const Color(0xFF9CA3AF));
+    canvas.drawCircle(Offset(viaturaLargura / 2 - 6, -viaturaRaioRoda - 4), 3.5, pisca);
+    canvas.drawCircle(Offset(-viaturaLargura / 2 + 6, -viaturaRaioRoda - 4), 3.5, pisca);
+    // Pneu dianteiro murcho: a borracha amassada no chão.
+    canvas.drawOval(
+        Rect.fromCenter(
+            center: Offset(viaturaEixoDianteiro, viaturaRaioRoda - 1), width: viaturaRaioRoda * 2.4, height: 7),
+        Paint()..color = const Color(0xFF111827));
     canvas.restore();
 
     // Fumaça saindo do capô (sobe e some).
     for (var i = 0; i < 3; i++) {
       final f = (t + i / 3) % 1;
-      final cx = s.width - 46 + math.sin((f + i) * math.pi) * 6;
-      final cy = solo - 40 - f * 46;
+      final cx = centro.dx + viaturaEixoDianteiro + 6 + math.sin((f + i) * math.pi) * 6;
+      final cy = centro.dy - 34 - f * 46;
       canvas.drawCircle(Offset(cx, cy), 6 + f * 10,
           Paint()..color = (escuro ? Colors.white : const Color(0xFF64748B)).withValues(alpha: 0.35 * (1 - f)));
     }
