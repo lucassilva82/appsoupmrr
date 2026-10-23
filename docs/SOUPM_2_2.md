@@ -2197,6 +2197,24 @@ Testado com dados fictícios: caso curto (1 página) e longo (42 rubricas, 2
 páginas, cabeçalho da tabela repetido e fecho junto). Falta: o SQL em
 produção, a comparação com uma conta real e a tela Documentos do painel.
 
+**Fase 4 (22/10/2026): pronta e desligada.** `sql/2026-10-23_soupm_notificacoes.sql`
+(aparelhos, notificações, leitura, envios e destino por aparelho),
+`sigrh/dispositivo.php` (registrar e remover o aparelho), `sigrh/notificacoes.php`
+(a aba Avisos: listar, lida, todas lidas, excluir, limpar) e o cron
+`sigrh/cron/envio_push.php`, que tira os envios da fila, grava no Postgres,
+manda pelo FCM v1 com a conta de serviço em `~/private/soupm_fcm.json` e grava
+também no Firestore enquanto houver 2.1.x. Na transição: "todos" vai pelo
+tópico `todos_militares` (que todas as versões assinam); um militar ou grupo
+vai para os aparelhos da 2.2 e, sem nenhum, para o token que a 2.1.x deixou no
+Firestore. Quem pede push (painel, certidão, feedback) só grava
+`soupm_notificacao_envio` (`soupmPedirPush`). No app: o aparelho é registrado no
+login e na renovação do token e sai no logout (antes, o aparelho continuava
+recebendo os avisos da conta anterior); a aba Avisos lê da API quando o
+`app_config` disser `notificacoes.fonte = api`. Desligado até: o usuário pôr a
+conta de serviço em `/private`, criar o cron (a cada minuto) e ligar
+`envio_fcm`; depois, mudar a certidão e o feedback para `soupmPedirPush`, exportar
+o histórico do Firestore e trocar `fonte_app` para `api`.
+
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
 porque o contrato do `app_config` fica fixado antes. A fase 5 depende da
