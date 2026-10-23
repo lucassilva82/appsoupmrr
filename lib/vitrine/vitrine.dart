@@ -55,6 +55,78 @@ http.Client clienteVitrine() {
   });
 }
 
+/// Campos de texto de um corpo multipart (os anexos são ignorados: no modo
+/// vitrine nada sai do aparelho).
+Map<String, String> _camposMultipart(http.Request req) {
+  final corpo = utf8.decode(req.bodyBytes, allowMalformed: true);
+  return {
+    // Campo com acento ganha cabeçalhos próprios (content-type) antes do valor.
+    for (final m in RegExp(r'name="([a-z_]+)"\r\n(?:[^\r\n]+\r\n)*\r\n([\s\S]*?)\r\n--')
+        .allMatches(corpo))
+      m.group(1)!: m.group(2)!,
+  };
+}
+
+// Sugestões e elogios do militar fictício, guardados só na memória.
+final _feedbacks = <Map<String, Object>>[
+  {
+    'id': 1,
+    'protocolo': 'FB-2026-00001',
+    'tipo': 'funcao_nova',
+    'texto': 'Seria bom ver as escalas do mês num calendário.',
+    'situacao': 'em_analise',
+    'aguarda_militar': true,
+    'criado_em': '2026-10-20T09:12:00-04:00',
+    'mensagens': <Map<String, Object>>[
+      {'autor': 'equipe', 'texto': 'Boa ideia! O calendário seria do mês inteiro ou só da semana?',
+       'criado_em': '2026-10-21T14:30:00-04:00', 'anexos': 0, 'lida': false},
+    ],
+  },
+];
+
+Object _feedback(Map<String, String> c) {
+  Map<String, Object> resumo(Map<String, Object> f) => {
+        'id': f['id']!, 'protocolo': f['protocolo']!, 'tipo': f['tipo']!,
+        'trecho': f['texto']!, 'situacao': f['situacao']!, 'criado_em': f['criado_em']!,
+        'respostas_novas': (f['mensagens']! as List)
+            .where((m) => (m as Map)['autor'] == 'equipe' && m['lida'] == false).length,
+      };
+  switch (c['acao']) {
+    case 'enviar':
+      final id = _feedbacks.length + 1;
+      final protocolo = 'FB-2026-${id.toString().padLeft(5, '0')}';
+      _feedbacks.insert(0, {
+        'id': id, 'protocolo': protocolo, 'tipo': c['tipo'] ?? 'melhoria', 'texto': c['texto'] ?? '',
+        'situacao': 'recebido', 'aguarda_militar': false,
+        'criado_em': DateTime.now().toIso8601String(), 'mensagens': <Map<String, Object>>[],
+      });
+      return {'code': 1, 'id': id, 'protocolo': protocolo};
+    case 'listar':
+      return {'code': 1, 'itens': [for (final f in _feedbacks) resumo(f)]};
+    case 'ver' || 'responder':
+      final f = _feedbacks.where((f) => '${f['id']}' == c['id']).firstOrNull;
+      if (f == null) {
+        return {'code': 0, 'erro': 'NAO_ENCONTRADO', 'message': 'Não achamos essa mensagem na sua conta.'};
+      }
+      final msgs = f['mensagens']! as List<Map<String, Object>>;
+      if (c['acao'] == 'responder') {
+        msgs.add({'autor': 'militar', 'texto': c['texto'] ?? '', 'criado_em': DateTime.now().toIso8601String(),
+                  'anexos': 0, 'lida': true});
+        f['aguarda_militar'] = false;
+        return {'code': 1};
+      }
+      for (final m in msgs) {
+        m['lida'] = true;
+      }
+      return {
+        'code': 1,
+        'feedback': {...resumo(f), 'texto': f['texto']!, 'aguarda_militar': f['aguarda_militar']!, 'anexos': 0},
+        'mensagens': [for (final m in msgs) {...m}..remove('lida')],
+      };
+  }
+  return {'code': 0, 'erro': 'DADOS_INVALIDOS', 'message': 'Ação inválida.'};
+}
+
 http.Response _json(Object corpo) => http.Response.bytes(
       utf8.encode(jsonEncode(corpo)),
       200,
@@ -67,6 +139,8 @@ Object? _responder(Uri url, http.Request req) {
     // O log do modo vitrine não vai a lugar nenhum: o militar é fictício.
     case 'log.php':
       return {'code': 1, 'aceitos': 0, 'recusados': 0};
+    case 'feedback.php':
+      return _feedback(_camposMultipart(req));
     // Sem menu: o app usa o menu do código, como na loja (fase 1 da 2.2).
     case 'app_config.php':
       return {

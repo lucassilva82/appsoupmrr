@@ -13,7 +13,7 @@ import '../../widgets/carouselSlider.dart' show CachedImageFromPrefs;
 /// Os dados ainda vêm da coleção 'stores' do Firestore; na fase 4 passam a
 /// vir do `app_config` (`home.comandantes`), aprovados no painel.
 class FaixaComando extends StatelessWidget {
-  FaixaComando({super.key});
+  const FaixaComando({super.key});
 
   // Uma assinatura só para o app: a Início redesenha a faixa quando o
   // app_config chega, e um stream novo a cada vez fazia a faixa piscar.

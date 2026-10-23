@@ -143,7 +143,22 @@ final registroModulos = RegistroModulos(const [
       icone: 'ajuda',
       prefixoErro: 'AJ',
       rota: AppRoutes.AJUDA_PAGE,
-      apelidos: ['ajuda']),
+      apelidos: ['ajuda'],
+      sinonimosPadrao: ['ajuda', 'dúvida', 'suporte', 'problema']),
+  ModuloApp(
+      chave: 'atend.feedback',
+      rotuloPadrao: 'Sugestões e elogios',
+      icone: 'feedback',
+      prefixoErro: 'FB',
+      rota: AppRoutes.FEEDBACK,
+      sinonimosPadrao: ['sugestão', 'ideia', 'elogio', 'melhoria']),
+  // Chamados no app chegam na fase 3c (SISCHAMADOS): por enquanto o menu
+  // traz a função bloqueada "Em breve", e sem rota esta versão não a abre.
+  ModuloApp(
+      chave: 'atend.chamados',
+      rotuloPadrao: 'Meus chamados',
+      icone: 'chamado',
+      prefixoErro: 'CH'),
   ModuloApp(
       chave: 'avisos',
       rotuloPadrao: 'Avisos',

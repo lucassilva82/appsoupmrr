@@ -8,7 +8,11 @@ import '../models/auth_model.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
-  const CustomAppBar({Key? key, required this.title}) : super(key: key);
+
+  /// Botões à direita, antes do selo de gestor (ex.: "Minhas mensagens").
+  final List<Widget> actions;
+  const CustomAppBar({Key? key, required this.title, this.actions = const []})
+      : super(key: key);
 
   /// Badge de função: Admin ⭐ | ⭐ GESTOR | vazio
   Widget _buildUserBadge(Auth auth) {
@@ -113,6 +117,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
+        ...actions,
         Padding(
           padding: const EdgeInsets.only(right: 8),
           child: Center(child: _buildUserBadge(auth)),

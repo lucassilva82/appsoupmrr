@@ -93,16 +93,38 @@ class ApiClient {
         json: _decodificar(prefixo, resposta), etag: resposta.headers['etag']);
   }
 
+  /// POST multipart com arquivos (anexos do feedback). [tempo] maior que o
+  /// padrão, porque vídeo em rede móvel demora.
+  Future<dynamic> postMultipart(
+    Uri url, {
+    required String prefixo,
+    required Map<String, String> campos,
+    List<({String caminho, String nome})> arquivos = const [],
+    Duration tempo = const Duration(seconds: 120),
+  }) async =>
+      _enviar(prefixo, () async {
+        final pedido = http.MultipartRequest('POST', url)
+          ..headers.addAll(_cabecalhos)
+          ..fields.addAll(campos);
+        for (final a in arquivos) {
+          pedido.files.add(await http.MultipartFile.fromPath(
+              'anexos[]', a.caminho,
+              filename: a.nome));
+        }
+        return http.Response.fromStream(await _c.send(pedido));
+      }, tempo: tempo);
+
   Future<dynamic> _enviar(
-          String prefixo, Future<http.Response> Function() pedido) async =>
-      _decodificar(prefixo, await _pedir(prefixo, pedido));
+          String prefixo, Future<http.Response> Function() pedido,
+          {Duration? tempo}) async =>
+      _decodificar(prefixo, await _pedir(prefixo, pedido, tempo: tempo));
 
   Future<http.Response> _pedir(
       String prefixo, Future<http.Response> Function() pedido,
-      {bool aceita304 = false}) async {
+      {bool aceita304 = false, Duration? tempo}) async {
     final http.Response resposta;
     try {
-      resposta = await pedido().timeout(tempoLimite);
+      resposta = await pedido().timeout(tempo ?? tempoLimite);
     } on TimeoutException catch (e) {
       throw FalhaApp.lento(prefixo, detalhe: '$e');
     } on HandshakeException catch (e) {

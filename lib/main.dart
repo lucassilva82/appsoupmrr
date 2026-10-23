@@ -31,7 +31,8 @@ import 'package:flutter/services.dart'; // Adicione esta linha
 import 'package:projetonovo/models/map_busca_detalhes_model.dart';
 import 'package:projetonovo/models/meses_contracheque_model.dart';
 import 'package:projetonovo/models/militar.dart';
-import 'package:projetonovo/pages/ajuda_page.dart';
+import 'package:projetonovo/features/ajuda/preciso_de_ajuda_page.dart';
+import 'package:projetonovo/features/feedback/sugestoes_page.dart';
 import 'package:projetonovo/pages/auth_or_home.dart';
 import 'package:projetonovo/pages/auth_page.dart';
 import 'package:projetonovo/pages/biometric_auth_page.dart';
@@ -809,7 +810,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             AppRoutes.SVI_MEUS_VOLUNTARIOS: (_) =>
                 const SviMeusVoluntariosPage(),
             AppRoutes.NOTIFICATIONS_PAGE: (_) => NotificationsPage(),
-            AppRoutes.AJUDA_PAGE: (_) => AjudaPage(),
+            // 2.2: o "Preciso de ajuda" guiado substitui a página antiga
+            // (WhatsApp e e-mail saíram: suporte é por chamado, §8).
+            AppRoutes.AJUDA_PAGE: (_) => const PrecisoDeAjudaPage(),
+            AppRoutes.FEEDBACK: (_) => const SugestoesPage(),
             AppRoutes.CONTRACHEQUE_PAGE: (_) => Contracheque(),
             AppRoutes.CONTRACHEQUE_GRAFICO_PAGE: (ctx) {
               final args =

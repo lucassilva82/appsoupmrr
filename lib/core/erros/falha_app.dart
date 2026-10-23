@@ -130,6 +130,30 @@ class FalhaApp implements Exception {
         detalhe: '$erro',
       );
 
+  /// Recusa explicada pela API (`{code: 0, erro, message}`): o texto vem do
+  /// servidor e o código vira `<prefixo>-<ERRO>` (FB-ANEXO-GRANDE).
+  factory FalhaApp.daApi(String prefixo, String erro, String? mensagem) {
+    final (origem, acao, titulo) = switch (erro) {
+      'SESSAO_INVALIDA' => (OrigemFalha.conta, AcaoFalha.entrarDeNovo, 'Entre de novo no app'),
+      'MUITAS_TENTATIVAS' => (OrigemFalha.conta, AcaoFalha.nenhuma, 'Acesso bloqueado por 15 minutos'),
+      'LIMITE_DIA' => (OrigemFalha.conta, AcaoFalha.nenhuma, 'Limite do dia atingido'),
+      'DESLIGADO' => (OrigemFalha.servidor, AcaoFalha.nenhuma, 'Função desligada no momento'),
+      'ANEXO_GRANDE' || 'ANEXO_TIPO' => (OrigemFalha.aparelho, AcaoFalha.nenhuma, 'Anexo não aceito'),
+      'DADOS_INVALIDOS' || 'NAO_ENCONTRADO' => (OrigemFalha.dado, AcaoFalha.nenhuma, 'Confira os dados'),
+      _ => (OrigemFalha.servidor, AcaoFalha.tentarDeNovo, 'O servidor não conseguiu atender'),
+    };
+    return FalhaApp(
+      codigo: '$prefixo-${erro.replaceAll('_', '-')}',
+      origem: origem,
+      titulo: titulo,
+      texto: (mensagem == null || mensagem.isEmpty)
+          ? 'Tente de novo em alguns minutos.'
+          : mensagem,
+      acao: acao,
+      detalhe: 'API: $erro',
+    );
+  }
+
   @override
   String toString() => 'FalhaApp($codigo: ${detalhe ?? titulo})';
 }

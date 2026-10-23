@@ -143,3 +143,22 @@ class FolhaBloqueio extends StatelessWidget {
     );
   }
 }
+
+/// A função pela chave (ou apelido): primeiro no menu em uso, depois no
+/// menu de reserva e, por fim, no registro de módulos (funções fora do
+/// menu, como as de Perfil). Nula se esta versão não a conhece.
+ItemMenu? itemPorChave(String chave, {required List<ItemMenu> menu}) {
+  for (final area in menu) {
+    for (final f in area.filhos) {
+      if (f.chave == chave || f.apelidos.contains(chave)) return f;
+    }
+  }
+  final m = registroModulos.porChave(chave);
+  if (m == null) return null;
+  return ItemMenu(
+      chave: m.chave,
+      tipo: 'funcao',
+      rotulo: m.rotuloPadrao,
+      icone: m.icone,
+      rota: m.rota);
+}

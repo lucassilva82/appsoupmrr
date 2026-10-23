@@ -9,6 +9,7 @@ import '../enderecos.dart';
 import '../erros/falha_app.dart';
 import '../log/registro_log.dart';
 import '../rede/api_client.dart';
+import '../../features/ajuda/ajuda_modelo.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // O que o app desenha vem da API (docs/SOUPM_2_2.md §5, PAINEL_ADMIN §9).
@@ -233,6 +234,7 @@ class AppConfig {
     this.menu = const [],
     this.home,
     this.maisUsados,
+    this.ajuda,
     this.recebidoEm,
   });
 
@@ -256,6 +258,9 @@ class AppConfig {
 
   /// "Mais usados" de Serviços; nulo = a linha não aparece.
   final List<String>? maisUsados;
+
+  /// "Preciso de ajuda"; nulo = o app usa o [ajudaPadrao].
+  final List<AjudaAssunto>? ajuda;
 
   /// Quando a cópia em uso chegou do servidor ("Atualizado hoje às 07:30").
   final DateTime? recebidoEm;
@@ -284,6 +289,7 @@ class AppConfig {
       maisUsados: j['servicos'] is Map && j['servicos']['mais_usados'] is List
           ? [for (final c in j['servicos']['mais_usados'] as List) '$c']
           : null,
+      ajuda: AjudaAssunto.lista(j['ajuda']),
       recebidoEm: recebidoEm,
     );
   }
