@@ -7,6 +7,7 @@ import '../../core/navegacao/abrir_funcao.dart';
 import '../../models/auth_model.dart';
 import '../../utils/app_theme.dart';
 import '../servicos/servicos_page.dart';
+import '../../widgets/vidro.dart';
 import 'personalizar_inicio_page.dart';
 import 'preferencias_inicio.dart';
 
@@ -39,9 +40,27 @@ List<({ItemMenu item, ItemMenu area})> resolverAtalhos(
   ];
 }
 
+/// Nome curto de cada função no atalho (protótipo `CURTO`): o rótulo do
+/// menu não cabe embaixo de um ícone de 44.
+const rotulosCurtos = <String, String>{
+  'rh.contracheques': 'Contracheque',
+  'rh.ferias': 'Férias',
+  'rh.documentos': 'Documentos',
+  'rh.certidoes': 'Certidões',
+  'atend.feedback': 'Sugestões',
+  'rh.tempo_servico': 'Tempo de serviço',
+  'normas.legislacoes': 'Legislações',
+  'rh.declaracoes': 'Declarações',
+  'rh.ficha': 'Minha ficha',
+  'gestao.mapa_forca': 'Mapa da Força',
+  'atend.chamados': 'Chamados',
+};
+
+String rotuloCurto(ItemMenu f) => rotulosCurtos[f.chave] ?? f.rotulo;
+
 /// Quantos atalhos cabem inteiros numa linha. Se o militar tem mais do que
 /// cabe, o último lugar vira "Mais" (§4.4: sem atalho cortado).
-int atalhosQueCabem(double largura, int total, {double celula = 72}) {
+int atalhosQueCabem(double largura, int total, {double celula = 68}) {
   final cabem = (largura / celula).floor().clamp(1, 12);
   if (total <= cabem) return total;
   return cabem - 1;
@@ -65,33 +84,57 @@ class LinhaAtalhos extends StatelessWidget {
             doMilitar ??
                 (doPainel == null || doPainel.isEmpty ? atalhosPadrao(gestor: gestor) : doPainel));
         if (atalhos.isEmpty) return const SizedBox.shrink();
+        // Cabeçalho "Atalhos" com "Editar" e a caixa de vidro com a arte
+        // discreta (protótipo `.vidro.atalhos`).
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: LayoutBuilder(builder: (context, c) {
-            final n = atalhosQueCabem(c.maxWidth, atalhos.length);
-            final mais = n < atalhos.length;
-            return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              for (final a in atalhos.take(n))
-                Expanded(
-                  child: _Atalho(
-                    icone: iconePorChave(a.item.icone),
-                    cor: Arte.de(a.area.arte).destaque,
-                    rotulo: a.item.rotulo,
-                    bloqueado: a.item.bloqueado,
-                    aoTocar: () => abrirFuncao(context, a.item, origem: 'atalho'),
-                  ),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            CabecalhoSecao(
+              titulo: 'Atalhos',
+              direita: TextButton(
+                onPressed: () =>
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PersonalizarInicioPage())),
+                style: TextButton.styleFrom(minimumSize: const Size(44, 36)),
+                child: Text('Editar',
+                    style: TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary)),
+              ),
+            ),
+            CartaoVidro(
+              padding: EdgeInsets.zero,
+              child: Stack(children: [
+                ArteDiscreta(arte: Arte.de('cc')),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                  child: LayoutBuilder(builder: (context, c) {
+                    final n = atalhosQueCabem(c.maxWidth, atalhos.length);
+                    final mais = n < atalhos.length;
+                    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      for (final a in atalhos.take(n))
+                        Expanded(
+                          child: _Atalho(
+                            icone: iconePorChave(a.item.icone),
+                            cor: Arte.de(a.area.arte).destaque,
+                            rotulo: rotuloCurto(a.item),
+                            bloqueado: a.item.bloqueado,
+                            aoTocar: () => abrirFuncao(context, a.item, origem: 'atalho'),
+                          ),
+                        ),
+                      if (mais)
+                        Expanded(
+                          child: _Atalho(
+                            icone: Icons.apps_rounded,
+                            cor: Theme.of(context).colorScheme.primary,
+                            rotulo: 'Mais',
+                            aoTocar: () => _todos(context, atalhos),
+                          ),
+                        ),
+                    ]);
+                  }),
                 ),
-              if (mais)
-                Expanded(
-                  child: _Atalho(
-                    icone: Icons.more_horiz_rounded,
-                    cor: Theme.of(context).colorScheme.primary,
-                    rotulo: 'Mais',
-                    aoTocar: () => _todos(context, atalhos),
-                  ),
-                ),
-            ]);
-          }),
+              ]),
+            ),
+          ]),
         );
       },
     );
@@ -154,8 +197,8 @@ class _Atalho extends StatelessWidget {
   final VoidCallback aoTocar;
   final bool bloqueado;
 
-  static TextStyle? _estilo(ThemeData t) =>
-      t.textTheme.labelSmall?.copyWith(height: 1.15, letterSpacing: 0);
+  static TextStyle _estilo(ThemeData t) =>
+      TextStyle(fontSize: 10.5, height: 1.2, letterSpacing: -0.21, color: t.colorScheme.onSurface);
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +210,7 @@ class _Atalho extends StatelessWidget {
         label: rotulo,
         excludeSemantics: true,
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           onTap: aoTocar,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
@@ -176,13 +219,12 @@ class _Atalho extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: cor.withValues(alpha: 0.14),
+                  color: cor.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: cor.withValues(alpha: 0.35)),
                 ),
                 child: Icon(icone, color: cor, size: AppIconSize.md),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 5),
               // Palavra única longa ("Contracheques") encolhe em vez de
               // quebrar no meio; frase quebra em até duas linhas.
               if (rotulo.contains(' '))

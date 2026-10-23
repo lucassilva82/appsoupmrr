@@ -64,9 +64,9 @@ class FaixaComando extends StatelessWidget {
   }
 
   Widget _faixa(List<Map<String, dynamic>> lista) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: SizedBox(
-          height: 64,
+          height: 68,
           child: Row(children: [
             for (var i = 0; i < math.min(2, lista.length); i++) ...[
               if (i > 0) const SizedBox(width: 10),

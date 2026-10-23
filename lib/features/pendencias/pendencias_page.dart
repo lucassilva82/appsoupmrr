@@ -34,11 +34,13 @@ PendenciasRepositorio repositorioPendencias(BuildContext context) {
 
 String _prazo(DateTime? d) {
   if (d == null) return '';
-  final dias = DateTime(d.year, d.month, d.day).difference(DateTime.now().copyWith(hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0)).inDays;
-  if (dias < 0) return 'Prazo vencido';
-  if (dias == 0) return 'Vence hoje';
-  if (dias == 1) return 'Vence amanhã';
-  return 'Vence em $dias dias';
+  final hoje = DateTime.now().copyWith(hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0);
+  final dias = DateTime(d.year, d.month, d.day).difference(hoje).inDays;
+  final data = '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';
+  if (dias < 0) return 'Prazo $data · vencido';
+  if (dias == 0) return 'Prazo $data · vence hoje';
+  if (dias == 1) return 'Prazo $data · falta 1 dia';
+  return 'Prazo $data · faltam $dias dias';
 }
 
 /// Abre o que resolve a pendência. Sem destino (ou destino que o militar não
@@ -111,64 +113,46 @@ class _BlocoPendenciasState extends State<BlocoPendencias> {
       valueListenable: PendenciasRepositorio.emUso,
       builder: (context, s, _) {
         if (s == null || s.ligados == 0) return const SizedBox.shrink();
+        final obrigatorias = s.itens.where((p) => p.obrigatoria).length;
+        final corPilula = obrigatorias > 0
+            ? (theme.brightness == Brightness.dark ? const Color(0xFFFF9E9E) : const Color(0xFFB3261E))
+            : theme.colorScheme.primary;
         return Padding(
-          padding: const EdgeInsets.only(top: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            SizedBox(
-              height: 36,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(children: [
-                  Text('Suas pendências', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                  if (s.itens.isNotEmpty) ...[
-                    const SizedBox(width: 8),
-                    _Contador(s.itens.length),
-                  ],
-                  const Spacer(),
-                  if (s.itens.isNotEmpty)
-                    TextButton(
-                      onPressed: () {
-                        registrar('tela.abrir', chave: _chave, dados: {'de': 'inicio'});
-                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PendenciasPage()));
-                      },
-                      child: const Text('Ver todas ›'),
-                    ),
-                ]),
-              ),
+            CabecalhoSecao(
+              titulo: 'Suas pendências',
+              pilula: s.itens.isEmpty ? null : '${s.itens.length}',
+              corPilula: corPilula,
+              textoVer: 'Ver todas',
+              verTodos: s.itens.isEmpty
+                  ? null
+                  : () {
+                      registrar('tela.abrir', chave: _chave, dados: {'de': 'inicio'});
+                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PendenciasPage()));
+                    },
             ),
-            const SizedBox(height: 6),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: CartaoVidro(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: s.itens.isEmpty
-                    ? const _SemPendencias()
-                    : Column(children: [
-                        for (final (i, p) in s.itens.take(3).indexed) ...[
-                          if (i > 0) const Divider(height: 1, indent: 52),
-                          LinhaPendencia(pendencia: p, aoTocar: () => abrirPendencia(context, p, origem: 'inicio')),
-                        ],
-                      ]),
-              ),
+            CartaoVidro(
+              padding: EdgeInsets.zero,
+              child: Stack(children: [
+                ArteDiscreta(arte: Arte.de('pe')),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: s.itens.isEmpty
+                      ? const _SemPendencias()
+                      : Column(children: [
+                          for (final (i, p) in s.itens.take(3).indexed) ...[
+                            if (i > 0)
+                              Divider(height: 1, thickness: 1, color: theme.colorScheme.onSurface.withValues(alpha: .10)),
+                            LinhaPendencia(pendencia: p, aoTocar: () => abrirPendencia(context, p, origem: 'inicio')),
+                          ],
+                        ]),
+                ),
+              ]),
             ),
           ]),
         );
       },
-    );
-  }
-}
-
-class _Contador extends StatelessWidget {
-  const _Contador(this.n);
-  final int n;
-
-  @override
-  Widget build(BuildContext context) {
-    final cor = Theme.of(context).colorScheme.primary;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: cor.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(10)),
-      child: Text('$n', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: cor)),
     );
   }
 }
@@ -191,8 +175,9 @@ class _SemPendencias extends StatelessWidget {
   }
 }
 
-/// Linha de 48 pt: ícone, o quê, sistema e prazo, e o selo Obrigatória
-/// (vermelho) ou Lembrete (azul). Cor nunca sozinha: o selo diz em texto.
+/// Linha da pendência (protótipo `.pend .linha`): ícone num quadrado de 36
+/// tingido, o quê, o prazo (ou o texto) e, embaixo, o selo Obrigatória ou
+/// Lembrete com o sistema de origem. Cor nunca sozinha: o selo diz em texto.
 class LinhaPendencia extends StatelessWidget {
   const LinhaPendencia({super.key, required this.pendencia, required this.aoTocar});
   final Pendencia pendencia;
@@ -203,40 +188,73 @@ class LinhaPendencia extends StatelessWidget {
     final theme = Theme.of(context);
     final p = pendencia;
     final escuro = theme.brightness == Brightness.dark;
-    final corSelo = p.erro != null
-        ? theme.colorScheme.onSurfaceVariant
+    final mudo = theme.colorScheme.onSurface.withValues(alpha: .62);
+    final vermelho = escuro ? const Color(0xFFFF9E9E) : const Color(0xFFB3261E);
+    final corIcone = p.erro != null
+        ? mudo
         : p.obrigatoria
-            ? (escuro ? const Color(0xFFFF9E9E) : const Color(0xFFB3261E))
+            ? vermelho
             : theme.colorScheme.primary;
-    final apoio = [p.sistema, _prazo(p.prazo), if (p.erro != null) p.erro!].where((e) => e.isNotEmpty).join(' · ');
+    final linha2 = p.erro != null
+        ? 'Não foi possível conferir · ${p.erro}'
+        : (p.prazo != null ? _prazo(p.prazo) : (p.texto ?? ''));
     return InkWell(
       onTap: aoTocar,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 48),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          child: Row(children: [
-            Icon(p.erro != null ? Icons.sync_problem_outlined : iconePorNome(p.icone) ?? Icons.pending_actions_outlined,
-                size: AppIconSize.sm, color: corSelo),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                Text(p.titulo, maxLines: 2, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodyMedium),
-                if (apoio.isNotEmpty) Text(apoio, style: theme.textTheme.bodySmall),
-              ]),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        child: Row(children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: corIcone.withValues(alpha: p.obrigatoria ? .14 : .20),
+              borderRadius: BorderRadius.circular(10),
             ),
-            if (p.erro == null) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                    border: Border.all(color: corSelo.withValues(alpha: 0.6)), borderRadius: BorderRadius.circular(8)),
-                child: Text(p.obrigatoria ? 'Obrigatória' : 'Lembrete',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: corSelo)),
-              ),
-            ],
-          ]),
-        ),
+            child: Icon(
+                p.erro != null ? Icons.sync_problem_outlined : iconePorNome(p.icone) ?? Icons.pending_actions_outlined,
+                size: AppIconSize.sm,
+                color: corIcone),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+              Text(p.titulo,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w500, height: 1.35, color: theme.colorScheme.onSurface)),
+              if (linha2.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Text(linha2, style: TextStyle(fontSize: 12.5, height: 1.35, color: mudo)),
+                ),
+              if (p.erro == null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: p.obrigatoria
+                            ? vermelho.withValues(alpha: .14)
+                            : theme.colorScheme.onSurface.withValues(alpha: .06),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(p.obrigatoria ? 'Obrigatória' : 'Lembrete',
+                          style: TextStyle(
+                              fontSize: 11, fontWeight: FontWeight.w600, color: p.obrigatoria ? vermelho : mudo)),
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(p.sistema,
+                          maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: mudo)),
+                    ),
+                  ]),
+                ),
+            ]),
+          ),
+          const SizedBox(width: 12),
+          Icon(Icons.chevron_right_rounded, size: 20, color: theme.colorScheme.onSurface.withValues(alpha: .45)),
+        ]),
       ),
     );
   }

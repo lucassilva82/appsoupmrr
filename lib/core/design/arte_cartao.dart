@@ -75,8 +75,10 @@ class Arte {
     'beach_access': Icons.beach_access_outlined, 'flight': Icons.flight_outlined, 'wb_sunny': Icons.wb_sunny_outlined,
     'tips_and_updates': Icons.tips_and_updates_outlined, 'search': Icons.search, 'lightbulb': Icons.lightbulb_outline,
     'pending_actions': Icons.pending_actions_outlined, 'assignment_late': Icons.assignment_late_outlined,
-    'task_alt': Icons.task_alt, 'favorite': Icons.favorite_outline, 'volunteer_activism': Icons.volunteer_activism_outlined,
-    'health_and_safety': Icons.health_and_safety_outlined, 'badge': Icons.badge_outlined, 'verified': Icons.verified_outlined,
+    'task_alt': Icons.task_alt, 'favorite': Icons.favorite_outline,
+    'volunteer_activism': Icons.volunteer_activism_outlined,
+    'health_and_safety': Icons.health_and_safety_outlined, 'badge': Icons.badge_outlined,
+    'verified': Icons.verified_outlined,
     'local_police': Icons.local_police_outlined, 'calendar_month': Icons.calendar_month_outlined,
     'shield': Icons.shield_outlined, 'gavel': Icons.gavel_outlined, 'menu_book': Icons.menu_book_outlined,
     'balance': Icons.balance_outlined, 'monitoring': Icons.monitor_heart_outlined, 'groups': Icons.groups_outlined,
@@ -88,53 +90,94 @@ class Arte {
     'fingerprint': Icons.fingerprint, 'notifications': Icons.notifications_outlined, 'event': Icons.event_outlined,
     'description': Icons.description_outlined, 'lock': Icons.lock_outline, 'place': Icons.place_outlined,
     'chat': Icons.chat_outlined, 'rocket_launch': Icons.rocket_launch_outlined, 'handshake': Icons.handshake_outlined,
+    // Categorias e assuntos dos comunicados (protótipo).
+    'how_to_vote': Icons.how_to_vote_outlined, 'schedule': Icons.schedule_rounded, 'vaccines': Icons.vaccines_outlined,
+    'event_busy': Icons.event_busy_outlined, 'contact_page': Icons.contact_page_outlined,
+    'school': Icons.school_outlined,
+    'phone_iphone': Icons.phone_iphone_rounded, 'calendar_today': Icons.calendar_today_outlined,
+    'new_releases': Icons.new_releases_outlined, 'request_quote': Icons.request_quote_outlined,
+    'edit_note': Icons.edit_note_rounded, 'priority_high': Icons.priority_high_rounded,
   };
 }
 
 /// Ícone do catálogo do painel pelo nome ('campaign', 'local_police'...).
 IconData? iconePorNome(String? nome) => Arte._iconesPorNome[nome];
 
-/// Fundo com a arte no estilo cheio. O conteúdo vai por cima, sobre um véu
-/// escuro embaixo que garante texto branco legível (4,5:1) nos dois temas.
+/// Onde a arte vai: muda o tamanho dos ícones e a direção do véu, como no
+/// protótipo (`.arte-card` e `.sv-area`).
+enum FormatoArte {
+  /// Cards de resumo e da Início: ícones 120/48/38 e véu da esquerda para
+  /// a direita (o texto fica à esquerda).
+  card,
+
+  /// Cartões das áreas de Serviços: ícones 84/38/30 e véu de cima para
+  /// baixo (o nome fica embaixo).
+  area,
+}
+
+/// Fundo com a arte no estilo cheio (protótipo `arteArea`). O conteúdo vai
+/// por cima, sobre um véu escuro que garante texto branco legível (4,5:1)
+/// nos dois temas.
 class FundoArte extends StatelessWidget {
   const FundoArte({
     super.key,
     required this.arte,
     required this.child,
     this.raio = 18,
-    this.tamanhoIcone = 96,
+    this.tamanhoIcone,
+    this.formato = FormatoArte.card,
   });
 
   final Arte arte;
   final Widget child;
   final double raio;
-  final double tamanhoIcone;
+
+  /// Tamanho do ícone grande; os outros dois e as posições acompanham.
+  /// Nulo: o do formato (120 no card, 84 na área).
+  final double? tamanhoIcone;
+  final FormatoArte formato;
 
   @override
   Widget build(BuildContext context) {
+    final area = formato == FormatoArte.area;
+    final base = area ? 84.0 : 120.0;
+    final k = (tamanhoIcone ?? base) / base;
+    // [tamanho, direita, cima ou baixo, giro em graus, opacidade]
+    final i1 = area ? [84.0, -8.0, -6.0] : [120.0, -14.0, -18.0];
+    final i2 = area ? [38.0, 52.0, 30.0] : [48.0, 92.0, 24.0];
+    final i3 = area ? [30.0, 14.0, 30.0] : [38.0, 24.0, 22.0];
+
+    Widget icone(IconData d, double tam, double giro, double alfa) => Transform.rotate(
+          angle: giro * 3.1415926535 / 180,
+          child: Icon(d, size: tam * k, color: Colors.white.withValues(alpha: alfa)),
+        );
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(raio),
       child: DecoratedBox(
         decoration: BoxDecoration(
+          // linear-gradient(150deg, base, meio)
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: const Alignment(-0.5, -0.866),
+            end: const Alignment(0.5, 0.866),
             colors: [arte.base, arte.meio],
           ),
         ),
         child: Stack(
           children: [
-            // Brilho da cor de destaque no canto.
+            // Brilho: radial-gradient(120% 90% at 100% 0%, destaque .45, 0 55%).
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
-                    center: const Alignment(1.1, -1.1),
-                    radius: 1.1,
+                    center: const Alignment(1, -1),
+                    radius: 1.2,
+                    stops: const [0, .55],
                     colors: [
-                      arte.destaque.withValues(alpha: 0.35),
+                      arte.destaque.withValues(alpha: 0.45),
                       arte.destaque.withValues(alpha: 0),
                     ],
+                    transform: const _Elipse(.75),
                   ),
                 ),
               ),
@@ -142,41 +185,38 @@ class FundoArte extends StatelessWidget {
             Positioned.fill(
               child: CustomPaint(painter: _Trilhas(arte.destaque)),
             ),
-            // Três ícones grandes e apagados no canto direito.
             Positioned(
-              right: -tamanhoIcone * 0.18,
-              top: -tamanhoIcone * 0.12,
-              child: Transform.rotate(
-                angle: -0.22,
-                child: Icon(arte.icones[0],
-                    size: tamanhoIcone,
-                    color: Colors.white.withValues(alpha: 0.16)),
-              ),
+              right: i1[1] * k,
+              top: i1[2] * k,
+              child: icone(arte.icones[0], i1[0], -12, .20),
             ),
             Positioned(
-              right: tamanhoIcone * 0.62,
-              top: tamanhoIcone * 0.12,
-              child: Icon(arte.icones[1],
-                  size: tamanhoIcone * 0.42,
-                  color: Colors.white.withValues(alpha: 0.11)),
+              right: i2[1] * k,
+              top: i2[2] * k,
+              child: icone(arte.icones[1], i2[0], 10, .16),
             ),
             Positioned(
-              right: tamanhoIcone * 0.08,
-              top: tamanhoIcone * 0.78,
-              child: Icon(arte.icones[2],
-                  size: tamanhoIcone * 0.36,
-                  color: Colors.white.withValues(alpha: 0.10)),
+              right: i3[1] * k,
+              bottom: i3[2] * k,
+              child: icone(arte.icones[2], i3[0], -6, .13),
             ),
-            // Véu escuro embaixo, para o texto.
-            const Positioned.fill(
+            // Véu escuro, do lado do texto.
+            Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: [0.35, 1],
-                    colors: [Color(0x00000000), Color(0x8C000000)],
-                  ),
+                  gradient: area
+                      ? const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: [0.35, 1],
+                          colors: [Color(0x00000000), Color(0x8C000000)],
+                        )
+                      : const LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          stops: [0, 0.7],
+                          colors: [Color(0x61000000), Color(0x0D000000)],
+                        ),
                 ),
               ),
             ),
@@ -188,33 +228,77 @@ class FundoArte extends StatelessWidget {
   }
 }
 
-/// Duas trilhas de circuito finas, com um ponto na ponta.
+/// Achata o brilho na vertical (a elipse de 120% × 90% do protótipo).
+class _Elipse extends GradientTransform {
+  const _Elipse(this.y);
+  final double y;
+
+  @override
+  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
+    final c = bounds.topRight;
+    return Matrix4.identity()
+      ..translateByDouble(c.dx, c.dy, 0, 1)
+      ..scaleByDouble(1, y, 1, 1)
+      ..translateByDouble(-c.dx, -c.dy, 0, 1);
+  }
+}
+
+/// As trilhas de circuito do protótipo: três caminhos num quadro de
+/// 200 × 120, cobrindo o cartão (`preserveAspectRatio: slice`), com um ponto
+/// na ponta de cada um.
 class _Trilhas extends CustomPainter {
   _Trilhas(this.cor);
   final Color cor;
 
   @override
   void paint(Canvas canvas, Size s) {
-    final p = Paint()
-      ..color = cor.withValues(alpha: 0.28)
-      ..strokeWidth = 1.2
+    final escala = s.width / 200 > s.height / 120 ? s.width / 200 : s.height / 120;
+    final dx = (s.width - 200 * escala) / 2, dy = (s.height - 120 * escala) / 2;
+    Offset o(double x, double y) => Offset(dx + x * escala, dy + y * escala);
+    Path linha(List<List<double>> pts) {
+      final p = Path()..moveTo(o(pts[0][0], pts[0][1]).dx, o(pts[0][0], pts[0][1]).dy);
+      for (final q in pts.skip(1)) {
+        final v = o(q[0], q[1]);
+        p.lineTo(v.dx, v.dy);
+      }
+      return p;
+    }
+
+    final traco = Paint()
+      ..color = cor.withValues(alpha: 0.35)
+      ..strokeWidth = escala
       ..style = PaintingStyle.stroke;
-    final ponto = Paint()..color = cor.withValues(alpha: 0.5);
-    final a = Path()
-      ..moveTo(0, s.height * 0.30)
-      ..lineTo(s.width * 0.22, s.height * 0.30)
-      ..lineTo(s.width * 0.30, s.height * 0.18)
-      ..lineTo(s.width * 0.46, s.height * 0.18);
-    final b = Path()
-      ..moveTo(s.width, s.height * 0.72)
-      ..lineTo(s.width * 0.80, s.height * 0.72)
-      ..lineTo(s.width * 0.72, s.height * 0.86)
-      ..lineTo(s.width * 0.58, s.height * 0.86);
+    final ponto = Paint()..color = cor.withValues(alpha: 0.6);
     canvas
-      ..drawPath(a, p)
-      ..drawPath(b, p)
-      ..drawCircle(Offset(s.width * 0.46, s.height * 0.18), 2.4, ponto)
-      ..drawCircle(Offset(s.width * 0.58, s.height * 0.86), 2.4, ponto);
+      ..drawPath(
+          linha([
+            [-5, 30],
+            [60, 30],
+            [75, 15],
+            [130, 15]
+          ]),
+          traco)
+      ..drawPath(
+          linha([
+            [-5, 92],
+            [40, 92],
+            [58, 74],
+            [110, 74],
+            [124, 60],
+            [210, 60]
+          ]),
+          traco)
+      ..drawPath(
+          linha([
+            [150, -5],
+            [150, 22],
+            [168, 40],
+            [168, 130]
+          ]),
+          traco)
+      ..drawCircle(o(130, 15), 2.2 * escala, ponto)
+      ..drawCircle(o(110, 74), 2.2 * escala, ponto)
+      ..drawCircle(o(168, 40), 2.2 * escala, ponto);
   }
 
   @override
@@ -260,3 +344,281 @@ IconData iconePorChave(String? chave) => switch (chave) {
       'config' => Icons.settings_outlined,
       _ => Icons.apps_rounded,
     };
+
+/// Card de resumo com a arte cheia (protótipo `.card.arte-card`): raio 18,
+/// borda branca de 10%, sombra embaixo e 14 de respiro. O conteúdo é
+/// desenhado com o tema escuro, porque o fundo é sempre escuro: assim os
+/// cabeçalhos, números e o azul de destaque das peças dos cards ficam
+/// legíveis nos dois temas sem cada card trocar cor à mão.
+class CartaoArte extends StatelessWidget {
+  const CartaoArte({
+    super.key,
+    required this.arte,
+    required this.child,
+    this.onTap,
+    this.padding = const EdgeInsets.all(14),
+    this.raio = 18,
+    this.temaEscuro,
+  });
+
+  final Arte arte;
+  final Widget child;
+  final VoidCallback? onTap;
+  final EdgeInsetsGeometry padding;
+  final double raio;
+
+  /// O tema escuro do app (com a cor de gestor, se for o caso). Nulo: só
+  /// força o brilho escuro no tema atual.
+  final ThemeData? temaEscuro;
+
+  @override
+  Widget build(BuildContext context) {
+    final atual = Theme.of(context);
+    final escuro = temaEscuro ??
+        (atual.brightness == Brightness.dark
+            ? atual
+            : atual.copyWith(
+                brightness: Brightness.dark,
+                colorScheme: atual.colorScheme.copyWith(
+                  brightness: Brightness.dark,
+                  onSurface: Colors.white,
+                  primary: const Color(0xFF42A5F5),
+                ),
+              ));
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(raio),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .6),
+            offset: const Offset(0, 10),
+            blurRadius: 24,
+            spreadRadius: -14,
+          ),
+        ],
+      ),
+      child: FundoArte(
+        arte: arte,
+        raio: raio,
+        child: Theme(
+          data: escuro,
+          child: DefaultTextStyle.merge(
+            style: const TextStyle(color: Colors.white),
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(raio),
+                child: Container(
+                  padding: padding,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(raio),
+                    border: Border.all(color: Colors.white.withValues(alpha: .10)),
+                  ),
+                  child: child,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A arte em versão discreta, para superfícies de vidro (protótipo
+/// `.arte-s`): um brilho de 15% da cor de destaque no canto, duas trilhas
+/// finas e dois ícones grandes quase apagados. Vai como primeira camada de
+/// um Stack, por baixo do conteúdo.
+class ArteDiscreta extends StatelessWidget {
+  const ArteDiscreta({super.key, required this.arte, this.raio = 16});
+
+  final Arte arte;
+  final double raio;
+
+  @override
+  Widget build(BuildContext context) {
+    final escuro = Theme.of(context).brightness == Brightness.dark;
+    final alfa = escuro ? .09 : .07;
+    final c = arte.destaque;
+    return Positioned.fill(
+      child: ExcludeSemantics(
+        child: IgnorePointer(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(raio),
+            child: Stack(children: [
+              // radial-gradient(80% 130% at 100% 0%, destaque .15, 0 62%)
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: const Alignment(1, -1),
+                      radius: 1.0,
+                      stops: const [0, .62],
+                      colors: [c.withValues(alpha: .15), c.withValues(alpha: 0)],
+                      transform: const _Elipse(1.3),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: CustomPaint(painter: _TrilhasDiscretas(c.withValues(alpha: .22))),
+              ),
+              Positioned(
+                right: -10,
+                top: -6,
+                child: Transform.rotate(
+                  angle: -12 * 3.1415926535 / 180,
+                  child: Icon(arte.icones[0], size: 92, color: c.withValues(alpha: alfa)),
+                ),
+              ),
+              Positioned(
+                right: 84,
+                bottom: -12,
+                child: Transform.rotate(
+                  angle: 8 * 3.1415926535 / 180,
+                  child: Icon(arte.icones[1], size: 42, color: c.withValues(alpha: alfa)),
+                ),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// As duas trilhas da arte discreta, presas à direita
+/// (`preserveAspectRatio: xMaxYMid slice`).
+class _TrilhasDiscretas extends CustomPainter {
+  _TrilhasDiscretas(this.cor);
+  final Color cor;
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    final escala = s.height / 120;
+    final dx = s.width - 200 * escala;
+    Offset o(double x, double y) => Offset(dx + x * escala, y * escala);
+    final traco = Paint()
+      ..color = cor
+      ..strokeWidth = escala
+      ..style = PaintingStyle.stroke;
+    final ponto = Paint()..color = cor;
+    Path p(List<List<double>> pts) {
+      final path = Path()..moveTo(o(pts[0][0], pts[0][1]).dx, o(pts[0][0], pts[0][1]).dy);
+      for (final q in pts.skip(1)) {
+        path.lineTo(o(q[0], q[1]).dx, o(q[0], q[1]).dy);
+      }
+      return path;
+    }
+
+    canvas
+      ..drawPath(
+          p([
+            [60, 22],
+            [120, 22],
+            [134, 8],
+            [210, 8]
+          ]),
+          traco)
+      ..drawPath(
+          p([
+            [90, 98],
+            [140, 98],
+            [156, 82],
+            [210, 82]
+          ]),
+          traco)
+      ..drawCircle(o(60, 22), 2 * escala, ponto)
+      ..drawCircle(o(90, 98), 2 * escala, ponto);
+  }
+
+  @override
+  bool shouldRepaint(_TrilhasDiscretas old) => old.cor != cor;
+}
+
+/// Cabeçalho de seção da Início (protótipo `.sec-cab`): título de 20,
+/// pílula com o contador e "Ver todos" na cor de ação.
+class CabecalhoSecao extends StatelessWidget {
+  const CabecalhoSecao({
+    super.key,
+    required this.titulo,
+    this.pilula,
+    this.corPilula,
+    this.verTodos,
+    this.textoVer = 'Ver todos',
+    this.direita,
+  });
+
+  final String titulo;
+  final String? pilula;
+
+  /// Cor da pílula; nula = a primária do tema.
+  final Color? corPilula;
+  final VoidCallback? verTodos;
+  final String textoVer;
+
+  /// No lugar do "Ver todos" (ex.: "Editar" dos atalhos).
+  final Widget? direita;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cor = corPilula ?? theme.colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 2, 2, 6),
+      child: SizedBox(
+        height: 36,
+        child: Row(children: [
+          // Título e pílula ocupam o que precisam; o "Ver todos" fica com o
+          // resto (com Spacer + Flexible o título levava só metade).
+          Expanded(
+            child: Row(children: [
+              Flexible(
+                child: Semantics(
+                  header: true,
+                  child: Text(titulo,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
+                          color: theme.colorScheme.onSurface)),
+                ),
+              ),
+              if (pilula != null) ...[
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: cor.withValues(alpha: .12),
+                    border: Border.all(color: cor.withValues(alpha: .30)),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(pilula!, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: cor)),
+                ),
+              ],
+            ]),
+          ),
+          if (direita != null)
+            direita!
+          else if (verTodos != null)
+            TextButton(
+              onPressed: verTodos,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.only(left: 8),
+                minimumSize: const Size(44, 36),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text(textoVer,
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: theme.colorScheme.primary)),
+                Icon(Icons.chevron_right_rounded, size: 20, color: theme.colorScheme.primary),
+              ]),
+            ),
+        ]),
+      ),
+    );
+  }
+}

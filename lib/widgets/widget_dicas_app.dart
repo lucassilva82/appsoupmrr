@@ -8,7 +8,6 @@ import '../core/config/app_config.dart';
 import '../core/design/arte_cartao.dart';
 import '../models/auth_model.dart';
 import '../utils/app_theme.dart';
-import 'vidro.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WidgetDicasApp
@@ -37,7 +36,6 @@ class WidgetDicasApp extends StatefulWidget {
 }
 
 class _WidgetDicasAppState extends State<WidgetDicasApp> {
-  final PageController _pageCtrl = PageController();
   int _current = 0;
   Timer? _timer;
   List<Map<String, dynamic>> _dicas = [];
@@ -175,12 +173,7 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
     if (_dicas.length <= 1) return;
     _timer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted || _dicas.isEmpty) return;
-      final next = (_current + 1) % _dicas.length;
-      _pageCtrl.animateToPage(
-        next,
-        duration: const Duration(milliseconds: 450),
-        curve: Curves.easeInOut,
-      );
+      setState(() => _current = (_current + 1) % _dicas.length);
     });
   }
 
@@ -188,36 +181,7 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
   void dispose() {
     _sub?.cancel();
     _timer?.cancel();
-    _pageCtrl.dispose();
     super.dispose();
-  }
-
-  // ── Helpers de estilo ─────────────────────────────────────────────────────
-
-  Color _tipoColor(String tipo) {
-    switch (tipo) {
-      case 'aviso':
-        return Colors.orange;
-      case 'novidade':
-        return const Color(0xFF2E7D32);
-      case 'suporte':
-        return AppColors.lightBlue;
-      default:
-        return AppColors.blue;
-    }
-  }
-
-  String _tipoLabel(String tipo) {
-    switch (tipo) {
-      case 'aviso':
-        return 'AVISO';
-      case 'novidade':
-        return 'NOVIDADE';
-      case 'suporte':
-        return 'SUPORTE';
-      default:
-        return 'DICA';
-    }
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -226,7 +190,10 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
   Widget build(BuildContext context) {
     final isSuperUser = Provider.of<Auth>(context, listen: false).isSuperUser;
 
-    final dicasFiltradas = _dicas.where((d) {
+    // As do painel valem mesmo quando o app_config chega depois de a tela
+    // abrir (na abertura ele ainda pode estar a caminho).
+    final doPainel = RepositorioConfig.atual.bloco('home.dicas')?.itens ?? const [];
+    final dicasFiltradas = (doPainel.isNotEmpty ? doPainel : _dicas).where((d) {
       final perfil = (d['perfil'] ?? 'todos') as String;
       if (perfil == 'admin' && !isSuperUser) return false;
       return true;
@@ -234,130 +201,46 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
 
     if (dicasFiltradas.isEmpty) return const SizedBox.shrink();
 
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
+    // Uma linha discreta com a arte da dica (protótipo `.dica`): ícone na
+    // cor de destaque e o texto em cinza claro. Com mais de uma dica, elas
+    // se revezam no mesmo lugar, sem pontos (um só cartão, sem disputar com
+    // o carrossel dos comunicados).
+    final d = dicasFiltradas[_current % dicasFiltradas.length];
+    final icone = iconePorNome('${d['icone']}') ?? Icons.tips_and_updates_outlined;
+    final semMovimento = MediaQuery.of(context).disableAnimations;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Column(
-        children: [
-          // ── Card balão ───────────────────────────────────────────────────
-          CartaoVidro(
-            raio: 14,
-            child: SizedBox(
-            height: 76,
-            child: PageView.builder(
-              controller: _pageCtrl,
-              onPageChanged: (i) => setState(() => _current = i),
-              itemCount: dicasFiltradas.length,
-              itemBuilder: (_, i) {
-                final d = dicasFiltradas[i];
-                final tipo = (d['tipo'] ?? 'dica') as String;
-                final cor = _tipoColor(tipo);
-                return Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  child: Row(
-                    children: [
-                      // Ícone (largura fixa — protege o layout caso o campo
-                      // 'icone' venha do Firestore com um valor malformado
-                      // e mais longo que um emoji único).
-                      SizedBox(
-                        width: 30,
-                        child: iconePorNome('${d['icone']}') != null
-                            ? Icon(iconePorNome('${d['icone']}'), size: AppIconSize.lg, color: cor)
-                            : Text(
-                          d['icone'] ?? '💡',
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.clip,
-                          style: const TextStyle(fontSize: 26),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Texto + label
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 5, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: cor.withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    _tipoLabel(tipo),
-                                    style: TextStyle(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                      color: cor,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              d['texto'] ?? '',
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12,
-                                height: 1.35,
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.85),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Chevron sutil
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 16,
-                        color: theme.colorScheme.onSurface.withOpacity(0.2),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            ),
-          ),
-
-          const SizedBox(height: 6),
-
-          // ── Dots indicadores ─────────────────────────────────────────────
-          // Envolvido em scroll horizontal: com muitas dicas cadastradas no
-          // Firestore, a linha de pontos pode ficar mais larga que a tela.
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Semantics(
+        container: true,
+        label: 'Dica: ${d['texto'] ?? ''}',
+        excludeSemantics: true,
+        child: CartaoArte(
+          arte: Arte.de('dc'),
+          raio: 16,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: AnimatedSwitcher(
+            duration: semMovimento ? Duration.zero : const Duration(milliseconds: 320),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(dicasFiltradas.length, (i) {
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 280),
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  width: i == _current ? 18.0 : 5.0,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: i == _current
-                        ? AppColors.blue
-                        : AppColors.blue.withOpacity(0.18),
-                    borderRadius: BorderRadius.circular(3),
+              key: ValueKey(_current),
+              children: [
+                Icon(icone, size: AppIconSize.sm, color: const Color(0xFF42A5F5)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '${d['texto'] ?? ''}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.35,
+                      color: Colors.white.withValues(alpha: 0.78),
+                    ),
                   ),
-                );
-              }),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

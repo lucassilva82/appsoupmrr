@@ -102,28 +102,41 @@ Object _comunicados(Map<String, String> c) {
       return {'code': 1, 'ciente_em': DateTime.now().toIso8601String()};
   }
   final hoje = DateTime.now();
-  Map<String, Object?> item(int id, String titulo, String resumo, String categoria, String origem,
-          {bool urgente = false, bool ciencia = false, Map<String, String>? pilula}) =>
+  Map<String, Object?> item(int id, String titulo, String resumo, String categoria, String origem, String icone,
+          {bool urgente = false, bool ciencia = false, Map<String, String>? pilula, int dias = 0, bool lido = false}) =>
       {
-        'id': id, 'titulo': titulo, 'resumo': resumo, 'categoria': categoria, 'origem': origem,
-        'texto': '$resumo.\n\nTexto fictício do modo vitrine, para conferir o desenho da central de '
+        'id': id, 'titulo': titulo, 'resumo': resumo, 'categoria': categoria, 'origem': origem, 'icone': icone,
+        'texto': '$resumo\n\nTexto fictício do modo vitrine, para conferir o desenho da central de '
             'comunicados. Nenhum dado aqui é real.',
-        'inicio': hoje.subtract(Duration(days: id)).toIso8601String(), 'urgente': urgente, 'ciencia': ciencia,
-        'versao': 1, 'lido': _comLidos.contains(id), 'ciente': _comCientes.contains(id),
+        'inicio': hoje.subtract(Duration(days: dias)).toIso8601String(), 'urgente': urgente, 'ciencia': ciencia,
+        'versao': 1, 'lido': lido || _comLidos.contains(id), 'ciente': _comCientes.contains(id),
         if (pilula != null) 'pilula': pilula,
       };
+  // Os mesmos seis do protótipo (prototipos/soupm-2-2.html).
   return {
     'code': 1,
     'categorias': [
-      {'chave': 'operacao', 'nome': 'Operação', 'cor': '#1D4ED8', 'icone': 'local_police'},
-      {'chave': 'saude', 'nome': 'Saúde', 'cor': '#0F766E', 'icone': 'health_and_safety'},
-      {'chave': 'instrucao', 'nome': 'Instrução', 'cor': '#A15C07', 'icone': 'menu_book'},
+      {'chave': 'operacao', 'nome': 'Operação', 'cor': '#3B82F6', 'icone': 'how_to_vote'},
+      {'chave': 'administrativo', 'nome': 'Administrativo', 'cor': '#E5484D', 'icone': 'schedule'},
+      {'chave': 'saude', 'nome': 'Saúde', 'cor': '#14B8A6', 'icone': 'vaccines'},
+      {'chave': 'rh', 'nome': 'Recursos Humanos', 'cor': '#7C6CF2', 'icone': 'groups'},
+      {'chave': 'instrucao', 'nome': 'Instrução', 'cor': '#0EA5A4', 'icone': 'menu_book'},
+      {'chave': 'institucional', 'nome': 'Institucional', 'cor': '#E0A100', 'icone': 'military_tech'},
     ],
     'itens': [
-      item(1, 'Operação Eleições 2026', 'Escala especial para o 2º turno em todo o estado', 'operacao',
-          'Comando-Geral', urgente: true, ciencia: true, pilula: {'icone': 'calendar_month', 'texto': 'Até 30/10'}),
-      item(2, 'Outubro Rosa', 'Exames preventivos na Diretoria de Saúde', 'saude', 'Diretoria de Saúde'),
-      item(3, 'Instrução de tiro', 'Novas turmas abertas para novembro', 'instrucao', 'Diretoria de Ensino'),
+      item(1, 'Eleições 2026: 2º turno', 'Escala reforçada. Apresentação nas OPMs às 5h do dia 25.', 'operacao',
+          'Comando-Geral', 'local_police', ciencia: true, pilula: {'icone': 'event', 'texto': '24 a 26/10'}),
+      item(6, 'Expediente reduzido na sexta', 'Das 7h30 às 12h em todas as OPMs.', 'administrativo',
+          'Comando-Geral', 'event_busy', urgente: true, dias: 1, pilula: {'icone': 'schedule', 'texto': 'Sexta, 30/10'}),
+      item(2, 'Vacinação no QCG', 'Gripe e hepatite B, das 8h às 16h. Leve o cartão de vacina.', 'saude',
+          'Diretoria de Saúde', 'vaccines', dias: 2, pilula: {'icone': 'event', 'texto': '3 a 7/11'}),
+      item(3, 'Declaração anual de bens', 'Envie sua declaração até 31 de outubro.', 'rh',
+          'Diretoria de Recursos Humanos - PMRR', 'contact_page', dias: 5, lido: true,
+          pilula: {'icone': 'calendar_today', 'texto': 'Prazo: 31/10'}),
+      item(4, 'Inscrições para o CFS', 'Processo seletivo interno do CFS QPC PM.', 'instrucao',
+          'Diretoria de Ensino', 'school', dias: 10, lido: true, pilula: {'icone': 'calendar_today', 'texto': 'Até 14/11'}),
+      item(5, 'Chegou o SouPMRR 2.2', 'Menu por áreas, busca e canal direto com o DTI.', 'institucional',
+          'DTI/PMRR', 'phone_iphone', pilula: {'icone': 'new_releases', 'texto': 'Versão 2.2'}),
     ],
   };
 }
@@ -137,22 +150,25 @@ Object _pendencias(Map<String, String> c) {
     _pendDispensadas.add('${c['tipo']}|${c['referencia']}');
     return {'code': 1};
   }
-  final prazo = DateTime.now().add(const Duration(days: 3)).toIso8601String();
+  final ano = DateTime.now().year;
   return {
     'code': 1,
     'ligados': 3,
     'itens': [
+      {'tipo': 'sigrh.declaracao_bens', 'sistema': 'SIGRH', 'titulo': 'Declaração anual de bens',
+       'obrigatoria': true, 'dispensavel': false, 'destino': 'rh.declaracoes', 'referencia': 'ano:$ano',
+       'prazo': DateTime(ano, 10, 31).isAfter(DateTime.now())
+           ? DateTime(ano, 10, 31).toIso8601String()
+           : DateTime.now().add(const Duration(days: 11)).toIso8601String(),
+       'icone': 'request_quote'},
       if (!_comCientes.contains(1))
-        {'tipo': 'soupm.ciencia_comunicado', 'sistema': 'SouPMRR', 'titulo': 'Ciência pendente: Operação Eleições 2026',
-         'obrigatoria': true, 'dispensavel': false, 'destino': 'com.central', 'referencia': 'comunicado:1',
-         'prazo': prazo, 'icone': 'campaign'},
-      {'tipo': 'sigrh.declaracao_bens', 'sistema': 'SIGRH', 'titulo': 'Declaração de bens de ${DateTime.now().year} não enviada',
-       'obrigatoria': true, 'dispensavel': false, 'destino': 'rh.declaracoes', 'referencia': 'ano:${DateTime.now().year}',
-       'prazo': DateTime.now().add(const Duration(days: 9)).toIso8601String(), 'icone': 'assignment_late'},
+        {'tipo': 'soupm.ciencia_comunicado', 'sistema': 'Comando', 'titulo': 'Ciência: Eleições 2026, 2º turno',
+         'texto': 'O Comando pede confirmação de leitura', 'obrigatoria': true, 'dispensavel': false,
+         'destino': 'com.central', 'referencia': 'comunicado:1', 'icone': 'campaign'},
       if (!_pendDispensadas.contains('soupm.certidao_vencendo|certidao:1'))
-        {'tipo': 'soupm.certidao_vencendo', 'sistema': 'SouPMRR', 'titulo': 'Sua certidão vence em 2 dias',
-         'obrigatoria': false, 'dispensavel': true, 'destino': 'rh.certidoes', 'referencia': 'certidao:1',
-         'prazo': DateTime.now().add(const Duration(days: 2)).toIso8601String(), 'icone': 'verified'},
+        {'tipo': 'soupm.certidao_vencendo', 'sistema': 'SouPMRR', 'titulo': 'Certidão de Vínculo vence em 23 dias',
+         'texto': 'Emita outra se ainda precisar dela', 'obrigatoria': false, 'dispensavel': true,
+         'destino': 'rh.certidoes', 'referencia': 'certidao:1', 'icone': 'verified'},
     ],
   };
 }

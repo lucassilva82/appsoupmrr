@@ -116,91 +116,82 @@ class _BlocoComunicadosState extends State<BlocoComunicados> {
         if (_atual >= lista.length) _atual = 0;
         _agendar(lista.length);
         final novos = lista.where((c) => !c.lido).length;
-        return Padding(
-          padding: const EdgeInsets.only(top: 12),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            SizedBox(
-              height: 36,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(children: [
-                  Text('Comunicados', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                  if (novos > 0) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(10)),
-                      child: Text(novos == 1 ? '1 novo' : '$novos novos',
-                          style:
-                              TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: theme.colorScheme.primary)),
-                    ),
-                  ],
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () => abrirCentral(context, origem: 'inicio'),
-                    child: const Text('Ver todos ›'),
-                  ),
-                ]),
-              ),
+        return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: CabecalhoSecao(
+              titulo: 'Comunicados',
+              pilula: novos > 0 ? (novos == 1 ? '1 novo' : '$novos novos') : null,
+              verTodos: () => abrirCentral(context, origem: 'inicio'),
             ),
-            const SizedBox(height: 6),
-            Semantics(
-              label: 'Comunicado ${_atual + 1} de ${lista.length}',
-              child: GestureDetector(
-                onLongPressStart: (_) => setState(() => _segurando = true),
-                onLongPressEnd: (_) => setState(() => _segurando = false),
-                child: SizedBox(
-                  height: MediaQuery.textScalerOf(context).scale(220).clamp(220, 300),
-                  child: PageView.builder(
-                    controller: _paginas,
-                    padEnds: false,
-                    itemCount: lista.length,
-                    onPageChanged: (i) => setState(() => _atual = i),
-                    itemBuilder: (context, i) => Padding(
-                      padding: EdgeInsets.only(left: i == 0 ? 16 : 6, right: 6),
-                      child: CartaoComunicado(
-                        comunicado: lista[i],
-                        aoTocar: () {
-                          registrar('comunicado.abrir', chave: _chave, dados: {'id': lista[i].id, 'de': 'inicio'});
-                          abrirComunicado(context, lista[i], _repo, origem: 'inicio');
-                        },
+          ),
+          Semantics(
+            label: 'Comunicado ${_atual + 1} de ${lista.length}',
+            child: GestureDetector(
+              onLongPressStart: (_) => setState(() => _segurando = true),
+              onLongPressEnd: (_) => setState(() => _segurando = false),
+              child: SizedBox(
+                height: MediaQuery.textScalerOf(context).scale(236).clamp(236, 310),
+                child: PageView.builder(
+                  controller: _paginas,
+                  padEnds: false,
+                  itemCount: lista.length,
+                  onPageChanged: (i) => setState(() => _atual = i),
+                  itemBuilder: (context, i) => Padding(
+                    padding: EdgeInsets.only(left: i == 0 ? 16 : 6, right: 6),
+                    // O cartão que não está na frente fica menor e mais
+                    // apagado (protótipo: escala .95, opacidade .72).
+                    child: AnimatedScale(
+                      duration: const Duration(milliseconds: 280),
+                      curve: Curves.easeOutCubic,
+                      scale: i == _atual ? 1 : .95,
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 280),
+                        opacity: i == _atual ? 1 : .72,
+                        child: CartaoComunicado(
+                          comunicado: lista[i],
+                          aoTocar: () {
+                            registrar('comunicado.abrir', chave: _chave, dados: {'id': lista[i].id, 'de': 'inicio'});
+                            abrirComunicado(context, lista[i], _repo, origem: 'inicio');
+                          },
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 2),
-            // Pontos: pequenos no desenho, área de toque de 44 pt (§4.2).
-            SizedBox(
-              height: 22,
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                for (var i = 0; i < lista.length; i++)
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.easeOut,
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    width: i == _atual ? 16 : 5,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.onSurface.withValues(alpha: i == _atual ? 0.55 : 0.22),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
+          ),
+          const SizedBox(height: 2),
+          // Pontos: pequenos no desenho, área de toque de 44 pt (§4.2).
+          SizedBox(
+            height: 22,
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              for (var i = 0; i < lista.length; i++)
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOut,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: i == _atual ? 16 : 5,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurface.withValues(alpha: i == _atual ? 0.55 : 0.22),
+                    borderRadius: BorderRadius.circular(3),
                   ),
-              ]),
-            ),
-          ]),
-        );
+                ),
+            ]),
+          ),
+        ]);
       },
     );
   }
 }
 
-/// Cartão do carrossel e da central, na anatomia aprovada (§4.2): arte da
-/// categoria, categoria em caixa alta, título grande, resumo, pílulas e o
-/// rodapé com origem e data.
+/// Cartão do carrossel e da central, na anatomia aprovada (§4.2; medidas do
+/// protótipo `.com-card`): vidro tingido pela cor da categoria, brilho no
+/// canto, a ilustração de duas folhas de vidro com o ícone do assunto sobre
+/// um anel de luz, categoria em caixa alta, título grande, resumo, pílulas e
+/// o rodapé com origem, data e a seta.
 class CartaoComunicado extends StatelessWidget {
   const CartaoComunicado({super.key, required this.comunicado, required this.aoTocar, this.compacto = false});
 
@@ -211,95 +202,171 @@ class CartaoComunicado extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = comunicado;
+    final cor = c.categoria.cor;
+    final claro = Color.lerp(cor, Colors.white, .45)!;
     const branco = Colors.white;
-    final suave = Colors.white.withValues(alpha: 0.82);
+    final raio = BorderRadius.circular(24);
     return Semantics(
       button: true,
       label: '${c.categoria.nome}. ${c.titulo}. ${c.resumo}'
           '${c.urgente ? '. Urgente' : ''}${c.cienciaPendente ? '. Ciência pendente' : ''}',
       excludeSemantics: true,
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(18),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: aoTocar,
-          child: FundoArte(
-            arte: c.categoria.arte,
-            tamanhoIcone: compacto ? 72 : 104,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Icon(c.categoria.icone, size: 16, color: suave),
-                  Container(width: 1, height: 12, margin: const EdgeInsets.symmetric(horizontal: 8), color: suave),
-                  Flexible(
-                    child: Text(c.categoria.nome.toUpperCase(),
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.w700, color: suave)),
-                  ),
-                  if (!c.lido) ...[
-                    const SizedBox(width: 8),
-                    _Pilula(texto: 'Novo', cor: Colors.white.withValues(alpha: 0.22)),
-                  ],
-                ]),
-                const SizedBox(height: 10),
-                // Título e resumo dividem o espaço que sobra: com fonte grande
-                // o resumo encolhe (reticências) em vez de estourar o cartão.
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Flexible(
-                      child: FractionallySizedBox(
-                        widthFactor: compacto ? 1 : 0.8,
-                        child: Text(c.titulo,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                fontSize: compacto ? 18 : 22,
-                                height: 1.15,
-                                fontWeight: FontWeight.w800,
-                                color: branco)),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: raio,
+          border: Border.all(color: cor.withValues(alpha: .48)),
+          // linear-gradient(160deg, cor misturada ao fundo escuro)
+          gradient: LinearGradient(
+            begin: const Alignment(-0.34, -1),
+            end: const Alignment(0.34, 1),
+            colors: [Color.lerp(cor, const Color(0xFF0B1220), .72)!, Color.lerp(cor, const Color(0xFF060B14), .88)!],
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: raio,
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: aoTocar,
+              child: Stack(children: [
+                // radial-gradient(110% 85% at 100% 0%, cor .46, 0 58%)
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: const Alignment(1, -1),
+                        radius: 1.1,
+                        stops: const [0, .58],
+                        colors: [cor.withValues(alpha: .46), cor.withValues(alpha: 0)],
                       ),
                     ),
-                    if (c.resumo.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Flexible(
-                        child: FractionallySizedBox(
-                          widthFactor: compacto ? 1 : 0.8,
-                          child: Text(c.resumo,
-                              maxLines: compacto ? 1 : 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 14, color: suave)),
-                        ),
+                  ),
+                ),
+                if (!compacto)
+                  Positioned(
+                      top: 34, right: 10, width: 100, height: 120, child: _Ilustracao(cor: cor, icone: c.iconeAssunto)),
+                // Véu embaixo: linear-gradient(transparente 28%, preto .66).
+                const Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: [.28, 1],
+                        colors: [Color(0x00000000), Color(0xA8000000)],
                       ),
-                    ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      Icon(c.categoria.icone, size: 20, color: branco.withValues(alpha: .92)),
+                      Container(
+                          width: 1,
+                          height: 17,
+                          margin: const EdgeInsets.symmetric(horizontal: 10),
+                          color: branco.withValues(alpha: .28)),
+                      Flexible(
+                        child: Text(c.categoria.nome.toUpperCase(),
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                fontSize: 11.5, letterSpacing: 1.84, fontWeight: FontWeight.w600, color: claro)),
+                      ),
+                      if (!c.lido) ...[
+                        const SizedBox(width: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: cor.withValues(alpha: .42),
+                            border: Border.all(color: cor.withValues(alpha: .6)),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text('NOVO',
+                              style: TextStyle(
+                                  fontSize: 10.5, letterSpacing: .42, fontWeight: FontWeight.w600, color: branco)),
+                        ),
+                      ],
+                    ]),
+                    const SizedBox(height: 10),
+                    // Título e resumo dividem o espaço que sobra: com fonte grande
+                    // o resumo encolhe (reticências) em vez de estourar o cartão.
+                    Expanded(
+                      child: FractionallySizedBox(
+                        widthFactor: compacto ? 1 : 0.62,
+                        alignment: Alignment.topLeft,
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Flexible(
+                            child: Text(c.titulo,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontSize: compacto ? 18 : 22,
+                                    height: 1.12,
+                                    letterSpacing: -.44,
+                                    fontWeight: FontWeight.w700,
+                                    color: branco)),
+                          ),
+                          if (c.resumo.isNotEmpty) ...[
+                            const SizedBox(height: 3),
+                            Flexible(
+                              child: Text(c.resumo,
+                                  maxLines: compacto ? 1 : 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 13.5, height: 1.3, color: Color(0xC7E2E8FF))),
+                            ),
+                          ],
+                        ]),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(spacing: 6, runSpacing: 6, children: [
+                      if (c.pilula != null)
+                        _Pilula(
+                            texto: c.pilula!.texto,
+                            icone: c.pilula!.icone,
+                            fundo: branco.withValues(alpha: .06),
+                            borda: branco.withValues(alpha: .22),
+                            cor: branco),
+                      if (c.cienciaPendente)
+                        const _Pilula(
+                            texto: 'Ciência pendente',
+                            icone: Icons.edit_note_rounded,
+                            fundo: Color(0x1FFFC968),
+                            borda: Color(0x80FFC968),
+                            cor: Color(0xFFFFD892)),
+                      if (c.urgente)
+                        const _Pilula(
+                            texto: 'Urgente',
+                            icone: Icons.priority_high_rounded,
+                            fundo: Color(0x29E5484D),
+                            borda: Color(0x99FF9E9E),
+                            cor: Color(0xFFFFB4B4)),
+                    ]),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.only(top: 8),
+                      decoration: BoxDecoration(border: Border(top: BorderSide(color: cor.withValues(alpha: .32)))),
+                      child: Row(children: [
+                        Expanded(
+                          child: Text('${c.origem}${c.inicio != null ? ' · ${_data(c.inicio)}' : ''}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 12.5, color: claro)),
+                        ),
+                        const SizedBox(width: 10),
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                              shape: BoxShape.circle, border: Border.all(color: branco.withValues(alpha: .3))),
+                          child: const Icon(Icons.arrow_forward_rounded, size: 20, color: branco),
+                        ),
+                      ]),
+                    ),
                   ]),
                 ),
-                const SizedBox(height: 8),
-                Wrap(spacing: 6, runSpacing: 6, children: [
-                  if (c.pilula != null)
-                    _Pilula(texto: c.pilula!.texto, icone: c.pilula!.icone, cor: Colors.white.withValues(alpha: 0.18)),
-                  if (c.urgente)
-                    const _Pilula(texto: 'Urgente', icone: Icons.priority_high_rounded, cor: Color(0xFFB3261E)),
-                  if (c.cienciaPendente)
-                    const _Pilula(
-                        texto: 'Ciência pendente', icone: Icons.pending_actions_outlined, cor: Color(0xFF8A5A00)),
-                ]),
-                const SizedBox(height: 10),
-                Container(height: 1, color: Colors.white.withValues(alpha: 0.18)),
-                const SizedBox(height: 8),
-                Row(children: [
-                  Expanded(
-                    child: Text('${c.origem}${c.inicio != null ? ' · ${_data(c.inicio)}' : ''}',
-                        maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: suave)),
-                  ),
-                  Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.18)),
-                    child: const Icon(Icons.arrow_forward_rounded, size: 16, color: branco),
-                  ),
-                ]),
               ]),
             ),
           ),
@@ -309,19 +376,111 @@ class CartaoComunicado extends StatelessWidget {
   }
 }
 
+/// A ilustração de vidro do cartão: anel de luz, uma folha de trás
+/// inclinada para a esquerda e a da frente, com o ícone do assunto e duas
+/// linhas de "texto".
+class _Ilustracao extends StatelessWidget {
+  const _Ilustracao({required this.cor, required this.icone});
+  final Color cor;
+  final IconData icone;
+
+  @override
+  Widget build(BuildContext context) {
+    final vidro = BoxDecoration(
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: Color.lerp(cor, Colors.white, .1)!.withValues(alpha: .72)),
+      gradient: LinearGradient(
+        begin: const Alignment(-0.34, -1),
+        end: const Alignment(0.34, 1),
+        colors: [
+          Color.lerp(cor, Colors.white, .15)!.withValues(alpha: .55),
+          Color.lerp(cor, Colors.white, .1)!.withValues(alpha: .2),
+        ],
+      ),
+    );
+    return ExcludeSemantics(
+      child: Stack(clipBehavior: Clip.none, children: [
+        Positioned(
+          left: -28,
+          top: -34,
+          width: 150,
+          height: 150,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withValues(alpha: .12)),
+              gradient: RadialGradient(
+                center: const Alignment(.4, -.5),
+                stops: const [0, .66],
+                colors: [cor.withValues(alpha: .42), cor.withValues(alpha: 0)],
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: -2,
+          top: 10,
+          width: 74,
+          height: 91,
+          child: Opacity(
+            opacity: .5,
+            child: Transform.rotate(angle: -9 * 3.14159 / 180, child: DecoratedBox(decoration: vidro)),
+          ),
+        ),
+        Positioned(
+          left: 22,
+          top: 2,
+          width: 77,
+          height: 97,
+          child: Transform.rotate(
+            angle: 6 * 3.14159 / 180,
+            child: DecoratedBox(
+              decoration: vidro.copyWith(boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: .35),
+                    offset: const Offset(0, 14),
+                    blurRadius: 30,
+                    spreadRadius: -6),
+              ]),
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Icon(icone, size: 40, color: Colors.white.withValues(alpha: .9)),
+                const SizedBox(height: 4),
+                Container(
+                    width: 41,
+                    height: 8,
+                    decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .32), borderRadius: BorderRadius.circular(2))),
+                const SizedBox(height: 3),
+                Container(
+                    width: 28,
+                    height: 6,
+                    decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .32), borderRadius: BorderRadius.circular(2))),
+              ]),
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
 class _Pilula extends StatelessWidget {
-  const _Pilula({required this.texto, required this.cor, this.icone});
+  const _Pilula({required this.texto, required this.fundo, required this.borda, required this.cor, this.icone});
   final String texto;
+  final Color fundo;
+  final Color borda;
   final Color cor;
   final IconData? icone;
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(color: cor, borderRadius: BorderRadius.circular(10)),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+        decoration:
+            BoxDecoration(color: fundo, border: Border.all(color: borda), borderRadius: BorderRadius.circular(20)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          if (icone != null) ...[Icon(icone, size: 12, color: Colors.white), const SizedBox(width: 4)],
-          Text(texto, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white)),
+          if (icone != null) ...[Icon(icone, size: 16, color: cor), const SizedBox(width: 6)],
+          Text(texto, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: cor)),
         ]),
       );
 }
@@ -544,7 +703,13 @@ class _ComunicadoPageState extends State<ComunicadoPage> {
             if (c.urgente || c.ciencia) ...[
               const SizedBox(height: 10),
               Wrap(spacing: 6, children: [
-                if (c.urgente) const _Pilula(texto: 'Urgente', cor: Color(0xFFB3261E)),
+                if (c.urgente)
+                  const _Pilula(
+                      texto: 'Urgente',
+                      icone: Icons.priority_high_rounded,
+                      fundo: Color(0xFFB3261E),
+                      borda: Color(0xFFB3261E),
+                      cor: Colors.white),
                 if (c.ciencia)
                   _Pilula(
                       texto: c.ciente
@@ -552,7 +717,10 @@ class _ComunicadoPageState extends State<ComunicadoPage> {
                           : c.cienciaPrazo != null
                               ? 'Ciência até ${_data(c.cienciaPrazo)}'
                               : 'Pede ciência',
-                      cor: c.ciente ? const Color(0xFF14713B) : const Color(0xFF8A5A00)),
+                      icone: c.ciente ? Icons.task_alt : Icons.edit_note_rounded,
+                      fundo: c.ciente ? const Color(0xFF14713B) : const Color(0xFF8A5A00),
+                      borda: c.ciente ? const Color(0xFF14713B) : const Color(0xFF8A5A00),
+                      cor: Colors.white),
               ]),
             ],
             const SizedBox(height: 16),

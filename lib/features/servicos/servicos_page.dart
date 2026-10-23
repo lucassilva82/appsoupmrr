@@ -502,7 +502,7 @@ class CartaoArea extends StatelessWidget {
       excludeSemantics: true,
       child: FundoArte(
         arte: Arte.de(area.arte),
-        tamanhoIcone: 84,
+        formato: FormatoArte.area,
         child: Material(
           type: MaterialType.transparency,
           child: InkWell(

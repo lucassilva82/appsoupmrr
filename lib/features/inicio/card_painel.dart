@@ -104,27 +104,23 @@ class CardPainel extends StatelessWidget {
       );
     } else {
       const branco = Colors.white;
-      final suave = Colors.white.withValues(alpha: 0.85);
-      conteudo = Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: acao == null ? null : () => _agir(context, acao),
-          child: FundoArte(
-            arte: arte,
-            raio: 16,
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+      // Medidas do protótipo `.card-livre`: raio 18, 16 de respiro, selo
+      // de vidro, título 19, texto 13,5 e o botão em pílula contornada.
+      conteudo = CartaoArte(
+        arte: arte,
+        padding: const EdgeInsets.all(16),
+        onTap: acao == null ? null : () => _agir(context, acao),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                 if ('${d['selo'] ?? ''}'.trim().isNotEmpty)
                   Container(
                     margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                     decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(10)),
-                    child: Text('${d['selo']}'.toUpperCase(),
-                        style: const TextStyle(fontSize: 11, letterSpacing: 1, fontWeight: FontWeight.w700, color: branco)),
+                        color: Colors.white.withValues(alpha: 0.18),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                        borderRadius: BorderRadius.circular(8)),
+                    child: Text('${d['selo']}',
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: branco)),
                   ),
                 Row(children: [
                   if (modelo == 'atalho') ...[
@@ -135,7 +131,8 @@ class CardPainel extends StatelessWidget {
                     child: Text(titulo,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: branco, height: 1.15)),
+                        style: const TextStyle(
+                            fontSize: 19, fontWeight: FontWeight.w700, letterSpacing: -0.19, color: branco, height: 1.35)),
                   ),
                 ]),
                 if (modelo == 'numero')
@@ -146,26 +143,36 @@ class CardPainel extends StatelessWidget {
                         style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: branco)),
                   ),
                 if (texto.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Text(texto, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, color: suave)),
+                  const SizedBox(height: 3),
+                  FractionallySizedBox(
+                    widthFactor: 0.68,
+                    child: Text(texto,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 13.5, height: 1.35, color: branco)),
+                  ),
                 ],
                 if (acao != null && '${acao['rotulo'] ?? ''}'.trim().isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Row(mainAxisSize: MainAxisSize.min, children: [
-                    Text('${acao['rotulo']}',
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: branco)),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.arrow_forward_rounded, size: 16, color: branco),
-                  ]),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.45)),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Text('${acao['rotulo']}',
+                          style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: branco)),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_forward_rounded, size: 16, color: branco),
+                    ]),
+                  ),
                 ],
               ]),
-            ),
-          ),
-        ),
       );
     }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Semantics(container: true, label: '$titulo. $texto', child: conteudo),
     );
   }

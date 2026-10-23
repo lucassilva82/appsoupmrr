@@ -62,7 +62,7 @@ void main() {
     });
     await t.pumpWidget(ChangeNotifierProvider<Auth>.value(
         value: Auth(), child: MaterialApp(home: Scaffold(body: CardPainel(bloco: b)))));
-    expect(find.text('CAMPANHA'), findsOneWidget);
+    expect(find.text('Campanha'), findsOneWidget);
     expect(find.text('Outubro Rosa'), findsOneWidget);
     expect(find.text('Saiba mais'), findsOneWidget);
   });

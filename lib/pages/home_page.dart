@@ -56,7 +56,7 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: child,
       );
 }
@@ -226,11 +226,8 @@ class _HomeBodyState extends State<HomeBody>
         'home.comandantes' => FaixaComando(),
         'home.pendencias' => const BlocoPendencias(),
         'home.anuncio' when RepositorioConfig.atual.fonteComunicados == 'api' => const BlocoComunicados(),
-        'home.dicas' => Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: WidgetDicasApp()),
-        'home.atalhos' => const Padding(
-            padding: EdgeInsets.only(top: 12), child: LinhaAtalhos()),
+        'home.dicas' => WidgetDicasApp(),
+        'home.atalhos' => const LinhaAtalhos(),
         'home.contracheque' => const _Card(HomeContrachequeCard()),
         'home.tempo_servico' => _Card(CardTempoServico()),
         'home.ferias' => const _Card(HomePlanoFeriasCard()),
@@ -437,6 +434,7 @@ class _HomeBodyState extends State<HomeBody>
             builder: (context, _) => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // 12 entre um bloco e outro (protótipo `.pilha`, §15.2).
                 for (final chave in blocosDaInicio(RepositorioConfig.atual, InicioPreferenciasRepositorio.emUso.value))
                   if (_bloco(chave) case final w?)
                     // Segurar entra em edição, como na tela do iOS. Para quem
@@ -450,7 +448,7 @@ class _HomeBodyState extends State<HomeBody>
                       child: GestureDetector(
                         behavior: HitTestBehavior.deferToChild,
                         onLongPress: _entrarEdicao,
-                        child: w,
+                        child: Padding(padding: const EdgeInsets.only(bottom: 12), child: w),
                       ),
                     ),
               ],

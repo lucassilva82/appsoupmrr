@@ -57,6 +57,7 @@ class Comunicado {
     this.versao = 1,
     this.lido = false,
     this.ciente = false,
+    this.icone,
   });
 
   final int id;
@@ -75,6 +76,11 @@ class Comunicado {
   final int versao;
   final bool lido;
   final bool ciente;
+
+  /// Ícone do assunto, na ilustração do cartão; nulo = o da categoria.
+  final IconData? icone;
+
+  IconData get iconeAssunto => icone ?? categoria.icone;
 
   bool get cienciaPendente => ciencia && !ciente;
 
@@ -95,6 +101,7 @@ class Comunicado {
         versao: versao,
         lido: lido ?? this.lido,
         ciente: ciente ?? this.ciente,
+        icone: icone,
       );
 
   static Comunicado deJson(Map j, Map<String, CategoriaComunicado> categorias) {
@@ -118,6 +125,7 @@ class Comunicado {
       versao: (j['versao'] as num?)?.toInt() ?? 1,
       lido: j['lido'] == true,
       ciente: j['ciente'] == true,
+      icone: iconePorNome('${j['icone']}'),
     );
   }
 }
