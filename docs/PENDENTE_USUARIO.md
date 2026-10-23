@@ -130,3 +130,71 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
 
 Nada bloqueado até agora nesta etapa. Se o verificador barrar alguma ação, ela
 entra aqui, com o que faltou fazer.
+
+---
+
+## Onde paramos em 23/10/2026 (fim da tarde)
+
+Tudo o que foi feito está no git (app na `feature/soupm-2-2`, API na `main`) e
+no banco de produção. **Três decisões esperam você**, e a primeira é urgente.
+
+### 1. O painel vai dar "permission denied" no primeiro salvamento ⚠
+
+O painel foi para o mesmo banco do app e conecta pelo `conexao.php` dele —
+então roda com o usuário de banco **da API**, que tem `SELECT` apenas nas
+tabelas de configuração (`soupm_arte`, `soupm_card`, `soupm_comando`,
+`soupm_comunicado`, `soupm_dica`, `soupm_midia`, `soupm_nivel`,
+`soupm_declaracao_campanha`, `soupm_lembrete`, `soupm_fonte_dados`…).
+
+Isso é de propósito: `PAINEL_ADMIN` §7.6 separou quem lê de quem escreve. Mas,
+com o painel usando a conexão do app, ele herdou a restrição justamente onde
+precisa gravar. Medido: o usuário da API insere em 34 de 53 tabelas, atualiza
+29, apaga 27 e executa 15 de 21 funções.
+
+| Saída | O que custa |
+|---|---|
+| **(a)** dar escrita ao usuário da API | resolve hoje; some a separação entre leitura e escrita (dívida já registrada na spec do painel) |
+| **(b)** usuário de banco próprio para o painel, criado no cPanel | preserva o limite; um passo de setup e mais uma senha a guardar |
+| **(c)** painel só leitura até migrar para a intranet | honesto, mas não fecha o que você quer fechar |
+
+Recomendação: **(a)**, porque o painel é provisório, com a dívida escrita.
+
+### 2. Arquivos de inclusão da API alcançáveis pela web
+
+`conexao.php`, `conexaoHomologacao.php`, `sessao_app.php` e `certidao_lib.php`
+respondem **200 com 0 bytes** — o PHP executa e não imprime, então hoje não
+vaza nada. O risco é a troca da versão do PHP no cPanel sair torta: aí eles
+passam a ser servidos como texto, com a senha do banco dentro. A sessão do
+painel encontrou exatamente isso no módulo dela e fechou com um `.htaccess`.
+
+Falta o aval para subir um `.htaccess` que bloqueie só esses arquivos.
+
+### 3. A virada para o esquema `soupm`
+
+Preparada e **não executada**: `sql/2026-10-23_soupm_esquema_proprio.sql` (o
+roteiro completo está no fim do arquivo) e
+`tools/reescrever_para_esquema_soupm.sh`.
+
+O administrador **não precisa fazer nada** — o usuário do phpPgAdmin pode
+criar esquema e é dono dos 53 tabelas, 26 sequências e 21 funções. O roteiro
+não tem janela de indisponibilidade: o PHP deixa de citar o esquema e passa a
+depender do `search_path`, que resolve para `public` antes e `soupm` depois.
+
+São 163 referências no PHP, 417 nos `.sql` e 402 no painel. Combinar a ordem
+com a sessão do painel antes de mover.
+
+### O que já está no ar
+
+- Os 17 SQL da 2.2 (banco de 24 para 53 tabelas `soupm_`).
+- O conserto dos 73 textos gravados como Mac Roman (APRENDIZADOS §45).
+- A árvore de menus do protótipo, com a área Institucional nova.
+- As 9 funções que liam o SIGRH passaram a `SECURITY INVOKER` — era o que
+  fazia a área Gestão sumir do menu para todo mundo (APRENDIZADOS §46).
+- O painel no ar em `/painelsoupmrr`, com a matrícula normalizada nos dois
+  lados.
+
+### Falta conferir no app (um toque)
+
+A área **Gestão** deve ter voltado ao menu depois do conserto das funções,
+mas o simulador caiu para a tela de login antes de eu confirmar. Entrar e
+abrir Serviços: devem aparecer **6 áreas**, não 5.
