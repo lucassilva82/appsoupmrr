@@ -235,6 +235,7 @@ class AppConfig {
     this.home,
     this.maisUsados,
     this.ajuda,
+    this.fonteAvisos = 'firestore',
     this.recebidoEm,
   });
 
@@ -261,6 +262,9 @@ class AppConfig {
 
   /// "Preciso de ajuda"; nulo = o app usa o [ajudaPadrao].
   final List<AjudaAssunto>? ajuda;
+
+  /// De onde vem a aba Avisos: 'firestore' até o corte (§13), depois 'api'.
+  final String fonteAvisos;
 
   /// Quando a cópia em uso chegou do servidor ("Atualizado hoje às 07:30").
   final DateTime? recebidoEm;
@@ -290,6 +294,7 @@ class AppConfig {
           ? [for (final c in j['servicos']['mais_usados'] as List) '$c']
           : null,
       ajuda: AjudaAssunto.lista(j['ajuda']),
+      fonteAvisos: j['notificacoes'] is Map && j['notificacoes']['fonte'] == 'api' ? 'api' : 'firestore',
       recebidoEm: recebidoEm,
     );
   }

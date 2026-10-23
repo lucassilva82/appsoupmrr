@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:projetonovo/features/avisos/avisos_api.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -395,6 +396,41 @@ class Auth with ChangeNotifier {
       debugPrint('[FCM] ❌ ERRO ao salvar token no Firestore: $e');
       debugPrint('[FCM] Stack: $stack');
     }
+
+    // 4) 2.2: o aparelho também vai para o Postgres (soupm_dispositivo), de
+    //    onde a API manda o push depois do corte do Firestore (§13).
+    await DispositivoApi().registrar(
+        token: token, matricula: matricula!, senhaMd5: generateMd5(password ?? ''));
+  }
+
+  /// O token deste aparelho, pelo plugin ou pelo valor nativo do iOS.
+  static Future<String?> tokenDoAparelho() async {
+    try {
+      final t = await FirebaseMessaging.instance.getToken();
+      if (t != null && t.isNotEmpty) return t;
+    } catch (_) {}
+    final nativo = await Store.getString('native_fcm_token');
+    return nativo.isEmpty ? null : nativo;
+  }
+
+  /// Sair da conta para de mandar push a este aparelho: o token deixa de ser
+  /// desta matrícula no Postgres e, se o Firestore ainda aponta para ele, sai
+  /// de lá também. Antes o logout não mexia no token e o aparelho continuava
+  /// recebendo os avisos da conta anterior.
+  Future<void> _desligarPushDaConta(String? matriculaQueSaiu) async {
+    if (modoVitrine) return;
+    final token = await tokenDoAparelho();
+    if (token == null) return;
+    await DispositivoApi().remover(token);
+    if (matriculaQueSaiu == null || matriculaQueSaiu.isEmpty) return;
+    try {
+      final doc = FirebaseFirestore.instance.collection('militares').doc(matriculaQueSaiu);
+      if ((await doc.get()).data()?['fcmToken'] == token) {
+        await doc.update({'fcmToken': FieldValue.delete()});
+      }
+    } catch (e) {
+      debugPrint('[FCM] não foi possível tirar o token do Firestore no logout: $e');
+    }
   }
 
   /* ===============================================================
@@ -561,6 +597,8 @@ class Auth with ChangeNotifier {
     // Notifica imediatamente: o estado em memória já está correto.
     // Não espera o storage para atualizar a UI.
     notifyListeners();
+
+    unawaited(_desligarPushDaConta(matricula));
 
     // Salva o logout no storage em background
     final userData = await Store.getMap('userData');

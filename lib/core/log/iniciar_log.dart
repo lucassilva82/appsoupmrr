@@ -31,7 +31,7 @@ Future<void> iniciarLog({
     armazem: ArmazemLogPreferencias(),
     enviar: (itens) => _enviarLote(api, itens),
     matricula: matricula,
-    aparelhoId: await _aparelhoId(),
+    aparelhoId: await aparelhoIdApp(),
   );
   RegistroLog.atual = log;
 
@@ -52,7 +52,7 @@ Future<void> _enviarLote(
 
 /// Id aleatório gerado na instalação. Não identifica a pessoa nem o aparelho
 /// fora do SouPMRR; serve para juntar os registros do mesmo aparelho.
-Future<String> _aparelhoId() async {
+Future<String> aparelhoIdApp() async {
   const chave = 'soupm_aparelho_id';
   final prefs = await SharedPreferences.getInstance();
   final atual = prefs.getString(chave);

@@ -3,7 +3,9 @@ import 'dart:io';
 import 'dart:ui';
 //teste de commit
 
+import 'package:crypto/crypto.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:projetonovo/features/avisos/avisos_api.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -287,6 +289,10 @@ Future<void> _prepararServicos() async {
               .doc(matricula.toString())
               .set({'fcmToken': token}, SetOptions(merge: true));
           debugPrint('[FCM] ✅ Token renovado salvo → militares/$matricula');
+          await DispositivoApi().registrar(
+              token: token,
+              matricula: matricula.toString(),
+              senhaMd5: md5.convert(utf8.encode(await Sessao.instancia.senha() ?? '')).toString());
         }
       } catch (e) {
         debugPrint('[FCM] ❌ ERRO ao salvar token renovado: $e');
