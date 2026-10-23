@@ -2251,6 +2251,15 @@ ligado e nada pendente, "Sem pendências") e a lista completa; dar ciência num
 comunicado tira a pendência na hora. Os tipos do SIGRH, SIGE, SVI e
 SISCHAMADOS ganham cálculo quando as fontes forem conferidas no banco.
 
+**Declarações por campanha (22/10/2026): prontas e desligadas.**
+`sql/2026-10-23_soupm_declaracao_campanha.sql` cria a campanha por tipo e ano;
+`sigrh/declaracao_campanha.php` entra nos 11 endpoints que gravam ou apagam
+declaração e, com `declaracoes.campanhas_ligadas`, recusa fora da campanha
+com o motivo e o código no texto ("ainda não foi aberta", com a data
+prevista, ou "o prazo terminou em …", `DC-FECHADA`), o que vale também para
+a 2.1.x. As pendências `sigrh.declaracao_*` só aparecem com campanha aberta e
+só para quem não enviou no ano.
+
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
 porque o contrato do `app_config` fica fixado antes. A fase 5 depende da

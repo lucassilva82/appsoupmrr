@@ -29,6 +29,7 @@ podem rodar mais de uma vez sem estragar nada.
 | 10 | `2026-10-23_soupm_painel_filas.sql` | Reset de senha pelo painel (fila), lembretes automáticos, modelos de mensagem e módulos da intranet que pedem push | **Pendente** |
 | 11 | `2026-10-23_soupm_cards.sql` | Cards criados no painel, Comando aprovado no painel e dicas (depois do 8, que cria as artes) | **Pendente** — sem ele, o Comando e as dicas continuam vindo do Firestore |
 | 12 | `2026-10-23_soupm_pendencias.sql` | Suas pendências: catálogo dos 37 tipos, **todos desligados**, dispensas e fontes de dados | **Pendente** — depois dele, cada tipo só liga pelo painel, depois de homologado |
+| 13 | `2026-10-23_soupm_declaracao_campanha.sql` | Declarações por campanha. Nasce **desligado** (`declaracoes.campanhas_ligadas = false`) | **Pendente** — antes de ligar, cadastrar pelo painel a campanha do ano em curso, senão ninguém consegue declarar |
 
 Os itens novos que forem entrando vão para o fim desta tabela, com o mesmo
 formato.
@@ -56,6 +57,7 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
 | `contracheque` | `pdf_api_matriculas: ["<sua matrícula>"]` | Para comparar o PDF novo com a sua conta (piloto) |
 | `contracheque` | `pdf_api: true` | Depois de aprovar a comparação: o app passa a pedir o PDF à API |
 | `comunicados` | `fonte_app: "api"` | Depois do SQL 9 e de publicar o primeiro comunicado pelo painel: a Início troca o anúncio do Firestore pela central |
+| `declaracoes` | `campanhas_ligadas: true` | Depois do SQL 13 e de abrir pelo painel a campanha de cada tipo do ano em curso |
 | `notificacoes` | `envio_fcm: true` | Depois da conta de serviço e do cron |
 | `notificacoes` | `fonte_app: "api"` | Depois de exportar o histórico do Firestore (§13, passo 4) e de a certidão e o feedback pedirem push pelo `soupmPedirPush` |
 
