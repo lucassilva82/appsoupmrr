@@ -202,6 +202,34 @@ Object? _responder(Uri url, http.Request req) {
         },
         'rede': {'timeout_s': 15},
         'comunicados': {'fonte': 'api'},
+        // Início com Comando fictício (sem foto) e um card do painel: as
+        // capturas e os vídeos não mostram os comandantes reais.
+        'home': [
+          {
+            'chave': 'home.comandantes',
+            'ordem': 10,
+            'arte': 'estrelas',
+            'dados': [
+              {'cargo': 'Comandante-Geral', 'posto': 'CEL QOC PM', 'nome': 'FULANO DE TAL EXEMPLO',
+               'nome_guerra': 'EXEMPLO', 'quadro': 'QOC', 'desde': '2025-01-02', 'estrelas': 3,
+               'mensagem': 'Mensagem fictícia do modo vitrine.'},
+              {'cargo': 'Subcomandante-Geral', 'posto': 'CEL QOC PM', 'nome': 'BELTRANO DA SILVA EXEMPLO',
+               'nome_guerra': 'BELTRANO', 'quadro': 'QOC', 'estrelas': 3},
+            ],
+          },
+          {'chave': 'home.anuncio', 'ordem': 20},
+          {'chave': 'home.dicas', 'ordem': 30, 'dados': [
+            {'texto': 'Ative a biometria em Perfil para entrar mais rápido.', 'icone': 'fingerprint', 'tipo': 'dica'},
+            {'texto': 'As certidões saem na hora, com QR Code de conferência.', 'icone': 'verified', 'tipo': 'novidade'},
+          ]},
+          {'chave': 'home.atalhos', 'ordem': 50},
+          {'chave': 'home.livre.outubro_rosa', 'ordem': 55, 'modelo': 'campanha', 'arte': 'rosa',
+           'dados': {'selo': 'Campanha', 'titulo': 'Outubro Rosa', 'texto': 'Exames preventivos na Diretoria de Saúde até 31/10.'},
+           'acao': {'tipo': 'comunicado', 'rotulo': 'Saiba mais'}},
+          {'chave': 'home.contracheque', 'ordem': 60},
+          {'chave': 'home.tempo_servico', 'ordem': 70},
+          {'chave': 'home.ferias', 'ordem': 80},
+        ],
         // Sem `menu`: vale o de reserva do app, igual à carga do banco.
         'servicos': {
           'mais_usados': ['rh.contracheques', 'rh.certidoes', 'rh.ferias', 'normas.legislacoes'],

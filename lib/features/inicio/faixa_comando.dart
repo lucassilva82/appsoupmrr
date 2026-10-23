@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/log/registro_log.dart';
 import '../../widgets/carouselSlider.dart' show CachedImageFromPrefs;
 
@@ -10,8 +11,9 @@ import '../../widgets/carouselSlider.dart' show CachedImageFromPrefs;
 /// 64 pt, com a arte `estrelas` (azul-marinho, brilho dourado e três
 /// estrelas apagadas). Tocar num deles abre o cartão grande dele.
 ///
-/// Os dados ainda vêm da coleção 'stores' do Firestore; na fase 4 passam a
-/// vir do `app_config` (`home.comandantes`), aprovados no painel.
+/// Os dados vêm do `app_config` (`home.comandantes`), aprovados no painel a
+/// partir do SIGRH. Enquanto o painel não aprovar ninguém, vêm da coleção
+/// 'stores' do Firestore, como na 2.1.x.
 class FaixaComando extends StatelessWidget {
   const FaixaComando({super.key});
 
@@ -24,8 +26,63 @@ class FaixaComando extends StatelessWidget {
 
   static const _cargos = ['Comandante-Geral', 'Subcomandante-Geral'];
 
+  /// Um comandante do app_config no formato que os cartões desenham.
+  static Map<String, dynamic> doPainel(Map<String, dynamic> c) {
+    final posto = '${c['posto'] ?? ''}'.trim();
+    final nome = '${c['nome_guerra'] ?? c['nome'] ?? ''}'.trim();
+    String data(Object? v) {
+      final d = DateTime.tryParse('${v ?? ''}');
+      return d == null ? '' : '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+    }
+    final cursos = c['cursos'] is List ? (c['cursos'] as List).map((e) => '$e').join(', ') : '';
+    return {
+      'img': c['foto'] ?? '',
+      'title': [posto, nome].where((e) => e.isNotEmpty).join(' '),
+      'cargo': c['cargo'],
+      'subtitle': '${c['mensagem'] ?? ''}'.trim(),
+      'detalhes': [
+        if ('${c['nome'] ?? ''}'.trim().isNotEmpty && c['nome_guerra'] != null) ('Nome', '${c['nome']}'),
+        if ('${c['quadro'] ?? ''}'.trim().isNotEmpty) ('Quadro', '${c['quadro']}'),
+        if (data(c['desde']).isNotEmpty) ('No cargo desde', data(c['desde'])),
+        if (data(c['inclusao']).isNotEmpty) ('Na PMRR desde', data(c['inclusao'])),
+        if ('${c['lotacao'] ?? ''}'.trim().isNotEmpty) ('Lotação', '${c['lotacao']}'),
+        if (cursos.isNotEmpty) ('Cursos', cursos),
+      ],
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder<AppConfig>(
+      valueListenable: RepositorioConfig.emUso,
+      builder: (context, config, _) {
+        final aprovados = config.bloco('home.comandantes')?.itens ?? const [];
+        if (aprovados.isNotEmpty) return _faixa([for (final c in aprovados) doPainel(c)]);
+        return _doFirestore();
+      },
+    );
+  }
+
+  Widget _faixa(List<Map<String, dynamic>> lista) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+        child: SizedBox(
+          height: 64,
+          child: Row(children: [
+            for (var i = 0; i < math.min(2, lista.length); i++) ...[
+              if (i > 0) const SizedBox(width: 10),
+              Expanded(
+                child: _CartaoComandante(
+                  dados: lista[i],
+                  cargo: '${lista[i]['cargo'] ?? _cargos[i]}',
+                  tag: 'comando-$i',
+                ),
+              ),
+            ],
+          ]),
+        ),
+      );
+
+  Widget _doFirestore() {
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: _slides,
       builder: (context, snap) {
@@ -36,24 +93,9 @@ class FaixaComando extends StatelessWidget {
               ? const SizedBox(height: 64 + 16)
               : const SizedBox.shrink();
         }
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: SizedBox(
-            height: 64,
-            child: Row(children: [
-              for (var i = 0; i < math.min(2, lista.length); i++) ...[
-                if (i > 0) const SizedBox(width: 10),
-                Expanded(
-                  child: _CartaoComandante(
-                    dados: lista[i],
-                    cargo: _cargos[i],
-                    tag: 'comando-$i',
-                  ),
-                ),
-              ],
-            ]),
-          ),
-        );
+        return _faixa([
+          for (var i = 0; i < lista.length; i++) {...lista[i], 'cargo': i < _cargos.length ? _cargos[i] : ''},
+        ]);
       },
     );
   }
@@ -195,6 +237,22 @@ class _ComandanteAberto extends StatelessWidget {
                             color: Colors.white.withValues(alpha: 0.85),
                             fontSize: 13)),
                   ],
+                  for (final (rotulo, valor) in (dados['detalhes'] is List
+                      ? (dados['detalhes'] as List).whereType<(String, String)>()
+                      : const <(String, String)>[]))
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        SizedBox(
+                          width: 110,
+                          child: Text(rotulo,
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12)),
+                        ),
+                        Expanded(
+                          child: Text(valor, style: const TextStyle(color: Colors.white, fontSize: 13)),
+                        ),
+                      ]),
+                    ),
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),

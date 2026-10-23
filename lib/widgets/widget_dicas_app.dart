@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/config/app_config.dart';
+import '../core/design/arte_cartao.dart';
 import '../models/auth_model.dart';
 import '../utils/app_theme.dart';
 import 'vidro.dart';
@@ -139,6 +141,14 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
   }
 
   Future<void> _initDicas() async {
+    // Dicas do painel (app_config, `home.dicas`): quando vêm, valem elas e o
+    // Firestore nem é lido. Ícone é chave do catálogo, nunca emoji.
+    final doPainel = RepositorioConfig.atual.bloco('home.dicas')?.itens ?? const [];
+    if (doPainel.isNotEmpty) {
+      setState(() => _dicas = doPainel);
+      _startTimer();
+      return;
+    }
     // Escuta em tempo real — filtra e ordena no cliente.
     // OBS: o seed automático de documentos foi removido daqui — cada
     // cliente que abrisse o app com a coleção vazia tentava semeá-la,
@@ -254,7 +264,9 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
                       // e mais longo que um emoji único).
                       SizedBox(
                         width: 30,
-                        child: Text(
+                        child: iconePorNome('${d['icone']}') != null
+                            ? Icon(iconePorNome('${d['icone']}'), size: AppIconSize.lg, color: cor)
+                            : Text(
                           d['icone'] ?? '💡',
                           textAlign: TextAlign.center,
                           maxLines: 1,

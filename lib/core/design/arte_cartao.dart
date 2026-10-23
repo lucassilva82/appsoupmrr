@@ -24,6 +24,8 @@ class Arte {
         [Icons.tips_and_updates_outlined, Icons.search, Icons.lightbulb_outline]),
     'pe': Arte(Color(0xFF2B0F12), Color(0xFF9F1D2B), Color(0xFFFF9E9E),
         [Icons.pending_actions_outlined, Icons.assignment_late_outlined, Icons.task_alt]),
+    'rosa': Arte(Color(0xFF3A0A1E), Color(0xFFB0225A), Color(0xFFFF8FB8),
+        [Icons.favorite_outline, Icons.volunteer_activism_outlined, Icons.health_and_safety_outlined]),
     'rh': Arte(Color(0xFF14205C), Color(0xFF4338CA), Color(0xFF38BDF8),
         [Icons.badge_outlined, Icons.receipt_long_outlined, Icons.verified_outlined]),
     'operacional': Arte(Color(0xFF071A33), Color(0xFF1D4ED8), Color(0xFFEF4444),
@@ -83,6 +85,9 @@ class Arte {
     'newspaper': Icons.newspaper_outlined, 'celebration': Icons.celebration_outlined, 'flag': Icons.flag_outlined,
     'emergency': Icons.emergency_outlined, 'radar': Icons.radar, 'psychology': Icons.psychology_outlined,
     'diversity_1': Icons.diversity_1_outlined, 'man': Icons.man_outlined,
+    'fingerprint': Icons.fingerprint, 'notifications': Icons.notifications_outlined, 'event': Icons.event_outlined,
+    'description': Icons.description_outlined, 'lock': Icons.lock_outline, 'place': Icons.place_outlined,
+    'chat': Icons.chat_outlined, 'rocket_launch': Icons.rocket_launch_outlined, 'handshake': Icons.handshake_outlined,
   };
 }
 

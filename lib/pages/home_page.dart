@@ -8,6 +8,7 @@ import 'package:projetonovo/widgets/anuncio_institucional.dart';
 import 'package:projetonovo/widgets/card_tempo_servico.dart';
 import 'package:projetonovo/core/config/app_config.dart';
 import 'package:projetonovo/features/comunicados/comunicados_page.dart';
+import 'package:projetonovo/features/inicio/card_painel.dart';
 import 'package:projetonovo/features/inicio/faixa_comando.dart';
 import 'package:projetonovo/features/inicio/linha_atalhos.dart';
 import 'package:projetonovo/widgets/vidro.dart';
@@ -95,6 +96,11 @@ class _HomeBodyState extends State<HomeBody>
         'home.contracheque' => const _Card(HomeContrachequeCard()),
         'home.tempo_servico' => _Card(CardTempoServico()),
         'home.ferias' => const _Card(HomePlanoFeriasCard()),
+        _ when chave.startsWith('home.livre.') =>
+          switch (RepositorioConfig.atual.bloco(chave)) {
+            final b? when CardPainel.desenha(b) => CardPainel(bloco: b),
+            _ => null,
+          },
         _ => null,
       };
 

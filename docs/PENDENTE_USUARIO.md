@@ -27,6 +27,7 @@ podem rodar mais de uma vez sem estragar nada.
 | 8 | `2026-10-23_soupm_artes.sql` | Artes dos cards editáveis pelo painel, mídia aprovada e paleta fechada | **Pendente** |
 | 9 | `2026-10-23_soupm_comunicados.sql` | Central de comunicados (categorias, comunicados, leitura e ciência) | **Pendente** — o `comunicados.php` já está no ar e responde erro até este SQL rodar; o app 2.2 só usa com o interruptor abaixo |
 | 10 | `2026-10-23_soupm_painel_filas.sql` | Reset de senha pelo painel (fila), lembretes automáticos, modelos de mensagem e módulos da intranet que pedem push | **Pendente** |
+| 11 | `2026-10-23_soupm_cards.sql` | Cards criados no painel, Comando aprovado no painel e dicas (depois do 8, que cria as artes) | **Pendente** — sem ele, o Comando e as dicas continuam vindo do Firestore |
 
 Os itens novos que forem entrando vão para o fim desta tabela, com o mesmo
 formato.

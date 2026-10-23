@@ -2226,6 +2226,18 @@ o destaque de abertura aparece uma vez por versão (ou até a ciência, se o
 painel pedir). Eventos `comunicado.*`, erros `CM-`. A Início só troca o anúncio
 do Firestore pela central quando `soupm_config.comunicados.fonte_app = api`.
 
+**Cards do painel, Comando e dicas (22/10/2026): prontos, esperando o SQL.**
+`sql/2026-10-23_soupm_cards.sql` cria `soupm_card` (modelos campanha, atalho,
+número e lista), `soupm_comando` (só o aprovado vai para o app; as estrelas
+saem do posto e precisam ser conferidas com o regulamento de uniformes) e
+`soupm_dica` (ícone por chave, sem emoji), e a função `soupm_home_extra`. O
+`app_config.php` põe os cards no ar como `home.livre.<chave>` e os dados
+aprovados nos blocos `home.comandantes` e `home.dicas`. No app,
+`lib/features/inicio/card_painel.dart` desenha os modelos (o "Número" só
+aparece com o valor pronto, e modelo desconhecido não desenha nada); a faixa
+do Comando e as dicas leem o `app_config` e, sem nada aprovado, continuam no
+Firestore. No modo vitrine o Comando é fictício, sem foto.
+
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
 porque o contrato do `app_config` fica fixado antes. A fase 5 depende da

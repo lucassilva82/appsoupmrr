@@ -197,6 +197,7 @@ class BlocoInicio {
     this.arte,
     this.arteEstilo,
     this.dados = const [],
+    this.bruto = const {},
   });
 
   final String chave;
@@ -207,6 +208,20 @@ class BlocoInicio {
 
   /// Só `home.atalhos` usa: as chaves dos atalhos padrão do militar.
   final List<String> dados;
+
+  /// O bloco como veio da API: os cards do painel (`modelo`, `dados`,
+  /// `acao`), o Comando aprovado e as dicas leem daqui (§4.1 e §4.6).
+  final Map<String, dynamic> bruto;
+
+  /// Lista de objetos em `dados` (Comando, dicas); vazia quando não há.
+  List<Map<String, dynamic>> get itens => [
+        if (bruto['dados'] is List)
+          for (final d in bruto['dados'] as List)
+            if (d is Map) Map<String, dynamic>.from(d),
+      ];
+
+  /// Card criado no painel: `home.livre.<chave>` com um dos 4 modelos.
+  bool get livre => chave.startsWith('home.livre.');
 
   static List<BlocoInicio> lista(Object? j) => [
         if (j is List)
@@ -219,8 +234,9 @@ class BlocoInicio {
                 arte: b['arte'] as String?,
                 arteEstilo: b['arte_estilo'] as String?,
                 dados: b['dados'] is List
-                    ? [for (final d in b['dados'] as List) '$d']
+                    ? [for (final d in b['dados'] as List) if (d is String) d]
                     : const [],
+                bruto: Map<String, dynamic>.from(b),
               ),
       ];
 }
