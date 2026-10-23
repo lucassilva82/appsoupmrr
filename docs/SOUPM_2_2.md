@@ -2290,6 +2290,21 @@ por nome, descrição e sinônimo, guarda as 5 últimas buscas no aparelho e, se
 resultado, oferece "Sugerir esta função" e "Ver todos os serviços" (eventos
 `busca.*`). Fica para depois: tolerância a um erro de digitação e `⌘F` no iPad.
 
+**Tela de erro (22/10/2026).** `EstadoErro` ganhou a viatura quebrada
+(inclinada, pneu dianteiro murcho, fumaça no capô, giroflex apagado,
+pisca-alerta âmbar e triângulo no chão, parada com "Reduzir movimento") com o
+selo do tipo de erro, "Detalhes técnicos" fechados (código, data e hora, tela,
+função, origem, versão e build, sistema e aparelho, sessão, com "Copiar
+detalhes") e "Abrir chamado técnico", que abre o chamado já preenchido com
+esses detalhes. O botão só aparece com a função de chamados liberada e a chave
+do SISCHAMADOS no build.
+
+**Níveis de acesso (fase 5): bloqueados.** O SIGRH ainda não tem a tabela de
+função e cargo (a própria intranet deixou isso pendente para o DBA, em
+`vw_lotacao_sigrh`), e os perfis da intranet só existem no banco de
+desenvolvimento. Sem isso, o nível "por função" não tem de onde sair. Até lá,
+o Mapa da Força segue a regra de hoje (`isSuperUser`).
+
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
 porque o contrato do `app_config` fica fixado antes. A fase 5 depende da

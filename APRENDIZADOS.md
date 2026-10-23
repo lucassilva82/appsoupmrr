@@ -1332,8 +1332,8 @@ um print do card; o defeito de esconder a falha foi corrigido de qualquer forma.
 
 **Regra.** Valor numérico que vem da rede nunca cai para zero em silêncio:
 "zero" e "não sei" são coisas diferentes para quem lê. O `test/widget_test.dart`
-(contador de exemplo do Flutter, de 2023) falha desde sempre e não tem relação
-com isso: apagar ou trocar por um teste real.
+(contador de exemplo do Flutter, de 2023) falhava desde sempre e não tinha
+relação com isso; foi apagado em 22/10/2026, e a suíte passou a ficar toda verde.
 
 ---
 
