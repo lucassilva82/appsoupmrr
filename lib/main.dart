@@ -1,3 +1,4 @@
+import 'package:projetonovo/core/log/registro_log.dart';
 import 'package:projetonovo/features/carreira/carreira_page.dart';
 import 'package:projetonovo/features/chamados/chamados_page.dart';
 import 'package:projetonovo/features/documentos/documentos_page.dart';
@@ -445,6 +446,12 @@ void tratarToqueNotificacao(RemoteMessage message) {
   if (id != null && id == _ultimoPushTratado) return;
   _ultimoPushTratado = id;
   final data = message.data;
+  // "Aberto" no histórico de envios do painel (§9.2); a API marca pelo id.
+  registrar('push.abrir', dados: {
+    if (data['notificacao_soupm'] != null) 'notificacao_soupm': '${data['notificacao_soupm']}',
+    if (data['route'] != null) 'rota': '${data['route']}',
+    if (data['tipo_evento'] != null) 'tipo_evento': '${data['tipo_evento']}',
+  });
   if (AvisoAberto.ehDoSige(data)) {
     abrirAviso(AvisoAberto.doPush(
       data,
@@ -635,6 +642,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           print('[DEBUG] Erro ao conectar provider no onMessage: $e');
         }
       }
+      registrar('push.receber', dados: {
+        if (message.data['notificacao_soupm'] != null) 'notificacao_soupm': '${message.data['notificacao_soupm']}',
+        if (message.data['tipo_evento'] != null) 'tipo_evento': '${message.data['tipo_evento']}',
+      });
       // Toast colorido em foreground conforme o tipo_evento do payload.
       tratarTipoEvento(message.data);
       print('[DEBUG] ===== FOREGROUND MESSAGE PROCESSADO =====');
