@@ -318,7 +318,7 @@ class _RaizAba extends StatelessWidget {
   static const _abaAvisos = _MainShellState._abaAvisos;
 
   /// Início leva saudação e lotação (duas linhas); as outras, o título.
-  double get _alturaCab => indice == 0 ? 64 : 56;
+  double get _alturaCab => indice == 0 || indice == _abaAvisos ? 64 : 56;
 
   @override
   Widget build(BuildContext context) {
@@ -382,51 +382,65 @@ class _RaizAba extends StatelessWidget {
           Expanded(
             child: indice == 0
                 ? _titleHome(context, nome, isSuperUser, isAdmin)
-                : Text(
-                    ['Início', 'Serviços', 'Avisos', 'Perfil'][indice],
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    // iOS: título grande (32, negrito); Android: o da
-                    // TopAppBar média do Material 3 (24, regular).
-                    style: TextStyle(
-                      fontSize: _ios ? 32 : 24,
-                      fontWeight: _ios ? FontWeight.w700 : FontWeight.w400,
-                      letterSpacing: _ios ? -0.6 : 0,
-                      height: 1.1,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        ['Início', 'Serviços', 'Avisos', 'Perfil'][indice],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        // iOS: título grande (32, negrito); Android: o da
+                        // TopAppBar média do Material 3 (24, regular).
+                        style: TextStyle(
+                          fontSize: _ios ? 32 : 24,
+                          fontWeight: _ios ? FontWeight.w700 : FontWeight.w400,
+                          letterSpacing: _ios ? -0.64 : 0,
+                          height: 1.1,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      // Avisos diz numa linha o que é a aba (§3.1).
+                      if (indice == _abaAvisos)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            'Mensagens do SouPMRR para você'
+                            '${unread > 0 ? ' · $unread ${unread == 1 ? 'não lido' : 'não lidos'}' : ''}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.62)),
+                          ),
+                        ),
+                    ],
                   ),
           ),
 
-          // Ações à direita. A lupa abre a busca dentro da aba (§7); em
-          // Serviços a busca já está no topo da tela.
-          if (indice != 1)
+          // Ações à direita, como no protótipo: Início com lupa e sino,
+          // Serviços com o sino (a busca já fica no topo da tela), Avisos
+          // com "Marcar todos" e Perfil com a lupa.
+          if (indice == 0 || indice == 3)
             IconButton(
               tooltip: 'Buscar',
               icon: Icon(Icons.search, color: cor),
               onPressed: () => Navigator.of(context)
                   .push(MaterialPageRoute(builder: (_) => const BuscaPage())),
             ),
-          if (indice == 0) ...[
-            _notificationBell(unread, cor),
-          ],
-          if (indice == 3)
-            IconButton(
-              tooltip: 'Ficha Individual',
-              icon: Icon(Icons.badge_outlined, color: cor),
-              onPressed: () {
-                registrar('funcao.tocar',
-                    chave: 'perfil.ficha', dados: {'origem': 'perfil'});
-                Navigator.of(context).pushNamed(AppRoutes.PAGE_MILITAR);
-              },
-            ),
+          if (indice == 0 || indice == 1) _notificationBell(unread, cor),
           if (indice == _abaAvisos && unread > 0)
             TextButton(
               onPressed: () => notifProvider.markAllAsRead(),
               child: Text(
-                'Limpar tudo',
+                'Marcar todos',
                 style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary, fontSize: 14),
+                    color: Theme.of(context).colorScheme.primary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600),
               ),
             ),
         ],

@@ -73,8 +73,7 @@ class BarraNavegacao extends StatelessWidget {
 // ── iOS ──────────────────────────────────────────────────────────────────────
 
 class _BarraIos extends StatelessWidget {
-  const _BarraIos(
-      {required this.itens, required this.indiceAtual, required this.aoTocar});
+  const _BarraIos({required this.itens, required this.indiceAtual, required this.aoTocar});
 
   final List<ItemNavegacao> itens;
   final int indiceAtual;
@@ -95,8 +94,7 @@ class _BarraIos extends StatelessWidget {
 
     final ativo = theme.colorScheme.primary;
     final texto = theme.colorScheme.onSurface;
-    final estiloRotulo =
-        TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ativo);
+    final estiloRotulo = TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ativo);
 
     final capsula = DecoratedBox(
       decoration: BoxDecoration(
@@ -132,14 +130,12 @@ class _BarraIos extends StatelessWidget {
             final tp = TextPainter(
               text: TextSpan(text: rotulo, style: estiloRotulo),
               textDirection: TextDirection.ltr,
-              textScaler: MediaQuery.textScalerOf(context)
-                  .clamp(maxScaleFactor: 1.2),
+              textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.2),
             )..layout();
             final vaos = _vao * (itens.length - 1);
             final larguraAtiva = (20 + 24 + 7 + tp.width + 1)
                 .clamp(0.0, c.maxWidth - vaos - 44.0 * (itens.length - 1));
-            final larguraOutra =
-                (c.maxWidth - vaos - larguraAtiva) / (itens.length - 1);
+            final larguraOutra = (c.maxWidth - vaos - larguraAtiva) / (itens.length - 1);
             return Row(
               children: [
                 for (var i = 0; i < itens.length; i++) ...[
@@ -188,8 +184,7 @@ class _BarraIos extends StatelessWidget {
           ];
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-          16, 0, 16, base > 0 ? (base - 12).clamp(8.0, base) : 16),
+      padding: EdgeInsets.fromLTRB(16, 0, 16, base > 0 ? (base - 12).clamp(8.0, base) : 16),
       child: Semantics(
         container: true,
         explicitChildNodes: true,
@@ -237,8 +232,8 @@ class _BordaDeLuz extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final r = RRect.fromRectAndRadius(
-        (Offset.zero & size).deflate(.5), Radius.circular(size.height / 2));
+    final r =
+        RRect.fromRectAndRadius((Offset.zero & size).deflate(.5), Radius.circular(size.height / 2));
     final cores = escuro
         ? [
             Colors.white.withValues(alpha: .65),
@@ -297,8 +292,8 @@ class _AbaIos extends StatefulWidget {
 
 class _AbaIosState extends State<_AbaIos> with SingleTickerProviderStateMixin {
   // O pulo do ícone quando a aba é escolhida (`.pulso`, 500 ms).
-  late final AnimationController _pulo = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 500));
+  late final AnimationController _pulo =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
   bool _apertada = false;
 
   /// Quique da troca de largura: cubic-bezier(.3, 1.2, .4, 1).
@@ -322,8 +317,7 @@ class _AbaIosState extends State<_AbaIos> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     final w = widget;
     final cor = w.ativa ? w.corAtiva : w.corTexto;
-    final dur =
-        w.semMovimento ? Duration.zero : const Duration(milliseconds: 500);
+    final dur = w.semMovimento ? Duration.zero : const Duration(milliseconds: 500);
     final contador = w.item.contador;
 
     final icone = AnimatedBuilder(
@@ -334,14 +328,12 @@ class _AbaIosState extends State<_AbaIos> with SingleTickerProviderStateMixin {
         final escala = _pulo.isAnimating
             ? 1 + .18 * Curves.easeOutBack.transform(t < .5 ? t * 2 : 2 - t * 2)
             : 1.0;
-        return Transform.scale(
-            scale: (_apertada ? .8 : 1) * escala, child: child);
+        return Transform.scale(scale: (_apertada ? .8 : 1) * escala, child: child);
       },
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Icon(w.ativa ? w.item.iconeAtivo : w.item.icone,
-              size: 24, color: cor),
+          Icon(w.ativa ? w.item.iconeAtivo : w.item.icone, size: 24, color: cor),
           if (contador > 0)
             Positioned(
               top: -7,
@@ -358,10 +350,7 @@ class _AbaIosState extends State<_AbaIos> with SingleTickerProviderStateMixin {
                 child: Text(
                   contador > 99 ? '99+' : '$contador',
                   style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      height: 1),
+                      color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w700, height: 1),
                 ),
               ),
             ),
@@ -372,77 +361,78 @@ class _AbaIosState extends State<_AbaIos> with SingleTickerProviderStateMixin {
     return Semantics(
       button: true,
       selected: w.ativa,
-      label: contador > 0
-          ? '${w.item.rotulo}, $contador não lidos'
-          : w.item.rotulo,
+      label: contador > 0 ? '${w.item.rotulo}, $contador não lidos' : w.item.rotulo,
       excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => setState(() => _apertada = true),
-        onTapCancel: () => setState(() => _apertada = false),
-        onTapUp: (_) => setState(() => _apertada = false),
-        onTap: w.aoTocar,
-        child: AnimatedContainer(
-          duration: dur,
-          curve: _quique,
-          width: w.largura,
-          height: 52,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(26),
-            gradient: w.ativa
-                ? LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: w.escuro
-                        ? [
-                            Colors.white.withValues(alpha: .17),
-                            Colors.white.withValues(alpha: .06),
-                          ]
-                        : [
-                            const Color(0xFF002154).withValues(alpha: .11),
-                            const Color(0xFF002154).withValues(alpha: .05),
-                          ],
-                  )
-                : null,
-            boxShadow: w.ativa && w.escuro
-                ? [
-                    BoxShadow(
-                        color: Colors.black.withValues(alpha: .18),
-                        offset: const Offset(0, 4),
-                        blurRadius: 12),
-                  ]
-                : null,
-          ),
-          child: ClipRect(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                icone,
-                // O nome cresce de 0 até a largura dele e acende logo depois.
-                Flexible(
-                  child: AnimatedOpacity(
-                    duration: w.semMovimento
-                        ? Duration.zero
-                        : const Duration(milliseconds: 300),
-                    opacity: w.ativa ? 1 : 0,
-                    child: w.ativa
-                        ? Padding(
-                            padding: const EdgeInsets.only(left: 7),
-                            child: Text(
-                              w.item.rotulo,
-                              maxLines: 1,
-                              softWrap: false,
-                              overflow: TextOverflow.clip,
-                              textScaler: MediaQuery.textScalerOf(context)
-                                  .clamp(maxScaleFactor: 1.2),
-                              style: w.estiloRotulo,
-                            ),
-                          )
-                        : const SizedBox.shrink(),
+      // O "apertar" (ícone encolhe) vem do ponteiro, separado do toque: um
+      // setState no meio do reconhecimento do toque fazia toques muito
+      // curtos se perderem.
+      child: Listener(
+        onPointerDown: (_) => setState(() => _apertada = true),
+        onPointerUp: (_) => setState(() => _apertada = false),
+        onPointerCancel: (_) => setState(() => _apertada = false),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: w.aoTocar,
+          child: AnimatedContainer(
+            duration: dur,
+            curve: _quique,
+            width: w.largura,
+            height: 52,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(26),
+              gradient: w.ativa
+                  ? LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: w.escuro
+                          ? [
+                              Colors.white.withValues(alpha: .17),
+                              Colors.white.withValues(alpha: .06),
+                            ]
+                          : [
+                              const Color(0xFF002154).withValues(alpha: .11),
+                              const Color(0xFF002154).withValues(alpha: .05),
+                            ],
+                    )
+                  : null,
+              boxShadow: w.ativa && w.escuro
+                  ? [
+                      BoxShadow(
+                          color: Colors.black.withValues(alpha: .18),
+                          offset: const Offset(0, 4),
+                          blurRadius: 12),
+                    ]
+                  : null,
+            ),
+            child: ClipRect(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  icone,
+                  // O nome cresce de 0 até a largura dele e acende logo depois.
+                  Flexible(
+                    child: AnimatedOpacity(
+                      duration: w.semMovimento ? Duration.zero : const Duration(milliseconds: 300),
+                      opacity: w.ativa ? 1 : 0,
+                      child: w.ativa
+                          ? Padding(
+                              padding: const EdgeInsets.only(left: 7),
+                              child: Text(
+                                w.item.rotulo,
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.clip,
+                                textScaler:
+                                    MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.2),
+                                style: w.estiloRotulo,
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -454,8 +444,7 @@ class _AbaIosState extends State<_AbaIos> with SingleTickerProviderStateMixin {
 // ── Android ──────────────────────────────────────────────────────────────────
 
 class _BarraAndroid extends StatelessWidget {
-  const _BarraAndroid(
-      {required this.itens, required this.indiceAtual, required this.aoTocar});
+  const _BarraAndroid({required this.itens, required this.indiceAtual, required this.aoTocar});
 
   final List<ItemNavegacao> itens;
   final int indiceAtual;
@@ -467,8 +456,8 @@ class _BarraAndroid extends StatelessWidget {
     final escuro = theme.brightness == Brightness.dark;
     final pri = theme.colorScheme.primary;
     // Superfície tonal: 96% da superfície com 4% da primária.
-    final fundo = Color.alphaBlend(pri.withValues(alpha: .04),
-        escuro ? AppColors.darkCard : theme.colorScheme.surface);
+    final fundo = Color.alphaBlend(
+        pri.withValues(alpha: .04), escuro ? AppColors.darkCard : theme.colorScheme.surface);
     final apagado = theme.colorScheme.onSurface.withValues(alpha: .62);
 
     return Material(
@@ -522,9 +511,7 @@ class _AbaAndroid extends StatelessWidget {
     return Semantics(
       button: true,
       selected: ativa,
-      label: item.contador > 0
-          ? '${item.rotulo}, ${item.contador} não lidos'
-          : item.rotulo,
+      label: item.contador > 0 ? '${item.rotulo}, ${item.contador} não lidos' : item.rotulo,
       excludeSemantics: true,
       child: InkWell(
         onTap: aoTocar,
@@ -535,9 +522,7 @@ class _AbaAndroid extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               AnimatedContainer(
-                duration: semMovimento
-                    ? Duration.zero
-                    : const Duration(milliseconds: 240),
+                duration: semMovimento ? Duration.zero : const Duration(milliseconds: 240),
                 curve: Curves.easeOut,
                 width: 64,
                 height: 32,
@@ -549,8 +534,7 @@ class _AbaAndroid extends StatelessWidget {
                   clipBehavior: Clip.none,
                   alignment: Alignment.center,
                   children: [
-                    Icon(ativa ? item.iconeAtivo : item.icone,
-                        size: 24, color: cor),
+                    Icon(ativa ? item.iconeAtivo : item.icone, size: 24, color: cor),
                     if (item.contador > 0)
                       Positioned(
                         top: -2,

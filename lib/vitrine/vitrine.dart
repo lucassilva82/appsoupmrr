@@ -296,7 +296,7 @@ Object? _responder(Uri url, http.Request req) {
         ],
         // Sem `menu`: vale o de reserva do app, igual à carga do banco.
         'servicos': {
-          'mais_usados': ['rh.contracheques', 'rh.certidoes', 'rh.ferias', 'normas.legislacoes'],
+          'mais_usados': ['rh.contracheques', 'rh.certidoes', 'rh.ferias', 'rh.ficha', 'normas.legislacoes', 'rh.documentos', 'rh.declaracoes'],
         },
       };
     case 'login.php':
@@ -903,34 +903,23 @@ List<NotificationModel> _avisosSigeNaLista(DateTime agora) => [
 
 List<NotificationModel> notificacoesVitrine() {
   final agora = DateTime.now();
-  NotificationModel n(String id, String titulo, String corpo, Duration ha,
-          {bool lida = true}) =>
-      NotificationModel(
-        id: id,
-        title: titulo,
-        body: corpo,
-        timestamp: agora.subtract(ha),
-        clicked: lida,
-      );
+  NotificationModel n(String id, String titulo, String corpo, DateTime quando, {bool lida = true, String? rota}) =>
+      NotificationModel(id: id, title: titulo, body: corpo, timestamp: quando, clicked: lida, route: rota);
+  final hoje730 = DateTime(agora.year, agora.month, agora.day, 7, 30);
 
-  // Mais antigas primeiro, como vem do Firestore.
+  // Os quatro do protótipo, só do SouPMRR (os do SIGE dependem da intranet e
+  // ficam para a fase com a intranet). Mais antigas primeiro, como vem do
+  // Firestore.
   return [
-    n(
-        'v4',
-        'Plano de férias publicado',
-        'Seu plano de férias de 2026 já está no app. A 2ª parcela começa em 21/12.',
-        const Duration(days: 9)),
-    n(
-        'v3',
-        'Contracheque disponível',
-        'O contracheque de ${_mesesNome[(agora.month + 10) % 12].toLowerCase()} já pode ser consultado.',
-        const Duration(days: 3)),
-    n(
-        'v2',
-        'Certidão emitida',
-        'Sua Certidão de Tempo de Serviço foi emitida e vale por 30 dias. Uma cópia em PDF foi enviada para o seu e-mail.',
-        const Duration(hours: 2),
-        lida: false),
-    ..._avisosSigeNaLista(agora),
+    n('v4', 'Comunicado do Comando', 'Operação Eleições 2026, 2º turno: orientações para o efetivo.',
+        agora.subtract(const Duration(days: 6)), rota: '/com/central'),
+    n('v2', 'Sua sugestão foi respondida', 'A equipe do SouPMRR respondeu a FB-2026-00031.',
+        agora.subtract(const Duration(days: 5)), lida: false, rota: '/atend/feedback'),
+    n('v3', 'Certidão emitida',
+        'Certidão Administrativa de Tempo de Serviço. Cópia enviada para st*****a@exemplo.com.br.',
+        agora.subtract(const Duration(days: 3)), rota: '/certidoes'),
+    n('v1', 'Contracheque de setembro disponível', 'Toque para ver os valores do mês.',
+        hoje730.isAfter(agora) ? agora.subtract(const Duration(minutes: 30)) : hoje730,
+        lida: false, rota: '/contracheques'),
   ];
 }

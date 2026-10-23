@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projetonovo/features/inicio/linha_atalhos.dart' show rotuloCurto;
 import 'package:provider/provider.dart';
 
 import '../../core/config/app_config.dart';
@@ -137,7 +138,7 @@ class _ServicosBodyState extends State<ServicosBody> {
         return CustomScrollView(
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               sliver: SliverToBoxAdapter(
                 child: _CampoBusca(
                   controle: _busca,
@@ -161,46 +162,44 @@ class _ServicosBodyState extends State<ServicosBody> {
             else ...[
               if (_maisUsados(menu, config) case final l when l.isNotEmpty)
                 SliverToBoxAdapter(child: _LinhaMaisUsados(itens: l)),
+              SliverToBoxAdapter(
+                child: _TituloSecao('Áreas',
+                    direita: '${menu.length} ${menu.length == 1 ? 'área' : 'áreas'}'),
+              ),
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                sliver: SliverLayoutBuilder(builder: (context, c) {
-                  final colunas = c.crossAxisExtent >= 600 ? 3 : 2;
-                  return SliverGrid(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: colunas,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 1.05,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, i) => CartaoArea(
-                        area: menu[i],
-                        aoTocar: () => _abrirArea(context, menu[i]),
-                      ),
-                      childCount: menu.length,
-                    ),
-                  );
-                }),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverToBoxAdapter(
+                  child: LayoutBuilder(builder: (context, c) {
+                    // 2 colunas (3 no iPad), cartões de 136; a área que sobra
+                    // sozinha na última linha ocupa a largura toda, com 112
+                    // (protótipo `.sv-area`, §3.3).
+                    final colunas = c.maxWidth >= 600 ? 3 : 2;
+                    final largura = (c.maxWidth - 10 * (colunas - 1)) / colunas;
+                    final sobra = menu.length % colunas;
+                    return Wrap(spacing: 10, runSpacing: 10, children: [
+                      for (final (i, a) in menu.indexed)
+                        SizedBox(
+                          width: sobra == 1 && i == menu.length - 1 ? c.maxWidth : largura,
+                          height: sobra == 1 && i == menu.length - 1 ? 112 : 136,
+                          child: CartaoArea(area: a, aoTocar: () => _abrirArea(context, a)),
+                        ),
+                    ]);
+                  }),
+                ),
               ),
               if (_novidades(menu) case final l when l.isNotEmpty)
                 SliverToBoxAdapter(child: _LinhaNovidades(itens: l)),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                  child: Center(
-                    child: TextButton.icon(
-                      onPressed: () {
-                        final ajuda = itemPorChave('atend.ajuda', menu: menu);
-                        if (ajuda != null) {
-                          abrirFuncao(context, ajuda, origem: 'servicos');
-                        } else {
-                          Navigator.of(context).pushNamed(AppRoutes.AJUDA_PAGE);
-                        }
-                      },
-                      icon: const Icon(Icons.help_outline_rounded, size: AppIconSize.sm),
-                      label: const Text('Não achou o que procurava?'),
-                    ),
-                  ),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  child: _NaoAchou(aoTocar: () {
+                    final ajuda = itemPorChave('atend.ajuda', menu: menu);
+                    if (ajuda != null) {
+                      abrirFuncao(context, ajuda, origem: 'servicos');
+                    } else {
+                      Navigator.of(context).pushNamed(AppRoutes.AJUDA_PAGE);
+                    }
+                  }),
                 ),
               ),
             ],
@@ -246,7 +245,72 @@ class _ServicosBodyState extends State<ServicosBody> {
   }
 }
 
-/// Faixa de cartões que rola de lado, cada um com a arte da sua área.
+/// Título de seção de Serviços (protótipo `.sv-sec`): 18 em negrito e, à
+/// direita, um apoio em cinza ("5 áreas").
+class _TituloSecao extends StatelessWidget {
+  const _TituloSecao(this.titulo, {this.direita});
+  final String titulo;
+  final String? direita;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        Expanded(
+          child: Semantics(
+            header: true,
+            child: Text(titulo,
+                style: TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.18, color: theme.colorScheme.onSurface)),
+          ),
+        ),
+        if (direita != null)
+          Text(direita!,
+              style: TextStyle(fontSize: 12.5, color: theme.colorScheme.onSurface.withValues(alpha: 0.62))),
+      ]),
+    );
+  }
+}
+
+/// "Não achou o que procurava?" (protótipo `.sv-ajuda`): linha de vidro que
+/// abre o "Preciso de ajuda".
+class _NaoAchou extends StatelessWidget {
+  const _NaoAchou({required this.aoTocar});
+  final VoidCallback aoTocar;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final pri = theme.colorScheme.primary;
+    return CartaoVidro(
+      onTap: aoTocar,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(color: pri.withValues(alpha: .2), borderRadius: BorderRadius.circular(12)),
+          child: Icon(Icons.help_outline_rounded, size: AppIconSize.md, color: pri),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Não achou o que procurava?',
+                style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface)),
+            Text('Conte o que precisa e encaminhamos',
+                style: TextStyle(fontSize: 12.5, color: theme.colorScheme.onSurface.withValues(alpha: .62))),
+          ]),
+        ),
+        Icon(Icons.chevron_right_rounded, size: 20, color: theme.colorScheme.onSurface.withValues(alpha: .45)),
+      ]),
+    );
+  }
+}
+
+/// Faixa de cartões que rola de lado, cada um com a arte da sua área
+/// (protótipo `.sv-novo`: 232 × 112).
 class _LinhaNovidades extends StatelessWidget {
   const _LinhaNovidades({required this.itens});
 
@@ -254,58 +318,50 @@ class _LinhaNovidades extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final escala = MediaQuery.textScalerOf(context);
+    final escala = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.3);
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-        child: Semantics(
-          header: true,
-          child: Text('Novidades no SouPMRR',
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-        ),
-      ),
+      const _TituloSecao('Novidades no SouPMRR'),
       SizedBox(
-        height: escala.scale(56) + 74,
+        height: escala.scale(112),
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: itens.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          separatorBuilder: (_, __) => const SizedBox(width: 10),
           itemBuilder: (context, i) {
             final r = itens[i];
             return SizedBox(
-              width: 220,
+              width: 232,
               child: Semantics(
                 button: true,
                 label: '${r.item.rotulo}, novo. ${r.item.descricao ?? ''}',
                 excludeSemantics: true,
                 child: FundoArte(
                   arte: Arte.de(r.area.arte),
-                  tamanhoIcone: 64,
-                  raio: 16,
+                  formato: FormatoArte.area,
                   child: Material(
                     type: MaterialType.transparency,
                     child: InkWell(
                       onTap: () => abrirFuncao(context, r.item, origem: 'novidades'),
                       child: Padding(
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.all(12),
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Row(children: [
-                            Icon(iconePorChave(r.item.icone), color: Colors.white, size: AppIconSize.md),
-                            const Spacer(),
-                            const SeloEstado(texto: 'Novo', sobreArte: true),
-                          ]),
+                          const SeloEstado(texto: 'Novo', sobreArte: true),
                           const Spacer(),
                           Text(r.item.rotulo,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 15, height: 1.2, fontWeight: FontWeight.w700)),
                           if (r.item.descricao != null)
-                            Text(r.item.descricao!,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: Colors.white.withValues(alpha: 0.88), fontSize: 12, height: 1.2)),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(r.item.descricao!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.82), fontSize: 11.5, height: 1.35)),
+                            ),
                         ]),
                       ),
                     ),
@@ -316,77 +372,83 @@ class _LinhaNovidades extends StatelessWidget {
           },
         ),
       ),
-      const SizedBox(height: 16),
     ]);
   }
 }
 
-/// Linha de círculos que rola de lado, como os destaques do Instagram.
+/// Linha de círculos que rola de lado, como os destaques do Instagram
+/// (protótipo `.sv-bola`): anel de 64 (colorido quando a função é nova),
+/// miolo na cor do fundo e o ícone num círculo tingido de 53.
 class _LinhaMaisUsados extends StatelessWidget {
   const _LinhaMaisUsados({required this.itens});
 
   final List<({ItemMenu item, ItemMenu area})> itens;
 
+  static const _anelNovo = SweepGradient(
+    startAngle: 0,
+    endAngle: 6.2832,
+    transform: GradientRotation(3.665),
+    colors: [
+      Color(0xFF4FD8F0), Color(0xFF2E7FBF), Color(0xFF7C6CF2), //
+      Color(0xFFE5487F), Color(0xFFFFB300), Color(0xFF4FD8F0),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final pri = theme.colorScheme.primary;
+    final fundo = theme.brightness == Brightness.dark ? const Color(0xFF03050A) : theme.colorScheme.surface;
+    final escala = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.3);
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-        child: Text('Mais usados',
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700)),
-      ),
+      const _TituloSecao('Mais usados'),
       SizedBox(
-        height: MediaQuery.textScalerOf(context).scale(34) + 64,
+        height: 64 + 6 + escala.scale(14),
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: itens.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          separatorBuilder: (_, __) => const SizedBox(width: 6),
           itemBuilder: (context, i) {
             final r = itens[i];
-            final arte = Arte.de(r.area.arte);
+            final novo = r.item.selo == 'Novo';
             return Semantics(
               button: true,
-              label: r.item.rotulo,
+              label: novo ? '${r.item.rotulo}, novo' : r.item.rotulo,
               excludeSemantics: true,
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
                 onTap: () => abrirFuncao(context, r.item, origem: 'mais_usados'),
                 child: SizedBox(
-                  width: 72,
+                  width: 76,
                   child: Column(children: [
                     Container(
-                      width: 60,
-                      height: 60,
+                      width: 64,
+                      height: 64,
+                      padding: const EdgeInsets.all(2.5),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                            colors: [arte.base, arte.meio],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight),
-                        border: Border.all(color: arte.destaque, width: 2),
+                        color: novo ? null : theme.colorScheme.onSurface.withValues(alpha: .14),
+                        gradient: novo ? _anelNovo : null,
                       ),
-                      child: Icon(iconePorChave(r.item.icone),
-                          color: Colors.white, size: AppIconSize.md),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: fundo,
+                          border: Border.all(color: fundo, width: 3),
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(shape: BoxShape.circle, color: pri.withValues(alpha: .2)),
+                          child: Icon(iconePorChave(r.item.icone), color: pri, size: 26),
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    // Palavra única encolhe em vez de quebrar no meio.
-                    if (r.item.rotulo.contains(' '))
-                      Text(r.item.rotulo,
-                          maxLines: 2,
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.labelSmall
-                              ?.copyWith(letterSpacing: 0, height: 1.15))
-                    else
-                      FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(r.item.rotulo,
-                              maxLines: 1,
-                              style: theme.textTheme.labelSmall
-                                  ?.copyWith(letterSpacing: 0))),
+                    const SizedBox(height: 6),
+                    Text(rotuloCurto(r.item),
+                        maxLines: 1,
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 11, height: 1.2, letterSpacing: -0.11, color: theme.colorScheme.onSurface)),
                   ]),
                 ),
               ),
@@ -394,7 +456,6 @@ class _LinhaMaisUsados extends StatelessWidget {
           },
         ),
       ),
-      const SizedBox(height: 8),
     ]);
   }
 }
@@ -409,28 +470,47 @@ class _CampoBusca extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controle,
-      onChanged: aoMudar,
-      onSubmitted: aoEnviar,
-      textInputAction: TextInputAction.search,
-      decoration: InputDecoration(
-        hintText: 'Buscar serviço (ex.: holerite, férias)',
-        prefixIcon: const Icon(Icons.search, size: AppIconSize.sm),
-        suffixIcon: ValueListenableBuilder<TextEditingValue>(
-          valueListenable: controle,
-          builder: (_, v, __) => v.text.isEmpty
-              ? const SizedBox.shrink()
-              : IconButton(
-                  tooltip: 'Limpar busca',
-                  icon: const Icon(Icons.close, size: AppIconSize.sm),
-                  onPressed: () {
-                    controle.clear();
-                    aoMudar('');
-                  },
-                ),
+    // Protótipo `.campo-busca`: 44 de altura, vidro leve, raio 12.
+    final theme = Theme.of(context);
+    final mudo = theme.colorScheme.onSurface.withValues(alpha: .62);
+    final borda = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: .10)),
+    );
+    return SizedBox(
+      height: 44,
+      child: TextField(
+        controller: controle,
+        onChanged: aoMudar,
+        onSubmitted: aoEnviar,
+        textInputAction: TextInputAction.search,
+        style: const TextStyle(fontSize: 15.5),
+        decoration: InputDecoration(
+          hintText: 'Buscar serviço, função ou assunto',
+          hintStyle: TextStyle(fontSize: 15.5, color: mudo),
+          isDense: true,
+          filled: true,
+          fillColor: theme.colorScheme.onSurface.withValues(alpha: .06),
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          prefixIcon: Icon(Icons.search, size: AppIconSize.sm, color: mudo),
+          prefixIconConstraints: const BoxConstraints(minWidth: 40),
+          suffixIcon: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controle,
+            builder: (_, v, __) => v.text.isEmpty
+                ? const SizedBox.shrink()
+                : IconButton(
+                    tooltip: 'Limpar busca',
+                    icon: const Icon(Icons.close, size: AppIconSize.sm),
+                    onPressed: () {
+                      controle.clear();
+                      aoMudar('');
+                    },
+                  ),
+          ),
+          border: borda,
+          enabledBorder: borda,
+          focusedBorder: borda.copyWith(borderSide: BorderSide(color: theme.colorScheme.primary)),
         ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }
@@ -508,36 +588,30 @@ class CartaoArea extends StatelessWidget {
           child: InkWell(
             onTap: aoTocar,
             child: Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: 44,
-                    height: 44,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.28)),
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(11),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
                     ),
-                    child: Icon(iconePorChave(area.icone),
-                        color: Colors.white, size: AppIconSize.md),
+                    child: Icon(iconePorChave(area.icone), color: Colors.white, size: AppIconSize.sm),
                   ),
                   const Spacer(),
                   Text(area.rotulo,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          height: 1.2,
-                          fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 4),
+                      style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.2, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 2),
                   Text(contagem,
-                      style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 12)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.82), fontSize: 11.5, height: 1.35)),
                 ],
               ),
             ),
