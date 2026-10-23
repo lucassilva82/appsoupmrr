@@ -101,7 +101,7 @@ class _TelaAtualizacaoState extends State<TelaAtualizacao> with TickerProviderSt
                 constraints: const BoxConstraints(maxWidth: 480),
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Semantics(
-                    label: 'Ilustração: uma viatura velha, com a versão ${widget.instalada}, ao lado de uma viatura nova, com a versão $_nova.',
+                    label: 'Ilustração: uma viatura velha, com a versão ${widget.instalada}, e um policial triste ao lado de uma viatura nova, com a versão $_nova.',
                     excludeSemantics: true,
                     child: SizedBox(
                       height: 170,
@@ -115,8 +115,11 @@ class _TelaAtualizacaoState extends State<TelaAtualizacao> with TickerProviderSt
                     ),
                   ),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                    _Etiqueta(texto: 'Sua versão · ${widget.instalada}', cor: theme.colorScheme.error),
-                    _Etiqueta(texto: 'Nova · $_nova', cor: const Color(0xFF14713B)),
+                    // Com fonte grande, encolhe em vez de estourar a linha.
+                    Flexible(child: FittedBox(fit: BoxFit.scaleDown,
+                        child: _Etiqueta(texto: 'Sua versão · ${widget.instalada}', cor: theme.colorScheme.error))),
+                    Flexible(child: FittedBox(fit: BoxFit.scaleDown,
+                        child: _Etiqueta(texto: 'Nova · $_nova', cor: const Color(0xFF14713B)))),
                   ]),
                   const SizedBox(height: 20),
                   Text('ATUALIZAÇÃO OBRIGATÓRIA',
@@ -216,6 +219,13 @@ class _PintorCena extends CustomPainter {
     desenharViatura(canvas, giroflexAceso: (loop * 6).floor().isEven, giroRodas: troca * math.pi * 4);
     canvas.restore();
 
+    // ── Policial genérico (sem semelhança com ninguém): triste ao lado do
+    // Fusca; na troca, dois pulinhos até a viatura nova e fica feliz.
+    final passo = Curves.easeInOut.transform(troca.clamp(0.0, 1.0));
+    final px = meio * 0.95 + (meio * 1.5 - 96 - meio * 0.95) * passo;
+    final pulo = (math.sin(troca * math.pi * 2).abs()) * 14 * (troca < 1 ? 1 : 0);
+    _policial(canvas, Offset(px, solo + 12 - pulo), feliz: troca > 0.5, loop: loop);
+
     // Confete no salto.
     if (troca > 0.3 && troca < 1) {
       final r = math.Random(7);
@@ -228,6 +238,43 @@ class _PintorCena extends CustomPainter {
               .withValues(alpha: 1 - troca),
         );
       }
+    }
+  }
+
+  /// Policial em desenho, com os pés em [pe]: farda e boina azuis da PMRR.
+  void _policial(Canvas canvas, Offset pe, {required bool feliz, required double loop}) {
+    const farda = Color(0xFF1E3A8A);
+    const pele = Color(0xFFD9A57B);
+    const tinta = Color(0xFF0F172A);
+    final traco = Paint()..color = tinta..strokeWidth = 2..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
+    // Pernas e corpo.
+    canvas.drawLine(pe + const Offset(-5, 0), pe + const Offset(-5, -14), Paint()..color = tinta..strokeWidth = 4);
+    canvas.drawLine(pe + const Offset(5, 0), pe + const Offset(5, -14), Paint()..color = tinta..strokeWidth = 4);
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: pe + const Offset(0, -26), width: 22, height: 26),
+        const Radius.circular(6)), Paint()..color = farda);
+    // Braços: caídos quando triste, para cima quando feliz.
+    final braco = Paint()..color = farda..strokeWidth = 5..strokeCap = StrokeCap.round;
+    for (final lado in [-1.0, 1.0]) {
+      final ombro = pe + Offset(10 * lado, -34);
+      final mao = feliz ? ombro + Offset(8 * lado, -16) : ombro + Offset(3 * lado, 16);
+      canvas.drawLine(ombro, mao, braco);
+      canvas.drawCircle(mao, 3, Paint()..color = pele);
+    }
+    // Cabeça e boina.
+    final cabeca = pe + const Offset(0, -48);
+    canvas.drawCircle(cabeca, 10, Paint()..color = pele);
+    canvas.drawOval(Rect.fromCenter(center: cabeca + const Offset(-2, -8), width: 24, height: 9), Paint()..color = farda);
+    canvas.drawCircle(cabeca + const Offset(6, -9), 2.2, Paint()..color = const Color(0xFFE0A100));
+    // Olhos e boca.
+    canvas.drawCircle(cabeca + const Offset(-3.5, -1), 1.3, Paint()..color = tinta);
+    canvas.drawCircle(cabeca + const Offset(3.5, -1), 1.3, Paint()..color = tinta);
+    final boca = Rect.fromCenter(center: cabeca + Offset(0, feliz ? 3 : 7), width: 8, height: 6);
+    canvas.drawArc(boca, feliz ? 0.2 : math.pi + 0.2, math.pi - 0.4, false, traco);
+    // Lágrima, caindo devagar.
+    if (!feliz) {
+      final f = (loop * 2) % 1;
+      canvas.drawCircle(cabeca + Offset(-5, 2 + f * 8), 1.8,
+          Paint()..color = const Color(0xFF60A5FA).withValues(alpha: 1 - f));
     }
   }
 

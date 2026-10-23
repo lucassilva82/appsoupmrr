@@ -2310,8 +2310,9 @@ viatura nova com a da loja; ao tocar, a velha apaga, a nova salta e a loja da
 plataforma abre; parada com "Reduzir movimento"; textos do painel e código
 `CF-VERSAO-IOS`/`CF-VERSAO-ANDROID`). Abaixo da recomendada, um cartão
 dispensável no topo da Início, uma vez por versão. A falha na abertura deixou
-de ser "Ocorreu um erro": vira a tela de erro com `AP-ABERTURA`. Fica para
-depois: o policial ilustrado da cena.
+de ser "Ocorreu um erro": vira a tela de erro com `AP-ABERTURA`. O policial
+ilustrado entrou na cena: triste ao lado do Fusca, dá dois pulinhos até a
+viatura nova e fica feliz.
 
 **Níveis de acesso (fase 5): estrutura pronta e desligada.**
 `sql/2026-10-23_soupm_niveis.sql` cria a escada (os 5 níveis), as regras, os
@@ -2371,7 +2372,9 @@ silencioso de configuração, que o `envio_push.php` agora manda só com dados
 `cron/versao_legada.php` leva o mínimo legado ao Firestore das 2.1.x, nunca
 acima das mínimas da 2.2 nem da última versão publicada em cada loja. O cron
 noturno apaga os anexos de sugestões 180 dias depois de concluídas ou
-arquivadas (SQL `2026-10-23_soupm_feedback_retencao.sql`).
+arquivadas (SQL `2026-10-23_soupm_feedback_retencao.sql`). Quando o servidor
+não responde, a Início mostra uma faixa "Sem conexão com o servidor", com a
+hora do que está guardado e "Tentar de novo" (§5.3).
 
 **P7, notícias e agenda: travada fora do app.** A API da intranet só tem a
 agenda **dos comandantes** (`/api/v1/agenda/eventos`, com a permissão
