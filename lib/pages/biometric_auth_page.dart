@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:projetonovo/core/log/registro_log.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -247,6 +248,9 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
         options: const AuthenticationOptions(biometricOnly: true),
       );
 
+      registrar('sessao.biometria',
+          resultado: didAuthenticate ? 'ok' : 'cancelado',
+          dados: {'metodo': Platform.isIOS ? 'face_id' : 'biometria'});
       if (didAuthenticate) {
         if (auth.matricula != null && auth.password != null) {
           await auth.loginSemNotificar(auth.matricula!, auth.password!);
@@ -260,7 +264,8 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
         if (mounted)
           Navigator.of(context).pushReplacementNamed(AppRoutes.AUTH_PAGE);
       }
-    } catch (_) {
+    } catch (e) {
+      registrar('sessao.biometria', resultado: 'falhou', codigo: 'LG-BIO', dados: {'tipo': e.runtimeType.toString()});
       if (mounted)
         Navigator.of(context).pushReplacementNamed(AppRoutes.AUTH_PAGE);
     } finally {

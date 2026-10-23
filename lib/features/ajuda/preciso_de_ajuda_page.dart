@@ -182,7 +182,7 @@ class _PerguntasPage extends StatelessWidget {
                     InkWell(
                       onTap: () {
                         registrar('ajuda.ver',
-                            chave: 'atend.ajuda', dados: {'assunto': assunto.chave, 'pergunta': p.id});
+                            chave: 'atend.ajuda', dados: {'assunto': assunto.chave, 'pergunta_id': p.id});
                         Navigator.of(context)
                             .push(MaterialPageRoute(builder: (_) => _RespostaPage(assunto: assunto, pergunta: p)));
                       },
@@ -291,7 +291,7 @@ class _RespostaPageState extends State<_RespostaPage> {
                   OutlinedButton(
                     onPressed: () {
                       registrar('ajuda.resolveu',
-                          chave: 'atend.ajuda', dados: {'assunto': widget.assunto.chave, 'pergunta': p.id});
+                          chave: 'atend.ajuda', dados: {'assunto': widget.assunto.chave, 'pergunta_id': p.id});
                       setState(() => _resolveu = true);
                     },
                     child: const Text('Sim, resolveu'),
@@ -324,7 +324,7 @@ class _BotaoChamado extends StatelessWidget {
         icon: const Icon(Icons.confirmation_number_outlined, size: AppIconSize.sm),
         label: Text(rotulo),
         onPressed: () {
-          registrar('ajuda.abriu_chamado', chave: 'atend.ajuda', dados: {'assunto': assunto, 'pergunta': pergunta});
+          registrar('ajuda.abriu_chamado', chave: 'atend.ajuda', dados: {'assunto': assunto, 'pergunta_id': pergunta});
           final gestor = context.read<Auth>().isSuperUser;
           final chamados = itemPorChave('atend.chamados', menu: menuEmUso(RepositorioConfig.atual, gestor: gestor));
           if (chamados == null) {

@@ -9,6 +9,10 @@ import 'dart:io';
 class AmbienteApp {
   AmbienteApp._();
 
+  /// Quando o processo começou (o `main` toca neste campo primeiro), para o
+  /// tempo de abertura do `app.abrir`.
+  static final DateTime inicio = DateTime.now();
+
   static String versao = '0.0.0';
   static String build = '0';
   static String plataforma = _plataforma();

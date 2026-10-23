@@ -1,3 +1,4 @@
+import 'package:projetonovo/core/ambiente_app.dart';
 import 'package:projetonovo/core/log/registro_log.dart';
 import 'package:projetonovo/features/carreira/carreira_page.dart';
 import 'package:projetonovo/features/chamados/chamados_page.dart';
@@ -154,6 +155,7 @@ Future<void> main() => modoVitrine
     : _iniciar();
 
 Future<void> _iniciar() async {
+  AmbienteApp.inicio; // marca o começo, para o tempo de abertura do log
   WidgetsFlutterBinding.ensureInitialized();
 
   // Antes de tudo: o que escapar de um `try` daqui em diante vai para o log

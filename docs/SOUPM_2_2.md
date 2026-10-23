@@ -1224,14 +1224,14 @@ cancelado, falhou + código).
 
 | Evento | Quando | Dados extras |
 |---|---|---|
-| `app.abrir`, `app.fundo`, `app.voltar`, `app.fechar` | ciclo de vida | tempo de abertura (ms), abertura a frio ou a quente |
-| `sessao.entrar`, `sessao.sair`, `sessao.expirar`, `sessao.biometria` | login e saída | método, resultado |
+| `app.abrir`, `app.fundo`, `app.voltar`, `app.fechar` | ciclo de vida | no `app.abrir`: `ms` (tempo de abertura), `abertura` (fria ou quente), `tema`, `fonte_escala` e `modelo`. A `rede` fica de fora: precisaria de um pacote nativo novo |
+| `sessao.entrar`, `sessao.sair`, `sessao.expirar`, `sessao.biometria` | login e saída | método, resultado (no `sessao.biometria`: ok, cancelado ou falhou com `LG-BIO`) |
 | `tela.abrir`, `tela.sair` | toda tela | chave, de onde veio (menu, busca, atalho, card, push, link), tempo na tela |
 | `funcao.tocar` | item de menu, atalho, card | chave, estado (ativo, bloqueado) |
 | `modulo.bloqueio_visto` | folha de bloqueio | chave, motivo |
 | `modulo.avisar_quando_voltar` | "Avisar quando voltar" na folha | código `MD-` da função |
 | `busca.executar`, `busca.abrir_resultado`, `busca.sem_resultado` | busca | termo, total, posição |
-| `ajuda.ver`, `ajuda.resolveu`, `ajuda.abriu_chamado` | "Preciso de ajuda" | assunto, id da pergunta |
+| `ajuda.ver`, `ajuda.resolveu`, `ajuda.abriu_chamado` | "Preciso de ajuda" | `assunto` (chave) e `pergunta_id` (id em `soupm_faq`) |
 | `inicio.personalizar`, `inicio.card_tocar` | Início | ordem nova; chave do card |
 | `inicio.editar_abrir`, `inicio.editar_concluir` | Início | edição na própria tela: quantos blocos ao abrir; ordem e escondidos ao concluir |
 | `comunicado.ver`, `comunicado.abrir`, `comunicado.ciencia`, `comunicado.popup_fechar` | comunicados | id, tempo de leitura |
