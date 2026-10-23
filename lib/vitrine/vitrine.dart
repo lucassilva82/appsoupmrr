@@ -248,6 +248,7 @@ Object? _responder(Uri url, http.Request req) {
         },
         'rede': {'timeout_s': 15},
         'comunicados': {'fonte': 'api'},
+        'lotacao': {'subunidade': '2ª Cia', 'unidade': '1º BPM', 'comando': 'CPC'},
         // Início com Comando fictício (sem foto) e um card do painel: as
         // capturas e os vídeos não mostram os comandantes reais.
         'home': [
@@ -266,13 +267,12 @@ Object? _responder(Uri url, http.Request req) {
           },
           {'chave': 'home.anuncio', 'ordem': 20, 'escondivel': false},
           {'chave': 'home.dicas', 'ordem': 30, 'dados': [
-            {'texto': 'Ative a biometria em Perfil para entrar mais rápido.', 'icone': 'fingerprint', 'tipo': 'dica'},
-            {'texto': 'As certidões saem na hora, com QR Code de conferência.', 'icone': 'verified', 'tipo': 'novidade'},
+            {'texto': 'Use a lupa para achar qualquer serviço pelo nome, como "holerite" ou "reserva".', 'icone': 'tips_and_updates', 'tipo': 'dica'},
           ]},
           {'chave': 'home.pendencias', 'ordem': 40, 'escondivel': false},
           {'chave': 'home.atalhos', 'ordem': 50},
           {'chave': 'home.livre.outubro_rosa', 'ordem': 55, 'modelo': 'campanha', 'arte': 'rosa',
-           'dados': {'selo': 'Campanha', 'titulo': 'Outubro Rosa', 'texto': 'Exames preventivos na Diretoria de Saúde até 31/10.'},
+           'dados': {'selo': 'Saúde', 'titulo': 'Outubro Rosa na PMRR', 'texto': 'Exames preventivos no HPM até 31/10. Agende pelo ramal da Diretoria de Saúde.'},
            'acao': {'tipo': 'comunicado', 'rotulo': 'Saiba mais'}},
           {'chave': 'home.contracheque', 'ordem': 60},
           {'chave': 'home.tempo_servico', 'ordem': 70},

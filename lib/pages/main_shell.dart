@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -18,7 +19,6 @@ import '../features/servicos/busca_page.dart';
 import 'configuracoes.dart';
 import '../widgets/barra_lateral.dart';
 import '../widgets/barra_navegacao.dart';
-import '../widgets/barra_vidro.dart';
 import '../widgets/vidro.dart';
 
 /// Rotas que só existem no navegador raiz (login, abertura, o próprio
@@ -275,6 +275,10 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
           },
           child: FundoSuave(
             child: Scaffold(
+              // No iOS a barra é solta, de vidro: o conteúdo passa por baixo
+              // dela (o MediaQuery já soma a altura da barra no fim das
+              // listas).
+              extendBody: !lateral && BarraNavegacao.plataformaIos,
               body: lateral
                   ? Row(children: [
                       BarraLateral(
@@ -313,6 +317,9 @@ class _RaizAba extends StatelessWidget {
 
   static const _abaAvisos = _MainShellState._abaAvisos;
 
+  /// Início leva saudação e lotação (duas linhas); as outras, o título.
+  double get _alturaCab => indice == 0 ? 64 : 56;
+
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<Auth>(context);
@@ -326,17 +333,19 @@ class _RaizAba extends StatelessWidget {
         // A altura precisa somar o recorte do topo (ilha/notch). Sem isso o
         // PreferredSize ficava com 56pt no total, o SafeArea empurrava o
         // conteúdo para baixo e o título encostava na borda inferior.
+        // Título grande na raiz de cada aba, sem faixa de fundo (protótipo
+        // §15.3: `.cab` e `.ola`). As funções abertas por cima trazem a
+        // barra de vidro delas.
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(
-            kToolbarHeight + MediaQuery.of(context).padding.top,
+            _alturaCab + MediaQuery.of(context).padding.top,
           ),
           child: Stack(
             children: [
-              const Positioned.fill(child: FundoBarraVidro()),
               SafeArea(
                 bottom: false,
                 child: SizedBox(
-                  height: kToolbarHeight,
+                  height: _alturaCab,
                   child: _buildAppBarContent(
                     context,
                     nome: auth.nomeMilitar ?? 'Militar',
@@ -364,24 +373,27 @@ class _RaizAba extends StatelessWidget {
     required int unread,
     required NotificationProvider notifProvider,
   }) {
+    final cor = Theme.of(context).colorScheme.onSurface;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.only(left: 18, right: 6),
       child: Row(
         children: [
-          const SizedBox(width: 8),
-
           // Título dinâmico por aba
           Expanded(
             child: indice == 0
-                ? _titleHome(nome, isSuperUser, isAdmin)
+                ? _titleHome(context, nome, isSuperUser, isAdmin)
                 : Text(
                     ['Início', 'Serviços', 'Avisos', 'Perfil'][indice],
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 0.2,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    // iOS: título grande (32, negrito); Android: o da
+                    // TopAppBar média do Material 3 (24, regular).
+                    style: TextStyle(
+                      fontSize: _ios ? 32 : 24,
+                      fontWeight: _ios ? FontWeight.w700 : FontWeight.w400,
+                      letterSpacing: _ios ? -0.6 : 0,
+                      height: 1.1,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
           ),
@@ -391,17 +403,17 @@ class _RaizAba extends StatelessWidget {
           if (indice != 1)
             IconButton(
               tooltip: 'Buscar',
-              icon: const Icon(Icons.search, color: Colors.white),
+              icon: Icon(Icons.search, color: cor),
               onPressed: () => Navigator.of(context)
                   .push(MaterialPageRoute(builder: (_) => const BuscaPage())),
             ),
           if (indice == 0) ...[
-            _notificationBell(unread),
+            _notificationBell(unread, cor),
           ],
           if (indice == 3)
             IconButton(
               tooltip: 'Ficha Individual',
-              icon: const Icon(Icons.badge_outlined, color: Colors.white),
+              icon: Icon(Icons.badge_outlined, color: cor),
               onPressed: () {
                 registrar('funcao.tocar',
                     chave: 'perfil.ficha', dados: {'origem': 'perfil'});
@@ -411,9 +423,10 @@ class _RaizAba extends StatelessWidget {
           if (indice == _abaAvisos && unread > 0)
             TextButton(
               onPressed: () => notifProvider.markAllAsRead(),
-              child: const Text(
+              child: Text(
                 'Limpar tudo',
-                style: TextStyle(color: Colors.white70, fontSize: 13),
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary, fontSize: 14),
               ),
             ),
         ],
@@ -421,59 +434,93 @@ class _RaizAba extends StatelessWidget {
     );
   }
 
-  Widget _titleHome(String nome, bool isSuperUserLegado, bool isAdmin) {
+  static bool get _ios => defaultTargetPlatform == TargetPlatform.iOS;
+
+  /// "Bom dia", "Boa tarde" ou "Boa noite", pela hora do aparelho.
+  static String saudacao([DateTime? agora]) {
+    final h = (agora ?? DateTime.now()).hour;
+    if (h >= 5 && h < 12) return 'Bom dia';
+    if (h >= 12 && h < 18) return 'Boa tarde';
+    return 'Boa noite';
+  }
+
+  /// Saudação grande e, embaixo, a lotação em siglas com o selo do nível
+  /// (§6.2; protótipo `.ola`).
+  Widget _titleHome(
+      BuildContext context, String nome, bool isSuperUserLegado, bool isAdmin) {
+    final theme = Theme.of(context);
+    final config = RepositorioConfig.atual;
     // Com os níveis ligados no painel, o selo é o nome curto do nível (§6.2);
     // até lá, a regra de hoje.
-    final nivel = RepositorioConfig.atual.nivel;
+    final nivel = config.nivel;
     final isSuperUser = nivel != null ? nivel.selo : isSuperUserLegado;
     final label =
-        nivel != null ? nivel.nomeCurto : (isAdmin ? 'Admin' : 'GESTOR');
-    return Row(
+        nivel != null ? nivel.nomeCurto : (isAdmin ? 'Admin' : 'Gestor');
+    final lotacao = config.lotacaoCurta;
+    final mudo = theme.colorScheme.onSurface.withValues(alpha: 0.62);
+    return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (isSuperUser) ...[
-          const Icon(Icons.star_rounded, color: AppColors.gold, size: 16),
-          const SizedBox(width: 4),
-        ],
-        Flexible(
-          child: Text(
-            'Olá, $nome',
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+        Text(
+          '${saudacao()}, $nome',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.2,
+            height: 1.15,
+            color: theme.colorScheme.onSurface,
           ),
         ),
-        if (isSuperUser) ...[
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: AppColors.gold,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-                letterSpacing: 0.5,
-              ),
+        if (lotacao.isNotEmpty || isSuperUser)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Row(
+              children: [
+                if (lotacao.isNotEmpty)
+                  Flexible(
+                    child: Text(
+                      lotacao,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12.5, color: mudo),
+                    ),
+                  ),
+                if (isSuperUser) ...[
+                  if (lotacao.isNotEmpty) const SizedBox(width: 6),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: AppColors.gold.withValues(alpha: 0.12),
+                      border: Border.all(
+                          color: AppColors.gold.withValues(alpha: 0.30)),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.gold,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-        ],
       ],
     );
   }
 
-  Widget _notificationBell(int count) {
+  Widget _notificationBell(int count, Color cor) {
     return Stack(
       children: [
         IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+          icon: Icon(Icons.notifications_outlined, color: cor),
           tooltip: 'Avisos',
           onPressed: () => irPara(_abaAvisos),
         ),

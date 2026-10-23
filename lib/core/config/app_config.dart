@@ -279,6 +279,7 @@ class AppConfig {
     this.preferencias,
     this.nivel,
     this.chamados = const {},
+    this.lotacao = const [],
     this.recebidoEm,
   });
 
@@ -329,6 +330,13 @@ class AppConfig {
     return v is String && v.trim().isNotEmpty ? v : null;
   }
 
+  /// Lotação do SIGRH para a linha abaixo da saudação (§6.2), da menor para
+  /// a maior: subunidade, unidade e grande comando. Vazia = não mostra.
+  final List<String> lotacao;
+
+  /// "2ª Cia · 1º BPM · CPC"; vazio quando o servidor não mandou.
+  String get lotacaoCurta => lotacao.join(' · ');
+
   /// Quando a cópia em uso chegou do servidor ("Atualizado hoje às 07:30").
   final DateTime? recebidoEm;
 
@@ -369,6 +377,12 @@ class AppConfig {
       preferencias: PreferenciasInicio.deJson(j['preferencias']),
       nivel: NivelApp.deJson(j['nivel']),
       chamados: j['chamados'] is Map ? Map<String, dynamic>.from(j['chamados'] as Map) : const {},
+      lotacao: [
+        if (j['lotacao'] is Map)
+          for (final k in const ['subunidade', 'unidade', 'comando'])
+            if (j['lotacao'][k] is String && (j['lotacao'][k] as String).trim().isNotEmpty)
+              (j['lotacao'][k] as String).trim(),
+      ],
       recebidoEm: recebidoEm,
     );
   }
