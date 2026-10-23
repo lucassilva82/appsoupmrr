@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:projetonovo/widgets/custom_appbar.dart';
 import 'package:projetonovo/features/inicio/linha_atalhos.dart' show rotuloCurto;
@@ -12,6 +14,7 @@ import '../../models/auth_model.dart';
 import '../../utils/app_routes.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/vidro.dart';
+import 'busca_page.dart';
 
 /// Menu em uso: o do `app_config` (já filtrado pelo servidor) ou, sem ele,
 /// o de reserva igual à carga do banco. Só os itens visíveis.
@@ -109,25 +112,6 @@ class ServicosBody extends StatefulWidget {
 }
 
 class _ServicosBodyState extends State<ServicosBody> {
-  final _busca = TextEditingController();
-  String _termo = '';
-
-  @override
-  void dispose() {
-    _busca.dispose();
-    super.dispose();
-  }
-
-  void _mudouBusca(String v) {
-    setState(() => _termo = v);
-  }
-
-  void _registrarBusca(String termo, int total) {
-    if (termo.trim().length < 2) return;
-    registrar(total == 0 ? 'busca.sem_resultado' : 'busca.executar',
-        dados: {'termo': termo.trim(), 'total': total});
-  }
-
   @override
   Widget build(BuildContext context) {
     final gestor = context.select<Auth, bool>((a) => a.isSuperUser);
@@ -135,32 +119,20 @@ class _ServicosBodyState extends State<ServicosBody> {
       valueListenable: RepositorioConfig.emUso,
       builder: (context, config, _) {
         final menu = menuEmUso(config, gestor: gestor);
-        final resultados = buscarFuncoes(menu, _termo);
         return CustomScrollView(
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               sliver: SliverToBoxAdapter(
                 child: _CampoBusca(
-                  controle: _busca,
-                  aoMudar: _mudouBusca,
-                  aoEnviar: (v) =>
-                      _registrarBusca(v, buscarFuncoes(menu, v).length),
+                  aoTocar: () {
+                    registrar('tela.abrir', chave: 'busca', dados: {'de': 'servicos'});
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BuscaPage()));
+                  },
                 ),
               ),
             ),
-            if (_termo.trim().isNotEmpty)
-              _ListaResultados(
-                resultados: resultados,
-                termo: _termo,
-                aoAbrir: (r, pos) {
-                  _registrarBusca(_termo, resultados.length);
-                  registrar('busca.abrir_resultado',
-                      chave: r.item.chave, dados: {'posicao': pos});
-                  abrirFuncao(context, r.item, origem: 'busca');
-                },
-              )
-            else ...[
+            ...[
               if (_maisUsados(menu, config) case final l when l.isNotEmpty)
                 SliverToBoxAdapter(child: _LinhaMaisUsados(itens: l)),
               SliverToBoxAdapter(
@@ -461,104 +433,49 @@ class _LinhaMaisUsados extends StatelessWidget {
   }
 }
 
+/// O campo de Serviços é um botão: abre a busca (protótipo `.campo-busca`,
+/// 44 de altura, raio 12; no Android, 56 e raio 28).
 class _CampoBusca extends StatelessWidget {
-  const _CampoBusca(
-      {required this.controle, required this.aoMudar, required this.aoEnviar});
+  const _CampoBusca({required this.aoTocar});
 
-  final TextEditingController controle;
-  final ValueChanged<String> aoMudar;
-  final ValueChanged<String> aoEnviar;
+  final VoidCallback aoTocar;
 
   @override
   Widget build(BuildContext context) {
-    // Protótipo `.campo-busca`: 44 de altura, vidro leve, raio 12.
     final theme = Theme.of(context);
+    final ios = Platform.isIOS;
     final mudo = theme.colorScheme.onSurface.withValues(alpha: .62);
-    final borda = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: .10)),
-    );
-    return SizedBox(
-      height: 44,
-      child: TextField(
-        controller: controle,
-        onChanged: aoMudar,
-        onSubmitted: aoEnviar,
-        textInputAction: TextInputAction.search,
-        style: const TextStyle(fontSize: 15.5),
-        decoration: InputDecoration(
-          hintText: 'Buscar serviço, função ou assunto',
-          hintStyle: TextStyle(fontSize: 15.5, color: mudo),
-          isDense: true,
-          filled: true,
-          fillColor: theme.colorScheme.onSurface.withValues(alpha: .06),
-          contentPadding: const EdgeInsets.symmetric(vertical: 12),
-          prefixIcon: Icon(Icons.search, size: AppIconSize.sm, color: mudo),
-          prefixIconConstraints: const BoxConstraints(minWidth: 40),
-          suffixIcon: ValueListenableBuilder<TextEditingValue>(
-            valueListenable: controle,
-            builder: (_, v, __) => v.text.isEmpty
-                ? const SizedBox.shrink()
-                : IconButton(
-                    tooltip: 'Limpar busca',
-                    icon: const Icon(Icons.close, size: AppIconSize.sm),
-                    onPressed: () {
-                      controle.clear();
-                      aoMudar('');
-                    },
-                  ),
+    final raio = BorderRadius.circular(ios ? 12 : 28);
+    return Semantics(
+      button: true,
+      label: 'Buscar serviço, função ou assunto',
+      excludeSemantics: true,
+      child: Material(
+        color: theme.colorScheme.onSurface.withValues(alpha: .06),
+        shape: RoundedRectangleBorder(
+          borderRadius: raio,
+          side: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: .10)),
+        ),
+        child: InkWell(
+          borderRadius: raio,
+          onTap: aoTocar,
+          child: SizedBox(
+            height: ios ? 44 : 56,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: ios ? 12 : 16),
+              child: Row(children: [
+                Icon(Icons.search, size: AppIconSize.sm, color: mudo),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('Buscar serviço, função ou assunto',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 15.5, color: mudo)),
+                ),
+              ]),
+            ),
           ),
-          border: borda,
-          enabledBorder: borda,
-          focusedBorder: borda.copyWith(borderSide: BorderSide(color: theme.colorScheme.primary)),
         ),
-      ),
-    );
-  }
-}
-
-class _ListaResultados extends StatelessWidget {
-  const _ListaResultados(
-      {required this.resultados, required this.termo, required this.aoAbrir});
-
-  final List<({ItemMenu item, ItemMenu area})> resultados;
-  final String termo;
-  final void Function(({ItemMenu item, ItemMenu area}) r, int posicao) aoAbrir;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    if (resultados.isEmpty) {
-      return SliverPadding(
-        padding: const EdgeInsets.all(24),
-        sliver: SliverToBoxAdapter(
-          child: Column(children: [
-            Icon(Icons.search_off_rounded,
-                size: AppIconSize.xl, color: theme.colorScheme.onSurfaceVariant),
-            const SizedBox(height: 10),
-            Text('Não achamos "${termo.trim()}".',
-                textAlign: TextAlign.center, style: theme.textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text('Tente outra palavra ou veja todas as áreas apagando a busca.',
-                textAlign: TextAlign.center, style: theme.textTheme.bodyMedium),
-          ]),
-        ),
-      );
-    }
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      sliver: SliverList.separated(
-        itemCount: resultados.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
-        itemBuilder: (context, i) {
-          final r = resultados[i];
-          return LinhaFuncao(
-            item: r.item,
-            caminho: r.area.rotulo,
-            corIcone: Arte.de(r.area.arte).destaque,
-            aoTocar: () => aoAbrir(r, i),
-          );
-        },
       ),
     );
   }
@@ -771,61 +688,6 @@ class _LadrilhoFuncao extends StatelessWidget {
             if (item.selo != null) Positioned(top: 0, right: 0, child: SeloEstado(texto: item.selo!)),
           ]),
         ),
-      ),
-    );
-  }
-}
-
-/// Linha de função (busca, listas): 52 pt, ícone, nome, caminho e selo.
-class LinhaFuncao extends StatelessWidget {
-  const LinhaFuncao({
-    super.key,
-    required this.item,
-    required this.aoTocar,
-    this.caminho,
-    this.corIcone,
-  });
-
-  final ItemMenu item;
-  final VoidCallback aoTocar;
-  final String? caminho;
-  final Color? corIcone;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Opacity(
-      opacity: item.bloqueado ? 0.55 : 1,
-      child: CartaoVidro(
-        raio: 12,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        onTap: aoTocar,
-        child: Row(children: [
-          Icon(iconePorChave(item.icone),
-              color: corIcone ?? theme.colorScheme.primary,
-              size: AppIconSize.md),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item.rotulo,
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600)),
-                if (caminho != null)
-                  Text('$caminho › ${item.rotulo}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant)),
-              ],
-            ),
-          ),
-          if (item.selo != null) SeloEstado(texto: item.selo!),
-          const SizedBox(width: 4),
-          Icon(Icons.chevron_right_rounded,
-              size: AppIconSize.sm, color: theme.colorScheme.onSurfaceVariant),
-        ]),
       ),
     );
   }

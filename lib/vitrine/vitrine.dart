@@ -303,6 +303,9 @@ Object? _responder(Uri url, http.Request req) {
         'servicos': {
           'mais_usados': ['rh.contracheques', 'rh.certidoes', 'rh.ferias', 'rh.ficha', 'normas.legislacoes', 'rh.documentos', 'rh.declaracoes'],
         },
+        'busca': {
+          'mais_procurados': ['rh.contracheques', 'rh.certidoes', 'rh.ferias', 'atend.feedback'],
+        },
       };
     case 'login.php':
       return {

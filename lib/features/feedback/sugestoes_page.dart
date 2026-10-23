@@ -40,7 +40,11 @@ FeedbackRepositorio repositorioFeedback(BuildContext context) {
 /// Sugestões e elogios (docs/SOUPM_2_2.md §8.1). Problema técnico não vem
 /// para cá: o aviso do topo leva ao chamado.
 class SugestoesPage extends StatefulWidget {
-  const SugestoesPage({super.key});
+  const SugestoesPage({super.key, this.funcaoSugerida});
+
+  /// Termo que a busca não achou ("Sugerir esta função", §7): a sugestão
+  /// já abre como pedido de função nova, com o termo no texto.
+  final String? funcaoSugerida;
 
   @override
   State<SugestoesPage> createState() => _SugestoesPageState();
@@ -57,6 +61,11 @@ class _SugestoesPageState extends State<SugestoesPage> {
   void initState() {
     super.initState();
     registrar('tela.abrir', chave: 'atend.feedback');
+    final termo = widget.funcaoSugerida?.trim();
+    if (termo != null && termo.isNotEmpty) {
+      _tipo = TipoFeedback.funcaoNova;
+      _texto.text = 'Procurei "$termo" no app e não achei. Gostaria que o SouPMRR tivesse ';
+    }
   }
 
   @override

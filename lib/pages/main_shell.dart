@@ -37,6 +37,10 @@ class MainShell extends StatefulWidget {
   final int initialIndex;
   const MainShell({Key? key, this.initialIndex = 0}) : super(key: key);
 
+  /// Pedido de troca de aba vindo de uma tela de dentro (ex.: "Ver todos os
+  /// serviços" na busca sem resultado). O shell atende e volta para nulo.
+  static final abaPedida = ValueNotifier<int?>(null);
+
   @override
   State<MainShell> createState() => _MainShellState();
 }
@@ -63,6 +67,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _currentIndex = widget.initialIndex.clamp(0, 3);
+    MainShell.abaPedida.addListener(_atenderAbaPedida);
     // Conecta o histórico de notificações do militar logado (stream Firestore).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<NotificationProvider>(context, listen: false).bindUser();
@@ -87,6 +92,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    MainShell.abaPedida.removeListener(_atenderAbaPedida);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -112,6 +118,13 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     _navegadores[_currentIndex]
         .currentState
         ?.push(MaterialPageRoute(builder: (_) => const BuscaPage()));
+  }
+
+  void _atenderAbaPedida() {
+    final i = MainShell.abaPedida.value;
+    if (i == null) return;
+    MainShell.abaPedida.value = null;
+    if (mounted && i != _currentIndex) _irPara(i.clamp(0, 3));
   }
 
   void _irPara(int i) {

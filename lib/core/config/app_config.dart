@@ -273,6 +273,7 @@ class AppConfig {
     this.menu = const [],
     this.home,
     this.maisUsados,
+    this.maisProcurados,
     this.ajuda,
     this.fonteAvisos = 'firestore',
     this.fonteComunicados = 'firestore',
@@ -304,6 +305,10 @@ class AppConfig {
 
   /// "Mais usados" de Serviços; nulo = a linha não aparece.
   final List<String>? maisUsados;
+
+  /// "Mais procurados" da busca (§7, `busca.mais_procurados`); nulo = a
+  /// lista de reserva do app.
+  final List<String>? maisProcurados;
 
   /// "Preciso de ajuda"; nulo = o app usa o [ajudaPadrao].
   final List<AjudaAssunto>? ajuda;
@@ -374,6 +379,9 @@ class AppConfig {
           : const Duration(seconds: 15),
       menu: ItemMenu.lista(j['menu']),
       home: j['home'] is List ? BlocoInicio.lista(j['home']) : null,
+      maisProcurados: j['busca'] is Map && j['busca']['mais_procurados'] is List
+          ? [for (final c in j['busca']['mais_procurados'] as List) '$c']
+          : null,
       maisUsados: j['servicos'] is Map && j['servicos']['mais_usados'] is List
           ? [for (final c in j['servicos']['mais_usados'] as List) '$c']
           : null,
