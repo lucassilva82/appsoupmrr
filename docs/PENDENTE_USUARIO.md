@@ -136,38 +136,47 @@ entra aqui, com o que faltou fazer.
 ## Onde paramos em 23/10/2026 (fim da tarde)
 
 Tudo o que foi feito está no git (app na `feature/soupm-2-2`, API na `main`) e
-no banco de produção. **Três decisões esperam você**, e a primeira é urgente.
+no banco de produção. As decisões 1 e 2 foram tomadas em 23/10/2026; a 3
+espera o combinado entre a API e o painel.
 
-### 1. O painel vai dar "permission denied" no primeiro salvamento ⚠
+### 1. Usuário de banco próprio para o painel — decidido: (b), em 23/10/2026
 
-O painel foi para o mesmo banco do app e conecta pelo `conexao.php` dele —
-então roda com o usuário de banco **da API**, que tem `SELECT` apenas nas
-tabelas de configuração (`soupm_arte`, `soupm_card`, `soupm_comando`,
-`soupm_comunicado`, `soupm_dica`, `soupm_midia`, `soupm_nivel`,
-`soupm_declaracao_campanha`, `soupm_lembrete`, `soupm_fonte_dados`…).
+Falta você fazer, nesta ordem:
 
-Isso é de propósito: `PAINEL_ADMIN` §7.6 separou quem lê de quem escreve. Mas,
-com o painel usando a conexão do app, ele herdou a restrição justamente onde
-precisa gravar. Medido: o usuário da API insere em 34 de 53 tabelas, atualiza
-29, apaga 27 e executa 15 de 21 funções.
+1. **Criar o usuário no cPanel** (Bancos de dados PostgreSQL › Adicionar
+   usuário). O nome sugerido termina em `_painelsoupm`; o cPanel põe o prefixo
+   da conta na frente. **A senha é você quem digita** e gera (um gerador de
+   senhas, 24 caracteres ou mais). Na mesma tela, ligar o usuário ao banco do
+   app ("Adicionar usuário ao banco"), sem marcar privilégios: quem concede é o
+   SQL do passo 2.
+2. **Rodar no phpPgAdmin** o `sql/2026-10-24_soupm_painel_usuario.sql` do
+   repositório da API (com `LC_CTYPE=UTF-8 pbcopy`, APRENDIZADOS §45). A última
+   linha chama a função com o nome do usuário; se o cPanel deu outro nome,
+   troque só ali. O resultado é uma linha por permissão: `ok`, `pulado` (não
+   existe neste banco) ou `FALTOU`, com o motivo.
+3. **O que der `FALTOU (pedir ao dono do esquema)`** é leitura fora das tabelas
+   do SouPMRR (`qra.sec_users`, a visão do SIGRH, `recursoshumanos`,
+   `intranet`, `sccti`). A conta do cPanel não é dona desses esquemas e não
+   consegue conceder (APRENDIZADOS §46): mande essas linhas ao administrador do
+   banco. Atenção a uma delas: o login do painel confere a senha em
+   `qra.sec_users` (reusa o `sessao_app.php` da API), então **sem esse
+   SELECT o painel não entra** com o usuário novo.
+4. **Guardar a credencial** em `~/private/painel_banco.php` no servidor
+   (permissão 600), no formato que o painel lê:
+   `<?php return ['host' => 'localhost', 'porta' => 5432, 'banco' => '…', 'usuario' => '…', 'senha' => '…'];`
+   e uma cópia no Google Drive, em "Arquivos SouPMRR/servidor-api". **Nunca
+   no git.**
+5. Avisar a sessão do painel: ela confere com o usuário novo e só então tira a
+   conexão de transição (a da API).
 
-| Saída | O que custa |
-|---|---|
-| **(a)** dar escrita ao usuário da API | resolve hoje; some a separação entre leitura e escrita (dívida já registrada na spec do painel) |
-| **(b)** usuário de banco próprio para o painel, criado no cPanel | preserva o limite; um passo de setup e mais uma senha a guardar |
-| **(c)** painel só leitura até migrar para a intranet | honesto, mas não fecha o que você quer fechar |
+### 2. Arquivos de inclusão da API — feito em 24/10/2026
 
-Recomendação: **(a)**, porque o painel é provisório, com a dívida escrita.
-
-### 2. Arquivos de inclusão da API alcançáveis pela web
-
-`conexao.php`, `conexaoHomologacao.php`, `sessao_app.php` e `certidao_lib.php`
-respondem **200 com 0 bytes** — o PHP executa e não imprime, então hoje não
-vaza nada. O risco é a troca da versão do PHP no cPanel sair torta: aí eles
-passam a ser servidos como texto, com a senha do banco dentro. A sessão do
-painel encontrou exatamente isso no módulo dela e fechou com um `.htaccess`.
-
-Falta o aval para subir um `.htaccess` que bloqueie só esses arquivos.
+Um `.htaccess` na raiz da API bloqueia pela web os arquivos que só são
+incluídos (conexão, `sessao_app.php`, bibliotecas das certidões e do
+contracheque, `push_lib.php`, PHPMailer) e os `error_log`. Medido antes e
+depois: os 14 arquivos passaram de 200 (ou 500) a 403, e os endpoints públicos
+respondem igual, inclusive `certidoes/verificar.php` e `doc/conferir.php`.
+Endpoint novo que seja só de inclusão entra na lista do `.htaccess`.
 
 ### 3. A virada para o esquema `soupm`
 
