@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' show ImageFilter;
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
@@ -397,6 +398,51 @@ class CartaoComunicado extends StatelessWidget {
 /// O fundo dos comunicados (protótipo `.cc-bg`): degradê da cor da
 /// categoria sobre o escuro, brilho no canto, a ilustração de vidro e o véu
 /// embaixo. Serve ao cartão do carrossel e ao topo do comunicado aberto.
+/// A foto do comunicado aberto, inteira (sem corte) e na largura da janela.
+/// Imagem muito alta fica limitada a [alturaMaxima], com faixas escuras dos
+/// lados. Enquanto carrega, um espaço 16:9; se falhar, some.
+class _FotoComunicado extends StatelessWidget {
+  const _FotoComunicado({required this.url, required this.alturaMaxima});
+
+  final String url;
+  final double alturaMaxima;
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+        color: const Color(0xFF060B14),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: alturaMaxima),
+          // Cartaz mais estreito que a janela: as laterais mostram a própria
+          // imagem desfocada e escurecida, em vez de faixas pretas.
+          child: Stack(children: [
+            Positioned.fill(
+              child: ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                child: Opacity(
+                  opacity: .55,
+                  child: Image.network(url,
+                      fit: BoxFit.cover, excludeFromSemantics: true, errorBuilder: (_, __, ___) => const SizedBox()),
+                ),
+              ),
+            ),
+            Image.network(
+              url,
+              width: double.infinity,
+              fit: BoxFit.contain,
+              excludeFromSemantics: true,
+              loadingBuilder: (_, filho, progresso) => progresso == null
+                  ? filho
+                  : const AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    ),
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+          ]),
+        ),
+      );
+}
+
 class FundoComunicado extends StatelessWidget {
   const FundoComunicado({
     super.key,
@@ -1169,21 +1215,25 @@ class _ComunicadoPageState extends State<ComunicadoPage> {
     final ok = escuro ? const Color(0xFF6EE7A0) : const Color(0xFF14713B);
     final paragrafos = c.texto.split(RegExp(r'\n\s*\n')).map((p) => p.trim()).where((p) => p.isNotEmpty);
 
+    // Com foto: a imagem aparece inteira no alto, na proporção dela, e o
+    // título, as pílulas e a origem vêm logo abaixo, só com a altura que
+    // ocupam. Sem foto: o cabeçalho com a ilustração da categoria, como antes.
+    final comFoto = c.imagem != null;
     final topo = FundoComunicado(
       cor: cor,
       icone: c.iconeAssunto,
-      imagem: c.imagem,
       borda: false,
+      comIlustracao: !comFoto,
       ilustracaoTopo: 60,
       ilustracaoDireita: 16,
       child: Container(
-        constraints: const BoxConstraints(minHeight: 250),
+        constraints: BoxConstraints(minHeight: comFoto ? 0 : 250),
         decoration: BoxDecoration(border: Border(bottom: BorderSide(color: cor.withValues(alpha: .40)))),
         padding: const EdgeInsets.fromLTRB(20, 22, 20, 14),
         child: IntrinsicHeight(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Padding(
-              padding: const EdgeInsets.only(right: 48),
+              padding: EdgeInsets.only(right: comFoto ? 0 : 48),
               child: Row(children: [
                 Icon(c.categoria.icone, size: 20, color: branco.withValues(alpha: .92)),
                 Container(
@@ -1200,7 +1250,7 @@ class _ComunicadoPageState extends State<ComunicadoPage> {
             ),
             const SizedBox(height: 10),
             FractionallySizedBox(
-              widthFactor: .66,
+              widthFactor: comFoto ? 1 : .66,
               child: Text(c.titulo,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
@@ -1322,39 +1372,49 @@ class _ComunicadoPageState extends State<ComunicadoPage> {
               explicitChildNodes: true,
               namesRoute: true,
               label: c.titulo,
-              child: CustomScrollView(slivers: [
-                SliverToBoxAdapter(
-                  child: Stack(children: [
-                    topo,
-                    Positioned(
-                      top: 12,
-                      right: 12,
-                      child: Semantics(
-                        button: true,
-                        label: 'Fechar comunicado',
-                        excludeSemantics: true,
-                        child: Material(
-                          color: const Color(0x6B000000),
-                          shape: const CircleBorder(),
-                          child: InkWell(
-                            customBorder: const CircleBorder(),
-                            onTap: () => Navigator.of(context).pop(),
-                            child: const SizedBox(
-                                width: 44,
-                                height: 44,
-                                child: Icon(Icons.close_rounded, size: AppIconSize.sm, color: Colors.white)),
-                          ),
-                        ),
+              // Encolhe para o tamanho do conteúdo; texto longo rola, e o X
+              // fica fixo no canto.
+              child: Stack(children: [
+                CustomScrollView(shrinkWrap: true, slivers: [
+                  SliverToBoxAdapter(
+                    child: Stack(children: [
+                      if (comFoto)
+                        Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                          _FotoComunicado(url: c.imagem!, alturaMaxima: mq.size.height * .44),
+                          topo,
+                        ])
+                      else
+                        topo,
+                    ]),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
+                    sliver: SliverList.separated(
+                      itemCount: corpo.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (_, i) => corpo[i],
+                    ),
+                  ),
+                ]),
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Semantics(
+                    button: true,
+                    label: 'Fechar comunicado',
+                    excludeSemantics: true,
+                    child: Material(
+                      color: const Color(0x6B000000),
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () => Navigator.of(context).pop(),
+                        child: const SizedBox(
+                            width: 44,
+                            height: 44,
+                            child: Icon(Icons.close_rounded, size: AppIconSize.sm, color: Colors.white)),
                       ),
                     ),
-                  ]),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
-                  sliver: SliverList.separated(
-                    itemCount: corpo.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (_, i) => corpo[i],
                   ),
                 ),
               ]),
