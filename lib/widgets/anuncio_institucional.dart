@@ -1,26 +1,31 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../core/config/app_config.dart';
+import '../core/log/registro_log.dart';
+import '../core/navegacao/abrir_funcao.dart';
+import '../features/servicos/servicos_page.dart' show menuEmUso;
+import '../models/auth_model.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AnuncioInstitucional
 //
-// Anúncio em imagem exibido por cima da página inicial, uma vez a cada
-// abertura do app. O usuário fecha no X; tocar na imagem abre o destino.
+// Cartaz em imagem por cima da página inicial. O usuário fecha no X; tocar na
+// imagem abre o destino.
 //
-// Fonte: documento Firestore `appConfig/anuncio`
-// Campos:
-//   ativo   : bool    — liga/desliga o anúncio
-//   imagem  : String  — URL http(s) da imagem
-//   tipo    : String  — (opcional) o que o toque na imagem abre:
-//                       'link' | 'whatsapp'. Vazio ou outro valor = nada.
-//   destino : String  — valor usado pelo `tipo`:
-//                       link     → URL http(s), ex.: "https://www.pm.rr.gov.br"
-//                       whatsapp → telefone com ou sem formatação e com ou
-//                                  sem o 55, ex.: "95 99129-8238"
-//
-// Para trocar o anúncio basta editar o documento no console do Firebase.
+// Fonte (2.2): a chave `anuncio` do app_config, editada no painel (tela
+// "Anúncio de abertura", tabela soupm_anuncio):
+//   id, titulo (texto alternativo), imagem (https), tipo (nenhum | link |
+//   funcao), destino (o https do link ou a chave do menu), frequencia
+//   (abertura = toda abertura; dia = uma vez por dia; uma_vez = só até ser
+//   visto) e versao (muda quando o anúncio muda; a frequência recomeça).
+// Sem a chave no app_config (API ou tabela ainda sem o anúncio), vale o
+// documento antigo do Firestore `appConfig/anuncio` (ativo, imagem, tipo
+// link|whatsapp, destino), como na 2.1.x.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnuncioInstitucional {
@@ -35,25 +40,23 @@ class AnuncioInstitucional {
     _jaExibido = true;
 
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('appConfig')
-          .doc('anuncio')
-          .get();
-      final data = doc.data();
-      if (data == null || data['ativo'] != true) return;
-
-      final imagem = (data['imagem'] ?? '').toString().trim();
-      if (!imagem.startsWith('http://') && !imagem.startsWith('https://')) {
-        return;
+      final cfg = RepositorioConfig.atual;
+      final _Anuncio? anuncio;
+      if (cfg.anuncioDoPainel) {
+        anuncio = cfg.anuncio == null ? null : _Anuncio.doPainel(cfg.anuncio!);
+      } else {
+        final doc = await FirebaseFirestore.instance.collection('appConfig').doc('anuncio').get();
+        anuncio = _Anuncio.doFirestore(doc.data());
       }
-      final destino = _destino(data);
+      if (anuncio == null) return;
+      if (!await anuncio.podeMostrar()) return;
 
       // Baixa a imagem antes de abrir o diálogo, para não mostrar um quadro
       // vazio carregando. Se o download falhar, o anúncio não aparece.
       if (!context.mounted) return;
       var falhou = false;
       await precacheImage(
-        CachedNetworkImageProvider(imagem),
+        CachedNetworkImageProvider(anuncio.imagem),
         context,
         onError: (e, _) {
           falhou = true;
@@ -62,27 +65,99 @@ class AnuncioInstitucional {
       );
       if (falhou || !context.mounted) return;
 
+      await anuncio.marcarVisto();
+      if (!context.mounted) return;
+      registrar('anuncio.ver', dados: {'id': anuncio.id, 'versao': anuncio.versao});
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (_) => _AnuncioDialog(imagem: imagem, destino: destino),
+        builder: (_) => _AnuncioDialog(anuncio: anuncio!),
       );
     } catch (e) {
       debugPrint('AnuncioInstitucional: $e');
     }
   }
+}
 
-  /// O que abrir ao tocar na imagem, conforme `tipo` + `destino`.
-  /// Retorna null (toque sem ação) quando o par não formar um destino válido.
-  static Uri? _destino(Map<String, dynamic> data) {
+/// O anúncio já conferido: imagem válida, o que o toque faz e a frequência.
+class _Anuncio {
+  _Anuncio({
+    required this.imagem,
+    this.titulo = '',
+    this.link,
+    this.funcao,
+    this.id = 0,
+    this.versao = 0,
+    this.frequencia = 'abertura',
+  });
+
+  final String imagem;
+  final String titulo;
+  final Uri? link;
+
+  /// Chave do menu (ex.: rh.contracheques) que o toque abre.
+  final String? funcao;
+  final int id;
+  final int versao;
+  final String frequencia;
+
+  String get _chaveVisto => 'anuncio_visto_${id}_$versao';
+
+  static _Anuncio? doPainel(Map<String, dynamic> j) {
+    final imagem = '${j['imagem'] ?? ''}'.trim();
+    if (!imagem.startsWith('https://')) return null;
+    final tipo = '${j['tipo'] ?? ''}';
+    final destino = '${j['destino'] ?? ''}'.trim();
+    return _Anuncio(
+      imagem: imagem,
+      titulo: '${j['titulo'] ?? ''}'.trim(),
+      link: tipo == 'link' && destino.startsWith('https://') ? Uri.tryParse(destino) : null,
+      funcao: tipo == 'funcao' && destino.isNotEmpty ? destino : null,
+      id: (j['id'] as num?)?.toInt() ?? 0,
+      versao: (j['versao'] as num?)?.toInt() ?? 0,
+      frequencia: '${j['frequencia'] ?? 'abertura'}',
+    );
+  }
+
+  static _Anuncio? doFirestore(Map<String, dynamic>? data) {
+    if (data == null || data['ativo'] != true) return null;
+    final imagem = (data['imagem'] ?? '').toString().trim();
+    if (!imagem.startsWith('http://') && !imagem.startsWith('https://')) return null;
+    return _Anuncio(imagem: imagem, link: _destinoFirestore(data));
+  }
+
+  /// Frequência do painel, guardada no aparelho por id + versão.
+  Future<bool> podeMostrar() async {
+    if (frequencia == 'abertura') return true;
+    try {
+      final visto = (await SharedPreferences.getInstance()).getString(_chaveVisto);
+      if (visto == null) return true;
+      if (frequencia == 'uma_vez') return false;
+      return visto != _hoje(); // dia
+    } catch (_) {
+      return true;
+    }
+  }
+
+  Future<void> marcarVisto() async {
+    if (frequencia == 'abertura') return;
+    try {
+      await (await SharedPreferences.getInstance()).setString(_chaveVisto, _hoje());
+    } catch (_) {}
+  }
+
+  static String _hoje() {
+    final d = DateTime.now();
+    return '${d.year}-${d.month}-${d.day}';
+  }
+
+  /// O destino do documento antigo do Firestore: link ou WhatsApp.
+  static Uri? _destinoFirestore(Map<String, dynamic> data) {
     final tipo = (data['tipo'] ?? '').toString().trim().toLowerCase();
     final valor = (data['destino'] ?? '').toString().trim();
-
     switch (tipo) {
       case 'link':
-        if (!valor.startsWith('http://') && !valor.startsWith('https://')) {
-          return null;
-        }
+        if (!valor.startsWith('http://') && !valor.startsWith('https://')) return null;
         return Uri.tryParse(valor);
       case 'whatsapp':
         // Mantém só os dígitos e completa o DDI 55 quando vier só DDD + número.
@@ -97,19 +172,31 @@ class AnuncioInstitucional {
 }
 
 class _AnuncioDialog extends StatelessWidget {
-  final String imagem;
-  final Uri? destino;
+  final _Anuncio anuncio;
 
-  const _AnuncioDialog({required this.imagem, this.destino});
+  const _AnuncioDialog({required this.anuncio});
+
+  bool get _temDestino => anuncio.link != null || anuncio.funcao != null;
 
   // Sem canLaunchUrl: no Android 11+ ele responde false para links http(s)
   // porque o manifesto não declara <queries> de navegador.
-  Future<void> _abrirDestino() async {
-    try {
-      await launchUrl(destino!, mode: LaunchMode.externalApplication);
-    } catch (e) {
-      debugPrint('AnuncioInstitucional: não abriu $destino: $e');
+  Future<void> _abrirDestino(BuildContext context) async {
+    registrar('anuncio.tocar', dados: {'id': anuncio.id, 'destino': anuncio.funcao ?? 'link'});
+    final link = anuncio.link;
+    if (link != null) {
+      try {
+        await launchUrl(link, mode: LaunchMode.externalApplication);
+      } catch (e) {
+        debugPrint('AnuncioInstitucional: não abriu $link: $e');
+      }
+      return;
     }
+    // Função do app: fecha o cartaz e abre a função pela chave do menu.
+    final gestor = context.read<Auth>().isSuperUser;
+    final item = itemPorChave(anuncio.funcao!, menu: menuEmUso(RepositorioConfig.atual, gestor: gestor));
+    final nav = Navigator.of(context);
+    nav.pop();
+    if (item != null && nav.context.mounted) await abrirFuncao(nav.context, item, origem: 'anuncio');
   }
 
   @override
@@ -128,11 +215,16 @@ class _AnuncioDialog extends StatelessWidget {
             // ── Imagem ───────────────────────────────────────────────────
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: GestureDetector(
-                onTap: destino == null ? null : _abrirDestino,
-                child: CachedNetworkImage(
-                  imageUrl: imagem,
-                  fit: BoxFit.contain,
+              child: Semantics(
+                image: true,
+                button: _temDestino,
+                label: anuncio.titulo.isEmpty ? 'Anúncio' : anuncio.titulo,
+                child: GestureDetector(
+                  onTap: _temDestino ? () => _abrirDestino(context) : null,
+                  child: CachedNetworkImage(
+                    imageUrl: anuncio.imagem,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),

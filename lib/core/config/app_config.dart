@@ -294,6 +294,8 @@ class AppConfig {
     this.maisUsados,
     this.maisProcurados,
     this.textos = const {},
+    this.anuncioDoPainel = false,
+    this.anuncio,
     this.ajuda,
     this.fonteAvisos = 'firestore',
     this.fonteComunicados = 'firestore',
@@ -353,6 +355,14 @@ class AppConfig {
   /// `botao_erro`). Chave ausente: vale o texto do app.
   final Map<String, String> textos;
 
+  /// O app_config trouxe a chave `anuncio` (a tabela do painel existe):
+  /// a partir daí o anúncio de abertura vem só do painel, mesmo que nulo.
+  final bool anuncioDoPainel;
+
+  /// O anúncio de abertura no ar (id, titulo, imagem, tipo, destino,
+  /// frequencia, versao), ou nulo quando não há nenhum.
+  final Map<String, dynamic>? anuncio;
+
   String? texto(String chave) {
     final v = textos[chave]?.trim();
     return v == null || v.isEmpty ? null : v;
@@ -408,6 +418,8 @@ class AppConfig {
           : const Duration(seconds: 15),
       menu: ItemMenu.lista(j['menu']),
       home: j['home'] is List ? BlocoInicio.lista(j['home']) : null,
+      anuncioDoPainel: j.containsKey('anuncio'),
+      anuncio: j['anuncio'] is Map ? Map<String, dynamic>.from(j['anuncio'] as Map) : null,
       textos: j['textos'] is Map
           ? {
               for (final e in (j['textos'] as Map).entries)
