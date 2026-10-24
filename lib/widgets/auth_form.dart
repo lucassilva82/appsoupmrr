@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import '../core/sessao/sessao.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:projetonovo/pages/primeiro_acesso_page.dart';
 import 'package:projetonovo/pages/recuperar_senha_page.dart';
 import 'package:provider/provider.dart';
@@ -34,6 +35,9 @@ class _AuthFormState extends State<AuthForm> with SingleTickerProviderStateMixin
       AnimationController(vsync: this, duration: const Duration(milliseconds: 420));
   bool _apertado = false;
   bool _isLoading = false;
+
+  /// Entrou: o botão vira um visto verde por um instante antes de seguir.
+  bool _sucesso = false;
   bool _lembrarAcesso = true;
 
   final _matriculaController = TextEditingController();
@@ -105,6 +109,15 @@ class _AuthFormState extends State<AuthForm> with SingleTickerProviderStateMixin
       await auth.loginSemNotificar(
           _authData['matricula']!, _authData['password']!);
 
+      // O círculo vira um visto verde antes de seguir (resposta da ação).
+      if (mounted) {
+        HapticFeedback.mediumImpact();
+        setState(() => _sucesso = true);
+        if (!MediaQuery.disableAnimationsOf(context)) {
+          await Future<void>.delayed(const Duration(milliseconds: 480));
+        }
+      }
+
       // Grava (ou não) as credenciais
       final prefs = await SharedPreferences.getInstance();
       if (_lembrarAcesso) {
@@ -135,8 +148,15 @@ class _AuthFormState extends State<AuthForm> with SingleTickerProviderStateMixin
       );
       debugPrint('[LOGIN] ${falha.codigo} $error\n$stack');
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _sucesso = false;
+        });
+      }
     }
+    // Falhou: o botão volta a abrir e o aparelho dá um toque mais forte.
+    if (falha != null) HapticFeedback.heavyImpact();
 
     if (falha != null && mounted) await _mostrarFalha(falha);
   }
@@ -250,71 +270,113 @@ class _AuthFormState extends State<AuthForm> with SingleTickerProviderStateMixin
               ),
       );
 
+  /// O botão Entrar. Ao enviar, encolhe até virar um círculo com o
+  /// indicador girando (a largura anima, o rótulo some); se entrou, o círculo
+  /// fica verde com um visto; se falhou, volta a abrir. iOS: degradê, afunda
+  /// um pouco ao apertar. Android: botão cheio do Material 3, com ripple.
   Widget _botao() {
-    final rotulo = AnimatedSwitcher(
-      duration: const Duration(milliseconds: 220),
-      child: _isLoading
-          ? const SizedBox(
-              key: ValueKey('carregando'),
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
-            )
-          : const Text('Entrar',
-              key: ValueKey('rotulo'),
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Colors.white)),
-    );
-    if (widget.material) {
-      return SizedBox(
-        height: 52,
-        child: FilledButton(
-          onPressed: _isLoading ? null : _submit,
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.acao,
-            disabledBackgroundColor: AppColors.acao.withValues(alpha: 0.55),
-            shape: const StadiumBorder(),
-          ),
-          child: rotulo,
-        ),
-      );
-    }
-    // iOS: o botão afunda um pouco ao apertar e volta (sem ripple).
-    return Listener(
-      onPointerDown: (_) => setState(() => _apertado = true),
-      onPointerUp: (_) => setState(() => _apertado = false),
-      onPointerCancel: (_) => setState(() => _apertado = false),
-      child: AnimatedScale(
-        scale: _apertado && !_isLoading ? 0.97 : 1,
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOut,
-        child: Semantics(
-          button: true,
-          label: 'Entrar',
-          excludeSemantics: true,
-          child: GestureDetector(
-            onTap: _isLoading ? null : _submit,
-            child: Container(
-              height: 54,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.acaoClara.withValues(alpha: _isLoading ? 0.55 : 1),
-                    AppColors.acao.withValues(alpha: _isLoading ? 0.55 : 1),
-                  ],
+    final ocupado = _isLoading || _sucesso;
+    final altura = widget.material ? 52.0 : 54.0;
+    final semMovimento = MediaQuery.disableAnimationsOf(context);
+    final tempo = semMovimento ? Duration.zero : const Duration(milliseconds: 340);
+    const curva = Curves.easeInOutCubic;
+
+    final conteudo = AnimatedSwitcher(
+      duration: semMovimento ? Duration.zero : const Duration(milliseconds: 200),
+      switchInCurve: Curves.easeOutBack,
+      transitionBuilder: (filho, a) => FadeTransition(
+        opacity: a,
+        child: ScaleTransition(scale: Tween(begin: 0.6, end: 1.0).animate(a), child: filho),
+      ),
+      child: _sucesso
+          ? const Icon(Icons.check_rounded, key: ValueKey('ok'), color: Colors.white, size: 28)
+          : _isLoading
+              ? SizedBox(
+                  key: const ValueKey('carregando'),
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: widget.material ? 3 : 2.4,
+                    strokeCap: StrokeCap.round,
+                    color: Colors.white,
+                  ),
+                )
+              : const FittedBox(
+                  key: ValueKey('rotulo'),
+                  fit: BoxFit.scaleDown,
+                  child: Text('Entrar',
+                      maxLines: 1,
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Colors.white)),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                      color: AppColors.acao.withValues(alpha: 0.45), blurRadius: 18, offset: const Offset(0, 8)),
-                ],
+    );
+
+    final corSucesso = AppColors.sucesso;
+    return Semantics(
+      button: true,
+      enabled: !ocupado,
+      liveRegion: true,
+      label: _sucesso ? 'Acesso liberado' : (_isLoading ? 'Entrando, aguarde' : 'Entrar'),
+      excludeSemantics: true,
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final largura = ocupado ? altura : c.maxWidth;
+          final raio = BorderRadius.circular(ocupado || widget.material ? altura / 2 : 16);
+          final decoracao = BoxDecoration(
+            borderRadius: raio,
+            color: widget.material ? (_sucesso ? corSucesso : AppColors.acao) : null,
+            gradient: widget.material
+                ? null
+                : LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: _sucesso
+                        ? [const Color(0xFF1F9D57), corSucesso]
+                        : [AppColors.acaoClara, AppColors.acao],
+                  ),
+            boxShadow: [
+              BoxShadow(
+                color: (_sucesso ? corSucesso : AppColors.acao).withValues(alpha: widget.material ? 0.30 : 0.45),
+                blurRadius: widget.material ? 10 : 18,
+                offset: Offset(0, widget.material ? 3 : 8),
               ),
-              child: rotulo,
+            ],
+          );
+          final botao = AnimatedContainer(
+            duration: tempo,
+            curve: curva,
+            width: largura,
+            height: altura,
+            decoration: decoracao,
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                onTap: ocupado ? null : _submit,
+                customBorder: RoundedRectangleBorder(borderRadius: raio),
+                // Ripple só no Android; no iOS o retorno é o botão afundar.
+                splashFactory: widget.material ? InkSparkle.splashFactory : NoSplash.splashFactory,
+                highlightColor: widget.material ? null : Colors.transparent,
+                child: Center(child: conteudo),
+              ),
             ),
-          ),
-        ),
+          );
+          return Center(
+            child: widget.material
+                ? botao
+                : Listener(
+                    onPointerDown: (_) {
+                      if (!ocupado) setState(() => _apertado = true);
+                    },
+                    onPointerUp: (_) => setState(() => _apertado = false),
+                    onPointerCancel: (_) => setState(() => _apertado = false),
+                    child: AnimatedScale(
+                      scale: _apertado && !ocupado ? 0.97 : 1,
+                      duration: const Duration(milliseconds: 120),
+                      curve: Curves.easeOut,
+                      child: botao,
+                    ),
+                  ),
+          );
+        },
       ),
     );
   }
