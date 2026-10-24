@@ -82,6 +82,16 @@ void main() {
     );
   });
 
+  test('imagem de fundo do painel: só https vira foto; outro endereço é ignorado', () {
+    Comunicado com(Object? imagem) => Comunicado.deJson(
+        {'id': 1, 'titulo': 't', 'texto': 'x', 'categoria': 'operacao', 'origem': 'o', 'imagem': imagem}, const {});
+    expect(com('https://pmrr.online/painelsoupmrr/midia/abc.jpg').imagem,
+        'https://pmrr.online/painelsoupmrr/midia/abc.jpg');
+    expect(com('http://exemplo.com/a.jpg').imagem, isNull);
+    expect(com(null).imagem, isNull);
+    expect(com('https://pmrr.online/x.jpg').copiar(lido: true).imagem, 'https://pmrr.online/x.jpg');
+  });
+
   test('app_config: fonte dos comunicados é firestore até o painel trocar', () {
     expect(AppConfig.deJson({}, origem: OrigemConfig.rede).fonteComunicados, 'firestore');
     expect(

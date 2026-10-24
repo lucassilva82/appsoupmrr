@@ -58,6 +58,7 @@ class Comunicado {
     this.lido = false,
     this.ciente = false,
     this.icone,
+    this.imagem,
   });
 
   final int id;
@@ -79,6 +80,10 @@ class Comunicado {
 
   /// Ícone do assunto, na ilustração do cartão; nulo = o da categoria.
   final IconData? icone;
+
+  /// Foto de fundo enviada no painel (só https). Vence a ilustração: o
+  /// cartão e o topo do comunicado aberto mostram a foto com um véu escuro.
+  final String? imagem;
 
   IconData get iconeAssunto => icone ?? categoria.icone;
 
@@ -102,6 +107,7 @@ class Comunicado {
         lido: lido ?? this.lido,
         ciente: ciente ?? this.ciente,
         icone: icone,
+        imagem: imagem,
       );
 
   static Comunicado deJson(Map j, Map<String, CategoriaComunicado> categorias) {
@@ -126,6 +132,7 @@ class Comunicado {
       lido: j['lido'] == true,
       ciente: j['ciente'] == true,
       icone: iconePorNome('${j['icone']}'),
+      imagem: '${j['imagem'] ?? ''}'.startsWith('https://') ? '${j['imagem']}' : null,
     );
   }
 }

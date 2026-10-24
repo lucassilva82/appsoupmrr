@@ -216,6 +216,7 @@ class CartaoComunicado extends StatelessWidget {
         cor: cor,
         raio: raio,
         icone: c.iconeAssunto,
+        imagem: c.imagem,
         comIlustracao: !compacto,
         child: Material(
           type: MaterialType.transparency,
@@ -349,6 +350,7 @@ class FundoComunicado extends StatelessWidget {
     this.ilustracaoTopo = 34,
     this.ilustracaoDireita = 10,
     this.borda = true,
+    this.imagem,
   });
 
   final Color cor;
@@ -360,8 +362,15 @@ class FundoComunicado extends StatelessWidget {
   final double ilustracaoDireita;
   final bool borda;
 
+  /// Foto de fundo do painel. Com ela, saem o brilho e a ilustração e entra
+  /// um véu escuro de cima para baixo (25%, 72% e 90%, como a prévia do
+  /// painel), para o texto branco ler sobre qualquer foto. Enquanto carrega,
+  /// ou se falhar, fica o degradê da categoria.
+  final String? imagem;
+
   @override
   Widget build(BuildContext context) {
+    final foto = imagem;
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: raio,
@@ -376,6 +385,28 @@ class FundoComunicado extends StatelessWidget {
       child: ClipRRect(
         borderRadius: raio,
         child: Stack(children: [
+          if (foto != null) ...[
+            Positioned.fill(
+              child: Image.network(
+                foto,
+                fit: BoxFit.cover,
+                excludeFromSemantics: true,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+            const Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: [0, .55, 1],
+                    colors: [Color(0x40000000), Color(0xB8000000), Color(0xE6000000)],
+                  ),
+                ),
+              ),
+            ),
+          ] else ...[
           // radial-gradient(110% 85% at 100% 0%, cor .46, 0 58%)
           Positioned.fill(
             child: DecoratedBox(
@@ -409,6 +440,7 @@ class FundoComunicado extends StatelessWidget {
               ),
             ),
           ),
+          ],
           child,
         ]),
       ),
@@ -736,6 +768,7 @@ class _LinhaComunicado extends StatelessWidget {
             child: FundoComunicado(
               cor: c.categoria.cor,
               icone: c.iconeAssunto,
+              imagem: c.imagem,
               comIlustracao: false,
               raio: BorderRadius.circular(14),
               child: Center(child: Icon(c.iconeAssunto, color: Colors.white, size: AppIconSize.md)),
@@ -865,6 +898,7 @@ class _ComunicadoPageState extends State<ComunicadoPage> {
     final topo = FundoComunicado(
       cor: cor,
       icone: c.iconeAssunto,
+      imagem: c.imagem,
       borda: false,
       ilustracaoTopo: 60,
       ilustracaoDireita: 16,
