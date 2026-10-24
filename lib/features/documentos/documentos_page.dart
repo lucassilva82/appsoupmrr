@@ -17,6 +17,7 @@ import '../../widgets/dialogo_confirmacao.dart';
 import '../../widgets/vidro.dart';
 import 'documentos_locais.dart';
 import '../../core/design/esqueleto.dart';
+import '../../core/design/arte_cartao.dart';
 
 const _chave = 'rh.documentos';
 
@@ -154,8 +155,14 @@ class _DocumentosPageState extends State<DocumentosPage> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                   children: [
-                    Text('Certidões e contracheques guardados neste aparelho.', style: theme.textTheme.bodySmall),
-                    const SizedBox(height: 12),
+                    // Topo com a arte da área (padrão 2.2).
+                    TopoArte(
+                      arte: Arte.de('rh'),
+                      icone: Icons.folder_open_outlined,
+                      titulo: 'Central de documentos',
+                      subtitulo: 'Certidões e contracheques guardados neste aparelho.',
+                      margem: const EdgeInsets.only(bottom: 16),
+                    ),
                     TextField(
                       decoration: const InputDecoration(
                         labelText: 'Buscar documento',
@@ -166,6 +173,8 @@ class _DocumentosPageState extends State<DocumentosPage> {
                     const SizedBox(height: 12),
                     if (itens.isEmpty)
                       CartaoVidro(
+                        arte: Arte.de('rh'),
+                        padding: const EdgeInsets.all(16),
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text('Nenhum documento guardado ainda.', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
                           const SizedBox(height: 4),
@@ -183,16 +192,19 @@ class _DocumentosPageState extends State<DocumentosPage> {
                         ]),
                       )
                     else if (lista.isEmpty)
-                      CartaoVidro(child: Text('Nenhum documento com "$_busca".'))
+                      CartaoVidro(
+                          arte: Arte.de('rh'),
+                          padding: const EdgeInsets.all(16),
+                          child: SizedBox(width: double.infinity, child: Text('Nenhum documento com "$_busca".')))
                     else
                       CartaoVidro(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Column(children: [
                           for (final (n, i) in lista.indexed) ...[
-                            if (n > 0) const Divider(height: 1, indent: 52),
+                            if (n > 0) const Divider(height: 1, indent: 56),
                             ListTile(
                               minVerticalPadding: 10,
-                              leading: Icon(i.tipo == 'certidao' ? Icons.edit_document : Icons.request_quote_outlined,
+                              leading: Icon(i.tipo == 'certidao' ? Icons.verified_outlined : Icons.request_quote_outlined,
                                   size: AppIconSize.md, color: theme.colorScheme.primary),
                               title: Text(i.titulo, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
                               subtitle: Text(i.detalhe, style: theme.textTheme.bodySmall),

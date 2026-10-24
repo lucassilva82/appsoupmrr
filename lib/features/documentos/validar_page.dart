@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/design/arte_cartao.dart';
 import '../../core/enderecos.dart';
 import '../../core/log/registro_log.dart';
 import '../../utils/app_theme.dart';
@@ -92,41 +93,43 @@ class _ValidarDocumentoPageState extends State<ValidarDocumentoPage> {
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
+            // Topo com a arte da área (padrão 2.2), com a explicação do QR.
+            TopoArte(
+              arte: Arte.de('rh'),
+              icone: Icons.qr_code_2_rounded,
+              titulo: 'Validar documento',
+              subtitulo: 'Para conferir pelo QR Code, aponte a câmera do celular para ele: a página de conferência '
+                  'abre sozinha. Sem o QR, digite ou cole aqui o código impresso no documento.',
+              margem: const EdgeInsets.only(bottom: 16),
+            ),
+            // O formulário numa seção com a arte discreta.
             CartaoVidro(
-              padding: const EdgeInsets.all(14),
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Icon(Icons.qr_code_2_rounded, size: AppIconSize.xl, color: theme.colorScheme.primary),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                      'Para conferir pelo QR Code, aponte a câmera do celular para ele: a página de conferência abre sozinha. '
-                      'Sem o QR, digite ou cole aqui o código impresso no documento.',
-                      style: theme.textTheme.bodyMedium),
+              arte: Arte.de('rh'),
+              padding: const EdgeInsets.all(16),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                TextField(
+                  controller: _campo,
+                  autocorrect: false,
+                  textInputAction: TextInputAction.go,
+                  onSubmitted: (_) => _conferir(),
+                  decoration: InputDecoration(
+                    labelText: 'Código ou link do documento',
+                    errorText: _erro,
+                    errorMaxLines: 4,
+                    suffixIcon: IconButton(
+                      tooltip: 'Colar',
+                      icon: const Icon(Icons.content_paste_rounded, size: AppIconSize.sm),
+                      onPressed: _colar,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _conferir,
+                  style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                  child: const Text('Conferir'),
                 ),
               ]),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _campo,
-              autocorrect: false,
-              textInputAction: TextInputAction.go,
-              onSubmitted: (_) => _conferir(),
-              decoration: InputDecoration(
-                labelText: 'Código ou link do documento',
-                errorText: _erro,
-                errorMaxLines: 4,
-                suffixIcon: IconButton(
-                  tooltip: 'Colar',
-                  icon: const Icon(Icons.content_paste_rounded, size: AppIconSize.sm),
-                  onPressed: _colar,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _conferir,
-              style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-              child: const Text('Conferir'),
             ),
             const SizedBox(height: 12),
             Text('A conferência mostra se o documento é válido, vencido ou revogado. Nada é guardado no seu aparelho.',

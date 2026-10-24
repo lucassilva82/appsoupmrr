@@ -14,6 +14,7 @@ import '../../utils/app_theme.dart';
 import '../../widgets/custom_appbar.dart';
 import '../../widgets/vidro.dart';
 import '../../core/design/esqueleto.dart';
+import '../../core/design/arte_cartao.dart';
 
 const _chave = 'rh.carreira';
 
@@ -159,9 +160,14 @@ class _Conteudo extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       children: [
-        Text('Os marcos da sua carreira na PMRR, do mais recente ao mais antigo, como estão no SIGRH.',
-            style: theme.textTheme.bodySmall),
-        const SizedBox(height: 12),
+        // Topo com a arte da área (padrão 2.2).
+        TopoArte(
+          arte: Arte.de('rh'),
+          icone: Icons.timeline_rounded,
+          titulo: 'Linha do tempo da carreira',
+          subtitulo: 'Os marcos da sua carreira na PMRR, do mais recente ao mais antigo, como estão no SIGRH.',
+          margem: const EdgeInsets.only(bottom: 16),
+        ),
         for (final f in linha.falhas)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
@@ -183,6 +189,8 @@ class _Conteudo extends StatelessWidget {
           ),
         if (linha.marcos.isEmpty && linha.falhas.isEmpty)
           CartaoVidro(
+            arte: Arte.de('rh'),
+            padding: const EdgeInsets.all(16),
             child: Text('O SIGRH ainda não tem marcos registrados para você. Se faltar algo, procure a '
                 'Diretoria de Recursos Humanos - PMRR.'),
           ),

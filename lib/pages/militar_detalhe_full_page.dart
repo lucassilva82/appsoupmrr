@@ -28,6 +28,7 @@ import '../widgets/aviso_rapido.dart';
 import '../models/auth_model.dart'; // fornece auth.matricula, auth.cpf
 import '../utils/app_theme.dart';
 import '../utils/protecao_tela.dart';
+import '../core/design/arte_cartao.dart';
 import '../core/erros/falha_de.dart';
 import '../core/erros/estado_erro.dart';
 
@@ -148,7 +149,8 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
     final isDark = theme.brightness == Brightness.dark;
     final auth = Provider.of<Auth>(context, listen: false); // para carimbo
 
-    return FundoSuave(child: Scaffold(
+    return FundoSuave(
+        child: Scaffold(
       appBar: const CustomAppBar(title: 'Dados do Militar'),
       body: FutureBuilder<Tuple>(
         future: _future,
@@ -157,7 +159,9 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
             return const Center(child: CircularProgressIndicator());
           }
           if (s.hasError) {
-            return EstadoErro(falha: falhaDe('MF', s.error, tela: 'gestao.mapa_forca'), tela: 'gestao.mapa_forca');
+            return EstadoErro(
+                falha: falhaDe('MF', s.error, tela: 'gestao.mapa_forca'),
+                tela: 'gestao.mapa_forca');
           }
 
           final tuple = s.data!;
@@ -299,109 +303,117 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
     final imageUrl = _resolveImageUrl(m.imagemUrl) ?? widget.preloadedImageUrl;
     // Era um degradê azul sólido ocupando a largura toda — a última
     // superfície chapada desta tela, e justamente o que o DESIGN.md §1 manda
-    // não fazer: a tela não pinta o próprio fundo, ela usa CartaoVidro e
-    // deixa o fundo global aparecer.
+    // não fazer: a tela não pinta o próprio fundo. No padrão 2.2 o cabeçalho
+    // é a arte cheia da área de Gestão, como o TopoArte das outras telas, e
+    // por isso o texto branco abaixo fica legível nos dois temas.
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: CartaoVidro(
-        raio: 16,
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Foto com carimbo
-            GestureDetector(
-              onTap: () => _showImageModal(context, m.imagemUrl ?? ''),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(
-                  width: 100,
-                  height: 125,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      CachedNetworkImage(
-                        imageUrl: imageUrl ?? '',
-                        fit: BoxFit.cover,
-                        alignment: Alignment.topCenter,
-                        memCacheWidth: 200,
-                        placeholder: (_, __) => Container(
-                            color: Colors.white.withValues(alpha: 0.1),
-                            child: const Center(
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white))),
-                        errorWidget: (_, __, ___) => Container(
-                          color: Colors.white.withValues(alpha: 0.1),
-                          child: const Icon(Icons.person,
-                              size: 48, color: Colors.white54),
-                        ),
-                      ),
-                      IgnorePointer(
-                        child: Opacity(
-                          opacity: .12,
-                          child: GridView.builder(
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2, mainAxisExtent: 75),
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemBuilder: (_, __) => Text(
-                              'Login: ${auth.matricula}\nCPF: ${auth.cpf}\nIP : $_ip\n$_dateTimeStr',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                  fontSize: 12,
-                                  height: 1.25,
-                                  color: Colors.white),
+      child: FundoArte(
+        arte: Arte.de('gestao'),
+        raio: 20,
+        child: Theme(
+          data: temaSobreArte(theme),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Foto com carimbo
+                GestureDetector(
+                  onTap: () => _showImageModal(context, m.imagemUrl ?? ''),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: SizedBox(
+                      width: 100,
+                      height: 125,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          CachedNetworkImage(
+                            imageUrl: imageUrl ?? '',
+                            fit: BoxFit.cover,
+                            alignment: Alignment.topCenter,
+                            memCacheWidth: 200,
+                            placeholder: (_, __) => Container(
+                                color: Colors.white.withValues(alpha: 0.1),
+                                child: const Center(
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2, color: Colors.white))),
+                            errorWidget: (_, __, ___) => Container(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              child: const Icon(Icons.person,
+                                  size: 48, color: Colors.white54),
                             ),
                           ),
+                          IgnorePointer(
+                            child: Opacity(
+                              opacity: .12,
+                              child: GridView.builder(
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2, mainAxisExtent: 75),
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemBuilder: (_, __) => Text(
+                                  'Login: ${auth.matricula}\nCPF: ${auth.cpf}\nIP : $_ip\n$_dateTimeStr',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      height: 1.25,
+                                      color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${m.postoGraduacao} • ${m.quadro}',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.3),
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      Text(m.nomeCompleto,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              height: 1.25)),
+                      const SizedBox(height: 12),
+                      _headerRow(
+                          Icons.badge_rounded, 'Mat. PMRR: ${m.matricula}'),
+                      const SizedBox(height: 5),
+                      _headerRow(Icons.verified_user_rounded,
+                          'Mat. SEGAD: ${m.matRhNova}'),
+                      const SizedBox(height: 5),
+                      _headerRow(Icons.credit_card_rounded, 'CPF: ${m.cpf}'),
+                      const SizedBox(height: 5),
+                      _headerRow(Icons.calendar_today_rounded,
+                          'Incorporação: ${_fmtDate(m.incorporacao)}'),
                     ],
                   ),
                 ),
-              ),
+              ],
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '${m.postoGraduacao} • ${m.quadro}',
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.3),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(m.nomeCompleto,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          height: 1.25)),
-                  const SizedBox(height: 12),
-                  _headerRow(Icons.badge_rounded, 'Mat. PMRR: ${m.matricula}'),
-                  const SizedBox(height: 5),
-                  _headerRow(Icons.verified_user_rounded,
-                      'Mat. SEGAD: ${m.matRhNova}'),
-                  const SizedBox(height: 5),
-                  _headerRow(Icons.credit_card_rounded, 'CPF: ${m.cpf}'),
-                  const SizedBox(height: 5),
-                  _headerRow(Icons.calendar_today_rounded,
-                      'Incorporação: ${_fmtDate(m.incorporacao)}'),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -409,7 +421,7 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
 
   Widget _headerRow(IconData icon, String text) => Row(
         children: [
-          Icon(icon, size: 13, color: Colors.white70),
+          Icon(icon, size: AppIconSize.xxs, color: Colors.white70),
           const SizedBox(width: 5),
           Expanded(
             child: Text(text,
@@ -428,6 +440,7 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: CartaoVidro(
+        arte: Arte.de('gestao'),
         raio: 16,
         padding: kPaddingCartao,
         child: child,
@@ -441,7 +454,7 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          _iconBox(icon, AppColors.blue, isDark),
+          _iconBox(icon, theme.colorScheme.primary, isDark),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -639,13 +652,10 @@ class _AvisoPrintBloqueado extends StatelessWidget {
     const cor = Color(0xFFC77800);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Container(
+      child: CartaoVidro(
+        raio: 12,
+        tingimento: cor,
         padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        decoration: BoxDecoration(
-          color: cor.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cor.withValues(alpha: 0.30)),
-        ),
         child: Row(children: [
           const Icon(Icons.no_photography_outlined,
               size: AppIconSize.sm, color: cor),

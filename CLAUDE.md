@@ -98,6 +98,16 @@ que depende dela.
   emitir, enviar, tocar em card ou atalho), com a chave da função e o
   resultado, no catálogo do `docs/SOUPM_2_2.md` §9.2. Função nova só está
   pronta quando os eventos dela estão no catálogo e aparecem no painel.
+- **Da versão 2.2 em diante, toda tela segue o padrão 2.2** (DESIGN.md §11),
+  inclusive as antigas quando forem mexidas: topo com a arte da área
+  (`TopoArte`), cards de resumo com arte (`CartaoArte`/`FundoArte`), caixas e
+  listas em `CartaoVidro` com a arte discreta da área (`arte:`), campos e
+  botões do tema, nunca cor ou borda própria. Telas de antes do login
+  (login, Face ID, primeiro acesso, recuperar senha) usam `TelaEntrada`, com o
+  fundo de circuito e a marca SOU PMRR. Tela nova só está pronta depois de
+  conferida no simulador, nos dois temas, no iPhone e no Android, e com as
+  regras de desenvolvimento da 2.2 (código de erro, eventos no catálogo,
+  textos e liga/desliga vindos da API, tudo no painel).
 - **Tudo o que entra no app entra no painel.** Função, tela, card, módulo,
   serviço ou API nova já nasce com tudo isto, sem esperar pedido: chave na
   árvore (`soupm_menu_item`), eventos no catálogo, códigos de erro em

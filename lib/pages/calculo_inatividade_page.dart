@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../core/design/arte_cartao.dart';
 import '../models/auth_model.dart';
 import '../models/inatividade_model.dart';
 import '../utils/app_theme.dart';
@@ -345,8 +346,16 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
                 // ── Tela de resultado: o formulário não aparece aqui ──
                 ? ListView(
                     key: const ValueKey('resultado'),
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                     children: [
+                      TopoArte(
+                        arte: Arte.de('ts'),
+                        icone: Icons.hourglass_top_rounded,
+                        titulo: 'Seu cálculo',
+                        subtitulo: 'Estimativa a partir dos dados que você '
+                            'conferiu: regime, prazos e requisitos.',
+                        margem: const EdgeInsets.only(bottom: 16),
+                      ),
                       _CardRegime(resultado: resultado),
                       const SizedBox(height: 12),
                       _CardPrevisao(resultado: resultado),
@@ -386,7 +395,8 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
                       const SizedBox(height: 20),
                       OutlinedButton.icon(
                         onPressed: _novoCalculo,
-                        icon: const Icon(Icons.restart_alt_rounded, size: 18),
+                        icon: const Icon(Icons.restart_alt_rounded,
+                            size: AppIconSize.sm),
                         label: const Text('Novo cálculo'),
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size.fromHeight(48),
@@ -407,8 +417,16 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
                 // ── Tela de formulário ──
                 : ListView(
                     key: const ValueKey('form'),
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                     children: [
+                      TopoArte(
+                        arte: Arte.de('ts'),
+                        icone: Icons.hourglass_top_rounded,
+                        titulo: 'Tempo de serviço e inatividade',
+                        subtitulo: 'Confira seus dados e os tempos averbados '
+                            'para estimar quando você pode ir para a reserva.',
+                        margem: const EdgeInsets.only(bottom: 16),
+                      ),
                       _cardDados(theme),
                       const SizedBox(height: 10),
                       _cardTempos(theme),
@@ -450,6 +468,7 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
     return _Card(
       titulo: 'Identificação',
       icone: Icons.badge_outlined,
+      arte: Arte.de('ts'),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const SizedBox(height: 0),
         Text(
@@ -525,6 +544,7 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
     return _Card(
       titulo: 'Tempos averbados',
       icone: Icons.more_time_rounded,
+      arte: Arte.de('ts'),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         _campoDuracao(
           theme,
@@ -552,12 +572,14 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFC77800).withOpacity(0.09),
-              borderRadius: BorderRadius.circular(8),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.055),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Icon(Icons.call_split_rounded,
-                  size: 14, color: Color(0xFFC77800)),
+              ExcludeSemantics(
+                child: Icon(Icons.call_split_rounded,
+                    size: AppIconSize.xs, color: _ambar(context)),
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -853,8 +875,8 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
   Widget _disclaimer(ThemeData theme) => Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: theme.hintColor.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(10),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.055),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Icon(Icons.info_outline_rounded, size: 15, color: theme.hintColor),
@@ -1002,7 +1024,7 @@ class _LinhaEtapa extends StatelessWidget {
     final ativa = estado == _EstadoEtapa.ativa;
     final feita = estado == _EstadoEtapa.concluida;
     final cor = feita
-        ? const Color(0xFF2E7D32)
+        ? _verde(context)
         : ativa
             ? theme.colorScheme.primary
             : theme.hintColor;
@@ -1058,6 +1080,16 @@ class _LinhaEtapa extends StatelessWidget {
 
 // ─── Componentes visuais ─────────────────────────────────────────────────────
 
+// Cores de estado nos pares de cada tema (DESIGN §3): a versão clara no
+// fundo escuro e a escura no claro, para passar de 4,5:1 nos dois.
+Color _verde(BuildContext c) => Theme.of(c).brightness == Brightness.dark
+    ? AppColors.sucessoEscuro
+    : AppColors.sucesso;
+Color _ambar(BuildContext c) => Theme.of(c).brightness == Brightness.dark
+    ? Colors.amber.shade300
+    : Colors.amber.shade900;
+Color _azul(BuildContext c) => Theme.of(c).colorScheme.primary;
+
 /// Superfície dos cards do módulo. Era um `Container` com cor e borda
 /// próprias — mais uma superfície opaca fora do padrão, justamente o que o
 /// DESIGN.md §2 manda não refazer. Agora é o `CartaoVidro` do app, com o
@@ -1067,12 +1099,16 @@ class _Card extends StatelessWidget {
   final String? titulo;
   final IconData? icone;
 
-  const _Card({required this.child, this.titulo, this.icone});
+  /// Arte discreta da área (padrão 2.2), nas seções do formulário.
+  final Arte? arte;
+
+  const _Card({required this.child, this.titulo, this.icone, this.arte});
 
   @override
   Widget build(BuildContext context) {
     return CartaoVidro(
       raio: 16,
+      arte: arte,
       child: Padding(
         padding: kPaddingCartao,
         child: Column(
@@ -1194,15 +1230,15 @@ class _CardRegime extends StatelessWidget {
     late final IconData icone;
     switch (resultado.regime) {
       case RegimeAplicavel.direitoAdquirido:
-        cor = const Color(0xFF2E7D32);
+        cor = _verde(context);
         icone = Icons.verified_rounded;
         break;
       case RegimeAplicavel.transicao:
-        cor = const Color(0xFFC77800);
+        cor = _ambar(context);
         icone = Icons.swap_horiz_rounded;
         break;
       case RegimeAplicavel.permanente:
-        cor = AppColors.blue;
+        cor = _azul(context);
         icone = Icons.rule_rounded;
         break;
     }
@@ -1252,7 +1288,7 @@ class _CardPrevisao extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final ok = resultado.integralJaCumprido;
-    final cor = ok ? const Color(0xFF2E7D32) : AppColors.blue;
+    final cor = ok ? _verde(context) : _azul(context);
 
     return _Card(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1297,13 +1333,14 @@ class _CardPrevisao extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.red.withOpacity(0.25)),
+              color: theme.colorScheme.error.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                  color: theme.colorScheme.error.withValues(alpha: 0.25)),
             ),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Icon(Icons.warning_amber_rounded,
-                  size: 15, color: Colors.redAccent),
+              Icon(Icons.warning_amber_rounded,
+                  size: AppIconSize.xs, color: theme.colorScheme.error),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -1333,7 +1370,7 @@ class _CardRequisito extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ok = requisito.cumprido;
-    final cor = ok ? const Color(0xFF2E7D32) : AppColors.blue;
+    final cor = ok ? _verde(context) : _azul(context);
 
     final pct = '${(requisito.percentual * 100).toStringAsFixed(1)}%'
         .replaceAll('.', ',');
@@ -1469,7 +1506,7 @@ class _CardPedagio extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const cor = Color(0xFFC77800);
+    final cor = _ambar(context);
     final r = resultado;
     final minEnte = ParametrosLegais.minimoEnteAnos(r.entrada.sexo);
     final minCorporacao =
@@ -1496,7 +1533,7 @@ class _CardPedagio extends StatelessWidget {
     return _Card(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          const Icon(Icons.toll_rounded, size: 17, color: cor),
+          Icon(Icons.toll_rounded, size: AppIconSize.sm, color: cor),
           const SizedBox(width: 8),
           Expanded(
             child: Text('Os dois pedágios',
@@ -1568,7 +1605,7 @@ class _CardProporcional extends StatelessWidget {
     final theme = Theme.of(context);
     final r = resultado;
     final ok = r.elegivelProporcional;
-    final cor = ok ? AppColors.blue : theme.hintColor;
+    final cor = ok ? _azul(context) : theme.hintColor;
     final quotas =
         (r.percentualProporcional * ParametrosLegais.quotasDenominador).floor();
 
@@ -1602,14 +1639,14 @@ class _CardProporcional extends StatelessWidget {
           Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Text('$quotas',
                 style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold, color: AppColors.blue)),
+                    fontWeight: FontWeight.bold, color: _azul(context))),
             Text('/35 avos',
                 style: theme.textTheme.bodyMedium
                     ?.copyWith(color: theme.hintColor)),
             const Spacer(),
             Text('${(r.percentualProporcional * 100).toStringAsFixed(1)}%',
                 style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold, color: AppColors.blue)),
+                    fontWeight: FontWeight.bold, color: _azul(context))),
           ]),
           const SizedBox(height: 6),
           Text(
@@ -1769,8 +1806,8 @@ class _CardReforma extends StatelessWidget {
                     'fração do art. 25, §7º, e nunca inferiores ao '
                     'salário-mínimo (§9º).\n${hip.fundamento}',
             cor: hip.integral
-                ? const Color(0xFF2E7D32)
-                : const Color(0xFFC77800),
+                ? _verde(context)
+                : _ambar(context),
           )
         else
           bloco(
@@ -1803,7 +1840,7 @@ class _CardOficioOutras extends StatelessWidget {
     final theme = Theme.of(context);
     final r = resultado;
     final ok = r.oficioOutrasLiberado;
-    final cor = ok ? const Color(0xFF2E7D32) : const Color(0xFFC77800);
+    final cor = ok ? _verde(context) : _ambar(context);
 
     return _Card(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1832,7 +1869,7 @@ class _CardOficioOutras extends StatelessWidget {
                       style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.gold)),
+                          color: _ambar(context))),
                 ),
                 Expanded(
                   child: Text(h[1],
@@ -1987,11 +2024,11 @@ class _CardAvisos extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const cor = Color(0xFFC77800);
+    final cor = _ambar(context);
     return _Card(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          const Icon(Icons.info_rounded, size: 17, color: cor),
+          Icon(Icons.info_rounded, size: AppIconSize.sm, color: cor),
           const SizedBox(width: 8),
           Text('Observações',
               style: theme.textTheme.titleSmall
@@ -2008,7 +2045,7 @@ class _CardAvisos extends StatelessWidget {
                     width: 4,
                     height: 4,
                     decoration:
-                        const BoxDecoration(color: cor, shape: BoxShape.circle),
+                        BoxDecoration(color: cor, shape: BoxShape.circle),
                   ),
                 ),
                 const SizedBox(width: 9),

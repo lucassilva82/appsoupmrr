@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:projetonovo/widgets/custom_appbar.dart';
 import 'package:provider/provider.dart';
 
+import '../core/design/arte_cartao.dart';
 import '../models/auth_model.dart';
 import '../utils/app_theme.dart';
 import '../widgets/declaracao_widget.dart';
@@ -41,98 +42,71 @@ class _DeclaracoesPageState extends State<DeclaracoesPage> {
   Widget build(BuildContext context) {
     final auth = Provider.of<Auth>(context);
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
-    final bgTop = isDark ? const Color(0xFF0E1B2E) : const Color(0xFFE8F1FF);
-    final bgBottom = isDark ? AppColors.darkBg : AppColors.lightBg;
-
-    return FundoSuave(child: Scaffold(
+    return FundoSuave(
+        child: Scaffold(
       appBar: CustomAppBar(title: 'Declarações'),
       body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeroCard(theme),
-                const SizedBox(height: 14),
-                _buildYearSelector(theme),
-                const SizedBox(height: 14),
-                DeclaracaoWidget(
-                  key: ValueKey(_anoSelecionado),
-                  cpf: auth.cpf ?? 'CPF Não Encontrado',
-                  ano: _anoSelecionado,
-                ),
-                const SizedBox(height: 14),
-                _buildComplianceCard(theme),
-              ],
-            ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeroCard(theme),
+              const SizedBox(height: 14),
+              _buildYearSelector(theme),
+              const SizedBox(height: 14),
+              DeclaracaoWidget(
+                key: ValueKey(_anoSelecionado),
+                cpf: auth.cpf ?? 'CPF Não Encontrado',
+                ano: _anoSelecionado,
+              ),
+              const SizedBox(height: 14),
+              _buildComplianceCard(theme),
+            ],
           ),
         ),
+      ),
     ));
   }
 
+  // Topo com a arte da área (padrão 2.2): título, a frase do que a tela faz
+  // e, embaixo, as pílulas do ciclo escolhido.
   Widget _buildHeroCard(ThemeData theme) {
     final base = int.tryParse(_anoSelecionado) ?? (DateTime.now().year - 1);
     final calendario = base + 1;
 
-    return CartaoDestaque(
-      raio: 22,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return TopoArte(
+      arte: Arte.de('rh'),
+      icone: Icons.verified_user_outlined,
+      titulo: 'Declarações anuais',
+      subtitulo:
+          'Acompanhe o status, envie pendências e mantenha tudo em dia em um só lugar.',
+      margem: EdgeInsets.zero,
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
         children: [
-          Row(
-            children: [
-              Icon(Icons.verified_user_rounded,
-                  color: theme.colorScheme.primary, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Painel Anual de Declarações',
-                style: TextStyle(
-                  color: theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Acompanhe o status, envie pendências e mantenha tudo em dia em um só lugar.',
-            style: TextStyle(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
-              fontSize: 13,
-              height: 1.35,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _heroTag(theme, 'Ano base: $base'),
-              _heroTag(theme, 'Ano calendário: $calendario'),
-              _heroTag(theme, 'Atualização em tempo real'),
-            ],
-          ),
+          _heroTag('Ano base: $base'),
+          _heroTag('Ano calendário: $calendario'),
         ],
       ),
     );
   }
 
-  Widget _heroTag(ThemeData theme, String label) {
+  // Pílula sobre a arte: branco translúcido, como o ícone do TopoArte.
+  Widget _heroTag(String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
+        color: Colors.white.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.16)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.26)),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.80),
+        style: const TextStyle(
+          color: Colors.white,
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
@@ -196,21 +170,16 @@ class _DeclaracoesPageState extends State<DeclaracoesPage> {
   Widget _buildComplianceCard(ThemeData theme) {
     final textColor = theme.colorScheme.onSurface.withValues(alpha: 0.80);
 
-    return Container(
-      width: double.infinity,
+    return CartaoVidro(
+      arte: Arte.de('rh'),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.30)),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.gpp_good_rounded,
-                  color: theme.colorScheme.primary, size: 20),
+              Icon(Icons.gpp_good_outlined,
+                  color: theme.colorScheme.primary, size: AppIconSize.sm),
               const SizedBox(width: 8),
               Text(
                 'Aviso de Responsabilidade',
@@ -243,15 +212,16 @@ class _DeclaracoesPageState extends State<DeclaracoesPage> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.red.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.red.withValues(alpha: 0.22)),
+              color: theme.colorScheme.error.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                  color: theme.colorScheme.error.withValues(alpha: 0.22)),
             ),
             child: Text(
               'LGPD - Lei n° 13.709/2018',
               textAlign: TextAlign.center,
               style: theme.textTheme.labelLarge?.copyWith(
-                color: Colors.red.shade700,
+                color: theme.colorScheme.error,
                 fontWeight: FontWeight.w700,
               ),
             ),

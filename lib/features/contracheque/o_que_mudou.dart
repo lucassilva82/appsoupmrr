@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/design/arte_cartao.dart';
 import '../../core/erros/falha_app.dart';
 import '../../core/log/registro_log.dart';
 import '../../models/contracheque_model.dart';
 import '../../models/meses_contracheque_model.dart';
 import '../../services/dados_sql.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/vidro.dart';
 
 /// "O que mudou no contracheque" (P1, docs/SOUPM_2_2.md §11): as rubricas
 /// que entraram, saíram ou mudaram de valor em relação ao mês anterior da
@@ -163,34 +165,48 @@ class _FolhaMudancas extends StatelessWidget {
     final theme = Theme.of(context);
     final apagado = theme.colorScheme.onSurface.withValues(alpha: 0.65);
     final escuro = theme.brightness == Brightness.dark;
-    final verde = escuro ? const Color(0xFF6EE7A0) : const Color(0xFF14713B);
-    final vermelho = escuro ? const Color(0xFFFF9E9E) : const Color(0xFFB3261E);
+    final verde = escuro ? AppColors.sucessoEscuro : AppColors.sucesso;
+    final vermelho = escuro ? AppColors.falhaEscuro : AppColors.falha;
+    // Recados (erro, sem mês anterior, nada mudou) num cartão com a arte
+    // discreta do contracheque, para não ficarem soltos na folha.
+    Widget recado(String texto) => CartaoVidro(
+          arte: Arte.de('cc'),
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+          child: SizedBox(
+            width: double.infinity,
+            child: Text(texto, style: theme.textTheme.bodyMedium),
+          ),
+        );
     return FutureBuilder<ComparacaoMes>(
       future: futuro,
       builder: (context, s) {
         Widget corpo;
         if (s.connectionState != ConnectionState.done) {
-          corpo = const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()));
+          corpo = const Padding(
+              padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator.adaptive()));
         } else if (s.hasError) {
           final f = s.error is FalhaApp ? s.error as FalhaApp : FalhaApp.inesperada(_prefixo, s.error!);
           registrarErro(f, tela: _chave);
-          corpo = Text('${f.titulo}. ${f.texto} Código ${f.codigo}.', style: theme.textTheme.bodyMedium);
+          corpo = recado('${f.titulo}. ${f.texto} Código ${f.codigo}.');
         } else if (s.data!.anterior == null) {
-          corpo = Text('Não há mês anterior desta folha para comparar.', style: theme.textTheme.bodyMedium);
+          corpo = recado('Não há mês anterior desta folha para comparar.');
         } else if (s.data!.mudancas.isEmpty) {
-          corpo = Text(
-              'Nenhuma rubrica mudou em relação a ${s.data!.anterior!.mesExtenso}/${s.data!.anterior!.ano}.',
-              style: theme.textTheme.bodyMedium);
+          corpo = recado(
+              'Nenhuma rubrica mudou em relação a ${s.data!.anterior!.mesExtenso}/${s.data!.anterior!.ano}.');
         } else {
           final ant = s.data!.anterior!;
           corpo = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Text('Comparado com ${ant.mesExtenso}/${ant.ano}.', style: theme.textTheme.bodySmall?.copyWith(color: apagado)),
             const SizedBox(height: 8),
-            for (final m in s.data!.mudancas)
+            CartaoVidro(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            for (final (i, m) in s.data!.mudancas.indexed) ...[
+              if (i > 0) Divider(height: 1, color: theme.colorScheme.onSurface.withValues(alpha: 0.08)),
               Semantics(
                 container: true,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                   child: Row(children: [
                     Icon(
                         switch (m.tipo) {
@@ -226,17 +242,23 @@ class _FolhaMudancas extends StatelessWidget {
                   ]),
                 ),
               ),
+            ],
+              ]),
+            ),
           ]);
         }
         return ListView(
           controller: rolagem,
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
           children: [
-            Semantics(
-                header: true,
-                child: Text('O que mudou em ${mes.mesExtenso}/${mes.ano}',
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700))),
-            const SizedBox(height: 12),
+            TopoArte(
+              arte: Arte.de('cc'),
+              icone: Icons.compare_arrows_rounded,
+              titulo: 'O que mudou em ${mes.mesExtenso}/${mes.ano}',
+              subtitulo: 'Rubricas que entraram, saíram ou mudaram de valor '
+                  'em relação ao mês anterior da mesma folha.',
+              margem: const EdgeInsets.only(bottom: 14),
+            ),
             corpo,
           ],
         );

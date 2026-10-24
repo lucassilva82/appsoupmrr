@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:projetonovo/core/design/fundo_circuito.dart';
 import 'package:flutter/services.dart';
 
 import '../utils/api_services.dart';
@@ -20,14 +21,24 @@ import '../widgets/vidro.dart';
 
 enum _Passo { cpf, perguntas, email, codigo, senha, concluido }
 
-class PrimeiroAcessoPage extends StatefulWidget {
+/// Tela de antes do login (padrão 2.2): o fundo de circuito e o tema escuro
+/// ficam por fora do conteúdo, para que o `context` do estado já leia o tema
+/// escuro (com ele por dentro, os textos pegavam o tema claro do aparelho).
+class PrimeiroAcessoPage extends StatelessWidget {
   const PrimeiroAcessoPage({Key? key}) : super(key: key);
 
   @override
-  State<PrimeiroAcessoPage> createState() => _PrimeiroAcessoPageState();
+  Widget build(BuildContext context) => const TelaEntrada(child: _PrimeiroAcesso());
 }
 
-class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
+class _PrimeiroAcesso extends StatefulWidget {
+  const _PrimeiroAcesso();
+
+  @override
+  State<_PrimeiroAcesso> createState() => _PrimeiroAcessoPageState();
+}
+
+class _PrimeiroAcessoPageState extends State<_PrimeiroAcesso> {
   final _cpfCtrl = TextEditingController();
   final _senhaCtrl = TextEditingController();
   final _repetirCtrl = TextEditingController();
@@ -230,12 +241,18 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return FundoSuave(child: Scaffold(
+    // Tela de entrada (antes de entrar no app): o fundo de circuito do
+    // login, tema escuro e o conteúdo de cada passo num cartão de vidro.
+    return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: const CustomAppBar(title: 'Primeiro acesso'),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        child: AnimatedSwitcher(
+        child: CartaoVidro(
+          raio: 24,
+          padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
+          child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 320),
           transitionBuilder: (child, anim) => FadeTransition(
             opacity: anim,
@@ -256,8 +273,9 @@ class _PrimeiroAcessoPageState extends State<PrimeiroAcessoPage> {
             _Passo.concluido => _telaConcluido(),
           },
         ),
+        ),
       ),
-    ));
+    );
   }
 
   Widget _cabecalho(IconData icone, String titulo, String descricao,

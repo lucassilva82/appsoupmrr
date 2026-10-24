@@ -126,7 +126,6 @@ class NotificationsBody extends StatelessWidget {
     return Consumer<NotificationProvider>(
       builder: (context, provider, _) {
         final notifications = provider.notifications.reversed.toList();
-        final unread = provider.unreadCount;
 
         if (notifications.isEmpty) {
           return _EmptyState(onRefresh: provider.loadNotifications);

@@ -16,6 +16,7 @@ import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../core/design/arte_cartao.dart';
 import '../core/erros/falha_app.dart';
 import '../core/log/registro_log.dart';
 import '../core/rede/api_client.dart';
@@ -1026,9 +1027,10 @@ class _PageContrachequeState extends State<PageContracheque> {
       future: _dados,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body:
-                Center(child: CircularProgressIndicator(color: AppColors.blue)),
+          return const FundoSuave(
+            child: Scaffold(
+              body: Center(child: CircularProgressIndicator.adaptive()),
+            ),
           );
         }
         if (snapshot.hasError) return SecondScreen();
@@ -1040,6 +1042,8 @@ class _PageContrachequeState extends State<PageContracheque> {
         final descontosLista = contracheque.proventos
             .where((r) => r.tipoRubrica != 'P')
             .toList();
+        final verde = _verde(theme);
+        final vermelho = _vermelho(theme);
 
         return FundoSuave(
           child: Scaffold(
@@ -1088,19 +1092,19 @@ class _PageContrachequeState extends State<PageContracheque> {
                 if (proventosLista.isNotEmpty) ...[
                   _tituloSecao(theme,
                       rotulo: 'Proventos',
-                      cor: _verde,
+                      cor: verde,
                       quantidade: proventosLista.length),
                   const SizedBox(height: 10),
-                  _blocoRubricas(theme, proventosLista, _verde),
+                  _blocoRubricas(theme, proventosLista, verde),
                   const SizedBox(height: 22),
                 ],
                 if (descontosLista.isNotEmpty) ...[
                   _tituloSecao(theme,
                       rotulo: 'Descontos',
-                      cor: _vermelho,
+                      cor: vermelho,
                       quantidade: descontosLista.length),
                   const SizedBox(height: 10),
-                  _blocoRubricas(theme, descontosLista, _vermelho),
+                  _blocoRubricas(theme, descontosLista, vermelho),
                 ],
                 const SizedBox(height: 18),
                 BotaoOQueMudou(
@@ -1122,16 +1126,17 @@ class _PageContrachequeState extends State<PageContracheque> {
   // oficial, não um painel. O verde e o vermelho marcam a natureza da
   // rubrica, mas quem informa de fato são o rótulo da seção e o sinal do
   // valor — cor sozinha não carrega significado.
-  static const _verde = Color(0xFF34D399);
-  static const _vermelho = Color(0xFFF87171);
+  // Os pares do DESIGN §3: a versão clara no fundo escuro e a escura no
+  // claro, para passar de 4,5:1 nos dois temas.
+  Color _verde(ThemeData theme) => theme.brightness == Brightness.dark
+      ? AppColors.sucessoEscuro
+      : AppColors.sucesso;
+  Color _vermelho(ThemeData theme) => theme.brightness == Brightness.dark
+      ? AppColors.falhaEscuro
+      : AppColors.falha;
 
-  Color _superficie(ThemeData theme) => theme.brightness == Brightness.dark
-      ? Colors.white.withValues(alpha: 0.04)
-      : AppColors.navy.withValues(alpha: 0.04);
-
-  Color _contorno(ThemeData theme) => theme.brightness == Brightness.dark
-      ? Colors.white.withValues(alpha: 0.08)
-      : AppColors.navy.withValues(alpha: 0.10);
+  Color _contorno(ThemeData theme) =>
+      theme.colorScheme.onSurface.withValues(alpha: 0.08);
 
   Color _apagado(ThemeData theme) =>
       theme.colorScheme.onSurface.withValues(alpha: 0.55);
@@ -1192,27 +1197,17 @@ class _PageContrachequeState extends State<PageContracheque> {
           ],
         );
 
-    return Container(
-      decoration: BoxDecoration(
-        color: _superficie(theme),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _contorno(theme)),
-      ),
+    return CartaoVidro(
+      arte: Arte.de('cc'),
       padding: const EdgeInsets.fromLTRB(16, 15, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.blue.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(11),
-                ),
+              ExcludeSemantics(
                 child: Icon(Icons.person_outline_rounded,
-                    size: 21, color: AppColors.lightBlue),
+                    size: AppIconSize.md, color: theme.colorScheme.primary),
               ),
               const SizedBox(width: 13),
               Expanded(
@@ -1272,59 +1267,49 @@ class _PageContrachequeState extends State<PageContracheque> {
   }
 
   // ── Cartão do valor líquido ───────────────────────────────────────────
-  Widget _cartaoLiquido(ThemeData theme) {
-    final escuro = theme.brightness == Brightness.dark;
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: escuro
-              ? [
-                  AppColors.blue.withValues(alpha: 0.26),
-                  AppColors.navy.withValues(alpha: 0.22),
-                ]
-              : [
-                  AppColors.blue.withValues(alpha: 0.12),
-                  AppColors.navy.withValues(alpha: 0.07),
-                ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.blue.withValues(alpha: 0.22)),
-      ),
+  // Arte cheia do contracheque (padrão 2.2). O fundo é sempre escuro, então
+  // o conteúdo lê o tema de cima da arte (texto branco) e proventos e
+  // descontos usam o verde e o vermelho claros (DESIGN §3).
+  Widget _cartaoLiquido(ThemeData temaFora) {
+    return CartaoArte(
+      arte: Arte.de('cc'),
+      raio: 16,
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Valor líquido',
-              style: TextStyle(
-                  fontSize: 12,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.75))),
-          const SizedBox(height: 8),
-          _valorGrande(theme),
-          const SizedBox(height: 14),
-          Divider(
-              height: 1,
-              thickness: 1,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
-          const SizedBox(height: 13),
-          Row(
-            children: [
-              Expanded(
-                  child: _resumoColuna(
-                      theme, 'Proventos', proventos, _verde)),
-              Container(
-                  width: 1,
-                  height: 32,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
-              const SizedBox(width: 16),
-              Expanded(
-                  child: _resumoColuna(
-                      theme, 'Descontos', descontos, _vermelho)),
-            ],
-          ),
-        ],
-      ),
+      child: Builder(builder: (context) {
+        final theme = Theme.of(context);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Valor líquido',
+                style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.75))),
+            const SizedBox(height: 8),
+            _valorGrande(theme),
+            const SizedBox(height: 14),
+            Divider(
+                height: 1,
+                thickness: 1,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
+            const SizedBox(height: 13),
+            Row(
+              children: [
+                Expanded(
+                    child: _resumoColuna(theme, 'Proventos', proventos,
+                        AppColors.sucessoEscuro)),
+                Container(
+                    width: 1,
+                    height: 32,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
+                const SizedBox(width: 16),
+                Expanded(
+                    child: _resumoColuna(
+                        theme, 'Descontos', descontos, AppColors.falhaEscuro)),
+              ],
+            ),
+          ],
+        );
+      }),
     );
   }
 
@@ -1409,14 +1394,10 @@ class _PageContrachequeState extends State<PageContracheque> {
   // ── Bloco de rubricas ─────────────────────────────────────────────────
   Widget _blocoRubricas(
       ThemeData theme, List<TipoProvento> itens, Color cor) {
-    return Container(
-      decoration: BoxDecoration(
-        color: cor.withValues(alpha: theme.brightness == Brightness.dark
-            ? 0.055
-            : 0.045),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cor.withValues(alpha: 0.18)),
-      ),
+    // Superfície de vidro como o resto do app; a cor da natureza da rubrica
+    // fica no título da seção e no valor (cor não é o único indicador).
+    return CartaoVidro(
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           for (var i = 0; i < itens.length; i++) ...[
@@ -1424,9 +1405,7 @@ class _PageContrachequeState extends State<PageContracheque> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: cor.withValues(alpha: 0.14)),
+                    height: 1, thickness: 1, color: _contorno(theme)),
               ),
             _linhaRubrica(theme, itens[i], cor),
           ],

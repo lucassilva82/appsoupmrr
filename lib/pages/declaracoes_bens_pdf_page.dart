@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/vidro.dart';
 import '../core/erros/falha_de.dart';
+import '../core/design/arte_cartao.dart';
 
 String statusText(int status) {
   switch (status) {
@@ -266,20 +267,20 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
   Widget _buildListaDeclaracoes(ThemeData theme) {
     if (_listaDeclaracoes.isEmpty) {
       return Center(
-        child: Container(
-          width: double.infinity,
-          margin: const EdgeInsets.all(10),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(14),
-            border:
-                Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
-          ),
-          child: Text(
-            'Nenhuma declaração enviada.',
-            style: theme.textTheme.bodyMedium,
-            textAlign: TextAlign.center,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: CartaoVidro(
+            arte: Arte.de('rh'),
+            raio: 14,
+            padding: const EdgeInsets.all(14),
+            child: SizedBox(
+              width: double.infinity,
+              child: Text(
+                'Nenhuma declaração enviada.',
+                style: theme.textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+            ),
           ),
         ),
       );
@@ -307,59 +308,57 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
               ),
             );
           },
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(14),
-              border:
-                  Border.all(color: theme.dividerColor.withValues(alpha: 0.28)),
-            ),
-            child: ListTile(
-              dense: true,
-              visualDensity: const VisualDensity(vertical: -2),
-              leading: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 6),
+            child: CartaoVidro(
+              raio: 14,
+              child: ListTile(
+                dense: true,
+                visualDensity: const VisualDensity(vertical: -2),
+                leading: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.error.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.picture_as_pdf_outlined,
+                      color: theme.colorScheme.error, size: AppIconSize.xs),
                 ),
-                child: const Icon(Icons.picture_as_pdf_rounded,
-                    color: Colors.red, size: 17),
-              ),
-              title: Text(entry.nome,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w600)),
-              subtitle: Text('Enviado em ${_formatDateTime(entry.dataEnvio)}',
-                  style: theme.textTheme.bodySmall),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: color.withValues(alpha: 0.22)),
-                    ),
-                    child: Text(
-                      entry.status,
-                      style: TextStyle(
-                        color: color,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
+                title: Text(entry.nome,
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w600)),
+                subtitle: Text('Enviado em ${_formatDateTime(entry.dataEnvio)}',
+                    style: theme.textTheme.bodySmall),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(999),
+                        border:
+                            Border.all(color: color.withValues(alpha: 0.22)),
+                      ),
+                      child: Text(
+                        entry.status,
+                        style: TextStyle(
+                          color: color,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    iconSize: 17,
-                    icon: const Icon(Icons.visibility_rounded),
-                    onPressed: () => _openPdf(entry),
-                  ),
-                ],
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      iconSize: AppIconSize.sm,
+                      icon: const Icon(Icons.visibility_rounded),
+                      onPressed: () => _openPdf(entry),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -373,39 +372,37 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
     return Column(
       children: [
         const SizedBox(height: 10),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 12),
-          padding: const EdgeInsets.all(11),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(14),
-            border:
-                Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: AppColors.blue.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: CartaoVidro(
+            arte: Arte.de('rh'),
+            raio: 14,
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.upload_file_outlined,
+                    size: AppIconSize.xs,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
-                child: Icon(
-                  Icons.upload_file_rounded,
-                  size: 16,
-                  color: theme.colorScheme.primary,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Envie o PDF com até 5MB',
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w600, fontSize: 12.5),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Envie o PDF com até 5MB',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w600, fontSize: 12.5),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -484,9 +481,9 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
   Widget build(BuildContext context) {
     final auth = Provider.of<Auth>(context, listen: false);
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
-    return FundoSuave(child: Scaffold(
+    return FundoSuave(
+        child: Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
@@ -496,70 +493,53 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
         flexibleSpace: const FundoBarraVidro(),
       ),
       body: isLoading
-            ? const Center(child: CircularProgressIndicator.adaptive())
-            : SizedBox.expand(
-                child: _showUploadSection
-                    ? _buildUploadSection(auth.cpf!, theme)
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.fromLTRB(12, 12, 12, 2),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: theme.cardColor,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                  color: theme.dividerColor
-                                      .withValues(alpha: 0.3)),
-                            ),
-                            child: Text(
-                              'Declaração de Bens (IRPF)',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w700, fontSize: 13),
-                            ),
+          ? const Center(child: CircularProgressIndicator.adaptive())
+          : SizedBox.expand(
+              child: _showUploadSection
+                  ? _buildUploadSection(auth.cpf!, theme)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Topo com a arte da área (padrão 2.2).
+                        TopoArte(
+                          arte: Arte.de('rh'),
+                          icone: Icons.picture_as_pdf_outlined,
+                          titulo: 'Declaração de bens (IRPF)',
+                          subtitulo: 'Envie o PDF da sua declaração do '
+                              'Imposto de Renda e acompanhe os enviados.',
+                          margem: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(18, 0, 18, 4),
+                          child: Text(
+                            'Seus documentos enviados',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700, fontSize: 13),
                           ),
-                          Container(
-                            margin: const EdgeInsets.fromLTRB(12, 8, 12, 6),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: theme.cardColor,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                  color: theme.dividerColor
-                                      .withValues(alpha: 0.3)),
-                            ),
-                            child: Text(
-                              'Seus documentos enviados',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w700, fontSize: 13),
-                              textAlign: TextAlign.center,
-                            ),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: _buildListaDeclaracoes(theme),
                           ),
-                          Expanded(
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 10),
-                              child: _buildListaDeclaracoes(theme),
-                            ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(14, 8, 14, 16),
+                          child: FilledButton.icon(
+                            style: _compactActionStyle(),
+                            onPressed: () {
+                              setState(() {
+                                _showUploadSection = true;
+                                selectedFile = null;
+                              });
+                            },
+                            icon: const Icon(Icons.upload_rounded, size: 15),
+                            label: const Text('Enviar outra declaração'),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(14, 8, 14, 16),
-                            child: FilledButton.icon(
-                              style: _compactActionStyle(),
-                              onPressed: () {
-                                setState(() {
-                                  _showUploadSection = true;
-                                  selectedFile = null;
-                                });
-                              },
-                              icon: const Icon(Icons.upload_rounded, size: 15),
-                              label: const Text('Enviar outra declaração'),
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
+                        ),
+                      ],
+                    ),
+            ),
     ));
   }
 
@@ -643,7 +623,8 @@ class PdfViewerPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FundoSuave(child: Scaffold(
+    return FundoSuave(
+        child: Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(

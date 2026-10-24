@@ -9,6 +9,7 @@ import '../utils/api_services.dart';
 import '../utils/app_theme.dart';
 import '../widgets/custom_appbar.dart';
 import '../widgets/vidro.dart';
+import '../core/design/arte_cartao.dart';
 import '../core/erros/falha_de.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -692,38 +693,14 @@ class _CabecalhoIcone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final destaque = cor ?? theme.colorScheme.primary;
-
-    return Column(
-      children: [
-        Container(
-          width: 76,
-          height: 76,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: destaque.withOpacity(0.12),
-          ),
-          child: Icon(icone, size: 38, color: destaque),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          titulo,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          descricao,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.70),
-            height: 1.4,
-          ),
-        ),
-      ],
+    // Padrão 2.2: o cabeçalho da tela é a arte da área (Minha vida
+    // funcional); o estado de sucesso usa a arte verde-água.
+    return TopoArte(
+      arte: Arte.de(cor != null ? 'fe' : 'rh'),
+      icone: icone,
+      titulo: titulo,
+      subtitulo: descricao,
+      margem: EdgeInsets.zero,
     );
   }
 }
@@ -782,6 +759,7 @@ class _Passos extends StatelessWidget {
 
     return CartaoVidro(
       raio: 14,
+      arte: Arte.de('rh'),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Column(
         children: [

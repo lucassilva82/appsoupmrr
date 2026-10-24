@@ -46,7 +46,12 @@ Future<bool> convidarParaBiometria(BuildContext context) async {
         opacity: anim,
         child: ScaleTransition(
           scale: Tween<double>(begin: 0.90, end: 1.0).animate(curva),
-          child: _Convite(temRosto: temRosto),
+          // Abre sobre o login (fundo escuro de circuito): sempre no tema
+          // escuro, mesmo com o aparelho no claro.
+          child: Theme(
+            data: AppTheme.build(isDark: true, isSuperUser: false),
+            child: _Convite(temRosto: temRosto),
+          ),
         ),
       );
     },

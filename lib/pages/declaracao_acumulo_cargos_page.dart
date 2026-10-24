@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/vidro.dart';
 import '../core/erros/falha_de.dart';
+import '../core/design/arte_cartao.dart';
 
 class DeclaracaoAcumuloCargosPage extends StatefulWidget {
   final String ano;
@@ -120,8 +121,8 @@ class _DeclaracaoAcumuloCargosPageState
       'orgao': temAcumulo ? orgaoController.text : '',
     };
 
-    final uri =
-        Uri.https('pmrr.online', '/flutter/sigrh/insereacumulocargos.php', params);
+    final uri = Uri.https(
+        'pmrr.online', '/flutter/sigrh/insereacumulocargos.php', params);
 
     try {
       final response = await http.get(uri);
@@ -228,10 +229,10 @@ class _DeclaracaoAcumuloCargosPageState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final auth = Provider.of<Auth>(context, listen: false);
 
-    return FundoSuave(child: Scaffold(
+    return FundoSuave(
+        child: Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
@@ -241,8 +242,8 @@ class _DeclaracaoAcumuloCargosPageState
         flexibleSpace: const FundoBarraVidro(),
       ),
       body: isLoading
-            ? const Center(child: CircularProgressIndicator.adaptive())
-            : _buildContent(theme, auth),
+          ? const Center(child: CircularProgressIndicator.adaptive())
+          : _buildContent(theme, auth),
     ));
   }
 
@@ -254,7 +255,7 @@ class _DeclaracaoAcumuloCargosPageState
 
   Widget _buildQuestionStep(ThemeData theme, Auth auth) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         _introBanner(
           theme,
@@ -297,7 +298,7 @@ class _DeclaracaoAcumuloCargosPageState
 
   Widget _buildNoCargoStep(ThemeData theme) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         _introBanner(
           theme,
@@ -331,7 +332,7 @@ class _DeclaracaoAcumuloCargosPageState
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
               _introBanner(
                 theme,
@@ -397,26 +398,26 @@ class _DeclaracaoAcumuloCargosPageState
           ),
         );
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
-        ),
-        child: ListTile(
-          dense: true,
-          visualDensity: const VisualDensity(vertical: -2),
-          leading: CircleAvatar(
-            radius: 15,
-            backgroundColor: AppColors.blue.withValues(alpha: 0.12),
-            child: const Icon(Icons.work_outline_rounded, size: 15),
-          ),
-          title: Text(cargo['cargo'] ?? 'Sem cargo'),
-          subtitle: Text('Órgão: ${cargo['orgao'] ?? 'Desconhecido'}'),
-          trailing: IconButton(
-            icon: const Icon(Icons.delete_outline_rounded, size: 18),
-            onPressed: () => _excluirCargo(cargo['id']),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: CartaoVidro(
+          raio: 14,
+          child: ListTile(
+            dense: true,
+            visualDensity: const VisualDensity(vertical: -2),
+            leading: CircleAvatar(
+              radius: 15,
+              backgroundColor:
+                  theme.colorScheme.primary.withValues(alpha: 0.12),
+              child: const Icon(Icons.work_outline_rounded, size: 15),
+            ),
+            title: Text(cargo['cargo'] ?? 'Sem cargo'),
+            subtitle: Text('Órgão: ${cargo['orgao'] ?? 'Desconhecido'}'),
+            trailing: IconButton(
+              icon: Icon(Icons.delete_outline_rounded,
+                  size: AppIconSize.sm, color: theme.colorScheme.error),
+              onPressed: () => _excluirCargo(cargo['id']),
+            ),
           ),
         ),
       ),
@@ -427,16 +428,10 @@ class _DeclaracaoAcumuloCargosPageState
     required TextEditingController controller,
     required String label,
   }) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     return TextField(
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        filled: true,
-        fillColor: isDark
-            ? theme.colorScheme.surface.withValues(alpha: 0.7)
-            : Colors.white,
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
@@ -450,13 +445,9 @@ class _DeclaracaoAcumuloCargosPageState
     required String title,
     required String text,
   }) {
-    return Container(
+    return CartaoVidro(
+      arte: Arte.de('rh'),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
-      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -464,10 +455,11 @@ class _DeclaracaoAcumuloCargosPageState
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: AppColors.blue.withValues(alpha: 0.12),
+              color: theme.colorScheme.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, size: 16, color: theme.colorScheme.primary),
+            child: Icon(icon,
+                size: AppIconSize.xs, color: theme.colorScheme.primary),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -528,38 +520,18 @@ class _DeclaracaoAcumuloCargosPageState
     );
   }
 
+  // Topo da etapa com a arte da área (padrão 2.2).
   Widget _introBanner(
     ThemeData theme, {
     required String title,
     required String subtitle,
   }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.30)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontSize: 12,
-              height: 1.35,
-            ),
-          ),
-        ],
-      ),
+    return TopoArte(
+      arte: Arte.de('rh'),
+      icone: Icons.work_outline_rounded,
+      titulo: title,
+      subtitulo: subtitle,
+      margem: const EdgeInsets.only(bottom: 6),
     );
   }
 

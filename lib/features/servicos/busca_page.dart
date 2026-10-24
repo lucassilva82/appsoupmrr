@@ -443,7 +443,7 @@ class _Vazio extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 30, 10, 0),
       child: Column(children: [
-        Icon(Icons.search_off_rounded, size: 36, color: mudo),
+        Icon(Icons.search_off_rounded, size: AppIconSize.xl, color: mudo),
         const SizedBox(height: 10),
         Text('Não achamos "$termo"',
             textAlign: TextAlign.center,

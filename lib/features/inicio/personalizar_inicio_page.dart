@@ -180,6 +180,7 @@ class _PersonalizarInicioPageState extends State<PersonalizarInicioPage> {
               const SizedBox(height: 12),
               CartaoVidro(
                 padding: const EdgeInsets.symmetric(vertical: 4),
+                arte: Arte.de('rh'),
                 child: ReorderableListView(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -222,6 +223,7 @@ class _PersonalizarInicioPageState extends State<PersonalizarInicioPage> {
               ]),
               CartaoVidro(
                 padding: const EdgeInsets.symmetric(vertical: 4),
+                arte: Arte.de('rh'),
                 child: ReorderableListView(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),

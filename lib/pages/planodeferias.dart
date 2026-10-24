@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import '../models/auth_model.dart';
+import '../core/design/arte_cartao.dart';
 import '../utils/app_theme.dart';
 import '../widgets/custom_appbar.dart';
 import '../widgets/vidro.dart';
@@ -190,62 +191,62 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
   // ── UI: estado vazio / erro ──────────────────────────────────────────
   Widget _buildEmptyState(bool isDark) {
     final isError = _error != null;
+    final tema = Theme.of(context);
+    final aoFundo = tema.colorScheme.onSurface;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: (isDark ? Colors.white : AppColors.blue)
-                    .withValues(alpha: 0.08),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isError
-                    ? Icons.cloud_off_outlined
-                    : Icons.beach_access_outlined,
-                size: 40,
-                color: isDark
-                    ? Colors.white24
-                    : AppColors.blue.withValues(alpha: 0.4),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              isError ? 'Não foi possível carregar' : 'Nenhum plano encontrado',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white70 : Colors.black54,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _error ??
-                  'Você não possui um plano de férias cadastrado para $_selectedYear.\nProcure a administração da sua OM.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.5,
-                color: isDark ? Colors.white38 : Colors.black38,
-              ),
-            ),
-            if (isError) ...[
-              const SizedBox(height: 20),
-              OutlinedButton.icon(
-                onPressed: _loadData,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Tentar novamente'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.blue,
-                  side: const BorderSide(color: AppColors.blue),
+            CartaoVidro(
+              arte: Arte.de('fe'),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+              child: SizedBox(
+                width: double.infinity,
+                child: Column(
+                  children: [
+                    ExcludeSemantics(
+                      child: Icon(
+                        isError
+                            ? Icons.cloud_off_outlined
+                            : Icons.beach_access_outlined,
+                        size: AppIconSize.xl,
+                        color: aoFundo.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      isError
+                          ? 'Não foi possível carregar'
+                          : 'Nenhum plano encontrado',
+                      textAlign: TextAlign.center,
+                      style: tema.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _error ??
+                          'Você não possui um plano de férias cadastrado para $_selectedYear.\nProcure a administração da sua OM.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.5,
+                        color: aoFundo.withValues(alpha: 0.65),
+                      ),
+                    ),
+                    if (isError) ...[
+                      const SizedBox(height: 18),
+                      OutlinedButton.icon(
+                        onPressed: _loadData,
+                        icon: const Icon(Icons.refresh, size: AppIconSize.sm),
+                        label: const Text('Tentar novamente'),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-            ],
+            ),
           ],
         ),
       ),
@@ -259,20 +260,22 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
     IconData icon;
     String label;
 
+    final tema = Theme.of(context);
+    final escuro = tema.brightness == Brightness.dark;
     if (startDt == null) {
       return const SizedBox.shrink();
     } else if (endDt != null && endDt.isBefore(now)) {
-      color = Colors.grey;
+      color = tema.colorScheme.onSurface.withValues(alpha: 0.65);
       icon = Icons.check_circle_outline;
       label = 'Concluído';
     } else if (startDt.isBefore(now) ||
         startDt.isAtSameMomentAs(DateTime(now.year, now.month, now.day))) {
-      color = const Color(0xFF22C55E);
+      color = escuro ? AppColors.sucessoEscuro : AppColors.sucesso;
       icon = Icons.play_circle_outline;
       label = 'Em andamento';
     } else {
       final days = startDt.difference(now).inDays + 1;
-      color = AppColors.blue;
+      color = tema.colorScheme.primary;
       icon = Icons.schedule_outlined;
       label = days == 1 ? 'Amanhã' : 'Em ${days}d';
     }
@@ -286,7 +289,7 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 11, color: color),
+          Icon(icon, size: AppIconSize.xxs, color: color),
           const SizedBox(width: 4),
           Text(label,
               style: TextStyle(
@@ -332,19 +335,18 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
       duration = '$d dias';
     }
 
-    final borderColor =
-        isDark ? AppColors.darkBorder : AppColors.blue.withValues(alpha: 0.15);
-    final bgColor = isDark
-        ? Colors.white.withValues(alpha: 0.04)
-        : AppColors.blue.withValues(alpha: 0.04);
+    // Seção dentro do cartão: superfície neutra, sem borda (DESIGN §3b).
+    final tema = Theme.of(context);
+    final aoFundo = tema.colorScheme.onSurface;
+    final primaria = tema.colorScheme.primary;
+    final fim = isDark ? AppColors.falhaEscuro : AppColors.falha;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: borderColor, width: 0.8),
+        color: aoFundo.withValues(alpha: 0.055),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,7 +359,7 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
-                  color: isDark ? Colors.white54 : Colors.black45,
+                  color: aoFundo.withValues(alpha: 0.62),
                 ),
               ),
               const Spacer(),
@@ -367,31 +369,38 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
           const SizedBox(height: 7),
           Row(
             children: [
-              Icon(Icons.flight_takeoff_rounded,
-                  size: 14, color: AppColors.blue),
+              ExcludeSemantics(
+                child: Icon(Icons.flight_takeoff_rounded,
+                    size: AppIconSize.xs, color: primaria),
+              ),
               const SizedBox(width: 5),
               Text(
                 startFormatted.isNotEmpty ? startFormatted : '—',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  color: aoFundo,
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Icon(Icons.arrow_forward_rounded,
-                    size: 13, color: isDark ? Colors.white38 : Colors.black26),
+                child: ExcludeSemantics(
+                  child: Icon(Icons.arrow_forward_rounded,
+                      size: AppIconSize.xxs,
+                      color: aoFundo.withValues(alpha: 0.40)),
+                ),
               ),
-              Icon(Icons.flight_land_rounded,
-                  size: 14, color: Colors.red.shade400),
+              ExcludeSemantics(
+                child: Icon(Icons.flight_land_rounded,
+                    size: AppIconSize.xs, color: fim),
+              ),
               const SizedBox(width: 5),
               Text(
                 endFormatted.isNotEmpty ? endFormatted : '—',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  color: aoFundo,
                 ),
               ),
               if (duration.isNotEmpty) ...[
@@ -400,7 +409,7 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
                   duration,
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? Colors.white38 : Colors.black38,
+                    color: aoFundo.withValues(alpha: 0.60),
                   ),
                 ),
               ],
@@ -511,39 +520,33 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
     final primaria = tema.colorScheme.primary;
     final aoFundo = tema.colorScheme.onSurface;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 14),
-      elevation: isDark ? 0 : 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      clipBehavior: Clip.antiAlias,
-      color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
+    // Selo do tipo: verde para integral, âmbar para parcelada, nas versões
+    // de cada tema (as de fundo escuro não passam de 4,5:1 no claro).
+    final corTipo = isIntegral
+        ? (isDark ? AppColors.sucessoEscuro : AppColors.sucesso)
+        : (isDark ? Colors.amber.shade300 : Colors.amber.shade900);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: CartaoVidro(
+      arte: Arte.de('fe'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Header gradient ──────────────────────────────────────
+          // ── Cabeçalho: quem e o tipo do plano ─────────────────────
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
             decoration: BoxDecoration(
-              // Tingimento leve no lugar do degradê sólido: é o cabeçalho de
-              // um cartão, não precisa do peso de um bloco de marca.
-              color: primaria.withOpacity(isDark ? 0.16 : 0.10),
               border: Border(
-                bottom: BorderSide(
-                    color: primaria.withOpacity(isDark ? 0.26 : 0.18)),
+                bottom: BorderSide(color: aoFundo.withValues(alpha: 0.08)),
               ),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: primaria.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.beach_access_rounded,
-                      color: primaria, size: 22),
+                ExcludeSemantics(
+                  child: Icon(Icons.beach_access_outlined,
+                      color: primaria, size: AppIconSize.md),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -581,24 +584,16 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                   decoration: BoxDecoration(
-                    color: isIntegral
-                        ? const Color(0xFF1DE9B6).withValues(alpha: 0.18)
-                        : Colors.amber.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(20),
+                    color: corTipo.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: isIntegral
-                          ? const Color(0xFF1DE9B6)
-                          : Colors.amber.shade400,
-                      width: 1,
-                    ),
+                        color: corTipo.withValues(alpha: 0.5), width: 1),
                   ),
                   child: Text(
                     isIntegral ? 'INTEGRAL' : 'PARCELADA',
                     style: TextStyle(
-                      color: isIntegral
-                          ? const Color(0xFF1DE9B6)
-                          : Colors.amber.shade300,
-                      fontSize: 9.5,
+                      color: corTipo,
+                      fontSize: 10,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.7,
                     ),
@@ -629,7 +624,7 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
                       child: Text(
                         'Plano integral — datas ainda não disponíveis.',
                         style: TextStyle(
-                          color: isDark ? Colors.white38 : Colors.black38,
+                          color: aoFundo.withValues(alpha: 0.60),
                           fontSize: 13,
                         ),
                       ),
@@ -675,22 +670,18 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.amber.withValues(alpha: 0.08)
-                      : Colors.amber.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Colors.amber.shade300.withValues(alpha: 0.6),
-                    width: 0.8,
-                  ),
+                  color: aoFundo.withValues(alpha: 0.055),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.monetization_on_outlined,
-                        size: 16,
-                        color: isDark
-                            ? Colors.amber.shade300
-                            : Colors.amber.shade800),
+                    ExcludeSemantics(
+                      child: Icon(Icons.monetization_on_outlined,
+                          size: AppIconSize.xs,
+                          color: isDark
+                              ? Colors.amber.shade300
+                              : Colors.amber.shade900),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -712,6 +703,7 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
             const SizedBox(height: 8),
         ],
       ),
+    ),
     );
   }
 
@@ -721,15 +713,19 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return FundoSuave(child: Scaffold(
-      backgroundColor: Colors.transparent,
-          // fundo global (FundoSuave) aparece por baixo
       appBar: const CustomAppBar(title: 'Plano de Férias'),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          TopoArte(
+            arte: Arte.de('fe'),
+            icone: Icons.beach_access_outlined,
+            titulo: 'Plano de férias',
+            subtitulo: 'Seus períodos de férias no ano escolhido, '
+                'com a situação de cada um.',
+          ),
           // Seletor de ano (chips)
           if (_years.isNotEmpty) ...[
-            const SizedBox(height: 12),
             _buildYearBar(isDark),
             const SizedBox(height: 4),
           ],
@@ -737,12 +733,10 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
           // Conteúdo principal
           Expanded(
             child: _loading
-                ? const Center(
-                    child: CircularProgressIndicator(color: AppColors.blue))
+                ? const Center(child: CircularProgressIndicator.adaptive())
                 : _filtered.isEmpty
                     ? _buildEmptyState(isDark)
                     : RefreshIndicator(
-                        color: AppColors.blue,
                         onRefresh: _loadData,
                         child: ListView.builder(
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),

@@ -17,6 +17,8 @@ import '../widgets/custom_appbar.dart';
 import '../widgets/vidro.dart';
 import '../core/erros/falha_de.dart';
 import '../core/erros/estado_erro.dart';
+import '../core/design/arte_cartao.dart';
+import '../utils/app_theme.dart';
 
 class DetalhesMapaForcaComandoPage extends StatefulWidget {
   final MapBuscaDetalhesModel dadosBusca;
@@ -189,96 +191,100 @@ class _DetalhesMapaForcaComandoPageState
   }
 
   /* ---------------- CARTÃO DE MILITAR ---------------- */
-  Widget _militarCard(MilitarDetalheModel m) => Card(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        elevation: 0,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          splashColor: _primaria.withValues(alpha: 0.12),
+  // Item de militar: vidro simples, sem arte (a arte fica no topo da tela).
+  Widget _militarCard(MilitarDetalheModel m) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: CartaoVidro(
+          raio: 14,
+          padding: const EdgeInsets.all(8),
           onTap: () => Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => MilitarDetalheFullPage(
                   matricula: m.matricula,
                   preloadedImageUrl: _resolveImgUrl(m.imagemUrl)))),
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: CachedNetworkImage(
-                  imageUrl: _resolveImgUrl(m.imagemUrl) ?? '',
+          child: Row(children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: CachedNetworkImage(
+                imageUrl: _resolveImgUrl(m.imagemUrl) ?? '',
+                width: 70,
+                height: 70,
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
+                cacheManager: DefaultCacheManager(),
+                placeholder: (_, __) => Container(
                   width: 70,
                   height: 70,
-                  fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
-                  cacheManager: DefaultCacheManager(),
-                  placeholder: (_, __) => Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.grey.shade300, Colors.grey.shade100],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.08),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-                    child: const Center(
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                  ),
-                  errorWidget: (_, __, ___) => Container(
-                    width: 70,
-                    height: 70,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.08),
-                    child: Icon(Icons.person,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.35),
-                        size: 38),
                   ),
                 ),
+                errorWidget: (_, __, ___) => Container(
+                  width: 70,
+                  height: 70,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.08),
+                  child: Icon(Icons.person,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.35),
+                      size: 38),
+                ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(m.nome,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(m.nome,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 2),
+                  Text('Posto/Graduação: ${m.postoGraduacao}',
+                      style: const TextStyle(fontSize: 12)),
+                  // nova linha: Situação
+                  if (m.situacaoDescricao != null &&
+                      m.situacaoDescricao!.trim().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Situação: ${m.situacaoDescricao!}',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: m.situacaoDescricao!.startsWith("PRONTO")
+                                ? Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.62)
+                                : Theme.of(context).colorScheme.error),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 2),
-                    Text('Posto/Graduação: ${m.postoGraduacao}',
-                        style: const TextStyle(fontSize: 12)),
-                    // nova linha: Situação
-                    if (m.situacaoDescricao != null &&
-                        m.situacaoDescricao!.trim().isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          'Situação: ${m.situacaoDescricao!}',
-                          style: m.situacaoDescricao!.startsWith("PRONTO")
-                              ? TextStyle(fontSize: 11, color: Colors.black54)
-                              : TextStyle(fontSize: 11, color: Colors.red),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
-              const Icon(Icons.chevron_right, color: Colors.grey, size: 20)
-            ]),
-          ),
+            ),
+            Icon(Icons.chevron_right_rounded,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.45),
+                size: AppIconSize.sm)
+          ]),
         ),
       );
 
@@ -304,50 +310,23 @@ class _DetalhesMapaForcaComandoPageState
         : postos.join(', ');
     final comando = widget.dadosBusca.descricao;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          gradient: _grad,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.account_balance_rounded, color: _primaria, size: 18),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(comando,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13)),
-                  const SizedBox(height: 2),
-                  Text('Filtro: $postosStr',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.62),
-                          fontSize: 10.5)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+    // Topo com a arte da área de Gestão (padrão 2.2): o comando escolhido e
+    // o filtro de postos aplicado.
+    return TopoArte(
+      arte: Arte.de('gestao'),
+      icone: Icons.account_balance_outlined,
+      titulo: comando,
+      subtitulo:
+          'Efetivo por unidade, subunidade e situação. Filtro: $postosStr',
+      margem: const EdgeInsets.fromLTRB(12, 8, 12, 8),
     );
   }
 
   /* ---------------- BUILD ---------------- */
   @override
   Widget build(BuildContext context) {
-    return FundoSuave(child: Scaffold(
+    return FundoSuave(
+        child: Scaffold(
       appBar: CustomAppBar(title: widget.dadosBusca.descricao),
       body: Column(
         children: [
@@ -356,18 +335,13 @@ class _DetalhesMapaForcaComandoPageState
           // ---------- CAMPO DE BUSCA ----------
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 4, 12, 2),
-            child: SizedBox(
-              height: 48,
-              child: TextField(
-                controller: _searchCtrl,
-                style: const TextStyle(fontSize: 13),
-                decoration: InputDecoration(
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-                  hintText: 'Pesquisar por nome...',
-                  hintStyle: const TextStyle(fontSize: 13),
-                  prefixIcon: const Icon(Icons.search, size: 18),
-                ),
+            child: TextField(
+              controller: _searchCtrl,
+              style: const TextStyle(fontSize: 13),
+              decoration: const InputDecoration(
+                isDense: true,
+                labelText: 'Pesquisar por nome',
+                prefixIcon: Icon(Icons.search_rounded, size: AppIconSize.sm),
               ),
             ),
           ),
@@ -381,7 +355,10 @@ class _DetalhesMapaForcaComandoPageState
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snap.hasError) {
-                  return EstadoErro(falha: falhaDe('MF', snap.error, tela: 'gestao.mapa_forca'), tela: 'gestao.mapa_forca');
+                  return EstadoErro(
+                      falha:
+                          falhaDe('MF', snap.error, tela: 'gestao.mapa_forca'),
+                      tela: 'gestao.mapa_forca');
                 }
 
                 final baseMapa = snap.data ?? {};
@@ -538,8 +515,8 @@ class _GradientTile extends StatelessWidget {
         border: Border.all(color: cor.withValues(alpha: 0.35)),
       ),
       child: Text('$total',
-          style: TextStyle(
-              color: cor, fontSize: 11, fontWeight: FontWeight.w700)),
+          style:
+              TextStyle(color: cor, fontSize: 11, fontWeight: FontWeight.w700)),
     );
   }
 
@@ -575,8 +552,8 @@ class _GradientTile extends StatelessWidget {
           tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           collapsedBackgroundColor: bgCollapsed,
           backgroundColor: bgExpanded,
-          leading: Icon(leadingIcon,
-              color: primaria, size: isSubLevel ? 18 : 22),
+          leading:
+              Icon(leadingIcon, color: primaria, size: isSubLevel ? 18 : 22),
           iconColor: aoFundo.withValues(alpha: 0.65),
           collapsedIconColor: aoFundo.withValues(alpha: 0.65),
           title: Row(
@@ -613,8 +590,7 @@ class _GradientTile extends StatelessWidget {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          Container(
-                              color: aoFundo.withValues(alpha: 0.08)),
+                          Container(color: aoFundo.withValues(alpha: 0.08)),
                           Align(
                             alignment: Alignment.centerLeft,
                             child: FractionallySizedBox(
@@ -686,8 +662,7 @@ class _PostoHeader extends StatelessWidget {
           gradient: grad, borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
-          Icon(Icons.military_tech,
-              color: tema.colorScheme.primary, size: 16),
+          Icon(Icons.military_tech, color: tema.colorScheme.primary, size: 16),
           const SizedBox(width: 6),
           Expanded(
               child: Text('$sigla : $qtd militares',
@@ -814,105 +789,102 @@ class _SituacaoTile extends StatelessWidget {
               return Container(
                 margin: const EdgeInsets.symmetric(vertical: 1),
                 child: ExpansionTile(
-                      shape: const Border(),
-                      collapsedShape: const Border(),
-                      key: PageStorageKey(
-                          'situacao_item_${militares.hashCode}_$sit'),
-                      initiallyExpanded: false,
-                      tilePadding: EdgeInsets.symmetric(
-                          horizontal: 8.0 * scale, vertical: 3.0 * scale),
-                      collapsedBackgroundColor: Colors.transparent,
-                      backgroundColor: Colors.transparent,
-                      leading: Icon(Icons.work_outline,
-                          color: onCard.withOpacity(0.6), size: 13.0 * scale),
-                      iconColor: onCard.withOpacity(0.6),
-                      collapsedIconColor: onCard.withOpacity(0.6),
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Text(sit,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                    color: onCard,
-                                    fontSize: itemTitleSize,
-                                    fontWeight: FontWeight.w600)),
-                          ),
-                          Text(
-                            pctText,
+                  shape: const Border(),
+                  collapsedShape: const Border(),
+                  key: PageStorageKey(
+                      'situacao_item_${militares.hashCode}_$sit'),
+                  initiallyExpanded: false,
+                  tilePadding: EdgeInsets.symmetric(
+                      horizontal: 8.0 * scale, vertical: 3.0 * scale),
+                  collapsedBackgroundColor: Colors.transparent,
+                  backgroundColor: Colors.transparent,
+                  leading: Icon(Icons.work_outline,
+                      color: onCard.withOpacity(0.6), size: 13.0 * scale),
+                  iconColor: onCard.withOpacity(0.6),
+                  collapsedIconColor: onCard.withOpacity(0.6),
+                  title: Row(
+                    children: [
+                      Expanded(
+                        child: Text(sit,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: onCard.withOpacity(0.65),
-                              fontSize: 9.0 * scale,
-                              fontWeight: FontWeight.w700,
+                                color: onCard,
+                                fontSize: itemTitleSize,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                      Text(
+                        pctText,
+                        style: TextStyle(
+                          color: onCard.withOpacity(0.65),
+                          fontSize: 9.0 * scale,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(width: 5.0 * scale),
+                      SizedBox(
+                        width: 50.0 * scale,
+                        height: 5.0 * scale,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(99),
+                            border: Border.all(
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.2)
+                                  : const Color(0xFF1976D2).withOpacity(0.3),
+                              width: .7,
                             ),
                           ),
-                          SizedBox(width: 5.0 * scale),
-                          SizedBox(
-                            width: 50.0 * scale,
-                            height: 5.0 * scale,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(99),
-                                border: Border.all(
-                                  color: isDark
-                                      ? Colors.white.withOpacity(0.2)
-                                      : const Color(0xFF1976D2)
-                                          .withOpacity(0.3),
-                                  width: .7,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(99),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Container(
+                                  color: const Color(0xFF1976D2)
+                                      .withOpacity(isDark ? 0.12 : 0.08),
                                 ),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(99),
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    Container(
-                                      color: const Color(0xFF1976D2)
-                                          .withOpacity(isDark ? 0.12 : 0.08),
-                                    ),
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: FractionallySizedBox(
-                                        widthFactor: visualPct,
-                                        child: Container(
-                                          decoration: const BoxDecoration(
-                                            gradient: LinearGradient(
-                                              colors: [
-                                                Color(0xFF64B5F6),
-                                                Color(0xFF1976D2),
-                                              ],
-                                            ),
-                                          ),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: FractionallySizedBox(
+                                    widthFactor: visualPct,
+                                    child: Container(
+                                      decoration: const BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Color(0xFF64B5F6),
+                                            Color(0xFF1976D2),
+                                          ],
                                         ),
                                       ),
                                     ),
-                                  ],
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
                           ),
-                          SizedBox(width: 5.0 * scale),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 6.0 * scale, vertical: 2.0 * scale),
-                            decoration: BoxDecoration(
-                                gradient: pillGrad,
-                                borderRadius:
-                                    BorderRadius.circular(20.0 * scale)),
-                            child: Text('${lista.length}',
-                                style: TextStyle(
-                                    color: primaria,
-                                    fontSize: itemBadgeSize,
-                                    fontWeight: FontWeight.w700)),
-                          )
-                        ],
+                        ),
                       ),
-                      childrenPadding:
-                          const EdgeInsets.only(bottom: 4, top: 2),
-                      children: lista
-                          .map((m) => _situacaoListItem(context, m, pillGrad,
-                              listNameSize, listSubSize, scale, isDark, onCard))
-                          .toList(),
+                      SizedBox(width: 5.0 * scale),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 6.0 * scale, vertical: 2.0 * scale),
+                        decoration: BoxDecoration(
+                            gradient: pillGrad,
+                            borderRadius: BorderRadius.circular(20.0 * scale)),
+                        child: Text('${lista.length}',
+                            style: TextStyle(
+                                color: primaria,
+                                fontSize: itemBadgeSize,
+                                fontWeight: FontWeight.w700)),
+                      )
+                    ],
+                  ),
+                  childrenPadding: const EdgeInsets.only(bottom: 4, top: 2),
+                  children: lista
+                      .map((m) => _situacaoListItem(context, m, pillGrad,
+                          listNameSize, listSubSize, scale, isDark, onCard))
+                      .toList(),
                 ),
               );
             }).toList(),

@@ -392,7 +392,7 @@ não vinha do tema em nenhum deles.
 
 ---
 
-## 10. Avisos curtos — um desenho só
+## 10b. Avisos curtos — um desenho só
 
 Todo aviso que aparece embaixo e some sozinho usa `lib/widgets/aviso_rapido.dart`
 (o desenho do "Em desenvolvimento" do menu): cartão flutuante com fundo levemente
@@ -412,3 +412,36 @@ com sucesso!"). Explicação no `texto:`. Erro técnico (`$e`) vai para o
 `debugPrint`, nunca para a tela. Cor ou ícone fora dos quatro tipos:
 `avisoRapido(context, icone:, cor:)`; sem `BuildContext` (push com o app
 aberto): `avisoRapidoGlobal`.
+
+---
+
+## 11. Padrão 2.2: arte, efeitos e imagens de fundo
+
+Decisão do usuário (24/10/2026): da versão 2.2 em diante, **toda tela** segue
+este padrão, as novas e as antigas quando forem mexidas. Discreto, mas com a
+cara do app: a arte da área aparece em todas as telas, sem virar enfeite.
+
+| Onde | Use | Não use |
+|---|---|---|
+| Topo da tela de função (o que antes era um parágrafo de introdução) | `TopoArte(arte: Arte.de('<área>'), icone:, titulo:, subtitulo:)` | Texto solto no topo, círculo com ícone |
+| Card de resumo (Início, cards do painel) | `CartaoArte` / `FundoArte` com o texto em `temaSobreArte` | Superfície sólida com cor fixa |
+| Caixa, lista agrupada, estado vazio | `CartaoVidro(arte: Arte.de('<área>'))` (arte discreta: brilho, trilhas e ícones quase apagados) | `Container` com `BoxDecoration` de cor própria |
+| Aviso dentro da tela | `CartaoVidro(tingimento: cor)` ou `avisoRapido` | Caixa com borda colorida feita à mão |
+| Campos | O `InputDecoration` do tema (contorno, raio 14 no iOS e 12 no Android) | `filled`, borda ou cor fixas no campo |
+| Botões cheios | O tema (`AppColors.acao`) | Cor própria (o verde de "Voltar ao app" saiu por isso) |
+| Telas antes do login (login, Face ID, primeiro acesso, recuperar senha) | `TelaEntrada` (fundo de circuito escuro, sempre no tema escuro) com o conteúdo num `CartaoVidro` de raio 24 e a marca `MarcaSouPMRR` | Imagem fixa de fundo (`entradacapa.png`), fundo claro |
+
+**A arte segue a área da função** (as mesmas chaves das áreas de Serviços):
+`rh` vida funcional, perfil e conta; `fe` sucesso e férias; `pe` pendências;
+`atendimento` ajuda, sugestões e chamados; `institucional` comunicados e
+avisos; `normas` legislações e POPs; `gestao` Mapa da Força; `operacional`
+escalas e SVI. Uma arte por tela: todas as caixas dela usam a mesma.
+
+**Efeitos.** Movimento só com as durações do §7 e parado com "Reduzir
+movimento". Nada pisca nem passa sozinho sem motivo.
+
+**Dado sensível na tela de entrada.** O Face ID mostra a matrícula e o CPF
+mascarado (`***.456.789-**`), nunca o número inteiro.
+
+**Conferir antes de entregar:** simulador do iPhone e emulador Android, temas
+claro e escuro, e a tela com o teclado aberto, quando tiver campo.

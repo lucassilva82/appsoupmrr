@@ -328,13 +328,19 @@ class _PendenciasPageState extends State<PendenciasPage> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 2, 4, 4),
-                    child: Text(
+                  // Topo com a arte cheia da área (padrão 2.2).
+                  TopoArte(
+                    arte: Arte.de('pe'),
+                    icone: Icons.pending_actions_outlined,
+                    titulo: 'Suas pendências',
+                    subtitulo:
                         'Cada sistema da PMRR informa o que falta você fazer. As obrigatórias só saem daqui quando forem resolvidas.',
-                        style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface.withValues(alpha: .62))),
+                    margem: const EdgeInsets.only(bottom: 6),
                   ),
-                  if (s.itens.isEmpty) ...[const SizedBox(height: 10), const CartaoVidro(child: _SemPendencias())],
+                  if (s.itens.isEmpty) ...[
+                    const SizedBox(height: 10),
+                    CartaoVidro(arte: Arte.de('pe'), child: const _SemPendencias()),
+                  ],
                   for (final (titulo, lista) in [('Obrigatórias', obrig), ('Lembretes', lembretes)])
                     if (lista.isNotEmpty) ...[
                       Padding(
@@ -349,6 +355,7 @@ class _PendenciasPageState extends State<PendenciasPage> {
                       CartaoVidro(
                         raio: 16,
                         padding: const EdgeInsets.symmetric(vertical: 4),
+                        arte: Arte.de('pe'),
                         child: Column(children: [
                           for (final p in lista)
                             LinhaPendencia(

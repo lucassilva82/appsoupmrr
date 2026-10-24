@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/config/app_config.dart';
+import '../../core/design/arte_cartao.dart';
 import '../../core/erros/estado_erro.dart';
 import '../../core/erros/falha_app.dart';
 import '../../core/log/registro_log.dart';
@@ -158,11 +159,15 @@ class _MeusChamadosPageState extends State<MeusChamadosPage> {
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
                       children: [
-                        Text(
-                            RepositorioConfig.atual.textoChamados('topo') ??
-                                'Suporte técnico do DTI pelo SISCHAMADOS. O atendimento continua na intranet.',
-                            style: theme.textTheme.bodySmall),
-                        const SizedBox(height: 10),
+                        // Topo com a arte cheia da área (padrão 2.2).
+                        TopoArte(
+                          arte: Arte.de('atendimento'),
+                          icone: Icons.confirmation_number_outlined,
+                          titulo: 'Meus chamados',
+                          subtitulo: RepositorioConfig.atual.textoChamados('topo') ??
+                              'Suporte técnico do DTI pelo SISCHAMADOS. O atendimento continua na intranet.',
+                          margem: const EdgeInsets.only(bottom: 14),
+                        ),
                         Wrap(spacing: 8, runSpacing: 6, children: [
                           for (final (f, rotulo) in [
                             (_Filtro.abertos, 'Em aberto'),
@@ -183,14 +188,18 @@ class _MeusChamadosPageState extends State<MeusChamadosPage> {
                                 onPressed: _novo, icon: const Icon(Icons.add), label: const Text('Novo chamado')),
                           ),
                         if (visiveis.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 40),
+                          CartaoVidro(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                            arte: Arte.de('atendimento'),
                             child: Column(children: [
                               Icon(Icons.support_agent_outlined, size: AppIconSize.xl, color: theme.colorScheme.onSurfaceVariant),
                               const SizedBox(height: 8),
-                              Text(lista.isEmpty
-                                  ? RepositorioConfig.atual.textoChamados('lista_vazia') ?? 'Você ainda não abriu nenhum chamado.'
-                                  : 'Nada neste filtro.'),
+                              Text(
+                                  lista.isEmpty
+                                      ? RepositorioConfig.atual.textoChamados('lista_vazia') ??
+                                          'Você ainda não abriu nenhum chamado.'
+                                      : 'Nada neste filtro.',
+                                  textAlign: TextAlign.center),
                             ]),
                           ),
                         if (visiveis.isNotEmpty)
@@ -290,7 +299,10 @@ class _ChamadoPageState extends State<ChamadoPage> {
                     if (d == null)
                       const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))
                     else ...[
-                      CartaoVidro(padding: const EdgeInsets.all(14), child: SelectableText(d.descricao)),
+                      CartaoVidro(
+                          padding: const EdgeInsets.all(14),
+                          arte: Arte.de('atendimento'),
+                          child: SelectableText(d.descricao)),
                       for (final c in d.dados.entries)
                         Padding(
                           padding: const EdgeInsets.only(top: 6),
@@ -505,6 +517,7 @@ class _NovoChamadoPageState extends State<NovoChamadoPage> {
       TextButton.icon(onPressed: () => setState(() => _grupo = null), icon: const Icon(Icons.arrow_back), label: Text(_grupo!.nome)),
       CartaoVidro(
         padding: const EdgeInsets.symmetric(vertical: 4),
+        arte: Arte.de('atendimento'),
         child: Column(children: [
           for (final (i, a) in _grupo!.assuntos.indexed) ...[
             if (i > 0) const Divider(height: 1, indent: 16),
@@ -596,6 +609,7 @@ class _NovoChamadoPageState extends State<NovoChamadoPage> {
       const SizedBox(height: 10),
       CartaoVidro(
         padding: const EdgeInsets.all(14),
+        arte: Arte.de('atendimento'),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('${_grupo?.nome ?? ''} › ${a.nome}', style: theme.textTheme.bodySmall),
           const SizedBox(height: 6),

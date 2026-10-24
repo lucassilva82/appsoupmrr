@@ -652,11 +652,14 @@ class _CentralComunicadosPageState extends State<CentralComunicadosPage> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 2, 4, 10),
-                    child: Text(
+                  // Topo com a arte cheia da área (padrão 2.2).
+                  TopoArte(
+                    arte: Arte.de('institucional'),
+                    icone: Icons.campaign_outlined,
+                    titulo: 'Comunicados',
+                    subtitulo:
                         'Comunicados oficiais do Comando e das diretorias. Os que abriram como aviso na entrada do app também ficam aqui.',
-                        style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface.withValues(alpha: .62))),
+                    margem: const EdgeInsets.only(bottom: 16),
                   ),
                   Wrap(spacing: 8, runSpacing: 8, children: [
                     for (final (f, rotulo) in [
@@ -671,6 +674,8 @@ class _CentralComunicadosPageState extends State<CentralComunicadosPage> {
                   CartaoVidro(
                     raio: 16,
                     padding: EdgeInsets.zero,
+                    // Arte discreta só no vazio: na lista, as miniaturas já têm cor.
+                    arte: filtrada.isEmpty ? Arte.de('institucional') : null,
                     child: filtrada.isEmpty
                         ? Padding(
                             padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 12),

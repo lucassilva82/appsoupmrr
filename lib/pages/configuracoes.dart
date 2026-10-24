@@ -556,8 +556,8 @@ class AparenciaPage extends StatelessWidget {
         texto: texto,
         seta: false,
         direita: escolhido
-            ? Icon(Icons.check_circle_rounded, size: 22, color: theme.colorScheme.primary)
-            : const SizedBox(width: 22),
+            ? Icon(Icons.check_circle_rounded, size: AppIconSize.md, color: theme.colorScheme.primary)
+            : const SizedBox(width: AppIconSize.md),
         aoTocar: () {
           temas.setMode(m);
           registrar('aparencia.tema', chave: 'apar.tema', dados: {'tema': m.name});
@@ -566,14 +566,22 @@ class AparenciaPage extends StatelessWidget {
     }
 
     return _TelaPerfil(titulo: 'Aparência', filhos: [
+      // Topo com a arte cheia da área (padrão 2.2).
+      TopoArte(
+        arte: Arte.de('rh'),
+        icone: Icons.palette_outlined,
+        titulo: 'Aparência',
+        subtitulo: 'Escolha o tema do app e organize a tela inicial do seu jeito. Vale só para este aparelho.',
+        margem: const EdgeInsets.only(top: 8, bottom: 4),
+      ),
       const _Rotulo('Tema'),
-      _Grupo(arte: 'dc', linhas: [
+      _Grupo(arte: 'rh', linhas: [
         opcao(AppThemeMode.auto, Icons.brightness_auto_outlined, 'Automático', 'Segue o tema do aparelho'),
         opcao(AppThemeMode.light, Icons.light_mode_outlined, 'Claro', 'Fundo claro, bom sob o sol'),
         opcao(AppThemeMode.dark, Icons.dark_mode_outlined, 'Escuro', 'Fundo escuro, descansa a vista à noite'),
       ]),
       const _Rotulo('Tela inicial'),
-      _Grupo(arte: 'cc', linhas: [
+      _Grupo(arte: 'rh', linhas: [
         _Linha(
           icone: Icons.dashboard_customize_outlined,
           titulo: 'Reorganizar a tela inicial',
@@ -633,8 +641,15 @@ class NotificacoesPreferenciasPage extends StatelessWidget {
     final theme = Theme.of(context);
     final mudo = theme.colorScheme.onSurface.withValues(alpha: .62);
     return _TelaPerfil(titulo: 'Notificações', filhos: [
-      const SizedBox(height: 8),
-      _Grupo(arte: 'cc', linhas: [
+      // Topo com a arte cheia da área (padrão 2.2).
+      TopoArte(
+        arte: Arte.de('rh'),
+        icone: Icons.notifications_outlined,
+        titulo: 'Notificações',
+        subtitulo: 'Avisos do SouPMRR neste aparelho: contracheque, comunicados oficiais e lembretes de prazo.',
+        margem: const EdgeInsets.only(top: 8, bottom: 16),
+      ),
+      _Grupo(arte: 'rh', linhas: [
         _Linha(
           icone: Icons.notifications_active_outlined,
           titulo: 'Notificações neste aparelho',
@@ -664,14 +679,14 @@ class NotificacoesPreferenciasPage extends StatelessWidget {
         ),
       ]),
       const _Rotulo('Lembretes da PMRR'),
-      _Grupo(arte: 'pe', linhas: [
+      _Grupo(arte: 'rh', linhas: [
         for (final (titulo, quando) in _lembretes)
           _Linha(
             icone: Icons.alarm_rounded,
             titulo: titulo,
             texto: quando,
             seta: false,
-            direita: Icon(Icons.lock_outline_rounded, size: 18, color: mudo),
+            direita: Icon(Icons.lock_outline_rounded, size: AppIconSize.xs, color: mudo),
             aoTocar: null,
           ),
       ]),
@@ -696,7 +711,7 @@ class BiometriaPage extends StatelessWidget {
     final mudo = Theme.of(context).colorScheme.onSurface.withValues(alpha: .62);
     return _TelaPerfil(titulo: nomeBiometria, filhos: [
       const SizedBox(height: 8),
-      _Grupo(arte: 'cc', linhas: [
+      _Grupo(arte: 'rh', linhas: [
         _Linha(
           icone: Platform.isIOS ? Icons.face_rounded : Icons.fingerprint_rounded,
           titulo: 'Entrar com $nomeBiometria',

@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:projetonovo/widgets/abertura_soupmrr.dart';
+import 'package:projetonovo/core/design/fundo_circuito.dart';
 import 'package:projetonovo/core/log/registro_log.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
@@ -9,7 +11,6 @@ import '../models/auth_model.dart';
 import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 import '../widgets/versao_app.dart';
-import '../widgets/vidro.dart';
 
 class BiometricAuthPage extends StatefulWidget {
   const BiometricAuthPage({Key? key}) : super(key: key);
@@ -68,7 +69,13 @@ class _BiometricAuthPageState extends State<BiometricAuthPage> {
       isDismissible: false,
       enableDrag: false,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _BiometricBottomSheet(localAuth: _localAuth),
+      // Véu leve: a marca SOU PMRR continua visível acima da folha.
+      barrierColor: Colors.black.withValues(alpha: 0.18),
+      // A folha fica sobre o fundo escuro de entrada: sempre no tema escuro.
+      builder: (ctx) => Theme(
+        data: AppTheme.build(isDark: true, isSuperUser: false),
+        child: _BiometricBottomSheet(localAuth: _localAuth),
+      ),
     );
 
     _isModalOpen = false;
@@ -81,84 +88,35 @@ class _BiometricAuthPageState extends State<BiometricAuthPage> {
       "[LOG] BiometricAuthPage build. biometricModalShown=${auth.biometricModalShown}",
     );
 
-    return FundoSuave(child: Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            // ── Fundo idêntico à tela de login ───────────────────────────
-            Positioned.fill(
-              child: Image.asset(
-                'assets/imagens/entradacapa.png',
-                fit: BoxFit.cover,
-              ),
-            ),
-            Positioned.fill(
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xCC000D1A),
-                      Color(0xEE001233),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+    // Tela de entrada (padrão 2.2): o fundo de circuito do login e a marca
+    // SOU PMRR no alto; a folha do Face ID sobe por cima, deixando a marca
+    // à vista.
+    return TelaEntrada(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 28),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                MarcaSouPMRR(largura: (MediaQuery.sizeOf(context).width * 0.5).clamp(170.0, 240.0)),
+                const SizedBox(height: 6),
+                Text(
+                  'POLÍCIA MILITAR DE RORAIMA',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    letterSpacing: 3,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.82),
                   ),
                 ),
-              ),
+              ]),
             ),
-
-            // ── Branding visível acima do modal ──────────────────────────
-            SafeArea(
-              child: Align(
-                alignment: const Alignment(0, -0.62),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.10),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.25),
-                          width: 2,
-                        ),
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/imagens/entradacapa.png',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'SouPMRR',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Polícia Militar de Roraima',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withOpacity(0.60),
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
-    ));
+    );
   }
 }
 
@@ -275,7 +233,7 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
 
   // ── Avatar com anel de gradiente pulsante ─────────────────────────────────
   Widget _buildAvatar(Auth auth, bool isDark) {
-    const double size = 118;
+    const double size = 96;
 
     Widget inner;
     if (localFile != null) {
@@ -287,7 +245,7 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
               strokeWidth: 2, color: AppColors.lightBlue));
     } else {
       inner = Icon(Icons.account_circle_rounded,
-          size: 62, color: isDark ? Colors.grey[500] : Colors.grey[400]);
+          size: 52, color: isDark ? Colors.grey[500] : Colors.grey[400]);
     }
 
     return ScaleTransition(
@@ -402,7 +360,7 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
     const raioTopo = BorderRadius.vertical(top: Radius.circular(28));
 
     return FractionallySizedBox(
-      heightFactor: 0.88,
+      heightFactor: 0.72,
       child: FadeTransition(
         opacity: _fadeAnim,
         child: SlideTransition(
@@ -419,9 +377,10 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: isDark
+                    // O mesmo vidro azulado do cartão do login.
                     ? [
-                        Colors.white.withOpacity(0.14),
-                        Colors.white.withOpacity(0.05),
+                        const Color(0xFF16396B).withValues(alpha: 0.55),
+                        const Color(0xFF041332).withValues(alpha: 0.78),
                       ]
                     : [
                         Colors.white.withOpacity(0.90),
@@ -503,17 +462,17 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
                             ),
                             _infoChip(
                               label: 'CPF',
-                              value: auth.cpf ?? '—',
+                              value: _cpfMascarado(auth.cpf),
                               isDark: isDark,
                             ),
                           ],
                         ),
 
-                        const SizedBox(height: 36),
+                        const SizedBox(height: 22),
 
                         // Divider sutil
                         Divider(color: dividerColor, thickness: 1, height: 1),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 22),
 
                         // Ícone de facial + instrução
                         AnimatedSwitcher(
@@ -587,7 +546,7 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
                                 ),
                         ),
 
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 24),
 
                         // Botão primário — Acessar
                         _primaryButton(
@@ -631,7 +590,7 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
                           ),
                         ),
 
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 16),
 
                         // Rodapé
                         // Versão real do pacote; estava fixa em v2.0 e o app
@@ -698,4 +657,12 @@ class _BlinkingTextState extends State<_BlinkingText>
           style: widget.style.copyWith(color: _colorAnim.value)),
     );
   }
+}
+
+/// CPF com só os 6 dígitos do meio à mostra (***.456.789-**): o bastante para
+/// o militar reconhecer a conta, sem expor o número inteiro na tela.
+String _cpfMascarado(String? cpf) {
+  final d = (cpf ?? '').replaceAll(RegExp(r'\D'), '');
+  if (d.length != 11) return '—';
+  return '***.${d.substring(3, 6)}.${d.substring(6, 9)}-**';
 }

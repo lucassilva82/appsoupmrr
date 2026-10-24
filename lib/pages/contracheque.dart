@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:projetonovo/utils/app_theme.dart';
 import 'package:projetonovo/widgets/custom_appbar.dart';
 
+import '../core/design/arte_cartao.dart';
 import '../models/auth_model.dart';
 import '../models/meses_contracheque_model.dart';
 import '../services/dados_sql.dart';
@@ -97,7 +98,15 @@ class _ContrachequeState extends State<Contracheque> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Seletor de ano — continuação visual do AppBar ─────────────
+          TopoArte(
+            arte: Arte.de('cc'),
+            icone: Icons.receipt_long_outlined,
+            titulo: 'Contracheques',
+            subtitulo: 'Escolha o ano e toque no mês para ver o '
+                'contracheque e baixar o PDF.',
+            margem: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          ),
+          // ── Seletor de ano ─────────────────────────────────────────────
           _buildYearBar(isDark),
 
           // ── Lista agrupada ────────────────────────────────────────────
@@ -107,7 +116,7 @@ class _ContrachequeState extends State<Contracheque> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
-                    child: CircularProgressIndicator(color: AppColors.blue),
+                    child: CircularProgressIndicator.adaptive(),
                   );
                 }
                 if (snapshot.hasError) return SecondScreen();
@@ -190,7 +199,8 @@ class _ContrachequeState extends State<Contracheque> {
   Widget _buildGroupedList(List<MesesContracheque> lista, bool isDark) {
     final groups = _groupByMonth(lista);
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      // Embaixo, espaço para o botão "Análise Salarial" não cobrir o último.
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
       itemCount: groups.length,
       itemBuilder: (ctx, i) {
         final entry = groups[i];
@@ -204,6 +214,9 @@ class _ContrachequeState extends State<Contracheque> {
   // ── Grupo de um mês ───────────────────────────────────────────────────
   Widget _buildMonthGroup(String mesExtenso, List<MesesContracheque> items,
       bool isDark, BuildContext ctx) {
+    final theme = Theme.of(ctx);
+    final aoFundo = theme.colorScheme.onSurface;
+    final primaria = theme.colorScheme.primary;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -217,7 +230,7 @@ class _ContrachequeState extends State<Contracheque> {
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
-                  color: isDark ? Colors.white54 : Colors.black45,
+                  color: aoFundo.withValues(alpha: 0.62),
                   letterSpacing: 0.3,
                 ),
               ),
@@ -227,14 +240,14 @@ class _ContrachequeState extends State<Contracheque> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppColors.blue.withValues(alpha: 0.12),
+                    color: primaria.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     '${items.length} folhas',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10,
-                      color: AppColors.blue,
+                      color: primaria,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -243,7 +256,7 @@ class _ContrachequeState extends State<Contracheque> {
               const SizedBox(width: 8),
               Expanded(
                 child: Divider(
-                  color: isDark ? Colors.white12 : Colors.black12,
+                  color: aoFundo.withValues(alpha: 0.10),
                   height: 1,
                 ),
               ),
@@ -258,10 +271,17 @@ class _ContrachequeState extends State<Contracheque> {
   }
 
   // ── Card de cada contracheque ─────────────────────────────────────────
+  // Item de lista: CartaoVidro sem arte (a arte discreta em cada item de uma
+  // lista longa deixa a tela carregada). A cor do tipo de folha fica só no
+  // ícone e no selo.
   Widget _buildPayslipCard(
       MesesContracheque item, bool isDark, BuildContext ctx) {
+    final theme = Theme.of(ctx);
+    final aoFundo = theme.colorScheme.onSurface;
     final isAtivo = item.tipo == 'A';
-    final accentColor = isAtivo ? AppColors.blue : const Color(0xFFE67E00);
+    final accentColor = isAtivo
+        ? theme.colorScheme.primary
+        : (isDark ? Colors.amber.shade300 : Colors.amber.shade900);
 
     final primaryText = item.tipo == 'A'
         ? _capitalizeFolha(item.relacaoTrabalho)
@@ -270,163 +290,123 @@ class _ContrachequeState extends State<Contracheque> {
 
     final badgeLabel = isAtivo ? 'Ativo' : item.tipo;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 7),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () {
-            item.cpf = Provider.of<Auth>(ctx, listen: false).cpf!;
-            Navigator.of(ctx)
-                .pushNamed(AppRoutes.PAGE_VIEW_CONTRACHEQUE, arguments: item);
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color:
-                    isDark ? AppColors.darkBorder : const Color(0xFFE8EDF5),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: CartaoVidro(
+        raio: 12,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        onTap: () {
+          item.cpf = Provider.of<Auth>(ctx, listen: false).cpf!;
+          Navigator.of(ctx)
+              .pushNamed(AppRoutes.PAGE_VIEW_CONTRACHEQUE, arguments: item);
+        },
+        child: Row(
+          children: [
+            // Ícone do tipo de folha (sem quadradinho tingido, DESIGN §2b)
+            ExcludeSemantics(
+              child: Icon(
+                Icons.receipt_long_outlined,
+                size: AppIconSize.sm,
+                color: accentColor,
               ),
-              boxShadow: isDark
-                  ? []
-                  : [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
             ),
-            // clipBehavior garante que a stripe lateral respeita o borderRadius
-            clipBehavior: Clip.antiAlias,
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+            const SizedBox(width: 12),
+
+            // Texto principal
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Stripe lateral colorida ──────────────────────
-                  Container(width: 3, color: accentColor),
-                  // ── Conteúdo do card ─────────────────────────────
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 11),
-                      child: Row(
-                        children: [
-                          // Ícone do tipo de folha
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: accentColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(9),
-                            ),
-                            child: Icon(
-                              Icons.receipt_long_outlined,
-                              size: 18,
-                              color: accentColor,
-                            ),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          primaryText,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13.5,
+                            color: aoFundo,
                           ),
-                          const SizedBox(width: 12),
-
-                          // Texto principal
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        primaryText,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 13.5,
-                                          color: isDark
-                                              ? Colors.white
-                                              : const Color(0xFF1A1A2E),
-                                        ),
-                                      ),
-                                    ),
-                                    if (_isThisMonth(item)) ...[
-                                      const SizedBox(width: 6),
-                                      const _NovoBadge(),
-                                    ],
-                                  ],
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Mat. ${item.matricula}',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: isDark
-                                        ? Colors.white38
-                                        : Colors.black38,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Badge tipo
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: accentColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              badgeLabel,
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: accentColor,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            size: 18,
-                            color: isDark
-                                ? Colors.white24
-                                : Colors.black.withValues(alpha: 0.15),
-                          ),
-                        ],
+                        ),
                       ),
+                      if (_isThisMonth(item)) ...[
+                        const SizedBox(width: 6),
+                        const _NovoBadge(),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Mat. ${item.matricula}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: aoFundo.withValues(alpha: 0.60),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
+
+            // Badge tipo
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: accentColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                badgeLabel,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: accentColor,
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            ExcludeSemantics(
+              child: Icon(
+                Icons.chevron_right_rounded,
+                size: AppIconSize.sm,
+                color: aoFundo.withValues(alpha: 0.35),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildEmptyState(bool isDark) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.receipt_long_outlined,
-              size: 64, color: isDark ? Colors.white24 : Colors.grey.shade300),
-          const SizedBox(height: 16),
-          Text(
-            'Nenhum contracheque em ${_anoSelecionado}',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: isDark ? Colors.white54 : Colors.black45,
-              fontWeight: FontWeight.w500,
-            ),
+    final theme = Theme.of(context);
+    final aoFundo = theme.colorScheme.onSurface;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+      children: [
+        CartaoVidro(
+          arte: Arte.de('cc'),
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+          child: Column(
+            children: [
+              ExcludeSemantics(
+                child: Icon(Icons.receipt_long_outlined,
+                    size: AppIconSize.xl,
+                    color: aoFundo.withValues(alpha: 0.45)),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Nenhum contracheque em $_anoSelecionado',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: aoFundo.withValues(alpha: 0.70),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

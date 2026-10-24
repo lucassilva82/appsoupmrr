@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/ambiente_app.dart';
 import '../../core/config/app_config.dart';
+import '../../core/design/arte_cartao.dart';
 import '../../core/erros/estado_erro.dart';
 import '../../core/erros/falha_app.dart';
 import '../../core/log/registro_log.dart';
@@ -170,8 +171,6 @@ class _SugestoesPageState extends State<SugestoesPage> {
     final theme = Theme.of(context);
     final pri = theme.colorScheme.primary;
     final mudo = theme.colorScheme.onSurface.withValues(alpha: .62);
-    final linha = theme.colorScheme.onSurface.withValues(alpha: .10);
-    final campo = theme.colorScheme.onSurface.withValues(alpha: .05);
     final n = _texto.text.trim().length;
     Widget rotulo(String t, [String? apoio]) => Padding(
           padding: const EdgeInsets.fromLTRB(2, 14, 2, 6),
@@ -189,7 +188,6 @@ class _SugestoesPageState extends State<SugestoesPage> {
             Text(dir, style: TextStyle(fontSize: 12, color: mudo)),
           ]),
         );
-    final borda = OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: linha));
 
     return FundoSuave(
       child: Scaffold(
@@ -197,50 +195,44 @@ class _SugestoesPageState extends State<SugestoesPage> {
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 2, 4, 4),
-              child: Text(
+            // Topo com a arte cheia da área (padrão 2.2).
+            TopoArte(
+              arte: Arte.de('atendimento'),
+              icone: Icons.lightbulb_outline_rounded,
+              titulo: 'Sugestões e elogios',
+              subtitulo:
                   'Ideias de melhoria, funções novas e elogios vão para a equipe do SouPMRR, que lê no painel e responde por aqui.',
-                  style: TextStyle(fontSize: 14, color: mudo)),
+              margem: const EdgeInsets.only(bottom: 12),
             ),
-            const SizedBox(height: 8),
-            // Faixa informativa (protótipo `.aviso-faixa.info`).
-            Material(
-              color: pri.withValues(alpha: .10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: BorderSide(color: pri.withValues(alpha: .30)),
-              ),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: _abrirChamados,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Icon(Icons.confirmation_number_outlined, color: pri),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text.rich(
-                        TextSpan(children: [
-                          const TextSpan(
-                              text: 'O app deu erro ou precisa de suporte?\n',
-                              style: TextStyle(fontWeight: FontWeight.w700)),
-                          TextSpan(
-                              text: 'Isso vai por chamado técnico, no Meus chamados.',
-                              style: TextStyle(fontSize: 12.5, color: mudo)),
-                        ]),
-                        style: TextStyle(fontSize: 13.5, color: theme.colorScheme.onSurface),
-                      ),
-                    ),
-                  ]),
+            // Faixa informativa (protótipo `.aviso-faixa.info`), no vidro do app.
+            CartaoVidro(
+              raio: 14,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              onTap: _abrirChamados,
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Icon(Icons.confirmation_number_outlined, color: pri, size: AppIconSize.md),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(children: [
+                      const TextSpan(
+                          text: 'O app deu erro ou precisa de suporte?\n',
+                          style: TextStyle(fontWeight: FontWeight.w700)),
+                      TextSpan(
+                          text: 'Isso vai por chamado técnico, no Meus chamados.',
+                          style: TextStyle(fontSize: 12.5, color: mudo)),
+                    ]),
+                    style: TextStyle(fontSize: 13.5, color: theme.colorScheme.onSurface),
+                  ),
                 ),
-              ),
+              ]),
             ),
             const SizedBox(height: 10),
             // "Minhas mensagens" com as contagens (protótipo `fb.lista`).
             CartaoVidro(
               raio: 14,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              arte: Arte.de('atendimento'),
               onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MinhasMensagensPage())),
               child: Row(children: [
                 Icon(Icons.forum_outlined, color: pri, size: AppIconSize.md),
@@ -293,14 +285,8 @@ class _SugestoesPageState extends State<SugestoesPage> {
               style: const TextStyle(fontSize: 15),
               decoration: InputDecoration(
                 hintText: 'O que você gostaria que o app fizesse?',
-                hintStyle: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: .45)),
                 errorText: _erroCampo,
-                filled: true,
-                fillColor: campo,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                border: borda,
-                enabledBorder: borda,
-                focusedBorder: borda.copyWith(borderSide: BorderSide(color: pri, width: 2)),
               ),
             ),
             contador(n < _minTexto ? 'Escreva pelo menos $_minTexto caracteres' : 'Pronto para enviar',
@@ -329,7 +315,7 @@ class _SugestoesPageState extends State<SugestoesPage> {
                         borderRadius: BorderRadius.circular(12),
                         onTap: _enviando ? null : _escolherAnexos,
                         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          Icon(Icons.add_photo_alternate_outlined, color: pri, size: 28),
+                          Icon(Icons.add_photo_alternate_outlined, color: pri, size: AppIconSize.lg),
                           const SizedBox(height: 4),
                           Text('Adicionar', style: TextStyle(fontSize: 11, color: pri)),
                         ]),
@@ -343,6 +329,7 @@ class _SugestoesPageState extends State<SugestoesPage> {
             CartaoVidro(
               raio: 14,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              arte: Arte.de('atendimento'),
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -463,7 +450,7 @@ class _Anexo extends StatelessWidget {
                 : Padding(
                     padding: const EdgeInsets.all(4),
                     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Icon(Icons.movie_outlined, size: 28, color: mudo),
+                      Icon(Icons.movie_outlined, size: AppIconSize.lg, color: mudo),
                       Text(arquivo.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -537,23 +524,38 @@ class _MinhasMensagensPageState extends State<MinhasMensagensPage> {
               return EstadoErro(falha: f, aoTentar: _recarregar);
             }
             final itens = snap.data!;
+            // Topo com a arte cheia da área (padrão 2.2).
+            final topo = TopoArte(
+              arte: Arte.de('atendimento'),
+              icone: Icons.forum_outlined,
+              titulo: 'Minhas mensagens',
+              subtitulo: 'Suas sugestões e elogios, a situação de cada um e as respostas da equipe.',
+              margem: const EdgeInsets.only(bottom: 16),
+            );
             if (itens.isEmpty) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text('Você ainda não mandou nenhuma sugestão ou elogio.',
-                      textAlign: TextAlign.center, style: theme.textTheme.bodyLarge),
-                ),
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                children: [
+                  topo,
+                  CartaoVidro(
+                    raio: 16,
+                    padding: const EdgeInsets.all(16),
+                    arte: Arte.de('atendimento'),
+                    child: Text('Você ainda não mandou nenhuma sugestão ou elogio.',
+                        textAlign: TextAlign.center, style: theme.textTheme.bodyLarge),
+                  ),
+                ],
               );
             }
             return RefreshIndicator.adaptive(
               onRefresh: _recarregar,
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                itemCount: itens.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemCount: itens.length + 1,
+                separatorBuilder: (_, i) => SizedBox(height: i == 0 ? 0 : 8),
                 itemBuilder: (context, i) {
-                  final it = itens[i];
+                  if (i == 0) return topo;
+                  final it = itens[i - 1];
                   return CartaoVidro(
                     raio: 12,
                     padding: const EdgeInsets.all(14),
@@ -704,10 +706,7 @@ class _MensagemDetalhePageState extends State<MensagemDetalhePage> {
                     minLines: 2,
                     maxLines: 6,
                     maxLength: _maxTexto,
-                    decoration: InputDecoration(
-                      labelText: 'Responder',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
+                    decoration: const InputDecoration(labelText: 'Responder'),
                   ),
                   const SizedBox(height: 8),
                   SizedBox(

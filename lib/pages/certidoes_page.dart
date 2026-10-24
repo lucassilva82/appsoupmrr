@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:projetonovo/core/design/arte_cartao.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:provider/provider.dart';
@@ -237,7 +238,6 @@ class _CertidoesPageState extends State<CertidoesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
 
     return FundoSuave(
       child: Scaffold(
@@ -249,18 +249,17 @@ class _CertidoesPageState extends State<CertidoesPage> {
                 parent: BouncingScrollPhysics()),
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
-              Text(
-                _texto(
+              TopoArte(
+                arte: Arte.de('rh'),
+                icone: Icons.verified_outlined,
+                titulo: 'Certidões',
+                subtitulo: _texto(
                     _painel,
                     'topo',
                     'Emita suas certidões na hora. Elas ficam salvas aqui '
                         'por 30 dias e também chegam no seu e-mail.'),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
-                  height: 1.4,
-                ),
+                margem: const EdgeInsets.only(bottom: 16),
               ),
-              const SizedBox(height: 16),
               ..._botaoNova(),
               const SizedBox(height: 24),
               _Rotulo('Minhas certidões'),
@@ -341,6 +340,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
       return [
         CartaoVidro(
           padding: kPaddingCartao,
+          arte: Arte.de('rh'),
           child: Row(
             children: [
               Icon(Icons.folder_open_rounded,
@@ -422,7 +422,6 @@ class _EscolherCertidaoPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
 
     return FundoSuave(
       child: Scaffold(
@@ -431,14 +430,13 @@ class _EscolherCertidaoPage extends StatelessWidget {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: [
-            Text(
-              _texto(painel, 'escolha', 'Escolha a certidão que você precisa.'),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
-                height: 1.4,
-              ),
+            TopoArte(
+              arte: Arte.de('rh'),
+              icone: Icons.post_add_rounded,
+              titulo: 'Emitir certidão',
+              subtitulo: _texto(painel, 'escolha', 'Escolha a certidão que você precisa.'),
+              margem: const EdgeInsets.only(bottom: 16),
             ),
-            const SizedBox(height: 16),
             for (final tipo in painel.tipos) ...[
               _CartaoTipo(tipo: tipo, aoTocar: () => _escolher(context, tipo)),
               const SizedBox(height: 10),

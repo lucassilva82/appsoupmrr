@@ -470,6 +470,114 @@ class CartaoArte extends StatelessWidget {
   }
 }
 
+/// Topo das telas de função (padrão 2.2): o cartão com a arte cheia da área
+/// (degradê, brilho, trilhas e ícones apagados), com o ícone num quadrado de
+/// vidro, o título e uma linha de apoio. É o mesmo desenho do cartão da área
+/// em Serviços, para a tela continuar a área de onde o militar veio.
+/// [child] entra abaixo do texto (números, selos); [direita], ao lado do
+/// título.
+class TopoArte extends StatelessWidget {
+  const TopoArte({
+    super.key,
+    required this.arte,
+    required this.icone,
+    required this.titulo,
+    this.subtitulo,
+    this.direita,
+    this.child,
+    this.margem = const EdgeInsets.fromLTRB(16, 8, 16, 12),
+  });
+
+  final Arte arte;
+  final IconData icone;
+  final String titulo;
+  final String? subtitulo;
+  final Widget? direita;
+  final Widget? child;
+  final EdgeInsetsGeometry margem;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: margem,
+      child: Semantics(
+        header: true,
+        label: [titulo, if (subtitulo != null) subtitulo].join('. '),
+        explicitChildNodes: true,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: .45),
+                offset: const Offset(0, 10),
+                blurRadius: 24,
+                spreadRadius: -14,
+              ),
+            ],
+          ),
+          child: FundoArte(
+            arte: arte,
+            raio: 20,
+            child: Theme(
+              data: temaSobreArte(Theme.of(context)),
+              child: DefaultTextStyle.merge(
+                style: const TextStyle(color: Colors.white),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 104),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                          ExcludeSemantics(
+                            child: Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.18),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
+                              ),
+                              child: Icon(icone, color: Colors.white, size: 22),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ExcludeSemantics(
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(titulo,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        fontSize: 19, height: 1.2, fontWeight: FontWeight.w700, color: Colors.white)),
+                                if (subtitulo != null) ...[
+                                  const SizedBox(height: 3),
+                                  Text(subtitulo!,
+                                      style: TextStyle(
+                                          fontSize: 13, height: 1.35, color: Colors.white.withValues(alpha: 0.84))),
+                                ],
+                              ]),
+                            ),
+                          ),
+                          if (direita != null) ...[const SizedBox(width: 8), direita!],
+                        ]),
+                        if (child != null) ...[const SizedBox(height: 14), child!],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// A arte em versão discreta, para superfícies de vidro (protótipo
 /// `.arte-s`): um brilho de 15% da cor de destaque no canto, duas trilhas
 /// finas e dois ícones grandes quase apagados. Vai como primeira camada de

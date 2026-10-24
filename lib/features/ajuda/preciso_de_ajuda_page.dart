@@ -22,8 +22,6 @@ class PrecisoDeAjudaPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final mudo = theme.colorScheme.onSurface.withValues(alpha: .62);
     final assuntos = RepositorioConfig.atual.ajuda ?? ajudaPadrao;
     return FundoSuave(
       child: Scaffold(
@@ -31,15 +29,14 @@ class PrecisoDeAjudaPage extends StatelessWidget {
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(2, 0, 2, 2),
-              child: Text('Como podemos ajudar?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(2, 4, 2, 12),
-              child: Text(
+            // Topo com a arte cheia da área (padrão 2.2).
+            TopoArte(
+              arte: Arte.de('atendimento'),
+              icone: Icons.support_agent_outlined,
+              titulo: 'Como podemos ajudar?',
+              subtitulo:
                   'Escolha o assunto. Mostramos as respostas mais comuns e, se não resolver, você abre um chamado e a equipe do DTI resolve por ele.',
-                  style: TextStyle(fontSize: 13.5, color: mudo)),
+              margem: const EdgeInsets.only(bottom: 16),
             ),
             // 2 colunas (3 no iPad); a linha cresce até o ladrilho mais alto.
             LayoutBuilder(builder: (context, c) {
@@ -137,6 +134,7 @@ class _CartaoFim extends StatelessWidget {
     return CartaoVidro(
       raio: 16,
       padding: const EdgeInsets.all(14),
+      arte: Arte.de('atendimento'),
       child: Column(
         crossAxisAlignment: centro ? CrossAxisAlignment.center : CrossAxisAlignment.start,
         children: [
@@ -171,12 +169,18 @@ class _PerguntasPage extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
             if (assunto.perguntas.isEmpty)
-              Text('Ainda não há perguntas sobre este assunto. Se precisar, abra um chamado técnico.',
-                  style: theme.textTheme.bodyMedium)
+              CartaoVidro(
+                raio: 16,
+                padding: const EdgeInsets.all(14),
+                arte: Arte.de('atendimento'),
+                child: Text('Ainda não há perguntas sobre este assunto. Se precisar, abra um chamado técnico.',
+                    style: theme.textTheme.bodyMedium),
+              )
             else
               CartaoVidro(
                 raio: 16,
                 padding: EdgeInsets.zero,
+                arte: Arte.de('atendimento'),
                 child: Column(children: [
                   for (final p in assunto.perguntas)
                     InkWell(
@@ -244,6 +248,7 @@ class _RespostaPageState extends State<_RespostaPage> {
             CartaoVidro(
               raio: 16,
               padding: const EdgeInsets.all(14),
+              arte: Arte.de('atendimento'),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 Text(p.pergunta, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
@@ -263,6 +268,7 @@ class _RespostaPageState extends State<_RespostaPage> {
               CartaoVidro(
                 raio: 16,
                 padding: const EdgeInsets.all(14),
+                arte: Arte.de('atendimento'),
                 child: Column(children: [
                   Container(
                     width: 48,

@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../core/design/arte_cartao.dart';
 import '../models/meses_contracheque_model.dart';
 import '../services/dados_sql.dart';
 import '../utils/app_theme.dart';
@@ -25,6 +26,24 @@ class _MesData {
     required this.descontos,
     required this.liquido,
   });
+}
+
+/// Cores das séries, nos pares do DESIGN §3: a versão clara no fundo
+/// escuro e a escura no claro, para o texto passar de 4,5:1 nos dois temas.
+class _Cores {
+  _Cores(ThemeData t)
+      : liquido = t.colorScheme.primary,
+        bruto = t.brightness == Brightness.dark
+            ? AppColors.sucessoEscuro
+            : AppColors.sucesso,
+        desconto = t.brightness == Brightness.dark
+            ? AppColors.falhaEscuro
+            : AppColors.falha,
+        destaque = t.brightness == Brightness.dark
+            ? Colors.amber.shade300
+            : Colors.amber.shade900,
+        texto = t.colorScheme.onSurface;
+  final Color liquido, bruto, desconto, destaque, texto;
 }
 
 // ── Página principal ──────────────────────────────────────────────────────────
@@ -250,64 +269,29 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
       body: CustomScrollView(
         slivers: [
           // ── AppBar ─────────────────────────────────────────────────────────
-          SliverAppBar(
-            expandedHeight: 130,
+          const SliverAppBar(
             pinned: true,
             elevation: 0,
-            // Era navy opaco, e o degradê translúcido por cima dele virava
-            // um bloco azul claro sobre a base escura. Transparente, o
-            // degradê encosta no fundo da tela como as demais barras.
             backgroundColor: Colors.transparent,
-            iconTheme: const IconThemeData(color: Colors.white),
-            flexibleSpace: FlexibleSpaceBar(
-              collapseMode: CollapseMode.pin,
-              titlePadding: const EdgeInsetsDirectional.fromSTEB(72, 0, 16, 16),
-              title: const Text(
-                'Evolução Salarial',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: AppTheme.appBarGradient(
-                      isDark: isDark,
-                      isSuperUser: false,
-                    ).map((c) => c.withOpacity(isDark ? 0.92 : 0.90)).toList(),
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 52),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Análise Salarial · ${widget.ano}',
-                          style: const TextStyle(
-                            color: Colors.white60,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+            flexibleSpace: FundoBarraVidro(),
+            title: Text('Evolução Salarial'),
+          ),
+
+          // ── Topo com a arte do contracheque (padrão 2.2) ───────────────────
+          SliverToBoxAdapter(
+            child: TopoArte(
+              arte: Arte.de('cc'),
+              icone: Icons.show_chart_rounded,
+              titulo: 'Análise salarial · ${widget.ano}',
+              subtitulo: 'Quanto você recebeu mês a mês no ano: '
+                  'líquido, bruto e descontos.',
+              margem: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             ),
           ),
 
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -358,27 +342,10 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
     required _MesData? touchedData,
     required NumberFormat fmt,
   }) {
-    final gridColor = isDark
-        ? Colors.white.withValues(alpha: 0.06)
-        : Colors.black.withValues(alpha: 0.05);
+    final cores = _Cores(Theme.of(context));
+    final gridColor = cores.texto.withValues(alpha: 0.06);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
-        ),
-        boxShadow: isDark
-            ? []
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 12,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-      ),
+    return CartaoVidro(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 18, 18, 14),
         child: Column(
@@ -394,17 +361,14 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                      color: cores.texto,
                     ),
                   ),
                 ),
                 _LegendDot(
-                    color: AppColors.blue, label: 'Líquido', isDark: isDark),
+                    color: cores.liquido, label: 'Líquido', isDark: isDark),
                 const SizedBox(width: 12),
-                _LegendDot(
-                    color: const Color(0xFF2E7D32),
-                    label: 'Bruto',
-                    isDark: isDark),
+                _LegendDot(color: cores.bruto, label: 'Bruto', isDark: isDark),
               ],
             ),
 
@@ -417,8 +381,8 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
                       child: Text(
                         'Toque em um ponto para ver o detalhe',
                         style: TextStyle(
-                          fontSize: 10,
-                          color: isDark ? Colors.white24 : Colors.black26,
+                          fontSize: 11,
+                          color: cores.texto.withValues(alpha: 0.55),
                         ),
                       ),
                     ),
@@ -486,10 +450,8 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
                                 fontWeight:
                                     sel ? FontWeight.w700 : FontWeight.w400,
                                 color: sel
-                                    ? AppColors.blue
-                                    : (isDark
-                                        ? Colors.white38
-                                        : Colors.black38),
+                                    ? cores.liquido
+                                    : cores.texto.withValues(alpha: 0.55),
                               ),
                             ),
                           );
@@ -508,7 +470,7 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
                             fmtY.format(val),
                             style: TextStyle(
                               fontSize: 8,
-                              color: isDark ? Colors.white24 : Colors.black26,
+                              color: cores.texto.withValues(alpha: 0.45),
                             ),
                           );
                         },
@@ -521,7 +483,7 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
                       spots: brutoSpots,
                       isCurved: true,
                       curveSmoothness: 0.3,
-                      color: const Color(0xFF2E7D32).withValues(alpha: 0.45),
+                      color: cores.bruto.withValues(alpha: 0.55),
                       barWidth: 1.5,
                       isStrokeCapRound: true,
                       dotData: const FlDotData(show: false),
@@ -532,7 +494,7 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
                       spots: liquidoSpots,
                       isCurved: true,
                       curveSmoothness: 0.3,
-                      color: AppColors.blue,
+                      color: cores.liquido,
                       barWidth: 2.5,
                       isStrokeCapRound: true,
                       dotData: FlDotData(
@@ -542,11 +504,10 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
                           return FlDotCirclePainter(
                             radius: sel ? 6.0 : 3.5,
                             color: sel
-                                ? AppColors.blue
-                                : AppColors.blue.withValues(alpha: 0.75),
+                                ? cores.liquido
+                                : cores.liquido.withValues(alpha: 0.75),
                             strokeWidth: sel ? 2.5 : 1.5,
-                            strokeColor:
-                                isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
+                            strokeColor: Theme.of(context).colorScheme.surface,
                           );
                         },
                       ),
@@ -554,8 +515,8 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
                         show: true,
                         gradient: LinearGradient(
                           colors: [
-                            AppColors.blue.withValues(alpha: 0.22),
-                            AppColors.blue.withValues(alpha: 0.0),
+                            cores.liquido.withValues(alpha: 0.22),
+                            cores.liquido.withValues(alpha: 0.0),
                           ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
@@ -574,41 +535,40 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
 
   // ── Tooltip inline (acima do gráfico) ───────────────────────────────────────
   Widget _buildTooltipRow(_MesData d, bool isDark, NumberFormat fmt) {
+    final cores = _Cores(Theme.of(context));
+    // Seção dentro do cartão: superfície neutra, sem borda (DESIGN §3b).
     return Container(
       margin: const EdgeInsets.fromLTRB(2, 6, 2, 0),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isDark ? AppColors.darkBorder : const Color(0xFFCBDEFF),
-        ),
+        color: cores.texto.withValues(alpha: 0.055),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
           Text(
             d.mesAbrev,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 13,
-              color: AppColors.blue,
+              color: cores.liquido,
             ),
           ),
           const Spacer(),
           _TooltipItem(
               label: 'Bruto',
               value: fmt.format(d.bruto),
-              color: const Color(0xFF2E7D32)),
+              color: cores.bruto),
           const SizedBox(width: 14),
           _TooltipItem(
               label: 'Descontos',
               value: fmt.format(d.descontos),
-              color: const Color(0xFFC62828)),
+              color: cores.desconto),
           const SizedBox(width: 14),
           _TooltipItem(
               label: 'Líquido',
               value: fmt.format(d.liquido),
-              color: AppColors.blue,
+              color: cores.liquido,
               bold: true),
         ],
       ),
@@ -618,23 +578,9 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
   // ── Lista mensal ────────────────────────────────────────────────────────────
   Widget _buildMonthList(List<_MesData> dados, bool isDark, NumberFormat fmt,
       double totalLiquido) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
-        ),
-        boxShadow: isDark
-            ? []
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-      ),
+    final texto = Theme.of(context).colorScheme.onSurface;
+    return CartaoVidro(
+      arte: Arte.de('cc'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -645,15 +591,11 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                color: texto,
               ),
             ),
           ),
-          Divider(
-              height: 1,
-              color: isDark
-                  ? Colors.white10
-                  : Colors.black.withValues(alpha: 0.06)),
+          Divider(height: 1, color: texto.withValues(alpha: 0.08)),
           ...dados.asMap().entries.map((e) {
             final idx = e.key;
             final d = e.value;
@@ -673,48 +615,26 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
   }
 
   // ── Estado de carregamento animado ──────────────────────────────────────────
+  // O texto branco fica sobre a arte do contracheque (fundo sempre escuro):
+  // direto no fundo da tela ele sumia no tema claro.
   Widget _buildLoading(bool isDark) {
     return FundoSuave(child: Scaffold(
-      body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 44),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: const FundoBarraVidro(),
+        title: const Text('Evolução Salarial'),
+      ),
+      body: ListView(
+        children: [
+          TopoArte(
+            arte: Arte.de('cc'),
+            icone: Icons.show_chart_rounded,
+            titulo: 'Análise salarial · ${widget.ano}',
+            subtitulo: 'Juntando os contracheques do ano.',
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Spacer(flex: 3),
-                // Ícone central
-                Container(
-                  width: 76,
-                  height: 76,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.22),
-                        width: 1.5),
-                  ),
-                  child: const Icon(Icons.show_chart_rounded,
-                      color: Colors.white, size: 38),
-                ),
-                const SizedBox(height: 28),
-                const Text(
-                  'Análise Salarial',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  widget.ano,
-                  style: const TextStyle(
-                    color: Colors.white60,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const Spacer(flex: 2),
                 // Mensagem animada com fade + slide
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 380),
@@ -732,54 +652,49 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
                   child: Text(
                     _statusMsg,
                     key: ValueKey(_statusMsg),
-                    textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Colors.white70,
+                      color: Colors.white,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 12),
                 // Barra de progresso com animação suave
                 TweenAnimationBuilder<double>(
                   tween: Tween<double>(begin: 0.0, end: _progress),
                   duration: const Duration(milliseconds: 700),
                   curve: Curves.easeInOut,
-                  builder: (context, animValue, _) => Column(
+                  builder: (context, animValue, _) => Row(
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: animValue,
-                          minHeight: 7,
-                          backgroundColor: Colors.white.withValues(alpha: 0.18),
-                          valueColor:
-                              const AlwaysStoppedAnimation<Color>(Colors.white),
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: animValue,
+                            minHeight: 6,
+                            backgroundColor:
+                                Colors.white.withValues(alpha: 0.18),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                                Colors.white),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(width: 10),
                       Text(
                         '${(animValue * 100).toInt()}%',
-                        style: const TextStyle(
-                            color: Colors.white54, fontSize: 11),
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.80),
+                            fontSize: 11),
                       ),
                     ],
                   ),
                 ),
-                const Spacer(flex: 2),
-                TextButton.icon(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.arrow_back_rounded,
-                      color: Colors.white30, size: 14),
-                  label: const Text('Voltar',
-                      style: TextStyle(color: Colors.white30, fontSize: 12)),
-                ),
-                const SizedBox(height: 20),
               ],
             ),
           ),
-        ),
+        ],
+      ),
     ));
   }
 
@@ -791,29 +706,46 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: const FundoBarraVidro(),
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text('Evolução Salarial',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text('Evolução Salarial'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.bar_chart_outlined,
-                size: 64,
-                color: isDark ? Colors.white24 : Colors.grey.shade300),
-            const SizedBox(height: 16),
-            Text(
-              'Sem dados disponíveis para ${widget.ano}',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 15,
-                color: isDark ? Colors.white54 : Colors.black45,
-                fontWeight: FontWeight.w500,
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        children: [
+          TopoArte(
+            arte: Arte.de('cc'),
+            icone: Icons.show_chart_rounded,
+            titulo: 'Análise salarial · ${widget.ano}',
+            subtitulo: 'Quanto você recebeu mês a mês no ano: '
+                'líquido, bruto e descontos.',
+            margem: const EdgeInsets.only(bottom: 16),
+          ),
+          Builder(builder: (context) {
+            final texto = Theme.of(context).colorScheme.onSurface;
+            return CartaoVidro(
+              arte: Arte.de('cc'),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+              child: Column(
+                children: [
+                  ExcludeSemantics(
+                    child: Icon(Icons.bar_chart_outlined,
+                        size: AppIconSize.xl,
+                        color: texto.withValues(alpha: 0.45)),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Sem dados disponíveis para ${widget.ano}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: texto.withValues(alpha: 0.70),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
+            );
+          }),
+        ],
       ),
     ));
   }
@@ -840,6 +772,7 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cores = _Cores(Theme.of(context));
     return Row(
       children: [
         Expanded(
@@ -847,7 +780,7 @@ class _SummaryRow extends StatelessWidget {
             label: 'Líquido no Ano',
             value: formatShort(totalLiquido),
             icon: Icons.account_balance_wallet_outlined,
-            color: AppColors.blue,
+            color: cores.liquido,
             isDark: isDark,
           ),
         ),
@@ -857,7 +790,7 @@ class _SummaryRow extends StatelessWidget {
             label: 'Média Mensal',
             value: formatShort(media),
             icon: Icons.trending_up_rounded,
-            color: const Color(0xFF2E7D32),
+            color: cores.bruto,
             isDark: isDark,
           ),
         ),
@@ -867,7 +800,7 @@ class _SummaryRow extends StatelessWidget {
             label: 'Melhor Mês',
             value: melhorMes.mesAbrev,
             icon: Icons.star_rounded,
-            color: const Color(0xFFE67E00),
+            color: cores.destaque,
             isDark: isDark,
             subtitle: formatShort(melhorMes.liquido),
           ),
@@ -896,41 +829,23 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final texto = Theme.of(context).colorScheme.onSurface;
+    return CartaoVidro(
+      raio: 14,
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
-        ),
-        boxShadow: isDark
-            ? []
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 15, color: color),
+          // Sem quadradinho tingido atrás do ícone (DESIGN §2b).
+          ExcludeSemantics(
+            child: Icon(icon, size: AppIconSize.sm, color: color),
           ),
           const SizedBox(height: 8),
           Text(
             label,
             style: TextStyle(
               fontSize: 10,
-              color: isDark ? Colors.white38 : Colors.black38,
+              color: texto.withValues(alpha: 0.60),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -943,7 +858,7 @@ class _SummaryCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
-                color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                color: texto,
               ),
             ),
           ),
@@ -987,7 +902,10 @@ class _LegendDot extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 10,
-            color: isDark ? Colors.white54 : Colors.black45,
+            color: Theme.of(context)
+                .colorScheme
+                .onSurface
+                .withValues(alpha: 0.62),
           ),
         ),
       ],
@@ -1052,6 +970,7 @@ class _MonthRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cores = _Cores(Theme.of(context));
     return Column(
       children: [
         Padding(
@@ -1066,7 +985,7 @@ class _MonthRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white70 : Colors.black54,
+                    color: cores.texto.withValues(alpha: 0.75),
                   ),
                 ),
               ),
@@ -1083,14 +1002,14 @@ class _MonthRow extends StatelessWidget {
                           'Bruto ${fmt.format(data.bruto)}',
                           style: TextStyle(
                             fontSize: 9,
-                            color: isDark ? Colors.white38 : Colors.black38,
+                            color: cores.texto.withValues(alpha: 0.60),
                           ),
                         ),
                         Text(
                           '- ${fmt.format(data.descontos)}',
                           style: TextStyle(
                             fontSize: 9,
-                            color: Colors.red.shade400,
+                            color: cores.desconto,
                           ),
                         ),
                       ],
@@ -1100,11 +1019,9 @@ class _MonthRow extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: pct.clamp(0.0, 1.0),
-                        backgroundColor: isDark
-                            ? Colors.white.withValues(alpha: 0.08)
-                            : Colors.grey.shade100,
+                        backgroundColor: cores.texto.withValues(alpha: 0.08),
                         valueColor:
-                            const AlwaysStoppedAnimation<Color>(AppColors.blue),
+                            AlwaysStoppedAnimation<Color>(cores.liquido),
                         minHeight: 5,
                       ),
                     ),
@@ -1118,7 +1035,7 @@ class _MonthRow extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                  color: cores.texto,
                 ),
               ),
             ],
@@ -1127,9 +1044,7 @@ class _MonthRow extends StatelessWidget {
         if (!isLast)
           Divider(
             height: 1,
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.06)
-                : Colors.black.withValues(alpha: 0.05),
+            color: cores.texto.withValues(alpha: 0.06),
           ),
       ],
     );

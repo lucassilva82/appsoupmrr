@@ -22,6 +22,7 @@ import '../widgets/barra_vidro.dart';
 import '../widgets/alerta.dart';
 import '../widgets/vidro.dart';
 import '../core/erros/falha_de.dart';
+import '../core/design/arte_cartao.dart';
 
 class DeclaracaoBensPage extends StatefulWidget {
   final String ano;
@@ -453,12 +454,11 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   //--------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final width = MediaQuery.of(context).size.width;
     final radius = BorderRadius.circular(12);
 
-    return FundoSuave(child: Scaffold(
+    return FundoSuave(
+        child: Scaffold(
       appBar: AppBar(
         elevation: 0,
         flexibleSpace: const FundoBarraVidro(),
@@ -467,30 +467,38 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
         leading: const BackButton(color: Colors.white),
       ),
       body: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            // ---------- Título ----------
-            Center(child: Text('Tipo de Bem', style: _titleStyle(context))),
-            const SizedBox(height: 8),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // ---------- Topo com a arte da área (padrão 2.2) ----------
+          TopoArte(
+            arte: Arte.de('rh'),
+            icone: Icons.home_work_outlined,
+            titulo: 'Declaração de bens',
+            subtitulo: 'Informe seus bens móveis e imóveis do ciclo '
+                '${widget.ano}, ou declare que não possui.',
+            margem: const EdgeInsets.only(bottom: 16),
+          ),
+          // ---------- Título ----------
+          Center(child: Text('Tipo de Bem', style: _titleStyle(context))),
+          const SizedBox(height: 8),
 
-            // ---------- Radio Buttons ----------
-            Row(children: [
-              _radio('Imóvel'),
-              _radio('Móvel'),
-              _radio('Nenhum', label: 'Não possui'),
-            ]),
-            const SizedBox(height: 14),
-
-            // ---------- Conteúdo dinâmico ----------
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: tipoBem == 'Nenhum'
-                  ? _buildNaoPossui(radius, width)
-                  : _buildForm(radius, width),
-            ),
+          // ---------- Radio Buttons ----------
+          Row(children: [
+            _radio('Imóvel'),
+            _radio('Móvel'),
+            _radio('Nenhum', label: 'Não possui'),
           ]),
-        ),
+          const SizedBox(height: 14),
+
+          // ---------- Conteúdo dinâmico ----------
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: tipoBem == 'Nenhum'
+                ? _buildNaoPossui(radius, width)
+                : _buildForm(radius, width),
+          ),
+        ]),
+      ),
     ));
   }
 
@@ -539,23 +547,21 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   Widget _buildNaoPossui(BorderRadius radius, double width) {
     final theme = Theme.of(context);
     return Column(children: [
-      Container(
-        width: double.infinity,
+      CartaoVidro(
+        arte: Arte.de('rh'),
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: radius,
-          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.32)),
-        ),
-        child: Text(
-          jaDeclarouNaoPossui
-              ? 'Declarou Não possuir Bens'
-              : 'Não possuo bem móvel ou imóvel',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-              fontSize: _fs(context, 16)),
+        child: SizedBox(
+          width: double.infinity,
+          child: Text(
+            jaDeclarouNaoPossui
+                ? 'Declarou Não possuir Bens'
+                : 'Não possuo bem móvel ou imóvel',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+                fontSize: _fs(context, 16)),
+          ),
         ),
       ),
       const SizedBox(height: 16),
@@ -594,21 +600,9 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   //--------------------------------------------------------------------
   Widget _buildForm(BorderRadius radius, double width) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     return Column(children: [
-      Container(
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: radius,
-          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.28)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.14 : 0.05),
-              blurRadius: isDark ? 12 : 8,
-              offset: const Offset(0, 3),
-            )
-          ],
-        ),
+      CartaoVidro(
+        arte: Arte.de('rh'),
         padding: const EdgeInsets.all(14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           if (tipoBem == 'Imóvel') ...[
@@ -648,8 +642,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
               FilteringTextInputFormatter.digitsOnly,
               CurrencyInputFormatter()
             ],
-            decoration: const InputDecoration(
-                labelText: 'Valor', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Valor'),
             style: _labelStyle(context),
           ),
           const SizedBox(height: 6),
@@ -658,10 +651,10 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.green.shade700.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(8),
+                color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: Colors.green.shade700.withValues(alpha: 0.22)),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.20)),
               ),
               child: Text(valorExtenso,
                   style: TextStyle(
@@ -743,9 +736,9 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
                         : null,
                     trailing: IconButton(
                       visualDensity: VisualDensity.compact,
-                      iconSize: 18,
-                      icon: const Icon(Icons.delete_outline_rounded,
-                          color: Colors.red),
+                      iconSize: AppIconSize.sm,
+                      icon: Icon(Icons.delete_outline_rounded,
+                          color: theme.colorScheme.error),
                       onPressed: () => _excluirBem(i),
                     ),
                   ),
@@ -761,8 +754,6 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   // INPUT WIDGETS
   //--------------------------------------------------------------------
   Widget _buildTextField(String label, TextEditingController ctrl) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: TextField(
@@ -772,10 +763,6 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
           isDense: true,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-          filled: true,
-          fillColor: isDark
-              ? theme.colorScheme.surface.withValues(alpha: 0.7)
-              : Colors.white,
         ),
         style: _labelStyle(context),
       ),
@@ -814,7 +801,6 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
         }),
         decoration: const InputDecoration(
           labelText: 'Forma de Aquisição',
-          border: OutlineInputBorder(),
           isDense: true,
           contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         ),
