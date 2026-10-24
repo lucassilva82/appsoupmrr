@@ -297,7 +297,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              color: const Color(0xFF0E1726).withValues(alpha: 0.97),
+              color: const Color(0xFF0A1220).withValues(alpha: 0.82),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
               border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.10))),
               boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 24, offset: Offset(0, -6))],
@@ -356,7 +356,7 @@ class _CartaoVidro extends StatelessWidget {
   Widget build(BuildContext context) => ClipRRect(
         borderRadius: BorderRadius.circular(28),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 26, sigmaY: 26),
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
           child: Container(
             padding: const EdgeInsets.fromLTRB(20, 22, 20, 8),
             decoration: BoxDecoration(
@@ -364,9 +364,9 @@ class _CartaoVidro extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Colors.white.withValues(alpha: 0.14), Colors.white.withValues(alpha: 0.05)],
+                colors: [Colors.white.withValues(alpha: 0.08), Colors.white.withValues(alpha: 0.02)],
               ),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
             ),
             child: child,
           ),
@@ -395,7 +395,7 @@ class _Marca extends StatelessWidget {
 class _Fundo extends CustomPainter {
   _Fundo({required this.pulso, required this.entrada});
 
-  static const base = Color(0xFF041029);
+  static const base = Color(0xFF020916);
   static const _ciano = Color(0xFF4FD8F0);
 
   /// 0..1, repetindo: posição dos pulsos de luz.
@@ -429,7 +429,7 @@ class _Fundo extends CustomPainter {
         ..shader = const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFF071A3D), Color(0xFF0A2350), Color(0xFF051432), base],
+          colors: [Color(0xFF041332), Color(0xFF061B3E), Color(0xFF031026), base],
           stops: [0, .38, .72, 1],
         ).createShader(r),
     );
@@ -440,7 +440,7 @@ class _Fundo extends CustomPainter {
         ..shader = RadialGradient(
           center: const Alignment(0.9, -0.95),
           radius: 0.95,
-          colors: [_ciano.withValues(alpha: 0.26), _ciano.withValues(alpha: 0)],
+          colors: [_ciano.withValues(alpha: 0.16), _ciano.withValues(alpha: 0)],
         ).createShader(r),
     );
     canvas.drawRect(
@@ -449,7 +449,7 @@ class _Fundo extends CustomPainter {
         ..shader = RadialGradient(
           center: const Alignment(-1, 0.9),
           radius: 0.9,
-          colors: [const Color(0xFF1565C0).withValues(alpha: 0.30), const Color(0x001565C0)],
+          colors: [const Color(0xFF1565C0).withValues(alpha: 0.20), const Color(0x001565C0)],
         ).createShader(r),
     );
 
@@ -462,7 +462,7 @@ class _Fundo extends CustomPainter {
             fontSize: tam,
             fontFamily: d.fontFamily,
             package: d.fontPackage,
-            color: Colors.white.withValues(alpha: 0.045),
+            color: Colors.white.withValues(alpha: 0.10),
           ),
         ),
         textDirection: TextDirection.ltr,
@@ -480,10 +480,10 @@ class _Fundo extends CustomPainter {
 
     // Trilhas: desenham-se na entrada, do começo ao fim de cada uma.
     final traco = Paint()
-      ..color = _ciano.withValues(alpha: 0.20)
-      ..strokeWidth = 1.2
+      ..color = _ciano.withValues(alpha: 0.34)
+      ..strokeWidth = 1.4
       ..style = PaintingStyle.stroke;
-    final ponto = Paint()..color = _ciano.withValues(alpha: 0.55);
+    final ponto = Paint()..color = _ciano.withValues(alpha: 0.75);
     final luz = Paint()
       ..color = _ciano
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
@@ -499,13 +499,13 @@ class _Fundo extends CustomPainter {
       if (t <= 0) continue;
       canvas.drawPath(metrica.extractPath(0, metrica.length * t), traco);
       if (t >= 1) {
-        canvas.drawCircle(pts.last, 3, ponto);
+        canvas.drawCircle(pts.last, 3.4, ponto);
         // Um pulso por trilha, cada um no seu tempo.
         final f = (pulso + i * 0.137) % 1;
         if (f < 0.6) {
           final pos = metrica.getTangentForOffset(metrica.length * (f / 0.6))!.position;
           final forca = math.sin(f / 0.6 * math.pi);
-          canvas.drawCircle(pos, 2.2, luz..color = _ciano.withValues(alpha: 0.85 * forca));
+          canvas.drawCircle(pos, 2.8, luz..color = _ciano.withValues(alpha: forca));
         }
       }
     }

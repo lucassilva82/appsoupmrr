@@ -197,36 +197,8 @@ class _AuthFormState extends State<AuthForm> with SingleTickerProviderStateMixin
         validator: (v) => (v == null || v.length < 5) ? 'Senha inválida (mín. 5 caracteres)' : null,
       );
 
-  /// iOS: os dois campos num bloco só, com um fio entre eles (como o login
-  /// do Apple ID e os formulários dos Ajustes).
-  Widget _camposIos() {
-    InputDecoration deco(String rotulo, IconData icone) => InputDecoration(
-          labelText: rotulo,
-          labelStyle: const TextStyle(color: Colors.white70, fontSize: 15),
-          floatingLabelStyle:
-              const TextStyle(color: AppColors.lightBlue, fontSize: 13, fontWeight: FontWeight.w600),
-          prefixIcon: Icon(icone, color: Colors.white60, size: 20),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.fromLTRB(4, 22, 4, 12),
-          errorStyle: const TextStyle(color: AppColors.falhaEscuro, fontSize: 12, height: 1.3),
-          errorMaxLines: 2,
-        );
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
-      ),
-      child: Column(children: [
-        _campoMatricula(deco('Matrícula', Icons.badge_outlined)),
-        Divider(height: 1, thickness: 0.5, indent: 48, color: Colors.white.withValues(alpha: 0.18)),
-        _campoSenha(deco('Senha', Icons.lock_outline_rounded)),
-      ]),
-    );
-  }
-
-  /// Android: campos contornados do Material 3.
-  Widget _camposMaterial() => Column(children: [
+  /// Campos contornados e separados (raio 14 no iOS, 12 no Android).
+  Widget _camposCampos() => Column(children: [
         _campoMatricula(_fieldDeco(label: 'Matrícula', icon: Icons.badge_outlined)),
         const SizedBox(height: 14),
         _campoSenha(_fieldDeco(label: 'Senha', icon: Icons.lock_outline_rounded)),
@@ -390,7 +362,9 @@ class _AuthFormState extends State<AuthForm> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    final campos = widget.material ? _camposMaterial() : _camposIos();
+    // Um campo de cada vez, com espaço entre eles: no bloco único o rótulo
+    // que sobe ficava espremido pela borda do campo de cima.
+    final campos = _camposCampos();
     return Form(
       key: _formKey,
       child: AutofillGroup(
@@ -419,7 +393,9 @@ class _AuthFormState extends State<AuthForm> with SingleTickerProviderStateMixin
     );
   }
 
-  /// Campo contornado do Android (Material 3), sobre o fundo escuro.
+  double get _raioCampo => widget.material ? 12 : 14;
+
+  /// Campo contornado, sobre o fundo escuro.
   InputDecoration _fieldDeco({
     required String label,
     required IconData icon,
@@ -432,19 +408,19 @@ class _AuthFormState extends State<AuthForm> with SingleTickerProviderStateMixin
       fillColor: Colors.white.withValues(alpha: 0.06),
       contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(_raioCampo),
         borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.32)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(_raioCampo),
         borderSide: const BorderSide(color: AppColors.lightBlue, width: 2),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(_raioCampo),
         borderSide: const BorderSide(color: AppColors.falhaEscuro, width: 1.2),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(_raioCampo),
         borderSide: const BorderSide(color: AppColors.falhaEscuro, width: 2),
       ),
       floatingLabelStyle: const TextStyle(color: AppColors.lightBlue, fontWeight: FontWeight.w600, fontSize: 13),
