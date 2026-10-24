@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projetonovo/widgets/dialogo_confirmacao.dart';
 import 'package:projetonovo/main.dart' show abrirAviso, navegarPorNotificacao;
 import 'package:projetonovo/models/aviso_model.dart';
 import 'package:projetonovo/models/notification_model.dart';
@@ -80,34 +81,31 @@ class NotificationsBody extends StatelessWidget {
   // ── Ações do topo ───────────────────────────────────────────────────────────
   Future<void> _confirmarLimpar(
       BuildContext context, NotificationProvider provider) async {
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Limpar notificações'),
-        content: const Text(
-            'Deseja remover todas as notificações? Esta ação não pode ser desfeita.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Limpar tudo'),
-          ),
-        ],
-      ),
+    final confirmar = await dialogoConfirmacao(
+      context,
+      titulo: 'Limpar os avisos?',
+      mensagem: 'Todos os avisos saem deste aparelho. Isto não pode ser desfeito.',
+      textoConfirmar: 'Limpar tudo',
+      icone: Icons.delete_sweep_outlined,
+      cor: Theme.of(context).colorScheme.error,
     );
-    if (confirmar != true) return;
+    if (!confirmar) return;
     await provider.clearAll();
     if (context.mounted) {
-      avisoSucesso(context, 'Notificações removidas');
+      avisoSucesso(context, 'Avisos removidos');
     }
+  }
+
+  /// Seção de cada aviso, pela data (os mais novos primeiro).
+  static String _secao(DateTime ts) {
+    final hoje = DateTime.now();
+    final dia = DateTime(ts.year, ts.month, ts.day);
+    final d0 = DateTime(hoje.year, hoje.month, hoje.day);
+    final dias = d0.difference(dia).inDays;
+    if (dias <= 0) return 'Hoje';
+    if (dias == 1) return 'Ontem';
+    if (dias < 7) return 'Esta semana';
+    return 'Anteriores';
   }
 
   // ── Leitura (aviso) em bottom sheet moderno ─────────────────────────────────
@@ -134,43 +132,60 @@ class NotificationsBody extends StatelessWidget {
           return _EmptyState(onRefresh: provider.loadNotifications);
         }
 
-        // Uma lista só, de vidro (protótipo `telaAvisos`): a não lida tem
-        // o título em negrito e um fio azul à esquerda. "Marcar todos" fica
-        // na barra do topo; tirar um aviso é arrastar para a esquerda.
+        // Um cartão por aviso, separados por dia (pedido do usuário,
+        // 24/10/2026: na lista única tudo parecia um bloco só). A não lida
+        // tem o fio azul e o ponto; "Limpar" fica no topo, porque a lista
+        // cresce; tirar um aviso só é arrastar para a esquerda.
+        final mudo = theme.colorScheme.onSurface.withValues(alpha: .62);
+        final itens = <Widget>[];
+        String? secaoAtual;
+        for (final notif in notifications) {
+          final secao = _secao(notif.timestamp);
+          if (secao != secaoAtual) {
+            secaoAtual = secao;
+            itens.add(Padding(
+              padding: EdgeInsets.fromLTRB(4, itens.isEmpty ? 4 : 14, 4, 8),
+              child: Text(secao.toUpperCase(),
+                  style: TextStyle(
+                      fontSize: 12, letterSpacing: 1.1, fontWeight: FontWeight.w700, color: theme.colorScheme.primary)),
+            ));
+          }
+          itens.add(Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _LinhaAviso(
+              notif: notif,
+              onTap: () => _abrirNotificacao(context, notif, provider),
+              onDelete: () => provider.removeNotification(notif),
+            ),
+          ));
+        }
         return RefreshIndicator(
           onRefresh: provider.loadNotifications,
           color: theme.colorScheme.primary,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
             // O fim passa da barra de abas de vidro (a altura dela vem no MediaQuery).
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 24 + MediaQuery.paddingOf(context).bottom),
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 24 + MediaQuery.paddingOf(context).bottom),
             children: [
-              CartaoVidro(
-                padding: EdgeInsets.zero,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Column(children: [
-                    for (final (i, notif) in notifications.indexed) ...[
-                      if (i > 0)
-                        Divider(height: 1, thickness: 1, color: theme.colorScheme.onSurface.withValues(alpha: .10)),
-                      _LinhaAviso(
-                        notif: notif,
-                        onTap: () => _abrirNotificacao(context, notif, provider),
-                        onDelete: () => provider.removeNotification(notif),
-                      ),
-                    ],
-                  ]),
-                ),
-              ),
-              const SizedBox(height: 8),
-              if (unread == 0 && notifications.length > 1)
-                Center(
-                  child: TextButton(
-                    onPressed: () => _confirmarLimpar(context, provider),
-                    child: Text('Limpar todos',
-                        style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface.withValues(alpha: .62))),
+              // Topo da lista: quantos são e o "Limpar".
+              Row(children: [
+                Expanded(
+                  child: Text(
+                    '${notifications.length} ${notifications.length == 1 ? 'aviso' : 'avisos'}',
+                    style: TextStyle(fontSize: 13, color: mudo),
                   ),
                 ),
+                TextButton.icon(
+                  onPressed: () => _confirmarLimpar(context, provider),
+                  style: TextButton.styleFrom(
+                    foregroundColor: theme.colorScheme.error,
+                    minimumSize: const Size(48, 44),
+                  ),
+                  icon: const Icon(Icons.delete_sweep_outlined, size: AppIconSize.sm),
+                  label: const Text('Limpar', style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
+              ]),
+              ...itens,
             ],
           ),
         );
@@ -215,7 +230,7 @@ class _LinhaAviso extends StatelessWidget {
         avisoSucesso(context, 'Aviso removido');
       },
       background: Container(
-        color: theme.colorScheme.error,
+        decoration: BoxDecoration(color: theme.colorScheme.error, borderRadius: BorderRadius.circular(16)),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: 22),
         child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
@@ -224,13 +239,16 @@ class _LinhaAviso extends StatelessWidget {
         button: true,
         label: '${naoLida ? 'Não lido. ' : ''}${notif.title}. ${notif.body}',
         excludeSemantics: true,
-        child: InkWell(
+        child: CartaoVidro(
+          padding: EdgeInsets.zero,
+          tingimento: naoLida ? pri : null,
           onTap: onTap,
           child: Container(
             decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
               border: naoLida ? Border(left: BorderSide(color: pri, width: 3)) : null,
             ),
-            padding: EdgeInsets.fromLTRB(naoLida ? 11 : 14, 9, 14, 9),
+            padding: EdgeInsets.fromLTRB(naoLida ? 11 : 14, 12, 12, 12),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Container(
                 width: 36,
@@ -273,6 +291,12 @@ class _LinhaAviso extends StatelessWidget {
                   ),
                 ]),
               ),
+              if (naoLida)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, top: 6),
+                  child: Container(
+                      width: 9, height: 9, decoration: BoxDecoration(color: pri, shape: BoxShape.circle)),
+                ),
             ]),
           ),
         ),

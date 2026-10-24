@@ -16,8 +16,23 @@ class CofreSeguro implements Cofre {
   const CofreSeguro();
   static const _s = FlutterSecureStorage();
 
+  /// Se o cofre não abre (no Android, um backup restaurado traz o arquivo
+  /// cifrado sem a chave do Keystore e a leitura falha), o que está lá é
+  /// lixo: apaga tudo e volta nulo. O militar só entra de novo, em vez de o
+  /// app falhar ao abrir.
   @override
-  Future<String?> ler(String chave) => _s.read(key: chave);
+  Future<String?> ler(String chave) async {
+    try {
+      return await _s.read(key: chave);
+    } catch (e) {
+      registrar('sessao.cofre_ilegivel', resultado: 'falhou', codigo: 'LG-COFRE');
+      try {
+        await _s.deleteAll();
+      } catch (_) {}
+      return null;
+    }
+  }
+
   @override
   Future<void> gravar(String chave, String valor) =>
       _s.write(key: chave, value: valor);
