@@ -1695,3 +1695,28 @@ função `SECURITY DEFINER`, função SQL chamando outra e gatilho):
   que três SQL não tinham rodado, e tinham.
 - Daqui em diante, SQL novo cria em `soupm.`.
 
+
+## 48. Duas quebras que só apareciam usando o app
+
+**Android 16 fechava o app a cada captura de tela (24/10/2026).** O pacote
+`screenshot_recording_detector` (1.9.0) observa a galeria e, a cada imagem
+nova, consulta `content://media/external`, que o Android 16 passou a recusar
+("is hidden API"). A exceção sobe na thread principal e o app fecha. Foi
+achado por acaso: a captura do emulador disparou o detector. No Android o app
+já ignorava os eventos (a proteção lá é o `FLAG_SECURE`), então o detector
+passou a ligar só no iOS. **Regra:** plugin que roda em segundo plano se testa
+na versão mais nova do Android antes de cada envio, e o que não serve à
+plataforma não é ligado nela.
+
+**A barra de abas quebrava a cada troca (faixa amarela).** A largura da aba
+anima com uma curva que passa do fim e volta (o "quique"). O
+`AnimatedContainer` aplicava a mesma curva à sombra, que ia de "nada" a
+"sombra": passando do fim, o raio de desfoque ficava negativo e o build da
+aba falhava. **Regra:** com curva que passa do fim (`easeOutBack`, `Cubic`
+com y > 1), os dois estados animados precisam ter as mesmas peças (sombra,
+degradê), mudando só a cor ou a opacidade.
+
+**"Entrei e apareceu SD STIVES".** Era a compilação do modo vitrine no
+simulador: nela, qualquer login entra como o militar fictício. Para testar com
+conta real: `flutter build ios --simulator --debug --dart-define-from-file=env.json`
+sem `VITRINE`, e desinstalar antes, porque a sessão da vitrine fica guardada.
