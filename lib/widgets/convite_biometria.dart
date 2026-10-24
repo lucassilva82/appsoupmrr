@@ -19,6 +19,11 @@ import '../utils/app_theme.dart';
 // ligado no sistema, ele fica parado.
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// Verdadeiro do envio do login até o convite de biometria fechar. A Início
+/// já aparece por trás nesse intervalo; o comunicado de abertura espera
+/// isto ficar falso para não abrir por baixo do convite.
+final entradaEmAndamento = ValueNotifier<bool>(false);
+
 /// Mostra o convite e devolve true se a pessoa aceitou ativar.
 /// Devolve false sem abrir nada quando o aparelho não tem biometria.
 Future<bool> convidarParaBiometria(BuildContext context) async {

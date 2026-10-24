@@ -5,18 +5,23 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/design/arte_cartao.dart';
 import '../../core/erros/estado_erro.dart';
 import '../../core/erros/falha_app.dart';
+import '../../core/config/app_config.dart';
 import '../../core/log/registro_log.dart';
+import '../../core/navegacao/abrir_funcao.dart';
 import '../../core/rede/api_client.dart';
 import '../../models/auth_model.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/aviso_rapido.dart';
+import '../../widgets/convite_biometria.dart' show entradaEmAndamento;
 import '../../widgets/custom_appbar.dart';
 import '../../widgets/vidro.dart';
 import '../pendencias/pendencias_repositorio.dart';
+import '../servicos/servicos_page.dart' show menuEmUso;
 import 'comunicados_repositorio.dart';
 import '../../core/design/esqueleto.dart';
 
@@ -78,6 +83,14 @@ class _BlocoComunicadosState extends State<BlocoComunicados> {
   Future<void> _abrirDestaque(List<Comunicado> lista) async {
     final c = lista.where((c) => c.destaqueAbertura).firstOrNull;
     if (c == null) return;
+    // Logo depois do login pode haver outra janela por cima (convite do
+    // Face ID, "salvar senha"): espera a Início ficar livre, até 1 min,
+    // para o comunicado não abrir por baixo dela nem ser fechado por ela.
+    bool livre() => !entradaEmAndamento.value && _semNadaPorCima(context);
+    for (var i = 0; i < 200 && mounted && !livre(); i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+    }
+    if (!mounted || !livre()) return;
     final marca = 'comunicado_abertura_${c.id}_${c.versao}';
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -86,13 +99,57 @@ class _BlocoComunicadosState extends State<BlocoComunicados> {
       await prefs.setBool(marca, true);
     } catch (_) {/* sem preferências, mostra mesmo assim */}
     if (!mounted) return;
-    await abrirComunicado(context, c, _repo, origem: 'abertura');
+    if (c.mostraCartaz) {
+      // O carrossel para enquanto o cartaz está aberto: o cartaz fecha
+      // voando até o cartão dele, que precisa estar na frente.
+      _timer?.cancel();
+      _cartazAberto = true;
+      await abrirCartazAbertura(context, c, alvo: () => _alvoDoCartao(c.id));
+      _cartazAberto = false;
+      if (mounted) _agendar(lista.length);
+    } else {
+      await abrirComunicado(context, c, _repo, origem: 'abertura');
+    }
     registrar('comunicado.popup_fechar', chave: _chave, dados: {'id': c.id});
+  }
+
+  /// Nenhuma rota por cima desta tela, em nenhum navegador (aba e raiz).
+  static bool _semNadaPorCima(BuildContext contexto) {
+    BuildContext? c = contexto;
+    while (c != null) {
+      final rota = ModalRoute.of(c);
+      if (rota != null && !rota.isCurrent) return false;
+      final nav = c.findAncestorStateOfType<NavigatorState>();
+      if (nav == null) return true;
+      c = nav.context;
+    }
+    return true;
+  }
+
+  /// Uma chave por cartão, para achar onde o cartaz deve pousar ao fechar.
+  final _chavesCartao = <int, GlobalKey>{};
+  GlobalKey _chaveDo(int id) => _chavesCartao.putIfAbsent(id, GlobalKey.new);
+
+  bool _cartazAberto = false;
+
+  /// Põe o cartão do comunicado na frente do carrossel e devolve onde ele
+  /// ficou na tela (nulo se o bloco saiu da tela).
+  Future<Rect?> _alvoDoCartao(int id) async {
+    // Procura pela id na lista em uso agora: a lista muda (lido, ciência)
+    // enquanto o cartaz está aberto.
+    final indice = (ComunicadosRepositorio.emUso.value ?? const []).indexWhere((x) => x.id == id);
+    if (indice >= 0 && _paginas.hasClients && _atual != indice) {
+      _paginas.jumpToPage(indice);
+      await WidgetsBinding.instance.endOfFrame;
+    }
+    final caixa = _chavesCartao[id]?.currentContext?.findRenderObject();
+    if (caixa is! RenderBox || !caixa.hasSize || !caixa.attached) return null;
+    return caixa.localToGlobal(Offset.zero) & caixa.size;
   }
 
   void _agendar(int total) {
     _timer?.cancel();
-    if (total < 2 || _segurando || MediaQuery.disableAnimationsOf(context)) return;
+    if (total < 2 || _segurando || _cartazAberto || MediaQuery.disableAnimationsOf(context)) return;
     _timer = Timer(_intervalo, () {
       if (!mounted || !_paginas.hasClients) return;
       final prox = (_atual + 1) % total;
@@ -150,6 +207,7 @@ class _BlocoComunicadosState extends State<BlocoComunicados> {
                         duration: const Duration(milliseconds: 280),
                         opacity: i == _atual ? 1 : .72,
                         child: CartaoComunicado(
+                          key: _chaveDo(lista[i].id),
                           comunicado: lista[i],
                           aoTocar: () {
                             registrar('comunicado.abrir', chave: _chave, dados: {'id': lista[i].id, 'de': 'inicio'});
@@ -407,39 +465,39 @@ class FundoComunicado extends StatelessWidget {
               ),
             ),
           ] else ...[
-          // radial-gradient(110% 85% at 100% 0%, cor .46, 0 58%)
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: const Alignment(1, -1),
-                  radius: 1.1,
-                  stops: const [0, .58],
-                  colors: [cor.withValues(alpha: .46), cor.withValues(alpha: 0)],
+            // radial-gradient(110% 85% at 100% 0%, cor .46, 0 58%)
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(1, -1),
+                    radius: 1.1,
+                    stops: const [0, .58],
+                    colors: [cor.withValues(alpha: .46), cor.withValues(alpha: 0)],
+                  ),
                 ),
               ),
             ),
-          ),
-          if (comIlustracao)
-            Positioned(
-                top: ilustracaoTopo,
-                right: ilustracaoDireita,
-                width: 100,
-                height: 120,
-                child: _Ilustracao(cor: cor, icone: icone)),
-          // Véu embaixo: linear-gradient(transparente 28%, preto .66).
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: [.28, 1],
-                  colors: [Color(0x00000000), Color(0xA8000000)],
+            if (comIlustracao)
+              Positioned(
+                  top: ilustracaoTopo,
+                  right: ilustracaoDireita,
+                  width: 100,
+                  height: 120,
+                  child: _Ilustracao(cor: cor, icone: icone)),
+            // Véu embaixo: linear-gradient(transparente 28%, preto .66).
+            const Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: [.28, 1],
+                    colors: [Color(0x00000000), Color(0xA8000000)],
+                  ),
                 ),
               ),
             ),
-          ),
           ],
           child,
         ]),
@@ -587,6 +645,217 @@ Future<void> abrirComunicado(BuildContext context, Comunicado c, ComunicadosRepo
       );
     },
   );
+}
+
+/// Executa o botão do comunicado: link https no navegador do aparelho, ou a
+/// função do app pela chave do menu (se ela estiver no menu deste militar).
+Future<void> executarAcaoComunicado(BuildContext context, Comunicado c, {required String de}) async {
+  final acao = c.acao;
+  if (acao == null) return;
+  registrar('comunicado.acao',
+      chave: _chave,
+      dados: {'id': c.id, 'tipo': acao.link != null ? 'link' : 'funcao', 'destino': acao.funcao ?? 'link', 'de': de});
+  final link = acao.link;
+  if (link != null) {
+    // Sem canLaunchUrl: no Android 11+ ele responde false para https sem
+    // <queries> de navegador no manifesto.
+    try {
+      final abriu = await launchUrl(link, mode: LaunchMode.externalApplication);
+      if (!abriu) throw Exception('launchUrl devolveu false');
+    } catch (e) {
+      final f = FalhaApp(
+        codigo: 'CM-LINK',
+        origem: OrigemFalha.aparelho,
+        titulo: 'O link não abriu',
+        texto: 'O aparelho não conseguiu abrir o navegador. Tente de novo ou abra o endereço pelo navegador.',
+        detalhe: '$e',
+      );
+      registrarErro(f, tela: _chave);
+      if (context.mounted) avisoErro(context, f.titulo, texto: '${f.texto} Código ${f.codigo}.');
+    }
+    return;
+  }
+  final gestor = context.read<Auth>().isSuperUser;
+  final item = itemPorChave(acao.funcao!, menu: menuEmUso(RepositorioConfig.atual, gestor: gestor));
+  final nav = Navigator.of(context, rootNavigator: true);
+  nav.pop();
+  if (item == null) {
+    final f = FalhaApp(
+      codigo: 'CM-FUNCAO',
+      origem: OrigemFalha.app,
+      titulo: 'Função indisponível',
+      texto: 'Este comunicado aponta para uma função que não está no seu menu. Procure por ela em Serviços.',
+      detalhe: acao.funcao,
+    );
+    registrarErro(f, tela: _chave);
+    if (nav.context.mounted) avisoErro(nav.context, f.titulo, texto: '${f.texto} Código ${f.codigo}.');
+    return;
+  }
+  if (nav.context.mounted) await abrirFuncao(nav.context, item, origem: 'comunicado');
+}
+
+/// Comunicado de abertura no modo cartaz (protótipo `.com-modal` com
+/// imagem): a imagem inteira, sem texto por cima, com o X. Tocar no cartaz
+/// executa o botão do comunicado; o X fecha voando até o cartão do
+/// carrossel (`alvo`), como o "fecharFlip" do protótipo.
+Future<void> abrirCartazAbertura(BuildContext context, Comunicado c, {required Future<Rect?> Function() alvo}) {
+  registrar('comunicado.ver', chave: _chave, dados: {'id': c.id, 'de': 'abertura', 'modo': 'cartaz'});
+  return Navigator.of(context, rootNavigator: true).push(PageRouteBuilder<void>(
+    opaque: false,
+    // O véu é desenhado pelo próprio cartaz, para sumir durante o voo.
+    transitionDuration: const Duration(milliseconds: 320),
+    // A volta é a própria animação do cartaz até o carrossel.
+    reverseTransitionDuration: Duration.zero,
+    pageBuilder: (_, __, ___) => _CartazAbertura(comunicado: c, alvo: alvo),
+    transitionsBuilder: (ctx, a, _, filho) {
+      if (MediaQuery.disableAnimationsOf(ctx)) return filho;
+      final curva = CurvedAnimation(parent: a, curve: Curves.easeOutCubic);
+      return FadeTransition(
+        opacity: curva,
+        child: ScaleTransition(scale: Tween<double>(begin: .92, end: 1).animate(curva), child: filho),
+      );
+    },
+  ));
+}
+
+class _CartazAbertura extends StatefulWidget {
+  const _CartazAbertura({required this.comunicado, required this.alvo});
+
+  final Comunicado comunicado;
+  final Future<Rect?> Function() alvo;
+
+  @override
+  State<_CartazAbertura> createState() => _CartazAberturaState();
+}
+
+class _CartazAberturaState extends State<_CartazAbertura> with SingleTickerProviderStateMixin {
+  late final _voo = AnimationController(vsync: this, duration: const Duration(milliseconds: 460));
+  final _chaveImagem = GlobalKey();
+  Rect? _de;
+  Rect? _para;
+  bool _fechando = false;
+
+  @override
+  void dispose() {
+    _voo.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fechar() async {
+    if (_fechando) return;
+    _fechando = true;
+    final nav = Navigator.of(context);
+    final caixa = _chaveImagem.currentContext?.findRenderObject();
+    final para = await widget.alvo();
+    if (!mounted) return;
+    if (!MediaQuery.disableAnimationsOf(context) && caixa is RenderBox && caixa.hasSize && para != null) {
+      setState(() {
+        _de = caixa.localToGlobal(Offset.zero) & caixa.size;
+        _para = para;
+      });
+      await _voo.forward();
+    }
+    if (mounted) nav.pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.comunicado;
+    final imagem = ClipRRect(
+      key: _chaveImagem,
+      borderRadius: BorderRadius.circular(16),
+      // A largura toda (até 520), na proporção da imagem: um cartaz, não um
+      // ícone no tamanho natural do arquivo.
+      child: Image.network(
+        c.imagem!,
+        width: double.infinity,
+        fit: BoxFit.contain,
+        loadingBuilder: (_, filho, p) => p == null
+            ? filho
+            : const SizedBox(width: 120, height: 120, child: Center(child: CircularProgressIndicator())),
+        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+      ),
+    );
+
+    final cartaz = Semantics(
+      image: true,
+      button: c.acao != null,
+      label: c.acao != null ? '${c.titulo}. ${c.acao!.texto}' : c.titulo,
+      child: GestureDetector(
+        onTap: c.acao == null ? null : () => executarAcaoComunicado(context, c, de: 'cartaz'),
+        child: imagem,
+      ),
+    );
+
+    final fechar = Semantics(
+      button: true,
+      label: 'Fechar comunicado',
+      excludeSemantics: true,
+      child: Material(
+        color: const Color(0x8C000000),
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: _fechar,
+          child: const SizedBox(
+              width: 44, height: 44, child: Icon(Icons.close_rounded, color: Colors.white, size: AppIconSize.md)),
+        ),
+      ),
+    );
+
+    // Durante o voo, o cartaz sai do lugar e encolhe até o retângulo do
+    // cartão do carrossel, sumindo no fim; o véu some junto.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (popped, _) {
+        if (!popped) _fechar();
+      },
+      child: AnimatedBuilder(
+        animation: _voo,
+        builder: (context, _) {
+          final de = _de, para = _para;
+          final veu = ModalBarrier(
+            dismissible: false,
+            color: const Color(0x99000000).withValues(alpha: .6 * (1 - _voo.value)),
+          );
+          if (de != null && para != null) {
+            final t = Curves.easeInOutCubic.transform(_voo.value);
+            final r = Rect.lerp(de, para, t)!;
+            return Stack(children: [
+              Positioned.fill(child: veu),
+              Positioned.fromRect(
+                rect: r,
+                child: Opacity(
+                  opacity: (1 - Curves.easeIn.transform(_voo.value) * .85).clamp(0, 1),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16 + 6 * t),
+                    child: Image.network(c.imagem!, fit: BoxFit.cover),
+                  ),
+                ),
+              ),
+            ]);
+          }
+          return Stack(children: [
+            Positioned.fill(child: veu),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: Stack(clipBehavior: Clip.none, children: [
+                      cartaz,
+                      Positioned(top: 8, right: 8, child: fechar),
+                    ]),
+                  ),
+                ),
+              ),
+            ),
+          ]);
+        },
+      ),
+    );
+  }
 }
 
 // ── Central (com.central) ────────────────────────────────────────────────────
@@ -983,9 +1252,18 @@ class _ComunicadoPageState extends State<ComunicadoPage> {
       ),
     );
 
+    final acao = c.acao;
     final corpo = <Widget>[
       for (final p in paragrafos)
         SelectableText(p, style: TextStyle(fontSize: 15.5, height: 1.5, color: theme.colorScheme.onSurface)),
+      // O botão do painel (link ou função). Com ciência pendente, "Estou
+      // ciente" é a ação principal e este fica contornado (DESIGN §5).
+      if (acao != null)
+        (c.cienciaPendente ? OutlinedButton.icon : ElevatedButton.icon)(
+          onPressed: () => executarAcaoComunicado(context, c, de: 'comunicado'),
+          icon: Icon(acao.link != null ? Icons.open_in_new_rounded : Icons.arrow_forward_rounded, size: AppIconSize.sm),
+          label: Text(acao.texto),
+        ),
       if (c.ciencia)
         if (c.ciente)
           Container(

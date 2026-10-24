@@ -59,6 +59,8 @@ class Comunicado {
     this.ciente = false,
     this.icone,
     this.imagem,
+    this.cartaz = false,
+    this.acao,
   });
 
   final int id;
@@ -85,6 +87,19 @@ class Comunicado {
   /// cartão e o topo do comunicado aberto mostram a foto com um véu escuro.
   final String? imagem;
 
+  /// Modo cartaz (painel: `imagem_modo = cartaz`): na abertura do app a
+  /// imagem aparece inteira, sem texto por cima, e ao fechar vai até o
+  /// cartão do carrossel. No carrossel e no comunicado aberto ela segue de
+  /// fundo, com o véu.
+  final bool cartaz;
+
+  /// O botão do comunicado (link https ou função do app), já conferido pela
+  /// API; nulo = sem botão.
+  final AcaoComunicado? acao;
+
+  /// Cartaz só com imagem: sem ela, o comunicado de abertura é o comum.
+  bool get mostraCartaz => cartaz && imagem != null;
+
   IconData get iconeAssunto => icone ?? categoria.icone;
 
   bool get cienciaPendente => ciencia && !ciente;
@@ -108,6 +123,8 @@ class Comunicado {
         ciente: ciente ?? this.ciente,
         icone: icone,
         imagem: imagem,
+        cartaz: cartaz,
+        acao: acao,
       );
 
   static Comunicado deJson(Map j, Map<String, CategoriaComunicado> categorias) {
@@ -133,7 +150,41 @@ class Comunicado {
       ciente: j['ciente'] == true,
       icone: iconePorNome('${j['icone']}'),
       imagem: '${j['imagem'] ?? ''}'.startsWith('https://') ? '${j['imagem']}' : null,
+      cartaz: j['imagem_modo'] == 'cartaz',
+      acao: AcaoComunicado.deJson(j['acao']),
     );
+  }
+}
+
+/// O botão de um comunicado: abre um link (só https) ou uma função do app
+/// pela chave do menu. A API já confere; o app confere de novo.
+class AcaoComunicado {
+  const AcaoComunicado.link(Uri this.link, {this.rotulo})
+      : funcao = null;
+  const AcaoComunicado.funcao(String this.funcao, {this.rotulo})
+      : link = null;
+
+  final Uri? link;
+  final String? funcao;
+  final String? rotulo;
+
+  /// Texto do botão: o do painel ou, sem ele, um padrão pelo tipo.
+  String get texto => rotulo ?? (link != null ? 'Abrir o link' : 'Abrir');
+
+  static AcaoComunicado? deJson(Object? j) {
+    if (j is! Map) return null;
+    final destino = '${j['destino'] ?? ''}'.trim();
+    final rotulo = '${j['rotulo'] ?? ''}'.trim();
+    final r = rotulo.isEmpty ? null : rotulo;
+    if (j['tipo'] == 'link') {
+      final uri = Uri.tryParse(destino);
+      if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) return null;
+      return AcaoComunicado.link(uri, rotulo: r);
+    }
+    if (j['tipo'] == 'funcao' && RegExp(r'^[a-z_]+(\.[a-z_]+)*$').hasMatch(destino)) {
+      return AcaoComunicado.funcao(destino, rotulo: r);
+    }
+    return null;
   }
 }
 

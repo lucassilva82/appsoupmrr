@@ -136,8 +136,16 @@ Object _comunicados(Map<String, String> c) {
       {'chave': 'institucional', 'nome': 'Institucional', 'cor': '#E0A100', 'icone': 'military_tech'},
     ],
     'itens': [
-      item(1, 'Eleições 2026: 2º turno', 'Escala reforçada. Apresentação nas OPMs às 5h do dia 25.', 'operacao',
-          'Comando-Geral', 'local_police', ciencia: true, pilula: {'icone': 'event', 'texto': '24 a 26/10'}),
+      // Comunicado de abertura no modo cartaz, com o botão de link (o
+      // cartaz é o brasão, imagem pública do servidor da API).
+      {
+        ...item(1, 'Eleições 2026: 2º turno', 'Escala reforçada. Apresentação nas OPMs às 5h do dia 25.', 'operacao',
+            'Comando-Geral', 'local_police', ciencia: true, pilula: {'icone': 'event', 'texto': '24 a 26/10'}),
+        'destaque_abertura': true,
+        'imagem_modo': 'cartaz',
+        'imagem': 'https://pmrr.online/flutter/sigrh/img/brasao-pmrr.png',
+        'acao': {'tipo': 'link', 'destino': 'https://pmrr.online/', 'rotulo': 'Acessar a operação'},
+      },
       item(6, 'Expediente reduzido na sexta', 'Das 7h30 às 12h em todas as OPMs.', 'administrativo',
           'Comando-Geral', 'event_busy', urgente: true, dias: 1, pilula: {'icone': 'schedule', 'texto': 'Sexta, 30/10'}),
       item(2, 'Vacinação no QCG', 'Gripe e hepatite B, das 8h às 16h. Leve o cartão de vacina.', 'saude',

@@ -101,6 +101,7 @@ class _AuthFormState extends State<AuthForm> with SingleTickerProviderStateMixin
     _formKey.currentState?.save();
 
     AuthException? falha;
+    entradaEmAndamento.value = true;
     try {
       // O e-mail não verificado NÃO bloqueia mais o acesso: muitos militares
       // ficavam presos na tela de confirmação sem conseguir entrar. A pendência
@@ -148,6 +149,7 @@ class _AuthFormState extends State<AuthForm> with SingleTickerProviderStateMixin
       );
       debugPrint('[LOGIN] ${falha.codigo} $error\n$stack');
     } finally {
+      entradaEmAndamento.value = false;
       if (mounted) {
         setState(() {
           _isLoading = false;

@@ -5,7 +5,6 @@ import 'package:projetonovo/core/design/arte_cartao.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:projetonovo/widgets/HomeContrachequeCard.dart';
 import 'package:projetonovo/widgets/HomePlanoFeriasCard.dart';
-import 'package:projetonovo/widgets/anuncio_institucional.dart';
 import 'package:projetonovo/widgets/card_tempo_servico.dart';
 import 'package:projetonovo/core/config/app_config.dart';
 import 'package:projetonovo/features/comunicados/comunicados_page.dart';
@@ -198,14 +197,8 @@ class _HomeBodyState extends State<HomeBody>
       RepositorioConfig.emUso.addListener(_carregarPreferencias);
     });
     _requestPermissions();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // O anúncio de abertura respeita o bloco desligado no painel.
-      // Com a central pela API, o destaque de abertura vem do BlocoComunicados.
-      final config = RepositorioConfig.atual;
-      if (mounted && config.blocoLigado('home.anuncio') && config.fonteComunicados != 'api') {
-        AnuncioInstitucional.mostrarSeAtivo(context);
-      }
-    });
+    // O comunicado de abertura (inclusive no modo cartaz) vem do
+    // BlocoComunicados; o anúncio do Firestore ficou só para as 2.1.x.
   }
 
   Future<void> _requestPermissions() async {

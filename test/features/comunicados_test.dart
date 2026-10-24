@@ -119,4 +119,68 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('Comunicados'), findsNothing);
   });
+
+  group('cartaz e botão do comunicado', () {
+    final cats = <String, CategoriaComunicado>{};
+    Map<String, Object?> base(Map<String, Object?> extra) => {
+          'id': 9, 'titulo': 'Eleições', 'texto': 'x', 'categoria': 'operacao', 'origem': 'CG',
+          'imagem': 'https://exemplo.test/cartaz.jpg', ...extra,
+        };
+
+    test('modo cartaz com link https e rótulo', () {
+      final c = Comunicado.deJson(base({
+        'imagem_modo': 'cartaz',
+        'acao': {'tipo': 'link', 'destino': 'https://operar.exemplo.test/app/', 'rotulo': 'Acessar a operação'},
+      }), cats);
+      expect(c.mostraCartaz, isTrue);
+      expect(c.acao!.link.toString(), 'https://operar.exemplo.test/app/');
+      expect(c.acao!.texto, 'Acessar a operação');
+    });
+
+    test('cartaz sem imagem é comunicado comum; fundo não é cartaz', () {
+      expect(Comunicado.deJson(base({'imagem_modo': 'cartaz', 'imagem': null}), cats).mostraCartaz, isFalse);
+      expect(Comunicado.deJson(base({'imagem_modo': 'fundo'}), cats).mostraCartaz, isFalse);
+      expect(Comunicado.deJson(base({}), cats).mostraCartaz, isFalse);
+    });
+
+    test('ação insegura ou malformada não vira botão', () {
+      for (final acao in [
+        {'tipo': 'link', 'destino': 'http://inseguro.test'},
+        {'tipo': 'link', 'destino': 'javascript:alert(1)'},
+        {'tipo': 'funcao', 'destino': '../x'},
+        {'tipo': 'nenhum', 'destino': 'https://a.test'},
+        'texto',
+      ]) {
+        expect(Comunicado.deJson(base({'acao': acao}), cats).acao, isNull, reason: '$acao');
+      }
+    });
+
+    test('função pela chave do menu, com texto padrão sem rótulo', () {
+      final c = Comunicado.deJson(base({'acao': {'tipo': 'funcao', 'destino': 'rh.contracheques'}}), cats);
+      expect(c.acao!.funcao, 'rh.contracheques');
+      expect(c.acao!.texto, 'Abrir');
+      expect(c.copiar(lido: true).acao!.funcao, 'rh.contracheques');
+    });
+  });
+
+  testWidgets('comunicado aberto mostra o botão do painel; com ciência pendente ele fica contornado', (t) async {
+    final cats = <String, CategoriaComunicado>{};
+    Comunicado com({required bool ciencia}) => Comunicado.deJson({
+          'id': 9, 'titulo': 'Eleições', 'texto': 'Texto.', 'categoria': 'operacao', 'origem': 'CG',
+          'ciencia': ciencia,
+          'acao': {'tipo': 'link', 'destino': 'https://operar.exemplo.test/app/', 'rotulo': 'Acessar a operação'},
+        }, cats);
+    for (final ciencia in [false, true]) {
+      await t.pumpWidget(ChangeNotifierProvider<Auth>.value(
+          value: Auth(),
+          child: MaterialApp(
+              home: ComunicadoPage(key: ValueKey(ciencia), comunicado: com(ciencia: ciencia), repositorio: _repo((_) => {'code': 1}), origem: 'teste'))));
+      await t.pump();
+      expect(find.text('Acessar a operação'), findsOneWidget);
+      final contornado = find.ancestor(
+          of: find.text('Acessar a operação'), matching: find.byWidgetPredicate((w) => w is OutlinedButton));
+      expect(contornado, ciencia ? findsOneWidget : findsNothing);
+      expect(find.text('Estou ciente'), ciencia ? findsOneWidget : findsNothing);
+    }
+  });
 }
