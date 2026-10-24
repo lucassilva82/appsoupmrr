@@ -67,7 +67,7 @@ class FaixaComando extends StatelessWidget {
   Widget _faixa(List<Map<String, dynamic>> lista) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: SizedBox(
-          height: 68,
+          height: _alturaFaixa,
           child: Row(children: [
             for (var i = 0; i < math.min(2, lista.length); i++) ...[
               if (i > 0) const SizedBox(width: 10),
@@ -101,7 +101,7 @@ class FaixaComando extends StatelessWidget {
         if (lista.isEmpty) {
           // Carregando: reserva o espaço para a tela não pular.
           return snap.connectionState == ConnectionState.waiting
-              ? const SizedBox(height: 64 + 16)
+              ? const SizedBox(height: _alturaFaixa)
               : const SizedBox.shrink();
         }
         return _faixa([
@@ -111,6 +111,10 @@ class FaixaComando extends StatelessWidget {
     );
   }
 }
+
+/// Faixa do Comando: o retrato (3:4) ocupa a altura toda, para o rosto
+/// aparecer de verdade (pedido do usuário, 24/10/2026).
+const double _alturaFaixa = 92;
 
 const _navy = Color(0xFF081A36);
 const _navyMeio = Color(0xFF16396B);
@@ -152,29 +156,37 @@ class _CartaoComandante extends StatelessWidget {
               ));
             },
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              padding: const EdgeInsets.fromLTRB(7, 7, 8, 7),
               child: Row(children: [
-                Hero(tag: tag, child: _Foto(url: _foto, tamanho: 40)),
-                const SizedBox(width: 8),
+                Hero(tag: tag, child: _Foto(url: _foto, largura: 58, altura: 78)),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Posto e nome numa linha que encolhe, sem reticências:
-                      // o nome cortado não identifica ninguém.
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(_nome,
-                            maxLines: 1,
-                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                      // Posto e nome em até duas linhas; se ainda não couber,
+                      // encolhe em vez de cortar (nome cortado não identifica
+                      // ninguém).
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 110),
+                            child: Text(_nome,
+                                maxLines: 2,
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 13, height: 1.2, fontWeight: FontWeight.w700)),
+                          ),
+                        ),
                       ),
+                      const SizedBox(height: 3),
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
                         child: Text(cargo,
-                            maxLines: 1, style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 11)),
+                            maxLines: 1, style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 11.5)),
                       ),
                     ],
                   ),
@@ -251,7 +263,7 @@ class _ComandanteAberto extends StatelessWidget {
                           icon: Icon(Icons.close_rounded, color: escuro ? Colors.white : theme.colorScheme.onSurface),
                         ),
                       ),
-                      Hero(tag: tag, child: _Foto(url: '${dados['img'] ?? ''}', tamanho: 112, ouro: ouro)),
+                      Hero(tag: tag, child: _Foto(url: '${dados['img'] ?? ''}', largura: 120, altura: 160, ouro: ouro)),
                       const SizedBox(height: 12),
                       Text(cargo.toUpperCase(),
                           textAlign: TextAlign.center,
@@ -423,31 +435,38 @@ class _EstrelasCoronel extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
+/// Retrato do comandante: retângulo 3:4 de cantos arredondados, com
+/// contorno dourado (no lugar do círculo, que cortava o rosto).
 class _Foto extends StatelessWidget {
-  const _Foto({required this.url, required this.tamanho, this.ouro = _dourado});
+  const _Foto({required this.url, required this.largura, required this.altura, this.ouro = _dourado});
 
   final String url;
-  final double tamanho;
+  final double largura;
+  final double altura;
   final Color ouro;
 
   @override
   Widget build(BuildContext context) {
     final ok = url.startsWith('https://') || url.startsWith('http://');
+    final grande = largura > 80;
+    final raio = grande ? 18.0 : 11.0;
+    final aro = grande ? 3.0 : 1.5;
     return Container(
-      width: tamanho,
-      height: tamanho,
-      padding: EdgeInsets.all(tamanho > 60 ? 3 : 1.5),
+      width: largura,
+      height: altura,
+      padding: EdgeInsets.all(aro),
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(raio),
         color: ouro,
-        // Halo de 6 do protótipo (`.cmd-foto`) só na foto grande.
-        boxShadow: tamanho > 60 ? [BoxShadow(color: ouro.withValues(alpha: .16), spreadRadius: 6)] : null,
+        // Halo do protótipo (`.cmd-foto`) só no retrato grande.
+        boxShadow: grande ? [BoxShadow(color: ouro.withValues(alpha: .16), spreadRadius: 6)] : null,
       ),
-      child: ClipOval(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(raio - aro),
         child: ok
             ? CachedImageFromPrefs(imageUrl: url)
             : Container(
-                color: _navyMeio, child: Icon(Icons.person_rounded, color: Colors.white70, size: tamanho * 0.6)),
+                color: _navyMeio, child: Icon(Icons.person_rounded, color: Colors.white70, size: largura * 0.6)),
       ),
     );
   }

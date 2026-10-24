@@ -423,6 +423,40 @@ class _PinturaAmbiente extends CustomPainter {
   bool shouldRepaint(_PinturaAmbiente antiga) => antiga.t != t;
 }
 
+/// A marca SOU PMRR da abertura, para outras telas (o login). [progresso]
+/// de 0 a 1 monta a moldura e assenta as letras, na mesma coreografia da
+/// abertura; [corrente] de 0 a 1 passa a luz uma vez pela moldura pronta.
+class MarcaSouPMRR extends StatelessWidget {
+  const MarcaSouPMRR({super.key, required this.largura, this.progresso = 1, this.corrente = 0});
+
+  final double largura;
+  final double progresso;
+  final double corrente;
+
+  double _trecho(double inicio, double fim, {Curve curva = Curves.linear}) =>
+      curva.transform(((progresso - inicio) / (fim - inicio)).clamp(0.0, 1.0));
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: largura,
+        height: largura * _compH / _compW,
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: SizedBox(
+            width: _compW,
+            height: _compH,
+            child: _Marca(
+              no: _trecho(0.0, 0.18, curva: Curves.easeOutBack),
+              trilha: _trecho(0.08, 0.62, curva: Curves.easeInOutCubic),
+              onda: _trecho(0.58, 1.0, curva: Curves.easeOutQuart),
+              corrente: corrente,
+              letra: _trecho,
+            ),
+          ),
+        ),
+      );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // A marca: moldura traçada + letras entrando
 // ─────────────────────────────────────────────────────────────────────────────

@@ -379,31 +379,32 @@ class _AbaIosState extends State<_AbaIos> with SingleTickerProviderStateMixin {
             width: w.largura,
             height: 52,
             padding: const EdgeInsets.symmetric(horizontal: 10),
+            // A largura usa a curva com quique (passa um pouco do fim e volta).
+            // Por isso os dois estados têm a mesma sombra e o mesmo degradê,
+            // só que transparentes na aba inativa: interpolar de "nada" com a
+            // curva passando do fim dava raio de desfoque negativo e a aba
+            // quebrava a cada troca.
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(26),
-              gradient: w.ativa
-                  ? LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: w.escuro
-                          ? [
-                              Colors.white.withValues(alpha: .17),
-                              Colors.white.withValues(alpha: .06),
-                            ]
-                          : [
-                              const Color(0xFF002154).withValues(alpha: .11),
-                              const Color(0xFF002154).withValues(alpha: .05),
-                            ],
-                    )
-                  : null,
-              boxShadow: w.ativa && w.escuro
-                  ? [
-                      BoxShadow(
-                          color: Colors.black.withValues(alpha: .18),
-                          offset: const Offset(0, 4),
-                          blurRadius: 12),
-                    ]
-                  : null,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: w.escuro
+                    ? [
+                        Colors.white.withValues(alpha: w.ativa ? .17 : 0),
+                        Colors.white.withValues(alpha: w.ativa ? .06 : 0),
+                      ]
+                    : [
+                        const Color(0xFF002154).withValues(alpha: w.ativa ? .11 : 0),
+                        const Color(0xFF002154).withValues(alpha: w.ativa ? .05 : 0),
+                      ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: w.ativa && w.escuro ? .18 : 0),
+                    offset: const Offset(0, 4),
+                    blurRadius: 12),
+              ],
             ),
             child: ClipRect(
               child: Row(

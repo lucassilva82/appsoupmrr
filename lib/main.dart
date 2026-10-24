@@ -232,9 +232,15 @@ Future<void> _prepararServicos() async {
     await iniciarLog(api: ApiClient(), matricula: () => Sessao.matriculaAtual);
   });
 
-  await passo('detector de captura', () async {
-    await ScreenshotRecordingDetector.initialize();
-  });
+  // Só no iOS: no Android a captura já é barrada pelo FLAG_SECURE nas telas
+  // protegidas, e o detector do pacote derrubava o app no Android 16 a cada
+  // captura de tela (consulta a content://media/external, que o sistema
+  // passou a recusar; o app fechava sozinho).
+  if (Platform.isIOS) {
+    await passo('detector de captura', () async {
+      await ScreenshotRecordingDetector.initialize();
+    });
+  }
 
   await passo('canal de notificação', () async {
     const canal = AndroidNotificationChannel(
@@ -562,7 +568,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     _setupFirebaseListeners();
     // _setupMethodChannel();
-    ScreenshotRecordingDetector.detectionStream.listen((DetectionEvent event) {
+    if (Platform.isIOS) ScreenshotRecordingDetector.detectionStream.listen((DetectionEvent event) {
       if (!mounted) return;
       // Fora de uma tela protegida não há o que esconder nem o que avisar.
       if (!ProtecaoTela.ativa.value) return;
