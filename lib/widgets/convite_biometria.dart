@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 
 import '../services/biometric_service.dart';
+import '../core/log/registro_log.dart';
 import '../utils/app_theme.dart';
+import 'aviso_rapido.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Convite para ativar a biometria
@@ -66,7 +68,14 @@ Future<bool> convidarParaBiometria(BuildContext context) async {
 
   // Pede a biometria na hora: ligar sem confirmar deixaria a pessoa trancada
   // fora na próxima entrada se o sensor não reconhecesse.
-  return servico.authenticateUser();
+  final r = await servico.confirmar(motivo: 'Confirme que é você para ligar o ${BiometricService.nome}');
+  final f = r.falha;
+  if (f != null) {
+    registrarErro(f, tela: 'login');
+    if (context.mounted) avisoErro(context, f.titulo, texto: '${f.texto} Código ${f.codigo}.');
+  }
+  registrar('conta.biometria_ligar', resultado: r.ok ? 'ok' : (f == null ? 'cancelado' : 'falhou'), codigo: f?.codigo);
+  return r.ok;
 }
 
 class _Convite extends StatefulWidget {

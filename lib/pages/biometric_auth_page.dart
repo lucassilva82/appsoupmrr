@@ -1,6 +1,11 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../widgets/erro_login.dart';
+import '../utils/auth_exception.dart';
+import '../widgets/aviso_rapido.dart';
+import '../core/erros/falha_app.dart';
+import '../services/biometric_service.dart';
 import 'package:projetonovo/widgets/abertura_soupmrr.dart';
 import 'package:projetonovo/core/design/fundo_circuito.dart';
 import 'package:projetonovo/core/log/registro_log.dart';
@@ -199,33 +204,63 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
   Future<void> _authenticateAndLogin() async {
     final auth = Provider.of<Auth>(context, listen: false);
     setState(() => isLoading = true);
-
     try {
-      final didAuthenticate = await widget.localAuth.authenticate(
-        localizedReason: 'Autentique-se para continuar',
-        options: const AuthenticationOptions(biometricOnly: true),
-      );
-
-      registrar('sessao.biometria',
-          resultado: didAuthenticate ? 'ok' : 'cancelado',
-          dados: {'metodo': Platform.isIOS ? 'face_id' : 'biometria'});
-      if (didAuthenticate) {
-        if (auth.matricula != null && auth.password != null) {
-          await auth.loginSemNotificar(auth.matricula!, auth.password!);
-          auth.finalizarLogin();
-          if (mounted) Navigator.of(context).pop();
-          // E-mail não verificado não interrompe mais o acesso: a pendência
-          // aparece em Perfil → Conta.
-          Navigator.of(context).pushReplacementNamed(AppRoutes.HOME_PAGE);
-        }
-      } else {
-        if (mounted)
+      // Sem a senha guardada no cofre não há como entrar pelo rosto: pede a
+      // senha uma vez (o cofre pode ter sido apagado, APRENDIZADOS §48).
+      if (auth.matricula == null || auth.password == null) {
+        const f = FalhaApp(
+          codigo: 'LG-BIO-SENHA',
+          origem: OrigemFalha.aparelho,
+          titulo: 'Entre com a senha uma vez',
+          texto: 'O aparelho não tem mais a sua senha guardada. Entre com a matrícula e a senha; '
+              'depois disso o Face ID volta a funcionar.',
+          acao: AcaoFalha.entrarDeNovo,
+        );
+        registrar('sessao.biometria', resultado: 'falhou', codigo: f.codigo);
+        registrarErro(f, tela: 'login.biometria');
+        if (mounted) {
+          avisoErro(context, f.titulo, texto: '${f.texto} Código ${f.codigo}.');
           Navigator.of(context).pushReplacementNamed(AppRoutes.AUTH_PAGE);
+        }
+        return;
       }
+
+      final r = await BiometricService(widget.localAuth).confirmar();
+      final f = r.falha;
+      registrar('sessao.biometria',
+          resultado: r.ok ? 'ok' : (f == null ? 'cancelado' : 'falhou'),
+          codigo: f?.codigo,
+          dados: {'metodo': Platform.isIOS ? 'face_id' : 'biometria'});
+      if (f != null) {
+        // Fica nesta tela: o militar lê o motivo e escolhe tentar de novo ou
+        // "Entrar com outros dados". Antes voltava ao login sem explicar.
+        registrarErro(f, tela: 'login.biometria');
+        if (mounted) avisoErro(context, f.titulo, texto: '${f.texto} Código ${f.codigo}.');
+        return;
+      }
+      if (!r.ok) return; // cancelou: continua aqui, com o botão para tentar de novo
+
+      await auth.loginSemNotificar(auth.matricula!, auth.password!);
+      auth.finalizarLogin();
+      if (mounted) Navigator.of(context).pop();
+      if (mounted) Navigator.of(context).pushReplacementNamed(AppRoutes.HOME_PAGE);
+    } on AuthException catch (e) {
+      // O rosto confere, mas o servidor recusou ou não respondeu: o mesmo
+      // cartão de erro do login, com o código LG-.
+      registrar('sessao.biometria', resultado: 'falhou', codigo: e.codigo);
+      if (mounted) await mostrarErroLogin(context, e);
     } catch (e) {
-      registrar('sessao.biometria', resultado: 'falhou', codigo: 'LG-BIO', dados: {'tipo': e.runtimeType.toString()});
-      if (mounted)
-        Navigator.of(context).pushReplacementNamed(AppRoutes.AUTH_PAGE);
+      final f = FalhaApp(
+        codigo: 'LG-BIO-X-${e.runtimeType}'.toUpperCase(),
+        origem: OrigemFalha.aparelho,
+        titulo: 'Não foi possível entrar com o ${BiometricService.nome}',
+        texto: 'Toque em "Entrar com outros dados" e use a matrícula e a senha. Se continuar, abra um chamado '
+            'técnico com o código.',
+        detalhe: '$e',
+      );
+      registrar('sessao.biometria', resultado: 'falhou', codigo: f.codigo);
+      registrarErro(f, tela: 'login.biometria');
+      if (mounted) avisoErro(context, f.titulo, texto: '${f.texto} Código ${f.codigo}.');
     } finally {
       if (mounted) setState(() => isLoading = false);
     }

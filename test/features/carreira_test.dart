@@ -18,6 +18,7 @@ CarreiraRepositorio _repo(Object resposta) => CarreiraRepositorio(
     );
 
 void main() {
+  setUp(() => CarreiraRepositorio.emUso.value = null);
   testWidgets('mostra os marcos por ano e a seção que falhou com código', (t) async {
     await t.pumpWidget(ChangeNotifierProvider(create: (_) => Auth(), child: MaterialApp(
       home: CarreiraPage(

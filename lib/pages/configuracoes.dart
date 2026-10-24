@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../services/biometric_service.dart';
 
 import '../core/config/app_config.dart';
 import '../core/design/arte_cartao.dart';
@@ -701,6 +702,30 @@ class NotificacoesPreferenciasPage extends StatelessWidget {
   }
 }
 
+/// Ligar pede o rosto (ou a digital) na hora: ligar sem confirmar deixava o
+/// militar sem conseguir entrar quando o aparelho não tinha Face ID
+/// cadastrado. Falha diz o motivo e o que fazer, com o código `LG-BIO-...`.
+Future<void> _alternarBiometria(BuildContext context, Auth auth, bool ligar) async {
+  if (!ligar) {
+    await auth.setBiometrics(false);
+    registrar('conta.biometria_ligar', resultado: 'ok', dados: {'ligada': false});
+    return;
+  }
+  final r = await BiometricService().confirmar(motivo: 'Confirme que é você para ligar o ${BiometricService.nome}');
+  if (r.ok) {
+    await auth.setBiometrics(true);
+    registrar('conta.biometria_ligar', resultado: 'ok', dados: {'ligada': true});
+    if (context.mounted) avisoSucesso(context, '${BiometricService.nome} ligado');
+    return;
+  }
+  final f = r.falha;
+  registrar('conta.biometria_ligar', resultado: f == null ? 'cancelado' : 'falhou', codigo: f?.codigo);
+  if (f != null) {
+    registrarErro(f, tela: 'seg.biometria');
+    if (context.mounted) avisoErro(context, f.titulo, texto: '${f.texto} Código ${f.codigo}.');
+  }
+}
+
 /// Face ID ou biometria: liga e desliga neste aparelho.
 class BiometriaPage extends StatelessWidget {
   const BiometriaPage({super.key});
@@ -717,8 +742,8 @@ class BiometriaPage extends StatelessWidget {
           titulo: 'Entrar com $nomeBiometria',
           texto: auth.useBiometrics ? 'Ligado neste aparelho' : 'Desligado neste aparelho',
           seta: false,
-          direita: Switch.adaptive(value: auth.useBiometrics, onChanged: auth.setBiometrics),
-          aoTocar: () => auth.setBiometrics(!auth.useBiometrics),
+          direita: Switch.adaptive(value: auth.useBiometrics, onChanged: (v) => _alternarBiometria(context, auth, v)),
+          aoTocar: () => _alternarBiometria(context, auth, !auth.useBiometrics),
         ),
       ]),
       Padding(

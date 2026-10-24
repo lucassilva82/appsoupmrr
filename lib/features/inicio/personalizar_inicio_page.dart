@@ -37,6 +37,7 @@ InicioPreferenciasRepositorio repositorioPreferencias(BuildContext context) {
 String nomeBloco(BlocoInicio b) => switch (b.chave) {
       'home.comandantes' => 'Comando',
       'home.anuncio' => 'Comunicados',
+      'home.carreira' => 'Sua carreira',
       'home.dicas' => 'Dica',
       'home.pendencias' => 'Suas pendências',
       'home.atalhos' => 'Atalhos',

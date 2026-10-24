@@ -26,6 +26,7 @@ import 'package:projetonovo/features/inicio/linha_atalhos.dart';
 import 'package:projetonovo/widgets/vidro.dart';
 import 'package:projetonovo/widgets/widget_dicas_app.dart';
 import '../widgets/faixa_sem_conexao.dart';
+import '../features/carreira/carreira_page.dart' show CardCarreira;
 
 /// Blocos da Início sem o painel (§4): a ordem padrão do app. Comando,
 /// Comunicados e Suas pendências são fixos (o militar não esconde).
@@ -38,6 +39,7 @@ List<BlocoInicio> blocosPadrao() => [
         'home.atalhos',
         'home.contracheque',
         'home.tempo_servico',
+        'home.carreira',
         'home.ferias',
       ].indexed)
         BlocoInicio(
@@ -227,6 +229,7 @@ class _HomeBodyState extends State<HomeBody>
         'home.contracheque' => const _Card(HomeContrachequeCard()),
         'home.tempo_servico' => _Card(CardTempoServico()),
         'home.ferias' => const _Card(HomePlanoFeriasCard()),
+        'home.carreira' => const _Card(CardCarreira()),
         _ when chave.startsWith('home.livre.') =>
           switch (RepositorioConfig.atual.bloco(chave)) {
             final b? when CardPainel.desenha(b) => CardPainel(bloco: b),

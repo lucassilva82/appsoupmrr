@@ -263,6 +263,13 @@ Object? _responder(Uri url, http.Request req) {
           {'data': '2019-03-11', 'tipo': 'promocao', 'titulo': 'Primeiro posto: Soldado (QPPM)', 'detalhe': 'BG 045/2019'},
           {'data': '2022-07-01', 'tipo': 'escolaridade', 'titulo': 'Escolaridade: superior completo'},
           {'data': '2023-03-11', 'tipo': 'comportamento', 'titulo': 'Comportamento ótimo'},
+          {'data': '2019-07-30', 'tipo': 'curso', 'titulo': 'Curso: Curso de Formação de Soldados (CFSD)',
+           'detalhe': 'Academia de Polícia Militar · 960 h · conceito ótimo'},
+          {'data': '2021-05-14', 'tipo': 'curso', 'titulo': 'Curso: Atendimento Pré-Hospitalar (APH)',
+           'detalhe': 'Corpo de Bombeiros Militar de Roraima · 40 h'},
+          {'data': '2022-11-20', 'tipo': 'elogio', 'titulo': 'Elogio individual', 'detalhe': 'BG 210/2022'},
+          {'data': '2024-04-21', 'tipo': 'medalha', 'titulo': 'Medalha Tiradentes', 'detalhe': 'BG 075/2024'},
+          {'data': '2025-09-07', 'tipo': 'mencao', 'titulo': 'Menção honrosa', 'detalhe': 'BG 170/2025'},
         ],
         'falhas': <String>[],
       };
@@ -319,6 +326,7 @@ Object? _responder(Uri url, http.Request req) {
            'acao': {'tipo': 'comunicado', 'rotulo': 'Saiba mais'}},
           {'chave': 'home.contracheque', 'ordem': 60},
           {'chave': 'home.tempo_servico', 'ordem': 70},
+          {'chave': 'home.carreira', 'ordem': 75},
           {'chave': 'home.ferias', 'ordem': 80},
         ],
         // Sem `menu`: vale o de reserva do app, igual à carga do banco.

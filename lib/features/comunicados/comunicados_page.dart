@@ -734,10 +734,12 @@ Future<void> executarAcaoComunicado(BuildContext context, Comunicado c, {require
       detalhe: acao.funcao,
     );
     registrarErro(f, tela: _chave);
-    if (nav.context.mounted) avisoErro(nav.context, f.titulo, texto: '${f.texto} Código ${f.codigo}.');
+    final aqui = nav.overlay?.context;
+    if (aqui != null && aqui.mounted) avisoErro(aqui, f.titulo, texto: '${f.texto} Código ${f.codigo}.');
     return;
   }
-  if (nav.context.mounted) await abrirFuncao(nav.context, item, origem: 'comunicado');
+  final aqui = nav.overlay?.context;
+  if (aqui != null && aqui.mounted) await abrirFuncao(aqui, item, origem: 'comunicado');
 }
 
 /// Comunicado de abertura no modo cartaz (protótipo `.com-modal` com
@@ -1200,7 +1202,10 @@ class _ComunicadoPageState extends State<ComunicadoPage> {
   void _verTodos() {
     final nav = Navigator.of(context);
     nav.pop();
-    if (widget.origem != 'central') abrirCentral(nav.context, origem: 'comunicado');
+    // O contexto do overlay fica abaixo do navegador; o do próprio navegador
+    // não acha onde empilhar a central (o botão não fazia nada).
+    final destino = nav.overlay?.context;
+    if (widget.origem != 'central' && destino != null) abrirCentral(destino, origem: 'comunicado');
   }
 
   @override
