@@ -231,33 +231,31 @@ depois: os 14 arquivos passaram de 200 (ou 500) a 403, e os endpoints públicos
 respondem igual, inclusive `certidoes/verificar.php` e `doc/conferir.php`.
 Endpoint novo que seja só de inclusão entra na lista do `.htaccess`.
 
-### 3. A virada para o esquema `soupm`
+### 3. A virada para o esquema `soupm` — feita em 24/10/2026
 
-Pedido do usuário (24/10/2026): "tudo deve ficar no nosso esquema do soupm e
-nao no public". Feito até agora, sem janela de indisponibilidade:
+Pedido do usuário: "tudo deve ficar no nosso esquema do soupm e nao no
+public". Feita sem tirar nada do ar:
 
-1. **Feito.** Backup dos 32 arquivos da API em
-   `/backups_api/virada-soupm-20261024/backup-virada-20261024.tgz`.
-2. **Feito.** `conexao.php` do servidor com `SET search_path TO soupm, public`
-   logo depois de criar o PDO (a cópia local, fora do git, também).
-3. **Feito.** Os 31 PHP da API sem o `public.` (commit 91284f9 da API),
-   publicados, conferidos com `cmp` e testados por HTTP.
-4. **Esperando o painel publicar** o código sem `public.` (commit df6a322c da
-   intranet). O painel em produção ainda cita `public.soupm_` e quebraria.
-5. Depois, num envio só pelo phpPgAdmin e numa transação só:
-   `2026-10-23_soupm_esquema_proprio.sql` (tabelas e sequências) +
-   `2026-10-24_soupm_funcoes_para_esquema.sql` (recria as funções em `soupm`
-   a partir da definição do banco, com as mesmas permissões e comentário,
-   refaz o gatilho do protocolo do feedback e apaga as velhas). Testado num
-   Postgres local: se algo falhar, nada muda.
-6. **Feito (24/10/2026, antes da virada).** A, C e D do painel conferidos no
-   banco por nome (63 tabelas `soupm_`, 1 Administrador) e
-   `2026-10-24_soupm_painel_permissoes.sql` rodado: 159 permissões, todas ok.
-   Depois da virada, rodar de novo só a última linha (a concessão) e conferir: `public` só com as duas `soupm_conceder_*`, o app
-   abrindo o menu, o painel entrando e o `error_log` de `sigrh/` limpo.
+- `conexao.php` da API com `SET search_path TO soupm, public`; os 31 PHP da
+  API sem o `public.` (commit 91284f9 da API); o painel publicado com o mesmo
+  ajuste (commit 2a2daa44 da intranet).
+- No banco, numa transação só: `2026-10-23_soupm_esquema_proprio.sql` +
+  `2026-10-24_soupm_funcoes_para_esquema.sql`. Ficaram em `soupm` as 63
+  tabelas, as 32 sequências e 21 funções (com as mesmas permissões); em
+  `public` só as duas `soupm_conceder_*`. O gatilho do protocolo do feedback
+  aponta para a função nova. A concessão ao usuário da API rodou de novo, sem
+  falha.
+- Conferido: `app_config` e `log.php` respondem, o `log.php` gravou um evento
+  de teste (`teste.virada_esquema`), `/painelsoupmrr/entrar` responde 200 e o
+  `error_log` de `sigrh/` não tem erro novo.
+- Backup dos PHP de antes: `/backups_api/virada-soupm-20261024/`.
 
-Para voltar: os mesmos laços com `SET SCHEMA public`; as funções, re-rodando o
-script com os esquemas trocados; os PHP, do backup.
+**Daqui em diante:** SQL novo cria em `soupm.` (os `.sql` versionados já
+foram reescritos, commit 0ab86b9 da API). Os SQL A, C e D do painel criam em
+`public.` e não rodam de novo como estão.
+
+**Falta:** entrar no painel com a matrícula do Administrador e abrir algumas
+telas (leitura e gravação).
 
 ### O que já está no ar
 

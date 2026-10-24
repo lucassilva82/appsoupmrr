@@ -1657,3 +1657,41 @@ contas em `qra.sec_users`. O banco está limpo; o problema é só o que a pessoa
 digita. Por isso a normalização tem de estar em **quem recebe o que foi
 digitado** (login do app, login do painel), não só em quem consulta — senão
 alguém é aceito pela senha e recusado pelo perfil, sem nada que possa fazer.
+
+## 47. Mudar tabelas de esquema sem tirar o app do ar
+
+**O pedido (24/10/2026).** Tudo do SouPM sai de `public` e vai para um
+esquema próprio, `soupm`, com o app da loja e o painel em uso.
+
+**Como foi feito sem janela.** Primeiro o código deixou de citar o esquema:
+o `conexao.php` ganhou `SET search_path TO soupm, public`, e o PHP passou a
+escrever `soupm_x` em vez de `public.soupm_x`. Com isso, o mesmo arquivo acha
+a tabela em `public` antes da mudança e em `soupm` depois. Só então o banco
+mudou, numa transação só.
+
+**O que o teste local pegou antes de produção** (Postgres local com tabela,
+função `SECURITY DEFINER`, função SQL chamando outra e gatilho):
+- `ALTER TABLE ... SET SCHEMA` leva junto índices, sequências de coluna e
+  permissões, mas **não reescreve o corpo das funções**. Uma função com
+  `search_path = public` ou que cita `public.soupm_x` quebra na hora. Por isso
+  as funções foram recriadas a partir de `pg_get_functiondef`, na mesma
+  transação que move as tabelas. Rodar os dois scripts separados deixaria o
+  app quebrado entre um e outro.
+- `pg_get_triggerdef` escreve o nome da função **sem o esquema** quando ela
+  está no `search_path`. Trocar texto por `public.` não acha nada; o gatilho
+  continua preso à função velha e o `DROP FUNCTION` falha (o que, sem
+  `CASCADE`, desfez tudo, como devia).
+- A função nova nasce com os privilégios padrão do esquema, que davam
+  `EXECUTE` a mais um usuário numa função `SECURITY DEFINER`. A permissão foi
+  copiada da função velha (`aclexplode(proacl)`), depois de tirar as padrão.
+- `to_regprocedure` não aceita nome de argumento; para achar a função nova,
+  comparar `proargtypes`.
+
+**Regras.**
+- Script de banco que mexe em várias peças roda numa transação e é testado
+  antes num Postgres local com as mesmas peças.
+- Conferência de "rodou ou não" se faz consultando o banco por nome, não
+  pela memória de uma sessão nem por página aberta: uma leitura antiga dizia
+  que três SQL não tinham rodado, e tinham.
+- Daqui em diante, SQL novo cria em `soupm.`.
+
