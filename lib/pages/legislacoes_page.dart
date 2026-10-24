@@ -5,6 +5,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:projetonovo/utils/api_services.dart';
 import 'dart:async';
+import '../core/erros/estado_erro.dart';
+import '../core/erros/falha_app.dart';
+import '../core/erros/falha_de.dart';
 import '../widgets/vidro.dart';
 import '../widgets/aviso_rapido.dart';
 // import 'package:pdf_text/pdf_text.dart'; // Removido por ora: usaremos ementa/palavras_chave para resumo
@@ -28,6 +31,7 @@ class _LegislacoesPageState extends State<LegislacoesPage> {
   bool _loading = false;
   bool _hasMore = true;
   String? _errorMsg;
+  FalhaApp? _falha;
 
   final List<Map<String, dynamic>> _items = [];
   Timer? _debounce;
@@ -93,6 +97,7 @@ class _LegislacoesPageState extends State<LegislacoesPage> {
     setState(() {
       _loading = true;
       _errorMsg = null;
+      _falha = null;
       if (reset) {
         _page = 1;
         _hasMore = true;
@@ -115,15 +120,8 @@ class _LegislacoesPageState extends State<LegislacoesPage> {
         _hasMore = _page < totalPages;
         _applyLocalSort();
       });
-    } on TimeoutException {
-      setState(() {
-        _errorMsg =
-            'Sistema de Legislações fora do ar. Tente novamente mais tarde';
-      });
     } catch (e) {
-      setState(() {
-        _errorMsg = 'Falha ao carregar: $e';
-      });
+      setState(() => _falha = falhaDe('NR', e, tela: 'legislacoes'));
     } finally {
       setState(() => _loading = false);
     }
@@ -394,6 +392,9 @@ class _LegislacoesPageState extends State<LegislacoesPage> {
 
   Widget _buildGallery(BuildContext context, ThemeData theme) {
     if (_items.isEmpty) {
+      if (_falha != null) {
+        return EstadoErro(falha: _falha!, aoTentar: _applyFilters, tela: 'legislacoes', chave: 'normas.legislacoes');
+      }
       if (_errorMsg != null) {
         return Center(
           child: Padding(

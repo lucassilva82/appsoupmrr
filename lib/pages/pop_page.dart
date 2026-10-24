@@ -6,6 +6,9 @@ import 'package:intl/intl.dart';
 import 'package:projetonovo/utils/api_services.dart';
 import 'package:projetonovo/widgets/custom_appbar.dart';
 import 'package:share_plus/share_plus.dart';
+import '../core/erros/estado_erro.dart';
+import '../core/erros/falha_app.dart';
+import '../core/erros/falha_de.dart';
 import '../widgets/vidro.dart';
 import '../widgets/aviso_rapido.dart';
 
@@ -27,6 +30,7 @@ class _PopPageState extends State<PopPage> {
   bool _loading = false;
   bool _hasMore = true;
   String? _errorMsg;
+  FalhaApp? _falha;
 
   final List<Map<String, dynamic>> _items = [];
   Timer? _debounce;
@@ -87,6 +91,7 @@ class _PopPageState extends State<PopPage> {
     setState(() {
       _loading = true;
       _errorMsg = null;
+      _falha = null;
       if (reset) {
         _page = 1;
         _hasMore = true;
@@ -110,15 +115,8 @@ class _PopPageState extends State<PopPage> {
         _hasMore = _page < totalPages;
         _applyLocalSort();
       });
-    } on TimeoutException {
-      setState(() {
-        _errorMsg =
-            'Sistema de Legislações fora do ar. Tente novamente mais tarde';
-      });
     } catch (e) {
-      setState(() {
-        _errorMsg = 'Falha ao carregar: $e';
-      });
+      setState(() => _falha = falhaDe('NR', e, tela: 'pops'));
     } finally {
       setState(() => _loading = false);
     }
@@ -387,6 +385,9 @@ class _PopPageState extends State<PopPage> {
 
   Widget _buildGallery(BuildContext context, ThemeData theme) {
     if (_items.isEmpty) {
+      if (_falha != null) {
+        return EstadoErro(falha: _falha!, aoTentar: _applyFilters, tela: 'pops', chave: 'normas.pops');
+      }
       if (_errorMsg != null) {
         return Center(
           child: Padding(

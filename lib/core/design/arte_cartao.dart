@@ -118,6 +118,20 @@ enum FormatoArte {
 /// Fundo com a arte no estilo cheio (protótipo `arteArea`). O conteúdo vai
 /// por cima, sobre um véu escuro que garante texto branco legível (4,5:1)
 /// nos dois temas.
+/// O card com arte é sempre escuro (não clareia no tema claro, SOUPM_2_2
+/// §4.6). Quem desenha sobre a arte lê as cores deste tema, senão o
+/// azul-marinho do tema claro some sobre o fundo escuro.
+ThemeData temaSobreArte(ThemeData atual) => atual.brightness == Brightness.dark
+    ? atual
+    : atual.copyWith(
+        brightness: Brightness.dark,
+        colorScheme: atual.colorScheme.copyWith(
+          brightness: Brightness.dark,
+          onSurface: Colors.white,
+          primary: const Color(0xFF42A5F5),
+        ),
+      );
+
 class FundoArte extends StatelessWidget {
   const FundoArte({
     super.key,
@@ -145,6 +159,9 @@ class FundoArte extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final conteudo =
+        tema.brightness == Brightness.dark ? child : Theme(data: temaSobreArte(tema), child: child);
     final area = formato == FormatoArte.area;
     final base = area ? 84.0 : 120.0;
     final k = (tamanhoIcone ?? base) / base;
@@ -192,7 +209,7 @@ class FundoArte extends StatelessWidget {
                       ),
                     ),
                   ),
-                  child,
+                  conteudo,
                 ]
               : [
                   // Brilho: radial-gradient(120% 90% at 100% 0%, destaque .45, 0 55%).
@@ -250,7 +267,7 @@ class FundoArte extends StatelessWidget {
                       ),
                     ),
                   ),
-                  child,
+                  conteudo,
                 ],
         ),
       ),
@@ -411,18 +428,7 @@ class CartaoArte extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final atual = Theme.of(context);
-    final escuro = temaEscuro ??
-        (atual.brightness == Brightness.dark
-            ? atual
-            : atual.copyWith(
-                brightness: Brightness.dark,
-                colorScheme: atual.colorScheme.copyWith(
-                  brightness: Brightness.dark,
-                  onSurface: Colors.white,
-                  primary: const Color(0xFF42A5F5),
-                ),
-              ));
+    final escuro = temaEscuro ?? temaSobreArte(Theme.of(context));
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(raio),

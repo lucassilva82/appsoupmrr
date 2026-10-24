@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:projetonovo/core/design/arte_cartao.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:projetonovo/widgets/HomeContrachequeCard.dart';
 import 'package:projetonovo/widgets/HomePlanoFeriasCard.dart';
@@ -54,10 +55,12 @@ class _Card extends StatelessWidget {
   const _Card(this.child);
   final Widget child;
 
+  // Os cards de dado são cards com arte, escuros nos dois temas: as cores
+  // que eles tiram do tema precisam ser as de sobre a arte.
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: child,
+        child: Theme(data: temaSobreArte(Theme.of(context)), child: child),
       );
 }
 

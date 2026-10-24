@@ -93,6 +93,7 @@ class _ValidarDocumentoPageState extends State<ValidarDocumentoPage> {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
             CartaoVidro(
+              padding: const EdgeInsets.all(14),
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Icon(Icons.qr_code_2_rounded, size: AppIconSize.xl, color: theme.colorScheme.primary),
                 const SizedBox(width: 12),

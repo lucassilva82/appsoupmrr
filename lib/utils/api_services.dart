@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
+import '../core/erros/falha_app.dart';
+
 class ApiServices {
   static const String baseUrl = 'https://pmrr.online/flutter/sigrh';
   // API de Legislações (externa)
@@ -307,7 +309,7 @@ class ApiServices {
       }).timeout(_limiteLegislacoes);
       debugPrint('[LEGIS] status: ${res.statusCode}');
       if (res.statusCode != 200) {
-        throw Exception('HTTP ${res.statusCode}');
+        throw FalhaApp.httpStatus('NR', res.statusCode);
       }
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       return data;
@@ -328,7 +330,7 @@ class ApiServices {
         'Accept': 'application/json',
       }).timeout(_limiteLegislacoes);
       if (res.statusCode != 200) {
-        throw Exception('HTTP ${res.statusCode}');
+        throw FalhaApp.httpStatus('NR', res.statusCode);
       }
       return jsonDecode(res.body) as Map<String, dynamic>;
     } catch (e) {
