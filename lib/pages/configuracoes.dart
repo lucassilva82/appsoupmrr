@@ -715,7 +715,7 @@ Future<void> _alternarBiometria(BuildContext context, Auth auth, bool ligar) asy
   if (r.ok) {
     await auth.setBiometrics(true);
     registrar('conta.biometria_ligar', resultado: 'ok', dados: {'ligada': true});
-    if (context.mounted) avisoSucesso(context, '${BiometricService.nome} ligado');
+    if (context.mounted) avisoSucesso(context, Platform.isIOS ? 'Face ID ligado' : 'Biometria ligada');
     return;
   }
   final f = r.falha;

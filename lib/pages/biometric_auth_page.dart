@@ -143,6 +143,11 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
   bool downloadError = false;
   File? localFile;
 
+  /// Rosto ou digital, pelo que o aparelho tem: no iPhone quase sempre Face
+  /// ID; no Android, digital, a menos que o sistema diga que é rosto. Antes a
+  /// tela dizia "olhe para a câmera" também num Android só com digital.
+  bool _temRosto = Platform.isIOS;
+
   // Animação de pulso no avatar (igual ao Stories do Instagram)
   late final AnimationController _pulseCtrl = AnimationController(
     vsync: this,
@@ -170,6 +175,11 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
     super.initState();
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _checkLocalOrDownload());
+    BiometricService(widget.localAuth).getAvailableBiometrics().then((tipos) {
+      final rosto = tipos.contains(BiometricType.face) ||
+          (Platform.isIOS && !tipos.contains(BiometricType.fingerprint));
+      if (mounted && rosto != _temRosto) setState(() => _temRosto = rosto);
+    });
   }
 
   @override
@@ -551,15 +561,17 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
                                             .withOpacity(isDark ? 0.18 : 0.09),
                                         shape: BoxShape.circle,
                                       ),
-                                      child: const Icon(
-                                        Icons.face_retouching_natural_rounded,
+                                      child: Icon(
+                                        _temRosto ? Icons.face_retouching_natural_rounded : Icons.fingerprint_rounded,
                                         size: 36,
                                         color: AppColors.blue,
                                       ),
                                     ),
                                     const SizedBox(height: 16),
                                     Text(
-                                      'Autenticação Facial',
+                                      _temRosto
+                                          ? (Platform.isIOS ? 'Entrar com Face ID' : 'Reconhecimento facial')
+                                          : (Platform.isIOS ? 'Entrar com Touch ID' : 'Entrar com a digital'),
                                       style: TextStyle(
                                         fontSize: 17,
                                         fontWeight: FontWeight.w700,
@@ -569,7 +581,9 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Toque em "Acessar" e olhe\npara a câmera do seu dispositivo.',
+                                      _temRosto
+                                          ? 'Toque em "Acessar" e olhe\npara a tela do aparelho.'
+                                          : 'Toque em "Acessar" e encoste o dedo\nno leitor de digital.',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: 13.5,
@@ -587,7 +601,7 @@ class __BiometricBottomSheetState extends State<_BiometricBottomSheet>
                         _primaryButton(
                           onTap: isLoading ? null : _authenticateAndLogin,
                           label: 'Acessar SouPMRR',
-                          icon: Icons.face_retouching_natural_rounded,
+                          icon: _temRosto ? Icons.face_retouching_natural_rounded : Icons.fingerprint_rounded,
                         ),
 
                         const SizedBox(height: 14),

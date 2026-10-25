@@ -220,8 +220,10 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       _saindo = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+        // Com Face ID/biometria ligado, a próxima entrada é por ela (a mesma
+        // tela que aparece ao abrir o app); sem, o login com senha.
         Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
-          AppRoutes.AUTH_PAGE,
+          auth.useBiometrics ? AppRoutes.BIOMETRIC_AUTH_PAGE : AppRoutes.AUTH_PAGE,
           (_) => false,
         );
       });
