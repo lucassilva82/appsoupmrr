@@ -26,6 +26,10 @@ import '../widgets/versao_app.dart';
 class AuthPage extends StatefulWidget {
   const AuthPage({Key? key}) : super(key: key);
 
+  /// Só para testes: força o desenho do Android (true) ou do iOS (false).
+  @visibleForTesting
+  static bool? androidParaTeste;
+
   @override
   State<AuthPage> createState() => _AuthPageState();
 }
@@ -98,7 +102,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
         resizeToAvoidBottomInset: false,
         body: Stack(children: [
           const Positioned.fill(child: FundoCircuito()),
-          Platform.isAndroid ? _android(context, teclado, aberto) : _ios(context, teclado, aberto),
+          (AuthPage.androidParaTeste ?? Platform.isAndroid) ? _android(context, teclado, aberto) : _ios(context, teclado, aberto),
         ]),
       ),
     );
@@ -121,11 +125,14 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
         ),
       );
 
+  // Fechado, o lema vira uma caixa vazia: no Android ele fica dentro do
+  // FittedBox da marca, e uma largura infinita ali quebrava o layout ao
+  // abrir o teclado (33 AP-FATAL no painel em 25/10/2026).
   Widget _lema(bool aberto) => AnimatedSize(
         duration: _tempoTeclado,
         curve: _curvaTeclado,
         child: aberto
-            ? const SizedBox(width: double.infinity)
+            ? const SizedBox.shrink()
             : _surge(
                 0.45,
                 0.8,
