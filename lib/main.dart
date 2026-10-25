@@ -764,7 +764,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // O militar já respondeu à pergunta do sistema (recusou): perguntar de
     // novo com a janela do app logo depois era repetido. Dá para ligar em
     // Perfil › Notificações.
-    if (settings.authorizationStatus == AuthorizationStatus.denied) return;
+    // No Android, "denied" é também o estado antes de perguntar: lá vale só
+    // a resposta guardada logo abaixo.
+    if (Platform.isIOS && settings.authorizationStatus == AuthorizationStatus.denied) return;
 
     // Quem já respondeu "Cancelar" não é perguntado de novo a cada volta ao
     // app (antes o pedido voltava sempre que o app saía do fundo); dá para
@@ -811,9 +813,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
       _pedindoPermissao = false;
       if (querAtivar) {
-        if (Platform.isIOS) {
-          await FirebaseMessaging.instance.requestPermission();
-        } else {
+        // Agora sim o pedido do sistema (no Android 13+ também). Se o sistema
+        // não perguntar mais (recusado antes), leva aos ajustes do app.
+        final r = await FirebaseMessaging.instance.requestPermission();
+        if (r.authorizationStatus == AuthorizationStatus.denied) {
           AppSettings.openAppSettings();
         }
         return;

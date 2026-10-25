@@ -18,20 +18,13 @@ import UserNotifications
         UNUserNotificationCenter.current().delegate = self
         Messaging.messaging().delegate = self
         
-        // Solicita permissão e SÓ registra para APNs após a resposta,
-        // na main thread (padrão recomendado pela Apple).
-        let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
-        UNUserNotificationCenter.current().requestAuthorization(options: authOptions) { (granted, error) in
-            NSLog("===== iOS Permission granted: \(granted) =====")
-            if let error = error {
-                NSLog("===== iOS Permission ERROR: \(error.localizedDescription) =====")
-            }
-            DispatchQueue.main.async {
-                application.registerForRemoteNotifications()
-                NSLog("===== iOS registerForRemoteNotifications() chamado =====")
-            }
-        }
-        
+        // Não pede permissão aqui: o sistema perguntava na abertura e, logo
+        // depois, o app mostrava a janela dele (duas perguntas seguidas). Quem
+        // pede é o Dart (_checkNotificationPermission): primeiro explica, e só
+        // no "Ativar" chama o pedido do sistema. Registrar no APNs não depende
+        // da permissão (o token serve também para push silencioso).
+        application.registerForRemoteNotifications()
+
         NSLog("===== iOS AppDelegate configurado (swizzling ON) =====")
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
