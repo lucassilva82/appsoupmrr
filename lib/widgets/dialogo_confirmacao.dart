@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../core/design/fundo_circuito.dart';
+
 import '../core/design/arte_cartao.dart';
 import '../utils/app_theme.dart';
 
@@ -54,6 +56,14 @@ Future<bool> dialogoConfirmacao(
 /// Abre a caixa de diálogo do padrão 2.2. [corpo] vem abaixo da mensagem
 /// (campo, lista); [acoes] são os botões (um ocupa a largura toda; dois ou
 /// mais ficam lado a lado). Use [BotaoDialogo] para eles.
+/// Sobre as telas de entrada (fundo de circuito escuro), o diálogo usa o
+/// tema escuro, mesmo com o aparelho no claro.
+Widget _naEntrada(Widget filho) => ValueListenableBuilder<int>(
+      valueListenable: FundoCircuito.abertos,
+      child: filho,
+      builder: (_, n, f) => n > 0 ? Theme(data: FundoCircuito.temaEscuro, child: f!) : f!,
+    );
+
 Future<T?> mostrarDialogoArte<T>(
   BuildContext context, {
   Arte? arte,
@@ -84,7 +94,7 @@ Future<T?> mostrarDialogoArte<T>(
           child: ScaleTransition(
             scale: Tween<double>(begin: reduzir ? 1.0 : 0.88, end: 1.0)
                 .animate(curva),
-            child: CaixaDialogo(
+            child: _naEntrada(CaixaDialogo(
               arte: arte,
               icone: icone,
               cor: cor,
@@ -92,7 +102,7 @@ Future<T?> mostrarDialogoArte<T>(
               mensagem: mensagem,
               corpo: corpo == null ? null : Builder(builder: corpo),
               acoes: acoes == null ? const [] : acoes(ctx),
-            ),
+            )),
           ),
         ),
       );

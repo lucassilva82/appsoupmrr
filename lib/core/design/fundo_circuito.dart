@@ -10,6 +10,17 @@ import '../../utils/app_theme.dart';
 /// circuito que se desenham ao abrir e pulsos de luz correndo por elas.
 /// Com "Reduzir movimento", aparece pronto e parado.
 class FundoCircuito extends StatefulWidget {
+  /// Quantas telas de entrada (login, Face ID, primeiro acesso, recuperar
+  /// senha) estão montadas. Com alguma, diálogos e avisos curtos abrem no
+  /// tema escuro, sobre o fundo de circuito, mesmo com o aparelho no claro.
+  /// (Notifica: um diálogo aberto antes da tela montar troca de tema na hora.)
+  static final abertos = ValueNotifier<int>(0);
+  static bool get ativo => abertos.value > 0;
+
+  /// O tema escuro das telas de entrada.
+  static ThemeData get temaEscuro => _escuro ??= AppTheme.build(isDark: true, isSuperUser: false);
+  static ThemeData? _escuro;
+
   const FundoCircuito({super.key});
 
   static const base = _Fundo.base;
@@ -19,6 +30,19 @@ class FundoCircuito extends StatefulWidget {
 }
 
 class _FundoCircuitoState extends State<FundoCircuito> with TickerProviderStateMixin {
+  bool _contado = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Depois do quadro: avisar durante o build marcaria outras telas no meio dele.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _contado = true;
+      FundoCircuito.abertos.value++;
+    });
+  }
+
   late final AnimationController _entrada =
       AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..forward();
   late final AnimationController _pulso = AnimationController(vsync: this, duration: const Duration(seconds: 7));
@@ -36,6 +60,8 @@ class _FundoCircuitoState extends State<FundoCircuito> with TickerProviderStateM
 
   @override
   void dispose() {
+    // Sem esperar o quadro: a tela já saiu (e o tema escuro deve sair junto).
+    if (_contado) FundoCircuito.abertos.value--;
     _entrada.dispose();
     _pulso.dispose();
     super.dispose();
@@ -59,8 +85,6 @@ class TelaEntrada extends StatelessWidget {
   const TelaEntrada({super.key, required this.child});
   final Widget child;
 
-  static ThemeData? _escuro;
-
   @override
   Widget build(BuildContext context) => AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.light.copyWith(
@@ -72,7 +96,7 @@ class TelaEntrada extends StatelessWidget {
           color: FundoCircuito.base,
           child: Stack(children: [
             const Positioned.fill(child: FundoCircuito()),
-            Theme(data: _escuro ??= AppTheme.build(isDark: true, isSuperUser: false), child: child),
+            Theme(data: FundoCircuito.temaEscuro, child: child),
           ]),
         ),
       );

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../core/design/fundo_circuito.dart';
 import 'package:flutter/services.dart';
 
 import '../utils/app_theme.dart';
@@ -82,7 +84,7 @@ void _porTipo(
     titulo: titulo,
     texto: texto,
     icone: _iconeDoAviso(tipo),
-    cor: corDoAviso(Theme.of(context), tipo),
+    cor: corDoAviso(FundoCircuito.ativo ? FundoCircuito.temaEscuro : Theme.of(context), tipo),
     // Erro fica um pouco mais na tela: costuma ter algo para ler.
     duracao: Duration(seconds: tipo == TipoAviso.erro ? 4 : 3),
   );
@@ -98,7 +100,8 @@ void avisoRapido(
 }) {
   _mostrar(
     ScaffoldMessenger.of(context),
-    Theme.of(context),
+    // Sobre as telas de entrada, o aviso segue o fundo escuro delas.
+    FundoCircuito.ativo ? FundoCircuito.temaEscuro : Theme.of(context),
     titulo: titulo,
     texto: texto,
     icone: icone,

@@ -431,9 +431,9 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
       appBar: AppBar(
         elevation: 0,
         flexibleSpace: const FundoBarraVidro(),
-        title: const Text('Declarações de Bens',
-            style: TextStyle(color: Colors.white)),
-        leading: const BackButton(color: Colors.white),
+        title: Text('Declarações de Bens',
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        leading: BackButton(color: Theme.of(context).colorScheme.onSurface),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),

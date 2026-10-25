@@ -28,6 +28,11 @@ import '../../core/design/esqueleto.dart';
 
 const _chave = 'com.central';
 
+/// Verdadeiro enquanto o comunicado de abertura (cartaz ou comum) está para
+/// abrir ou aberto: outras janelas da abertura (pedido de notificação)
+/// esperam, para não se empilharem.
+final aberturaEmAndamento = ValueNotifier<bool>(false);
+
 ComunicadosRepositorio repositorioComunicados(BuildContext context) {
   final auth = context.read<Auth>();
   return ComunicadosRepositorio(
@@ -84,6 +89,15 @@ class _BlocoComunicadosState extends State<BlocoComunicados> {
   Future<void> _abrirDestaque(List<Comunicado> lista) async {
     final c = lista.where((c) => c.destaqueAbertura).firstOrNull;
     if (c == null) return;
+    aberturaEmAndamento.value = true;
+    try {
+      await _abrirDestaqueDe(c, lista);
+    } finally {
+      aberturaEmAndamento.value = false;
+    }
+  }
+
+  Future<void> _abrirDestaqueDe(Comunicado c, List<Comunicado> lista) async {
     // Logo depois do login pode haver outra janela por cima (convite do
     // Face ID, "salvar senha"): espera a Início ficar livre, até 1 min,
     // para o comunicado não abrir por baixo dela nem ser fechado por ela.

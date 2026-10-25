@@ -487,9 +487,9 @@ class _EscalasPageState extends State<EscalasPage>
         ? TabBar(
             controller: _tabController,
             // Sobre a barra de vidro (sempre escura): texto branco.
-            indicatorColor: Colors.white,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
+            indicatorColor: Theme.of(context).colorScheme.onSurface,
+            labelColor: Theme.of(context).colorScheme.onSurface,
+            unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: .65),
             dividerColor: Colors.transparent,
             labelStyle:
                 const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
@@ -501,7 +501,7 @@ class _EscalasPageState extends State<EscalasPage>
         : null;
 
     return AppBar(
-      iconTheme: const IconThemeData(color: Colors.white),
+      iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
       automaticallyImplyLeading: !_needsPasswordMigration,
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -510,19 +510,19 @@ class _EscalasPageState extends State<EscalasPage>
           ? [
               IconButton(
                 tooltip: 'Vagas SVI',
-                icon: const Icon(Icons.more_time_rounded, color: Colors.white),
+                icon: Icon(Icons.more_time_rounded, color: Theme.of(context).colorScheme.onSurface),
                 onPressed: () =>
                     Navigator.of(context).pushNamed(AppRoutes.SVI_ESCALAS),
               ),
             ]
           : null,
       flexibleSpace: const FundoBarraVidro(),
-      title: const Text(
+      title: Text(
         'Escalas de Serviço',
         style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onSurface,
           letterSpacing: 1.2,
         ),
       ),

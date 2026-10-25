@@ -16,6 +16,7 @@ import 'package:projetonovo/features/avisos/avisos_api.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:projetonovo/core/navegacao/titulos_rota.dart';
 import 'widgets/vidro.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -81,6 +82,8 @@ import 'models/auth_model.dart';
 import 'widgets/aviso_rapido.dart';
 import 'package:http/http.dart' as http;
 import 'widgets/dialogo_confirmacao.dart';
+import 'widgets/convite_biometria.dart' show entradaEmAndamento;
+import 'features/comunicados/comunicados_page.dart' show aberturaEmAndamento;
 import 'vitrine/vitrine.dart';
 import 'core/erros/captura_global.dart';
 import 'core/log/iniciar_log.dart';
@@ -758,9 +761,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       return;
     }
 
+    // Quem já respondeu "Cancelar" não é perguntado de novo a cada volta ao
+    // app (antes o pedido voltava sempre que o app saía do fundo); dá para
+    // ligar em Perfil › Notificações.
+    // A resposta fica numa chave própria: o login regrava o userData inteiro
+    // e apagava a escolha (o pedido voltava logo depois de entrar).
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_chaveNotificacaoRecusada) == true) return;
+
     // Se não estiver autorizado, exibe o diálogo
     _showPermissionDialog();
   }
+
+  bool _pedindoPermissao = false;
+  static const _chaveNotificacaoRecusada = 'notificacao_pedido_recusado';
 
   void _showPermissionDialog() {
     // Usa a chave do Navigator para obter um contexto apropriado
@@ -769,7 +783,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     // iOS e Android caíam em dois blocos idênticos de alerta; o que muda é
     // só o que acontece ao confirmar.
+    if (_pedindoPermissao) return;
+    _pedindoPermissao = true;
     Future.delayed(Duration.zero, () async {
+      // Não abre por cima do login em andamento, do convite do Face ID nem do
+      // comunicado de abertura: espera até 1 min a tela ficar livre.
+      for (var i = 0; i < 200 && (entradaEmAndamento.value || aberturaEmAndamento.value); i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      }
+      if (!dialogContext.mounted) {
+        _pedindoPermissao = false;
+        return;
+      }
       final querAtivar = await dialogoConfirmacao(
         dialogContext,
         titulo: 'Permissão para Notificações',
@@ -779,6 +804,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         icone: Icons.notifications_active_rounded,
       );
 
+      _pedindoPermissao = false;
       if (querAtivar) {
         if (Platform.isIOS) {
           await FirebaseMessaging.instance.requestPermission();
@@ -791,6 +817,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       var userData = await Store.getMap('userData');
       userData['notificationsChoice'] = 'denied';
       await Store.saveMap('userData', userData);
+      try {
+        (await SharedPreferences.getInstance()).setBool(_chaveNotificacaoRecusada, true);
+      } catch (_) {/* sem preferências, pergunta de novo na próxima vez */}
       if (!dialogContext.mounted) return;
       avisoInfo(dialogContext, 'Notificações desativadas',
           texto: 'Você pode ativar nas configurações.');

@@ -487,10 +487,10 @@ class _DeclaracaoBensPdfPageState extends State<DeclaracaoBensPdfPage> {
     return FundoSuave(
         child: Scaffold(
       appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
+        title: Text(
           'Declaração de Bens (PDF)',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w700),
         ),
         flexibleSpace: const FundoBarraVidro(),
       ),
@@ -579,10 +579,10 @@ class PdfViewerPage extends StatelessWidget {
     return FundoSuave(
         child: Scaffold(
       appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
         title: Text(
           title,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         ),
         flexibleSpace: const FundoBarraVidro(),
       ),

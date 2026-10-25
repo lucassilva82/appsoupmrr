@@ -1017,12 +1017,12 @@ class _PageContrachequeState extends State<PageContracheque> {
               backgroundColor: Colors.transparent,
               elevation: 0,
               centerTitle: true,
-              iconTheme: const IconThemeData(color: Colors.white),
+              iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
               flexibleSpace: const FundoBarraVidro(),
-              title: const Text(
+              title: Text(
                 'Contracheque',
                 style: TextStyle(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.4),
@@ -1109,15 +1109,40 @@ class _PageContrachequeState extends State<PageContracheque> {
   String get _oculto => '••••••';
 
   // ── Competência ───────────────────────────────────────────────────────
-  // Topo da tela no padrão 2.2: a arte do contracheque com o mês e o ano.
+  // O mês como título simples, sem cartão: a arte cheia fica só no cartão do
+  // valor líquido, que é o destaque da tela. Com dois cartões iguais em
+  // sequência, nenhum se destacava.
   Widget _tituloCompetencia(ThemeData theme) {
     final mes = widget.mesSelecionado.mesExtenso;
-    return TopoArte(
-      arte: Arte.de('cc'),
-      icone: Icons.receipt_long_outlined,
-      titulo: '$mes ${widget.mesSelecionado.ano}',
-      subtitulo: 'Demonstrativo de pagamento',
-      margem: EdgeInsets.zero,
+    final destaque = theme.brightness == Brightness.dark ? Arte.de('cc').destaque : Arte.de('cc').meio;
+    return Semantics(
+      header: true,
+      label: 'Contracheque de $mes de ${widget.mesSelecionado.ano}',
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(2, 2, 2, 0),
+        child: Row(children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: destaque.withValues(alpha: .14),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: destaque.withValues(alpha: .35)),
+            ),
+            child: Icon(Icons.receipt_long_outlined, size: AppIconSize.md, color: destaque),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('$mes ${widget.mesSelecionado.ano}',
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+              Text('Demonstrativo de pagamento',
+                  style: theme.textTheme.bodySmall?.copyWith(color: _apagado(theme))),
+            ]),
+          ),
+        ]),
+      ),
     );
   }
 
@@ -1482,8 +1507,7 @@ class _BotaoOlho extends StatelessWidget {
       child: InkWell(
         onTap: aoTocar,
         borderRadius: BorderRadius.circular(20),
-        // Alvo de 44 pt; o desenho é o mesmo vidro claro dos botões da
-        // barra (a barra é sempre escura, então branco passa nos dois temas).
+        // Alvo de 44 pt; o vidro segue o tema (a barra é clara no tema claro).
         child: SizedBox(
           width: 44,
           height: 44,
@@ -1493,15 +1517,15 @@ class _BotaoOlho extends StatelessWidget {
               height: 38,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.12),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.22)),
               ),
               child: Icon(
                 visivel
                     ? Icons.visibility_outlined
                     : Icons.visibility_off_outlined,
                 size: AppIconSize.sm,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),

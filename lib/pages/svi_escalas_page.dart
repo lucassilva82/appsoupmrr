@@ -99,24 +99,24 @@ class _SviEscalasPageState extends State<SviEscalasPage> {
     return FundoSuave(
         child: Scaffold(
       appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         flexibleSpace: const FundoBarraVidro(),
-        title: const Text(
+        title: Text(
           'Vagas SVI',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             letterSpacing: 1.2,
           ),
         ),
         actions: [
           IconButton(
             tooltip: 'Meus Voluntários',
-            icon: const Icon(Icons.history_rounded, color: Colors.white),
+            icon: Icon(Icons.history_rounded, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () =>
                 Navigator.of(context).pushNamed(AppRoutes.SVI_MEUS_VOLUNTARIOS),
           ),

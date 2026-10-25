@@ -65,17 +65,17 @@ class _SviMeusVoluntariosPageState extends State<SviMeusVoluntariosPage> {
     return FundoSuave(child: Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         flexibleSpace: const FundoBarraVidro(),
-        title: const Text(
+        title: Text(
           'Meus Voluntários',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             letterSpacing: 1.2,
           ),
         ),

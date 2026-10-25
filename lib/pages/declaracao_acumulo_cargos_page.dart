@@ -236,10 +236,10 @@ class _DeclaracaoAcumuloCargosPageState
     return FundoSuave(
         child: Scaffold(
       appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
+        title: Text(
           'Acúmulo de Cargos',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w700),
         ),
         flexibleSpace: const FundoBarraVidro(),
       ),
