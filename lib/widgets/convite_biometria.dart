@@ -6,6 +6,8 @@ import 'package:local_auth/local_auth.dart';
 
 import '../services/biometric_service.dart';
 import '../core/log/registro_log.dart';
+import 'dialogo_confirmacao.dart';
+import '../core/design/arte_cartao.dart';
 import '../utils/app_theme.dart';
 import 'aviso_rapido.dart';
 
@@ -108,7 +110,6 @@ class _ConviteState extends State<_Convite>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final primaria = theme.colorScheme.primary;
     final semMovimento = MediaQuery.of(context).disableAnimations;
     if (semMovimento && _pulso.isAnimating) _pulso.stop();
@@ -119,102 +120,30 @@ class _ConviteState extends State<_Convite>
     final icone =
         widget.temRosto ? Icons.face_retouching_natural_rounded : Icons.fingerprint_rounded;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Material(
-          color: Colors.transparent,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 360),
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: isDark
-                        ? [
-                            Color.alphaBlend(Colors.white.withOpacity(0.10),
-                                AppColors.darkCard),
-                            Color.alphaBlend(Colors.white.withOpacity(0.04),
-                                AppColors.darkCard),
-                          ]
-                        : [
-                            Colors.white.withOpacity(0.96),
-                            Colors.white.withOpacity(0.90),
-                          ],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.16)
-                        : Colors.white.withOpacity(0.80),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(isDark ? 0.55 : 0.18),
-                      blurRadius: 32,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _SimboloPulsante(
-                      controlador: _pulso,
-                      cor: primaria,
-                      icone: icone,
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Entrar com $nome?',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Nas próximas vezes você entra sem digitar a senha. '
-                      'Dá para desligar quando quiser em Perfil › ${Platform.isIOS ? 'Face ID' : 'Biometria'}.',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        height: 1.4,
-                        color: theme.colorScheme.onSurface.withOpacity(0.72),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: const Text('Ativar'),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        style: TextButton.styleFrom(
-                          foregroundColor:
-                              theme.colorScheme.onSurface.withOpacity(0.70),
-                        ),
-                        child: const Text('Agora não'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+    // O mesmo vidro com a arte discreta das outras janelas do app
+    // (CaixaDialogo): antes esta tinha uma superfície própria, sem a arte.
+    return CaixaDialogo(
+      arte: Arte.de('rh'),
+      topo: _SimboloPulsante(controlador: _pulso, cor: primaria, icone: icone),
+      titulo: 'Entrar com $nome?',
+      mensagem: 'Nas próximas vezes você entra sem digitar a senha. '
+          'Dá para desligar quando quiser em Perfil › ${Platform.isIOS ? 'Face ID' : 'Biometria'}.',
+      corpo: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text('Ativar'),
         ),
-      ),
+        const SizedBox(height: 8),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          style: TextButton.styleFrom(
+            foregroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.70),
+            minimumSize: const Size.fromHeight(48),
+          ),
+          child: const Text('Agora não'),
+        ),
+      ]),
     );
   }
 }
