@@ -38,7 +38,6 @@ class SettingsBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = Provider.of<Auth>(context);
     final config = RepositorioConfig.atual;
-    final nivel = config.nivel;
 
     return ListView(
       physics: const BouncingScrollPhysics(),
@@ -92,7 +91,7 @@ class SettingsBody extends StatelessWidget {
 
         // ── Nível de acesso (§6.2) ──────────────────────────────────────
         const _Rotulo('Nível de acesso'),
-        _CartaoNivel(nome: nivel?.nome ?? 'Militar', escopo: nivel?.escopo ?? 'Seus próprios dados'),
+        _CartaoNivel(nome: _nomeNivel(config, auth), escopo: _escopoNivel(config, auth)),
 
         // ── Ajuda (§8: todo suporte é chamado técnico) ──────────────────
         const _Rotulo('Ajuda'),
@@ -354,7 +353,7 @@ class _CartaoMilitar extends StatelessWidget {
         ? '${partes.first[0]}${partes.last[0]}'.toUpperCase()
         : (partes.first.isNotEmpty ? partes.first[0].toUpperCase() : '?');
     final lotacao = config.lotacaoPorExtenso;
-    final nivel = config.nivel?.nome ?? 'Militar';
+    final nivel = _nomeNivel(config, auth);
     final escuro = theme.brightness == Brightness.dark;
     final fundoPagina = escuro ? const Color(0xFF03050A) : theme.colorScheme.surface;
 
@@ -775,3 +774,16 @@ class Configuracoes extends StatelessWidget {
     ));
   }
 }
+
+/// Nome do nível no Perfil. Com os níveis ligados no painel, o do servidor;
+/// até lá, a mesma regra do selo da Início (o nível 1 do SIGRH é o
+/// Administrador; a regra antiga de gestor, Gestor). Antes o Perfil caía em
+/// "Militar" mesmo para o Administrador, enquanto a Início mostrava "Admin".
+String _nomeNivel(AppConfig config, Auth auth) =>
+    config.nivel?.nome ?? (auth.nivel == 1 ? 'Administrador' : (auth.isSuperUser ? 'Gestor' : 'Militar'));
+
+String _escopoNivel(AppConfig config, Auth auth) =>
+    config.nivel?.escopo ??
+    (auth.nivel == 1
+        ? 'Toda a PMRR, com acesso à configuração do app'
+        : (auth.isSuperUser ? 'Militares do seu escopo de comando' : 'Seus próprios dados'));
