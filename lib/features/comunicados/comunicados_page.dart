@@ -682,6 +682,31 @@ Future<void> abrirCentral(BuildContext context, {required String origem}) {
   return Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CentralComunicadosPage()));
 }
 
+/// Abre um comunicado pelo id (card fixado na Início, push, link). Procura
+/// na lista que a Início já tem e, sem ela, pede a lista à API. Se ele saiu
+/// do ar (ou não é para este militar), abre a central com um aviso.
+Future<void> abrirComunicadoPorId(BuildContext context, int id, {required String origem}) async {
+  final repo = repositorioComunicados(context);
+  Comunicado? achar(List<Comunicado>? l) => l?.where((c) => c.id == id).firstOrNull;
+  var c = achar(ComunicadosRepositorio.emUso.value);
+  if (c == null) {
+    try {
+      c = achar(await repo.listar());
+    } on FalhaApp catch (f) {
+      registrarErro(f, tela: _chave);
+      if (context.mounted) avisoErro(context, f.titulo, texto: '${f.texto} Código ${f.codigo}.');
+      return;
+    }
+  }
+  if (!context.mounted) return;
+  if (c == null) {
+    avisoInfo(context, 'Este comunicado não está mais no ar',
+        texto: 'Veja os comunicados em vigor na central. Código CM-FORA-DO-AR.');
+    return abrirCentral(context, origem: origem);
+  }
+  return abrirComunicado(context, c, repo, origem: origem);
+}
+
 /// O comunicado abre como um cartão por cima da tela (protótipo
 /// `.com-modal`): cresce e aparece em 400 ms; sem animação com "Reduzir
 /// movimento". Cobre também a barra de abas.

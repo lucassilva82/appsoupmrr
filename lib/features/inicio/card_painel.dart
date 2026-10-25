@@ -54,7 +54,13 @@ class CardPainel extends StatelessWidget {
               texto: 'Esta função não está disponível para você agora. Código MD-CARD-DESTINO.');
         }
       case 'comunicado':
-        await abrirCentral(context, origem: 'card');
+        // Com o id (comunicado fixado como card), abre ele mesmo; sem, a central.
+        final id = int.tryParse(destino);
+        if (id != null) {
+          await abrirComunicadoPorId(context, id, origem: 'card');
+        } else {
+          await abrirCentral(context, origem: 'card');
+        }
       case 'link':
         final uri = Uri.tryParse(destino);
         final ok = uri != null && uri.scheme == 'https' &&

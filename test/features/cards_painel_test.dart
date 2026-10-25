@@ -68,4 +68,21 @@ void main() {
     expect(find.text('Outubro Rosa'), findsOneWidget);
     expect(find.text('Saiba mais'), findsOneWidget);
   });
+
+  test('comunicado fixado como card: chega como campanha com o id do comunicado na ação', () {
+    final b = _bloco({
+      'chave': 'home.livre.comunicado_12',
+      'modelo': 'campanha',
+      'ordem': 50,
+      'escondivel': true,
+      'dados': {'selo': 'Saúde', 'titulo': 'Vacinação no QCG', 'texto': 'Gripe e hepatite B, das 8h às 16h.'},
+      'acao': {'tipo': 'comunicado', 'destino': '12', 'rotulo': 'Saiba mais'},
+      'arte': 'rosa',
+      'arte_estilo': 'cheio',
+    });
+    expect(b.livre, isTrue);
+    expect(b.ordem, 50);
+    expect(CardPainel.desenha(b), isTrue);
+    expect(int.tryParse('${(b.bruto['acao'] as Map)['destino']}'), 12);
+  });
 }
