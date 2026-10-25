@@ -710,7 +710,7 @@ Future<void> _alternarBiometria(BuildContext context, Auth auth, bool ligar) asy
     registrar('conta.biometria_ligar', resultado: 'ok', dados: {'ligada': false});
     return;
   }
-  final r = await BiometricService().confirmar(motivo: 'Confirme que é você para ligar o ${BiometricService.nome}');
+  final r = await BiometricService().confirmar(motivo: 'Confirme que é você para ligar ${BiometricService.comArtigo}');
   if (r.ok) {
     await auth.setBiometrics(true);
     registrar('conta.biometria_ligar', resultado: 'ok', dados: {'ligada': true});

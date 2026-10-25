@@ -381,8 +381,14 @@ class ParCartao extends StatelessWidget {
         crossAxisAlignment: alinhamento,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(rotulo,
-              style: TextStyle(fontSize: 13, color: TomCartao.medio(context))),
+          // Com fonte grande (1,3×), quatro pares lado a lado quebravam a
+          // palavra no meio ("promoçõe / s"): o texto encolhe, não quebra.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(rotulo,
+                maxLines: 1,
+                style: TextStyle(fontSize: 13, color: TomCartao.medio(context))),
+          ),
           const SizedBox(height: 3),
           Text(
             valor,

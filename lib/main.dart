@@ -28,6 +28,7 @@ import 'package:projetonovo/pages/legislacoes_page.dart';
 import 'package:projetonovo/pages/militar_detalhe_full_page.dart';
 import 'package:projetonovo/pages/planodeferias.dart';
 import 'package:projetonovo/core/navegacao/guarda_funcao.dart';
+import 'package:projetonovo/app/registro_modulos.dart';
 import 'package:projetonovo/pages/pop_page.dart';
 import 'package:projetonovo/utils/notification_provider.dart';
 import 'package:projetonovo/utils/theme_provider.dart';
@@ -537,13 +538,33 @@ const Set<String> kRotasNotificacaoPermitidas = {
   '/page-militar',
 };
 
+/// A rota que uma notificação pode abrir, ou nula. Aceita (2.2):
+/// - as rotas antigas da lista acima (pushes das 2.1.x);
+/// - a rota de qualquer módulo do registro (`/com/central`, `/rh/carreira`);
+/// - a chave da função ou o nome antigo dela (`rh.contracheques`,
+///   `contracheques`, `/contracheques`), que é o que o painel manda.
+/// Antes só valia a lista fixa: as rotas novas eram ignoradas e o "Abrir"
+/// do aviso não fazia nada (teste de 25/10/2026). A rota passa pela guarda
+/// de função (`protegerRotas`): função bloqueada mostra o motivo, não a tela.
+String? rotaDaNotificacao(String? rota) {
+  if (rota == null || rota.trim().isEmpty) return null;
+  final r = rota.trim();
+  if (kRotasNotificacaoPermitidas.contains(r)) return r;
+  final chave = r.startsWith('/') ? r.substring(1) : r;
+  final m = registroModulos.porRota(r) ?? registroModulos.porChave(chave);
+  // Rota que precisa de argumentos (análise salarial) não abre por push.
+  if (m == null || m.rota == null || m.chave == 'rh.contracheques.grafico') return null;
+  return m.rota;
+}
+
 /// Navega para a rota indicada por uma notificação, de forma segura.
 /// Ignora rotas vazias, desconhecidas ou que exijam argumentos.
 void navegarPorNotificacao(String? rota) {
-  if (rota == null || rota.trim().isEmpty) return;
-  final r = rota.trim();
-  if (!kRotasNotificacaoPermitidas.contains(r)) {
-    print('[NOTIF] Rota "$r" não permitida/desconhecida — navegação ignorada.');
+  final r = rotaDaNotificacao(rota);
+  if (r == null) {
+    if (rota != null && rota.trim().isNotEmpty) {
+      print('[NOTIF] Rota "${rota.trim()}" desconhecida — navegação ignorada.');
+    }
     return;
   }
   final nav = navigatorKey.currentState;

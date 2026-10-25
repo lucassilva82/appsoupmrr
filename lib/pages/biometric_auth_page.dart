@@ -175,7 +175,7 @@ class _BiometricAuthPageState extends State<BiometricAuthPage> with TickerProvid
       final f = FalhaApp(
         codigo: 'LG-BIO-X-${e.runtimeType}'.toUpperCase(),
         origem: OrigemFalha.aparelho,
-        titulo: 'Não foi possível entrar com o ${BiometricService.nome}',
+        titulo: 'Não foi possível entrar com ${BiometricService.comArtigo}',
         texto: 'Toque em "Entrar com outros dados" e use a matrícula e a senha. Se continuar, abra um chamado '
             'técnico com o código.',
         detalhe: '$e',
@@ -280,7 +280,7 @@ class _BiometricAuthPageState extends State<BiometricAuthPage> with TickerProvid
                                   duration: const Duration(milliseconds: 220),
                                   child: Text(
                                     isLoading
-                                        ? 'Conferindo com o $_nomeMetodo…'
+                                        ? 'Conferindo ${_temRosto || Platform.isIOS ? 'o' : 'a'} $_nomeMetodo…'
                                         : (_temRosto
                                             ? 'Toque no símbolo e olhe para a tela do aparelho.'
                                             : 'Toque no símbolo e encoste o dedo no leitor.'),

@@ -17,6 +17,9 @@ import 'package:projetonovo/features/inicio/preferencias_inicio.dart';
 import 'package:projetonovo/features/inicio/edicao_inicio.dart';
 import 'package:projetonovo/core/erros/falha_app.dart';
 import 'package:projetonovo/core/log/registro_log.dart';
+import 'package:projetonovo/models/auth_model.dart';
+import 'package:provider/provider.dart';
+import 'package:projetonovo/core/rede/api_client.dart';
 import 'package:projetonovo/widgets/aviso_rapido.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter/rendering.dart' show CustomSemanticsAction;
@@ -91,7 +94,9 @@ class _Card extends StatelessWidget {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(item.rotulo.toUpperCase(),
                           style: TextStyle(
-                              fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.w700,
+                              fontSize: 11,
+                              letterSpacing: 1.2,
+                              fontWeight: FontWeight.w700,
                               color: Colors.white.withValues(alpha: .78))),
                       const SizedBox(height: 4),
                       Text(m.titulo,
@@ -134,8 +139,7 @@ class SeloBloqueio extends StatelessWidget {
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           const Icon(Icons.construction_rounded, size: AppIconSize.xxs, color: Color(0xFFFFC968)),
           const SizedBox(width: 5),
-          Text(texto,
-              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFFFFE2A8))),
+          Text(texto, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFFFFE2A8))),
         ]),
       );
 }
@@ -150,8 +154,7 @@ class HomeBody extends StatefulWidget {
   State<HomeBody> createState() => _HomeBodyState();
 }
 
-class _HomeBodyState extends State<HomeBody>
-    with AutomaticKeepAliveClientMixin {
+class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true; // preserva estado ao trocar de aba
 
@@ -203,9 +206,7 @@ class _HomeBodyState extends State<HomeBody>
       return;
     }
     setState(() {
-      _escondidosEdicao.contains(b.chave)
-          ? _escondidosEdicao.remove(b.chave)
-          : _escondidosEdicao.add(b.chave);
+      _escondidosEdicao.contains(b.chave) ? _escondidosEdicao.remove(b.chave) : _escondidosEdicao.add(b.chave);
       _mudou = true;
     });
     HapticFeedback.selectionClick();
@@ -222,8 +223,7 @@ class _HomeBodyState extends State<HomeBody>
     final atual = InicioPreferenciasRepositorio.emUso.value;
     final pref = PreferenciasInicio(
       blocos: [
-        for (final b in _blocosEdicao)
-          (chave: b.chave, visivel: !_escondidosEdicao.contains(b.chave)),
+        for (final b in _blocosEdicao) (chave: b.chave, visivel: !_escondidosEdicao.contains(b.chave)),
       ],
       atalhos: atual?.atalhos,
     );
@@ -305,8 +305,7 @@ class _HomeBodyState extends State<HomeBody>
         'home.tempo_servico' => _Card(CardTempoServico(), chave: 'rh.tempo_servico'),
         'home.ferias' => const _Card(HomePlanoFeriasCard(), chave: 'rh.ferias'),
         'home.carreira' => const _Card(CardCarreira(), chave: 'rh.carreira'),
-        _ when chave.startsWith('home.livre.') =>
-          switch (RepositorioConfig.atual.bloco(chave)) {
+        _ when chave.startsWith('home.livre.') => switch (RepositorioConfig.atual.bloco(chave)) {
             final b? when CardPainel.desenha(b) => CardPainel(bloco: b),
             _ => null,
           },
@@ -333,16 +332,12 @@ class _HomeBodyState extends State<HomeBody>
               if (_salvando)
                 const Padding(
                   padding: EdgeInsets.only(right: 12),
-                  child: SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2)),
+                  child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
                 )
               else
                 TextButton(
                   onPressed: _concluirEdicao,
-                  child: const Text('Concluído',
-                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: const Text('Concluído', style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
             ],
           ),
@@ -366,21 +361,18 @@ class _HomeBodyState extends State<HomeBody>
             child: Row(
               children: [
                 Icon(Icons.visibility_off_outlined,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
+                    size: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     nomeBloco(b),
-                    style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+                    style:
+                        TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
                   ),
                 ),
                 Text('Escondido',
                     style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.62))),
+                        fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.62))),
               ],
             ),
           ),
@@ -484,76 +476,100 @@ class _HomeBodyState extends State<HomeBody>
     if (_editando) return FundoSuave(child: _corpoEdicao());
 
     return FundoSuave(
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        // O fim passa da barra de abas de vidro (a altura dela vem no MediaQuery).
-        padding: EdgeInsets.only(bottom: 24 + MediaQuery.paddingOf(context).bottom),
-        child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // ── Sem conexão: o que aparece é o guardado (§5.3)
-          const FaixaSemConexao(),
-
-          // ── Versão recomendada (§10.2): cartão dispensável, uma vez por versão
-          ValueListenableBuilder<AppConfig>(
-            valueListenable: RepositorioConfig.emUso,
-            builder: (context, config, _) =>
-                config.situacaoVersao(AmbienteApp.plataforma, AmbienteApp.versao) == SituacaoVersao.recomendada
-                    ? CartaoVersaoRecomendada(recomendada: config.versoes[AmbienteApp.plataforma]!.recomendada)
-                    : const SizedBox.shrink(),
-          ),
-
-          // ── Blocos na ordem do painel (§4); sem `home`, a do app ──────
-          ListenableBuilder(
-            listenable: Listenable.merge([RepositorioConfig.emUso, InicioPreferenciasRepositorio.emUso]),
-            builder: (context, _) => Column(
+      // Puxar para atualizar (§5.3): relê o app_config e recria os blocos, que
+      // buscam os dados de novo (cards, comunicados, pendências).
+      child: RefreshIndicator(
+        onRefresh: _atualizar,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          // O fim passa da barra de abas de vidro (a altura dela vem no MediaQuery).
+          padding: EdgeInsets.only(bottom: 24 + MediaQuery.paddingOf(context).bottom),
+          child: KeyedSubtree(
+            key: ValueKey(_geracao),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 12 entre um bloco e outro (protótipo `.pilha`, §15.2).
-                for (final chave in blocosDaInicio(RepositorioConfig.atual, InicioPreferenciasRepositorio.emUso.value))
-                  if (_bloco(chave) case final w?)
-                    // Segurar entra em edição, como na tela do iOS. Para quem
-                    // usa leitor de tela o gesto não serve, então a mesma
-                    // ação vai no menu de ações do bloco.
-                    Semantics(
-                      customSemanticsActions: {
-                        const CustomSemanticsAction(label: 'Editar a tela inicial'):
-                            _entrarEdicao,
-                      },
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.deferToChild,
-                        onLongPress: _entrarEdicao,
-                        child: Padding(padding: const EdgeInsets.only(bottom: 12), child: w),
-                      ),
-                    ),
+                // ── Sem conexão: o que aparece é o guardado (§5.3)
+                const FaixaSemConexao(),
+
+                // ── Versão recomendada (§10.2): cartão dispensável, uma vez por versão
+                ValueListenableBuilder<AppConfig>(
+                  valueListenable: RepositorioConfig.emUso,
+                  builder: (context, config, _) =>
+                      config.situacaoVersao(AmbienteApp.plataforma, AmbienteApp.versao) == SituacaoVersao.recomendada
+                          ? CartaoVersaoRecomendada(recomendada: config.versoes[AmbienteApp.plataforma]!.recomendada)
+                          : const SizedBox.shrink(),
+                ),
+
+                // ── Blocos na ordem do painel (§4); sem `home`, a do app ──────
+                ListenableBuilder(
+                  listenable: Listenable.merge([RepositorioConfig.emUso, InicioPreferenciasRepositorio.emUso]),
+                  builder: (context, _) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // 12 entre um bloco e outro (protótipo `.pilha`, §15.2).
+                      for (final chave
+                          in blocosDaInicio(RepositorioConfig.atual, InicioPreferenciasRepositorio.emUso.value))
+                        if (_bloco(chave) case final w?)
+                          // Segurar entra em edição, como na tela do iOS. Para quem
+                          // usa leitor de tela o gesto não serve, então a mesma
+                          // ação vai no menu de ações do bloco.
+                          Semantics(
+                            customSemanticsActions: {
+                              const CustomSemanticsAction(label: 'Editar a tela inicial'): _entrarEdicao,
+                            },
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.deferToChild,
+                              onLongPress: _entrarEdicao,
+                              child: Padding(padding: const EdgeInsets.only(bottom: 12), child: w),
+                            ),
+                          ),
+                    ],
+                  ),
+                ),
+
+                // ── Personalizar (§4.5) ──────────────────────────────────────────
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () =>
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PersonalizarInicioPage())),
+                    icon: const Icon(Icons.dashboard_customize_outlined),
+                    label: const Text('Personalizar início'),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Texto do rodapé editado no painel (soupm_config 'textos').
+                if (RepositorioConfig.atual.texto('rodape_inicio') case final r?)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                    child: Text(r,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .62))),
+                  ),
               ],
             ),
           ),
-
-          // ── Personalizar (§4.5) ──────────────────────────────────────────
-          Center(
-            child: TextButton.icon(
-              onPressed: () => Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => const PersonalizarInicioPage())),
-              icon: const Icon(Icons.dashboard_customize_outlined),
-              label: const Text('Personalizar início'),
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // Texto do rodapé editado no painel (soupm_config 'textos').
-          if (RepositorioConfig.atual.texto('rodape_inicio') case final r?)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-              child: Text(r,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .62))),
-            ),
-        ],
-          ),
         ),
-      );
+      ),
+    );
+  }
+
+  /// Muda a cada "puxar para atualizar": os blocos nascem de novo e buscam
+  /// os dados outra vez.
+  int _geracao = 0;
+
+  Future<void> _atualizar() async {
+    registrar('inicio.atualizar', chave: 'aba.inicio');
+    final auth = Provider.of<Auth>(context, listen: false);
+    try {
+      await carregarAppConfig(api: ApiClient(), matricula: auth.matricula, senha: auth.password);
+    } catch (e) {
+      debugPrint('[INICIO] atualizar: $e');
+    }
+    if (mounted) setState(() => _geracao++);
   }
 }
 

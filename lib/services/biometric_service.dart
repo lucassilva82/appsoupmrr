@@ -25,6 +25,9 @@ class BiometricService {
 
   static String get nome => Platform.isIOS ? 'Face ID' : 'biometria';
 
+  /// O nome com o artigo certo: "o Face ID", "a biometria".
+  static String get comArtigo => Platform.isIOS ? 'o Face ID' : 'a biometria';
+
   /// Verifica se o dispositivo suporta e tem algum tipo de biometria configurada.
   Future<bool> isBiometricAvailable() async {
     try {

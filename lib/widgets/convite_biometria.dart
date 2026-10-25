@@ -70,7 +70,7 @@ Future<bool> convidarParaBiometria(BuildContext context) async {
 
   // Pede a biometria na hora: ligar sem confirmar deixaria a pessoa trancada
   // fora na próxima entrada se o sensor não reconhecesse.
-  final r = await servico.confirmar(motivo: 'Confirme que é você para ligar o ${BiometricService.nome}');
+  final r = await servico.confirmar(motivo: 'Confirme que é você para ligar ${BiometricService.comArtigo}');
   final f = r.falha;
   if (f != null) {
     registrarErro(f, tela: 'login');

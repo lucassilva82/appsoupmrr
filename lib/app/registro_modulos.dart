@@ -31,6 +31,13 @@ final registroModulos = RegistroModulos(const [
       rota: AppRoutes.DOCUMENTOS,
       sinonimosPadrao: ['documentos', 'pdf', 'arquivos', 'baixados']),
   ModuloApp(
+      chave: 'com.central',
+      rotuloPadrao: 'Comunicados',
+      icone: 'comunicado',
+      prefixoErro: 'CM',
+      rota: AppRoutes.COMUNICADOS,
+      sinonimosPadrao: ['comunicado', 'aviso oficial', 'informe']),
+  ModuloApp(
       chave: 'rh.validar',
       rotuloPadrao: 'Validar documento',
       icone: 'validar',
