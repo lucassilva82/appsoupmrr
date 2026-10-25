@@ -88,18 +88,18 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
         statusBarColor: Colors.transparent,
-        systemNavigationBarColor: const Color(0xFF0E1726),
+        systemNavigationBarColor: Colors.transparent,
         systemNavigationBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
-      backgroundColor: FundoCircuito.base,
-      // O teclado é tratado aqui, com animação própria: sem isto o Scaffold
-      // encolhe a tela de uma vez e tudo "pula" para cima.
-      resizeToAvoidBottomInset: false,
-      body: Stack(children: [
-        const Positioned.fill(child: FundoCircuito()),
-        Platform.isAndroid ? _android(context, teclado, aberto) : _ios(context, teclado, aberto),
-      ]),
+        backgroundColor: FundoCircuito.base,
+        // O teclado é tratado aqui, com animação própria: sem isto o Scaffold
+        // encolhe a tela de uma vez e tudo "pula" para cima.
+        resizeToAvoidBottomInset: false,
+        body: Stack(children: [
+          const Positioned.fill(child: FundoCircuito()),
+          Platform.isAndroid ? _android(context, teclado, aberto) : _ios(context, teclado, aberto),
+        ]),
       ),
     );
   }
@@ -156,14 +156,25 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _surge(0.62, 0.9, const _Marca(arquivo: 'assets/imagens/brasao_governo_rr.png', altura: 42,
-                        rotulo: 'Governo de Roraima')),
+                    _surge(
+                        0.62,
+                        0.9,
+                        const _Marca(
+                            arquivo: 'assets/imagens/brasao_governo_rr.png', altura: 42, rotulo: 'Governo de Roraima')),
                     _divisor(),
-                    _surge(0.68, 0.94, const _Marca(arquivo: 'assets/imagens/logo_pmrr.png', altura: 44,
-                        rotulo: 'Polícia Militar de Roraima')),
+                    _surge(
+                        0.68,
+                        0.94,
+                        const _Marca(
+                            arquivo: 'assets/imagens/logo_pmrr.png', altura: 44, rotulo: 'Polícia Militar de Roraima')),
                     _divisor(),
-                    _surge(0.74, 1.0, const _Marca(arquivo: 'assets/imagens/logo_dti_marca.png', altura: 34,
-                        rotulo: 'Departamento de Tecnologia da Informação')),
+                    _surge(
+                        0.74,
+                        1.0,
+                        const _Marca(
+                            arquivo: 'assets/imagens/logo_dti_marca.png',
+                            altura: 34,
+                            rotulo: 'Departamento de Tecnologia da Informação')),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -218,7 +229,8 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                       _surge(
                         0.3,
                         0.75,
-                        _CartaoVidro(
+                        CartaoVidroEntrada(
+                          padding: const EdgeInsets.fromLTRB(20, 22, 20, 8),
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             const Text('Entrar',
                                 style: TextStyle(
@@ -276,45 +288,60 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
         child: _surge(
           0.25,
           0.7,
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: const Color(0xFF0A1220).withValues(alpha: 0.82),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-              border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.10))),
-              boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 24, offset: Offset(0, -6))],
-            ),
-            child: AnimatedPadding(
-              duration: _tempoTeclado,
-              curve: _curvaTeclado,
-              padding: EdgeInsets.only(bottom: teclado),
-              child: SingleChildScrollView(
-                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: EdgeInsets.fromLTRB(24, 12, 24, 16 + (aberto ? 0 : mq.padding.bottom)),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 480),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      // Alça da folha.
-                      Center(
-                        child: Container(
-                          width: 32,
-                          height: 4,
-                          margin: const EdgeInsets.only(bottom: 18),
-                          decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.28), borderRadius: BorderRadius.circular(2)),
-                        ),
+          // Folha de vidro, a mesma linguagem do cartão do iPhone: desfoca o
+          // fundo de circuito em vez de tapar com um bloco preto.
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.10),
+                      const Color(0xFF16396B).withValues(alpha: 0.18),
+                      const Color(0xFF0A1C3A).withValues(alpha: 0.30),
+                    ],
+                  ),
+                  border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.20))),
+                ),
+                child: AnimatedPadding(
+                  duration: _tempoTeclado,
+                  curve: _curvaTeclado,
+                  padding: EdgeInsets.only(bottom: teclado),
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: EdgeInsets.fromLTRB(24, 12, 24, 16 + (aberto ? 0 : mq.padding.bottom)),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 480),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          // Alça da folha.
+                          Center(
+                            child: Container(
+                              width: 32,
+                              height: 4,
+                              margin: const EdgeInsets.only(bottom: 18),
+                              decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.28), borderRadius: BorderRadius.circular(2)),
+                            ),
+                          ),
+                          const Text('Entrar no SouPMRR',
+                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w400, color: Colors.white)),
+                          const SizedBox(height: 4),
+                          Text('Use a matrícula e a senha do SouPMRR.',
+                              style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.72))),
+                          const SizedBox(height: 20),
+                          const AuthForm(material: true),
+                          SizedBox(height: aberto ? 0 : 20),
+                          _rodape(aberto),
+                        ]),
                       ),
-                      const Text('Entrar no SouPMRR',
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w400, color: Colors.white)),
-                      const SizedBox(height: 4),
-                      Text('Use a matrícula e a senha do SouPMRR.',
-                          style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.72))),
-                      const SizedBox(height: 20),
-                      const AuthForm(material: true),
-                      SizedBox(height: aberto ? 0 : 20),
-                      _rodape(aberto),
-                    ]),
+                    ),
                   ),
                 ),
               ),
@@ -328,33 +355,6 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-
-/// Cartão de vidro do iOS: desfoque de verdade sobre a arte, borda de luz.
-class _CartaoVidro extends StatelessWidget {
-  const _CartaoVidro({required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(20, 22, 20, 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.white.withValues(alpha: 0.08), Colors.white.withValues(alpha: 0.02)],
-              ),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
-            ),
-            child: child,
-          ),
-        ),
-      );
-}
 
 /// Um brasão do rodapé, com o nome para o leitor de tela.
 class _Marca extends StatelessWidget {
@@ -370,4 +370,3 @@ class _Marca extends StatelessWidget {
         child: Image.asset(arquivo, height: altura, fit: BoxFit.contain, filterQuality: FilterQuality.medium),
       );
 }
-

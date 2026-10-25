@@ -1,9 +1,11 @@
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../utils/app_theme.dart';
+import '../../widgets/versao_app.dart';
 
 /// Fundo das telas de entrada (login, recuperar senha, primeiro acesso,
 /// e-mail, biometria): a arte dos cards em tela cheia, com as trilhas de
@@ -226,4 +228,77 @@ class _Fundo extends CustomPainter {
 
   @override
   bool shouldRepaint(_Fundo old) => old.pulso != pulso || old.entrada != entrada;
+}
+
+/// O cartão de vidro das telas de entrada (o do login do iPhone, padrão 2.2):
+/// desfoque de verdade sobre o fundo de circuito, degradê branco quase
+/// transparente e borda de luz. Usado no login (iOS e Android) e na entrada
+/// por Face ID ou digital.
+class CartaoVidroEntrada extends StatelessWidget {
+  const CartaoVidroEntrada({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.fromLTRB(20, 22, 20, 20),
+    this.raio = const BorderRadius.all(Radius.circular(28)),
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final BorderRadius raio;
+
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+        borderRadius: raio,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: Container(
+            padding: padding,
+            decoration: BoxDecoration(
+              borderRadius: raio,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white.withValues(alpha: 0.09), Colors.white.withValues(alpha: 0.025)],
+              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+            ),
+            child: child,
+          ),
+        ),
+      );
+}
+
+/// O rodapé das telas de entrada: os três brasões (Governo de Roraima, PMRR e
+/// DTI), cada um no seu tamanho, e a versão.
+class RodapeEntrada extends StatelessWidget {
+  const RodapeEntrada({super.key});
+
+  static Widget _marca(String arquivo, double altura, String rotulo) => Semantics(
+        image: true,
+        label: rotulo,
+        child: Image.asset(arquivo, height: altura, fit: BoxFit.contain, filterQuality: FilterQuality.medium),
+      );
+
+  static Widget _divisor() => Container(
+        width: 1,
+        height: 30,
+        margin: const EdgeInsets.symmetric(horizontal: 18),
+        color: Colors.white.withValues(alpha: 0.16),
+      );
+
+  @override
+  Widget build(BuildContext context) => Column(mainAxisSize: MainAxisSize.min, children: [
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          _marca('assets/imagens/brasao_governo_rr.png', 42, 'Governo de Roraima'),
+          _divisor(),
+          _marca('assets/imagens/logo_pmrr.png', 44, 'Polícia Militar de Roraima'),
+          _divisor(),
+          _marca('assets/imagens/logo_dti_marca.png', 34, 'Departamento de Tecnologia da Informação'),
+        ]),
+        const SizedBox(height: 10),
+        TextoVersao(
+          formato: (v) => v.isEmpty ? 'DTI/PMRR' : 'Versão $v · DTI/PMRR',
+          estilo: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.5), letterSpacing: .4),
+        ),
+      ]);
 }
