@@ -2457,6 +2457,43 @@ SISCHAMADOS nem SIGE (Escalas e SVI). Eles voltam na 2.3, em três passos:
 - Até lá, no app, as funções continuam "Em breve" com a folha de bloqueio e o
   código `MD-` (§16, "Fase sem intranet").
 
+### 16c. Equipe de testes e intranet DEV na 2.3 (plano de 25/10/2026)
+
+Pedido do usuário (25/10/2026), guardado para a 2.3: módulos em
+desenvolvimento (Escalas, SVI, Chamados e os que vierem) só para uma **equipe
+de testes**, conectados à intranet de desenvolvimento (intranet.gitpmrr).
+Decisão do mesmo dia: **a 2.2 vai para as lojas sem isso**, com esses módulos
+"Em breve" para todos; a 2.3 sai pelo TestFlight e pelo teste interno da Play
+Store para a equipe.
+
+1. **Equipe de testes no painel:** um papel "Equipe de testes"
+   (`soupm_papel`, tela Papéis, com auditoria) com as matrículas.
+2. **Público "só testadores"** nas funções (`soupm_menu_item.publico`, hoje
+   `todos | gestor`). O servidor tira do menu de quem não é da equipe **e
+   recusa o acesso direto**. Uma função sai do teste trocando o público para
+   "todos" no painel, sem versão nova.
+3. **Login na intranet sem API nova:** a intranet já tem
+   `/api/v1/auth/login` (JWT) e o app já entra sozinho com a senha do app
+   (Escalas, 2.1.7), pedindo a senha da intranet uma vez se for diferente e
+   guardando no cofre (APRENDIZADOS §42). Na 2.3: isso logo depois do login do
+   app, **só para a equipe**; o SISCHAMADOS passa a usar a mesma entrada.
+   Quem não é da equipe não vê pergunta nem conexão nenhuma com a intranet.
+4. **Endereço da intranet pelo painel**, enviado no `app_config` só para a
+   equipe (não mais fixo no build). Quando a intranet for para o pmrr.online,
+   troca-se o endereço no painel e todos passam a usar produção.
+5. **Riscos a tratar antes de abrir para muita gente:**
+   - Apple: função escondida (2.3.1) e teste beta pela loja (2.2) não são
+     permitidos; por isso a equipe testa só pelo TestFlight (até 10 mil
+     testadores externos) e pelo teste interno da Play Store.
+   - Servidor DEV: tem cópia dos dados reais do SIGRH; a chave que assina o
+     JWT tem valor padrão no código e a renovação nunca expira (PAINEL_ADMIN
+     §6.4). Corrigir na intranet antes de abrir para a equipe.
+
+Ordem: banco e painel (papel, público, endereço) → API do app (menu e
+endereço só para a equipe) → app (entrada na intranet só para a equipe, em
+Escalas, SVI e Chamados). O painel é da sessão do painel; o contrato é
+combinado antes.
+
 ## 17. Decisões que dependem do usuário
 
 **Todas as decisões do plano foram tomadas** (20 e 21/10/2026):
