@@ -175,7 +175,7 @@ class FolhaBloqueio extends StatelessWidget {
     final cor = switch (mensagem.motivo) {
       'manutencao' || 'restrito' => theme.colorScheme.error,
       'atualizar_app' => theme.colorScheme.primary,
-      _ => kCorAtencao,
+      _ => corAtencao(Theme.of(context)),
     };
     final mudo = theme.colorScheme.onSurface.withValues(alpha: .62);
     final p = mensagem.previsao?.toLocal();

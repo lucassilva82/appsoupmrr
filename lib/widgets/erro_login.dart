@@ -98,7 +98,7 @@ class _CartaoErro extends StatelessWidget {
           'Código ${erro.codigo}',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
             letterSpacing: 0.3,
           ),
         ),

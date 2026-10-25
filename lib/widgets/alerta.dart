@@ -129,7 +129,10 @@ class _Cartao extends StatelessWidget {
           icone: Icons.close_rounded,
         );
       case _Tipo.aviso:
-        return (cor: AppColors.gold, icone: Icons.priority_high_rounded);
+        return (
+          cor: AppColors.douradoTexto(isDark ? Brightness.dark : Brightness.light),
+          icone: Icons.priority_high_rounded,
+        );
     }
   }
 

@@ -339,7 +339,7 @@ class _SviVoluntarioCard extends StatelessWidget {
                     Text(
                       item.guarnicaoNome,
                       style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                          color: theme.colorScheme.onSurface.withOpacity(0.62)),
                       overflow: TextOverflow.ellipsis,
                     ),
                   const SizedBox(height: 2),
@@ -364,7 +364,7 @@ class _SviVoluntarioCard extends StatelessWidget {
                           style: theme.textTheme.bodySmall?.copyWith(
                               fontSize: 11,
                               color:
-                                  theme.colorScheme.onSurface.withOpacity(0.4)),
+                                  theme.colorScheme.onSurface.withOpacity(0.62)),
                         ),
                     ],
                   ),

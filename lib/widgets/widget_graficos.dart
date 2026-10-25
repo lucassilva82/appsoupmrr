@@ -281,7 +281,7 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
               getTitlesWidget: (v, _) => Text(
                 v.toInt().toString(),
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
                 ),
               ),
             ),

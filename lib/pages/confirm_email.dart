@@ -484,7 +484,7 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
           'Até lá, o atual continua valendo.',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.60),
+            color: theme.colorScheme.onSurface.withOpacity(0.62),
             height: 1.4,
           ),
         ),

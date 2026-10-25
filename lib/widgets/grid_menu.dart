@@ -112,7 +112,7 @@ class _GridMenuItem extends StatelessWidget {
         titulo: 'Em desenvolvimento',
         texto: 'Este recurso estará disponível em breve.',
         icone: Icons.hourglass_top_rounded,
-        cor: kCorAtencao,
+        cor: corAtencao(Theme.of(context)),
       );
       return;
     }

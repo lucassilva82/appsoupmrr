@@ -489,7 +489,7 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
                 Text(label,
                     style: theme.textTheme.bodySmall?.copyWith(
                         color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                            theme.colorScheme.onSurface.withValues(alpha: 0.62),
                         fontSize: 11)),
               ],
             ),

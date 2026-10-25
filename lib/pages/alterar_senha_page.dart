@@ -770,7 +770,10 @@ class _Caixa extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icone, color: cor, size: AppIconSize.sm),
+          // No claro, o mesmo tom mais escuro: o azul claro dava 2,6:1.
+          Icon(icone,
+              color: theme.brightness == Brightness.dark ? cor : Color.lerp(cor, Colors.black, .4),
+              size: AppIconSize.sm),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

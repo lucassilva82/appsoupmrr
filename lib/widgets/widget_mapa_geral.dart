@@ -179,7 +179,7 @@ class _WidgetMapaGeralState extends State<WidgetMapaGeral> {
                 'Filtros',
                 style: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
                 ),
               ),
             ],
@@ -251,7 +251,7 @@ class _WidgetMapaGeralState extends State<WidgetMapaGeral> {
                 style: theme.textTheme.labelSmall?.copyWith(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
                 ),
               ),
               const SizedBox(width: 6),

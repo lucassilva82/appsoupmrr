@@ -1152,7 +1152,7 @@ class _LinhaComunicado extends StatelessWidget {
               Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
                 _Selo(c.categoria.nome, cor: mudo, fundo: theme.colorScheme.onSurface.withValues(alpha: .06)),
                 if (c.urgente) _Selo('Urgente', cor: theme.colorScheme.error),
-                if (c.ciencia) c.ciente ? _Selo('Ciente', cor: ok) : const _Selo('Ciência pendente', cor: kCorAtencao),
+                if (c.ciencia) c.ciente ? _Selo('Ciente', cor: ok) : _Selo('Ciência pendente', cor: corAtencao(Theme.of(context))),
                 if (d != null) Text('${dois(d.day)}/${dois(d.month)}', style: TextStyle(fontSize: 12.5, color: mudo)),
               ]),
             ]),
@@ -1375,12 +1375,12 @@ class _ComunicadoPageState extends State<ComunicadoPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: kCorAtencao.withValues(alpha: .12),
-              border: Border.all(color: kCorAtencao.withValues(alpha: .35)),
+              color: corAtencao(Theme.of(context)).withValues(alpha: .12),
+              border: Border.all(color: corAtencao(Theme.of(context)).withValues(alpha: .35)),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Icon(Icons.edit_note_rounded, color: kCorAtencao),
+              Icon(Icons.edit_note_rounded, color: corAtencao(Theme.of(context))),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(

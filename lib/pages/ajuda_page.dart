@@ -286,7 +286,7 @@ class _AppInfoCard extends StatelessWidget {
                   'Versão $version  •  Módulo 2.0',
                   style: TextStyle(
                     fontSize: 12,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withOpacity(0.62),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -436,7 +436,7 @@ class _SystemInfoCard extends StatelessWidget {
                   items[i].value,
                   style: TextStyle(
                     fontSize: 12,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withOpacity(0.62),
                   ),
                 ),
               ),

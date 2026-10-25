@@ -29,6 +29,16 @@ class AppColors {
   static const lightBlue = Color(0xFF42A5F5);
   static const gold = Color(0xFFFFB300);
   static const goldLight = Color(0xFFFFD54F);
+
+  /// Dourado como texto ou ícone (selo do nível, aba ativa do gestor). O
+  /// FFB300 só tem contraste no tema escuro: no claro dá 1,5:1 e o selo
+  /// "some". No claro, este tom (6:1 sobre o fundo e sobre o selo tingido).
+  /// DESIGN §6. O dourado claro continua bom como tinta de fundo (alfa).
+  static const douradoEscuro = Color(0xFF7A4F00);
+  static Color douradoTexto(Brightness b) => b == Brightness.dark ? gold : douradoEscuro;
+
+  /// Âmbar de atenção no tema claro (o C77800 dá 2,9:1 sobre o fundo claro).
+  static const atencaoEscura = Color(0xFF8A5A00);
   // Azul premium para modo GESTOR
   static const superBlue = Color(0xFF003087);
   static const superBlueDark = Color(0xFF0A1E3D);
@@ -132,7 +142,7 @@ class AppTheme {
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor:
             isDark ? AppColors.darkSurface : AppColors.lightSurface,
-        selectedItemColor: isSuperUser ? AppColors.gold : primary,
+        selectedItemColor: isSuperUser ? AppColors.douradoTexto(isDark ? Brightness.dark : Brightness.light) : primary,
         unselectedItemColor: isDark ? Colors.grey[600] : Colors.grey[400],
         type: BottomNavigationBarType.fixed,
         elevation: 16,
@@ -342,7 +352,7 @@ class AppTheme {
           fontSize: 13,
         ),
         labelStyle: TextStyle(
-          color: onSurface.withOpacity(0.60),
+          color: onSurface.withOpacity(0.62),
           fontSize: 14,
         ),
         hintStyle: TextStyle(
@@ -350,7 +360,7 @@ class AppTheme {
           fontSize: 14,
         ),
         helperStyle: TextStyle(
-          color: onSurface.withOpacity(0.55),
+          color: onSurface.withOpacity(0.62),
           fontSize: 11.5,
         ),
         // Erro junto do campo, legível — não um fiapo de 10px.

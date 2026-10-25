@@ -334,6 +334,25 @@ da família que passa: 3,25:1 de contorno e 5,94:1 de branco por cima.
 - Ícone decorativo ao lado de texto visível → esconder da árvore semântica.
   Ícone sozinho que faz algo → precisa de `Semantics(label:)`.
 
+### Tema claro: cor clara não vira texto
+
+Medido em 25/10/2026, quando o selo "Admin" sumia no tema claro:
+
+| Cor como texto ou ícone | Sobre o fundo claro (`#F0F4F8`) | No tema claro use |
+|---|---|---|
+| Dourado `AppColors.gold` (`#FFB300`) | 1,5:1 | `AppColors.douradoTexto(brilho)` → `#7A4F00` (6:1) |
+| Âmbar `kCorAtencao` (`#C77800`) | 2,9:1 | `corAtencao(theme)` → `#8A5A00` (5:1) |
+| Cinza `onSurface` a 50% | 3,2:1 | no mínimo **62%** (4,6:1); no escuro, 50% já basta |
+| Azul claro `AppColors.lightBlue` em ícone | 2,6:1 | o mesmo tom escurecido no claro, ou `colorScheme.primary` |
+
+- As cores claras (dourado, âmbar, ciano, verde claro) continuam valendo como
+  **tinta de fundo** (alfa 0,10–0,14) e em tudo que fica sobre a arte escura
+  (cards com arte, telas de entrada), que é escura nos dois temas.
+- Texto e ícone com cor de destaque leem a cor pelo tema (`douradoTexto`,
+  `corAtencao`, `colorScheme`), nunca uma constante fixa.
+- Placeholder (`hintStyle`) pode ficar mais claro, porque o campo sempre tem
+  rótulo visível.
+
 ---
 
 ## 7. Movimento

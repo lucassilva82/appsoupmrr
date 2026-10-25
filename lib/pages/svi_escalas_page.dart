@@ -409,7 +409,7 @@ class _SviEscalaCard extends StatelessWidget {
           child: Text(
             text,
             style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                ?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.62)),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -725,7 +725,7 @@ class _SviEscalaDetalheSheetState extends State<_SviEscalaDetalheSheet> {
                   child: Text(
                     slot.guarnicaoNome,
                     style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                        color: theme.colorScheme.onSurface.withOpacity(0.62)),
                   ),
                 ),
               if (slot.postoPermitido != null &&

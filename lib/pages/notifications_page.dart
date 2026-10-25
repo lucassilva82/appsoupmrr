@@ -59,8 +59,8 @@ _NotifCategoria _categoriaDe(NotificationModel n, ThemeData theme) {
     return const _NotifCategoria(Icons.gavel_rounded, Color(0xFF64748B), 'POP');
   }
   if (r.contains('mapa')) {
-    return const _NotifCategoria(
-        Icons.groups_2_rounded, AppColors.gold, 'Mapa da Força');
+    return _NotifCategoria(
+        Icons.groups_2_rounded, AppColors.douradoTexto(theme.brightness), 'Mapa da Força');
   }
   return _NotifCategoria(
       Icons.campaign_rounded, theme.colorScheme.primary, 'Aviso');
@@ -404,7 +404,7 @@ class _EmptyState extends StatelessWidget {
             textAlign: TextAlign.center,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withOpacity(0.62),
             ),
           ),
           const SizedBox(height: 8),

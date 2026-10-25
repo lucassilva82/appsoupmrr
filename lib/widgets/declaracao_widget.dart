@@ -295,7 +295,7 @@ class _DeclaracaoWidgetState extends State<DeclaracaoWidget> {
                 Text(
                   'Última sincronização: ${_formatTime(_lastSync!)}',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.60),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
                     fontSize: 11,
                   ),
                 ),

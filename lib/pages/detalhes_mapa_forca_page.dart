@@ -364,14 +364,14 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
             Text(m.postoGraduacao,
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontSize: 11.5,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
                 )),
             Text('${m.comando} • ${m.unidade}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontSize: 11,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
                 )),
           ],
         ),

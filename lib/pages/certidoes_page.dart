@@ -306,7 +306,7 @@ class _CertidoesPageState extends State<CertidoesPage> {
     if (painel != null && !painel.servicoAtivo) {
       return [
         _Aviso(
-          cor: kCorAtencao,
+          cor: corAtencao(Theme.of(context)),
           icone: Icons.pause_circle_outline_rounded,
           titulo: painel.servicoTitulo ?? 'Emissão de certidões indisponível',
           texto: painel.servicoMensagem ??
@@ -663,16 +663,16 @@ class _SeloForaDoAr extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: kCorAtencao.withValues(alpha: 0.14),
+        color: corAtencao(Theme.of(context)).withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: kCorAtencao.withValues(alpha: 0.35)),
+        border: Border.all(color: corAtencao(Theme.of(context)).withValues(alpha: 0.35)),
       ),
-      child: const Text(
+      child: Text(
         'Temporariamente indisponível',
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: kCorAtencao,
+          color: corAtencao(Theme.of(context)),
         ),
       ),
     );
@@ -965,7 +965,7 @@ class _FolhaEmissaoState extends State<_FolhaEmissao> {
               'A certidão vale por ${widget.painel.validadeDias} dias.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
               ),
             ),
             // A folha não fecha por toque fora nem por arrasto: o

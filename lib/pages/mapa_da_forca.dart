@@ -82,7 +82,7 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontSize: 13,
                         color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                            theme.colorScheme.onSurface.withValues(alpha: 0.62),
                       ),
                     ),
                   ],

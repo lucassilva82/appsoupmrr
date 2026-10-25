@@ -671,7 +671,7 @@ class _MensagemDetalhePageState extends State<MensagemDetalhePage> {
                     padding: const EdgeInsets.only(bottom: 10),
                     child: CartaoVidro(
                       raio: 12,
-                      tingimento: kCorAtencao,
+                      tingimento: corAtencao(Theme.of(context)),
                       padding: const EdgeInsets.all(12),
                       child: const Text('A equipe aguarda a sua resposta.'),
                     ),

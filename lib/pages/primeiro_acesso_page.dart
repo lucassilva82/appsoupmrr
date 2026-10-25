@@ -796,7 +796,7 @@ class _PrimeiroAcessoPageState extends State<_PrimeiroAcesso> {
                 style: theme.textTheme.bodySmall?.copyWith(
                   letterSpacing: 1,
                   fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withOpacity(0.62),
                 ),
               ),
               const SizedBox(height: 14),

@@ -407,8 +407,8 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
             icon: const Icon(Icons.block_rounded, size: AppIconSize.sm),
             label: const Text('Declarar Impossibilidade'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: kCorAtencao,
-              side: BorderSide(color: kCorAtencao.withValues(alpha: 0.5)),
+              foregroundColor: corAtencao(Theme.of(context)),
+              side: BorderSide(color: corAtencao(Theme.of(context)).withValues(alpha: 0.5)),
             ),
           ),
         ),
@@ -602,8 +602,8 @@ class _ImpossibilidadeSheetState extends State<_ImpossibilidadeSheet> {
                   onChanged: (v) => setState(() => _selected = v),
                   title: Text(t.descricao, style: theme.textTheme.bodyMedium),
                   subtitle: t.requerAnexo
-                      ? const Text('* Requer anexo',
-                          style: TextStyle(color: kCorAtencao, fontSize: 11))
+                      ? Text('* Requer anexo',
+                          style: TextStyle(color: corAtencao(Theme.of(context)), fontSize: 11))
                       : null,
                   dense: true,
                   contentPadding: EdgeInsets.zero,

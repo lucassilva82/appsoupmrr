@@ -563,12 +563,12 @@ class _EscalasPageState extends State<EscalasPage>
       padding: const EdgeInsets.only(bottom: 12),
       child: CartaoVidro(
         raio: 12,
-        tingimento: kCorAtencao,
+        tingimento: corAtencao(Theme.of(context)),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: const Row(
+        child: Row(
           children: [
             Icon(Icons.cloud_off_rounded,
-                size: AppIconSize.xs, color: kCorAtencao),
+                size: AppIconSize.xs, color: corAtencao(Theme.of(context))),
             SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -1383,7 +1383,7 @@ class _EscalaListCard extends StatelessWidget {
                             .join('  ·  '),
                         style: theme.textTheme.bodySmall?.copyWith(
                             color:
-                                theme.colorScheme.onSurface.withOpacity(0.4)),
+                                theme.colorScheme.onSurface.withOpacity(0.62)),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -1521,7 +1521,7 @@ class _ImpossibilidadeBottomSheetState
           if (widget.tipos.isEmpty)
             Text('Carregando tipos...',
                 style: TextStyle(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6)))
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.62)))
           else
             ...widget.tipos.map((t) => RadioListTile<EscalaImpossibilidadeTipo>(
                   value: t,
@@ -1529,8 +1529,8 @@ class _ImpossibilidadeBottomSheetState
                   onChanged: (v) => setState(() => _selected = v),
                   title: Text(t.descricao, style: theme.textTheme.bodyMedium),
                   subtitle: t.requerAnexo
-                      ? const Text('* Requer anexo',
-                          style: TextStyle(color: kCorAtencao, fontSize: 11))
+                      ? Text('* Requer anexo',
+                          style: TextStyle(color: corAtencao(Theme.of(context)), fontSize: 11))
                       : null,
                   dense: true,
                   contentPadding: EdgeInsets.zero,

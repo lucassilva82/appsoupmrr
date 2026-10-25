@@ -423,7 +423,7 @@ class _Ano extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(quantos == 1 ? '1 registro' : '$quantos registros',
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: .6))),
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.62))),
         ]),
       ),
     );
@@ -479,7 +479,7 @@ class _Marco extends StatelessWidget {
                     const Spacer(),
                     Text(marco.semData ? 'data não registrada' : _data(marco.data),
                         style: theme.textTheme.bodySmall
-                            ?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+                            ?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.62))),
                   ]),
                   const SizedBox(height: 4),
                   Text(marco.titulo, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),

@@ -529,15 +529,15 @@ class _RaizAba extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
                     decoration: BoxDecoration(
                       color: AppColors.gold.withValues(alpha: 0.12),
-                      border: Border.all(color: AppColors.gold.withValues(alpha: 0.30)),
+                      border: Border.all(color: AppColors.douradoTexto(theme.brightness).withValues(alpha: 0.35)),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.gold,
+                        color: AppColors.douradoTexto(theme.brightness),
                       ),
                     ),
                   ),

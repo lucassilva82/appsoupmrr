@@ -25,8 +25,13 @@ import '../utils/app_theme.dart';
 
 enum TipoAviso { sucesso, erro, atencao, info }
 
-/// Âmbar do "Em desenvolvimento" e dos avisos de atenção.
+/// Âmbar do "Em desenvolvimento" e dos avisos de atenção, no tema escuro.
+/// Para texto e ícone use [corAtencao], que escurece no tema claro.
 const Color kCorAtencao = Color(0xFFC77800);
+
+/// O âmbar de atenção legível no tema da tela (DESIGN §6: 4,5:1).
+Color corAtencao(ThemeData theme) =>
+    theme.brightness == Brightness.dark ? kCorAtencao : AppColors.atencaoEscura;
 
 /// Cor de cada tipo, lida do tema para servir aos modos claro e escuro.
 Color corDoAviso(ThemeData theme, TipoAviso tipo) {
@@ -37,7 +42,7 @@ Color corDoAviso(ThemeData theme, TipoAviso tipo) {
     case TipoAviso.erro:
       return theme.colorScheme.error;
     case TipoAviso.atencao:
-      return kCorAtencao;
+      return corAtencao(theme);
     case TipoAviso.info:
       return theme.colorScheme.primary;
   }
