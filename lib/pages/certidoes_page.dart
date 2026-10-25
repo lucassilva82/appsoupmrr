@@ -1008,14 +1008,7 @@ class _BotaoEmitir extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    // A mesma cor do botão habilitado (tema), para não "apagar" ao emitir.
-    final corBotao = theme.elevatedButtonTheme.style?.backgroundColor
-            ?.resolve(const <WidgetState>{}) ??
-        theme.colorScheme.primary;
-    final noBotao = theme.elevatedButtonTheme.style?.foregroundColor
-            ?.resolve(const <WidgetState>{}) ??
-        theme.colorScheme.onPrimary;
+    const noBotao = Colors.white;
 
     final String texto;
     final Widget icone;
@@ -1049,12 +1042,9 @@ class _BotaoEmitir extends StatelessWidget {
         child: ElevatedButton(
           onPressed: habilitado && !ocupado ? aoTocar : null,
           clipBehavior: Clip.antiAlias,
-          style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.zero,
-            // Emitindo, o botão fica com a cor cheia mesmo desabilitado.
-            disabledBackgroundColor: ocupado ? corBotao : null,
-            disabledForegroundColor: ocupado ? noBotao : null,
-          ),
+          // Emitindo, o botão fica com a cor cheia mesmo desabilitado.
+          style: estiloBotaoCor(AppColors.acao, clara: AppColors.acaoClara, cheioDesligado: ocupado)
+              .copyWith(padding: const WidgetStatePropertyAll(EdgeInsets.zero)),
           child: Stack(
             fit: StackFit.expand,
             children: [

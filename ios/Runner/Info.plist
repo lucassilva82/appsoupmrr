@@ -44,6 +44,8 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>A câmera é usada só para ler o QR Code de certidões e contracheques em Validar documento.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
 	<string>Permissão para acessar documentos no dispositivo.</string>
 	<key>NSFaceIDUsageDescription</key>

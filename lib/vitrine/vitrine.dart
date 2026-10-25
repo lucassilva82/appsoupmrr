@@ -317,7 +317,12 @@ Object? _responder(Uri url, http.Request req) {
           },
           {'chave': 'home.anuncio', 'ordem': 20, 'escondivel': false},
           {'chave': 'home.dicas', 'ordem': 30, 'dados': [
-            {'texto': 'Use a lupa para achar qualquer serviço pelo nome, como "holerite" ou "reserva".', 'icone': 'tips_and_updates', 'tipo': 'dica'},
+            // As mesmas da carga inicial do painel (sql/2026-10-25_soupm_dicas_iniciais.sql).
+            {'texto': 'Use a lupa para achar qualquer serviço pelo nome, como "holerite" ou "reserva".', 'icone': 'search', 'tipo': 'dica'},
+            {'texto': 'Emita certidões na hora, com QR Code de conferência. Elas também chegam no seu e-mail.', 'icone': 'verified', 'tipo': 'dica', 'destino': 'rh.certidoes'},
+            {'texto': 'Veja na Linha do tempo seus cursos, elogios, medalhas e promoções registrados no SIGRH.', 'icone': 'military_tech', 'tipo': 'novidade', 'destino': 'rh.carreira'},
+            {'texto': 'Ligue o Face ID ou a biometria em Perfil para entrar sem digitar a senha.', 'icone': 'fingerprint', 'tipo': 'dica'},
+            {'texto': 'Confira em Validar documento se uma certidão ou contracheque é autêntico.', 'icone': 'task_alt', 'tipo': 'dica', 'destino': 'rh.validar'},
           ]},
           {'chave': 'home.pendencias', 'ordem': 40, 'escondivel': false},
           {'chave': 'home.atalhos', 'ordem': 50},

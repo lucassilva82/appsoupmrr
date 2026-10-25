@@ -55,6 +55,7 @@ dependencies:
   cached_network_image: ^3.4.1
   local_auth: ^2.3.0
   flutter_secure_storage: ^10.3.4
+  mobile_scanner: ^7.4.2
 
   # firebase_analytics: ^11.3.6
 

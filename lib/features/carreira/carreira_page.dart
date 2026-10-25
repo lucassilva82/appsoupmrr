@@ -23,8 +23,12 @@ const _chave = 'rh.carreira';
 /// Um marco da carreira (P5, docs/SOUPM_2_2.md §11): incorporação,
 /// promoção, comportamento, escolaridade ou tempo averbado.
 class MarcoCarreira {
-  const MarcoCarreira({required this.data, required this.tipo, required this.titulo, this.detalhe});
+  const MarcoCarreira(
+      {required this.data, required this.tipo, required this.titulo, this.detalhe, this.semData = false});
   final DateTime data;
+
+  /// O SIGRH não tem a data (a API manda 1900-01-01): vai para o fim da lista.
+  final bool semData;
   final String tipo;
   final String titulo;
   final String? detalhe;
@@ -33,7 +37,12 @@ class MarcoCarreira {
     if (j is! Map || j['titulo'] is! String) return null;
     final d = DateTime.tryParse('${j['data'] ?? ''}');
     if (d == null) return null;
-    return MarcoCarreira(data: d, tipo: '${j['tipo'] ?? ''}', titulo: j['titulo'] as String, detalhe: j['detalhe'] as String?);
+    return MarcoCarreira(
+        data: d,
+        tipo: '${j['tipo'] ?? ''}',
+        titulo: j['titulo'] as String,
+        detalhe: j['detalhe'] as String?,
+        semData: j['sem_data'] == true);
   }
 }
 
@@ -245,7 +254,7 @@ class _Conteudo extends StatelessWidget {
     final filtrados = linha.marcos.reversed.where(grupo.contem).toList();
     final anos = <int, List<MarcoCarreira>>{};
     for (final m in filtrados) {
-      anos.putIfAbsent(m.data.year, () => []).add(m);
+      anos.putIfAbsent(m.semData ? 0 : m.data.year, () => []).add(m);
     }
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
@@ -409,7 +418,7 @@ class _Ano extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: theme.colorScheme.primary.withValues(alpha: .35)),
             ),
-            child: Text('$ano',
+            child: Text(ano == 0 ? 'Sem data' : '$ano',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: theme.colorScheme.primary)),
           ),
           const SizedBox(width: 8),
@@ -433,7 +442,7 @@ class _Marco extends StatelessWidget {
     final cor = _corTipo(marco.tipo, theme.brightness);
     final linhaCor = theme.colorScheme.onSurface.withValues(alpha: 0.14);
     return Semantics(
-      label: '${_nomeTipo(marco.tipo)}, ${_data(marco.data)}: ${marco.titulo}'
+      label: '${_nomeTipo(marco.tipo)}, ${marco.semData ? 'sem data' : _data(marco.data)}: ${marco.titulo}'
           '${marco.detalhe != null ? ', ${marco.detalhe}' : ''}',
       excludeSemantics: true,
       child: IntrinsicHeight(
@@ -468,7 +477,7 @@ class _Marco extends StatelessWidget {
                     Text(_nomeTipo(marco.tipo).toUpperCase(),
                         style: TextStyle(fontSize: 10.5, letterSpacing: 1.1, fontWeight: FontWeight.w700, color: cor)),
                     const Spacer(),
-                    Text(_data(marco.data),
+                    Text(marco.semData ? 'data não registrada' : _data(marco.data),
                         style: theme.textTheme.bodySmall
                             ?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
                   ]),
@@ -529,7 +538,7 @@ class _CardCarreiraState extends State<CardCarreira> {
           // Sem dados (falhou ou ainda sem nada no SIGRH), o card não ocupa a Início.
           if (linha == null) return _falhou ? const SizedBox.shrink() : const Esqueleto(child: BlocoEsqueleto(altura: 150, raio: 18));
           if (linha.marcos.isEmpty) return const SizedBox.shrink();
-          final ultimo = linha.marcos.last;
+          final ultimo = linha.marcos.lastWhere((m) => !m.semData, orElse: () => linha.marcos.last);
           final anos = linha.anosNaPmrr;
           final itens = [
             ('cursos', linha.conta({'curso'})),

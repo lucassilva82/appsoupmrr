@@ -168,16 +168,9 @@ class BotaoDialogo extends StatelessWidget {
       final c = cor;
       botao = ElevatedButton(
         onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: c,
-          foregroundColor: c == null
-              ? null
-              : (ThemeData.estimateBrightnessForColor(c) == Brightness.dark
-                  ? Colors.white
-                  : Colors.black87),
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-        ),
+        // Cor própria (vermelho de excluir): o mesmo acabamento do tema.
+        style: (c == null ? const ButtonStyle() : estiloBotaoCor(c))
+            .copyWith(padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 12))),
         child: texto,
       );
     } else {

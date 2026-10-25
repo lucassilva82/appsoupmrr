@@ -761,6 +761,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       return;
     }
 
+    // O militar já respondeu à pergunta do sistema (recusou): perguntar de
+    // novo com a janela do app logo depois era repetido. Dá para ligar em
+    // Perfil › Notificações.
+    if (settings.authorizationStatus == AuthorizationStatus.denied) return;
+
     // Quem já respondeu "Cancelar" não é perguntado de novo a cada volta ao
     // app (antes o pedido voltava sempre que o app saía do fundo); dá para
     // ligar em Perfil › Notificações.

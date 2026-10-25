@@ -80,10 +80,9 @@ class AppTheme {
     final secondary = _secondary(isDark, isSuperUser);
     final onPrimary = Colors.white;
 
-    // Cor dos botões cheios: a mesma do botão de login, para o app inteiro
-    // falar a mesma língua. Medido sobre o fundo escuro: 3,25:1 de contorno
-    // (o navy dava 1,24:1) e 5,94:1 de branco por cima.
-    const corBotao = AppColors.acao;
+    // Botões cheios: degradê na cor de ação, o mesmo do botão de login
+    // (_botaoPrincipal, no fim do arquivo). Medido sobre o fundo escuro:
+    // 3,25:1 de contorno (o navy dava 1,24:1) e 5,94:1 de branco por cima.
     final bgColor = isDark ? AppColors.darkBg : AppColors.lightBg;
     final surface = isDark ? AppColors.darkSurface : AppColors.lightSurface;
     final card = isDark ? AppColors.darkCard : AppColors.lightCard;
@@ -257,35 +256,33 @@ class AppTheme {
       ),
 
       // ── ElevatedButton ──────────────────────────────────────────────────────
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: corBotao,
-          foregroundColor: Colors.white,
-          disabledBackgroundColor: corBotao.withOpacity(0.45),
-          disabledForegroundColor: Colors.white70,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          // 52 de altura mínima: com 48 o indicador de carregamento ficava
-          // espremido dentro do botão.
+      elevatedButtonTheme: ElevatedButtonThemeData(style: _botaoPrincipal(isDark)),
+
+      // ── FilledButton ───────────────────────────────────────────────────────
+      filledButtonTheme: FilledButtonThemeData(style: _botaoPrincipal(isDark)),
+
+      // ── OutlinedButton ─────────────────────────────────────────────────────
+      // Secundário (DESIGN §5): vidro leve, contorno fino na primária e o
+      // mesmo raio e altura do principal, para os dois lado a lado casarem.
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: primary,
+          backgroundColor: isDark ? Colors.white.withValues(alpha: .04) : Colors.white.withValues(alpha: .55),
+          side: BorderSide(color: primary.withValues(alpha: .55), width: 1.2),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           minimumSize: const Size(0, 52),
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-          elevation: isDark ? 0 : 2,
-          textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 22),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5, letterSpacing: .2),
         ),
       ),
 
-      // ── FilledButton ───────────────────────────────────────────────────────
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: corBotao,
-          foregroundColor: Colors.white,
-          disabledBackgroundColor: corBotao.withOpacity(0.45),
-          disabledForegroundColor: Colors.white70,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          minimumSize: const Size(0, 52),
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-          textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      // ── TextButton ─────────────────────────────────────────────────────────
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primary,
+          minimumSize: const Size(44, 44),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5),
         ),
       ),
 
@@ -429,4 +426,73 @@ class AppTheme {
         ? [const Color(0xFF003D99), AppColors.superBlue] // azul royal → navy
         : [const Color(0xFF1976D2), AppColors.navy]; // azul médio → navy
   }
+}
+
+/// Botão principal do app (DESIGN §5 e §11): o mesmo acabamento do botão
+/// Entrar do login, para todos os botões cheios. Degradê na cor de ação
+/// (mais clara em cima), um fio de luz no alto, sombra azul suave e, ao
+/// apertar, escurece e a sombra recolhe. Desabilitado: chapado e apagado.
+/// O contraste do branco sobre o tom mais claro do degradê passa de 4,5:1.
+ButtonStyle _botaoPrincipal(bool isDark) => estiloBotaoCor(AppColors.acao, clara: AppColors.acaoClara, escuro: isDark);
+
+/// O mesmo acabamento em outra cor (verde de concluir, vermelho de excluir).
+/// [clara] é o tom de cima do degradê; sem ele, a própria cor clareada.
+/// Com [cheioDesligado], o botão desabilitado continua cheio (botão ocupado,
+/// com o indicador de carregamento dentro).
+ButtonStyle estiloBotaoCor(Color cor, {Color? clara, bool escuro = true, bool cheioDesligado = false}) {
+  final topo = clara ?? Color.lerp(cor, Colors.white, .16)!;
+  final textoClaro = ThemeData.estimateBrightnessForColor(cor) == Brightness.dark;
+  final texto = textoClaro ? Colors.white : const Color(0xFF14171F);
+  return ButtonStyle(
+    foregroundColor: WidgetStateProperty.resolveWith((s) =>
+        s.contains(WidgetState.disabled) && !cheioDesligado ? texto.withValues(alpha: .7) : texto),
+    backgroundColor: const WidgetStatePropertyAll(Colors.transparent),
+    overlayColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.pressed)
+        ? Colors.black.withValues(alpha: .14)
+        : s.contains(WidgetState.hovered) || s.contains(WidgetState.focused)
+            ? Colors.white.withValues(alpha: .08)
+            : null),
+    elevation: const WidgetStatePropertyAll(0),
+    shadowColor: const WidgetStatePropertyAll(Colors.transparent),
+    shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+    // 52 de altura mínima: com 48 o indicador de carregamento ficava
+    // espremido dentro do botão.
+    minimumSize: const WidgetStatePropertyAll(Size(0, 52)),
+    padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 14, horizontal: 24)),
+    textStyle: const WidgetStatePropertyAll(
+        TextStyle(fontWeight: FontWeight.w700, fontSize: 16, letterSpacing: .2)),
+    backgroundBuilder: (context, estados, filho) {
+      final desligado = estados.contains(WidgetState.disabled) && !cheioDesligado;
+      final apertado = estados.contains(WidgetState.pressed);
+      return AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          gradient: desligado
+              ? null
+              : LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [topo, cor],
+                ),
+          color: desligado ? cor.withValues(alpha: .40) : null,
+          border: Border(
+            top: BorderSide(color: Colors.white.withValues(alpha: desligado ? 0 : .22), width: 1),
+          ),
+          boxShadow: desligado
+              ? null
+              : [
+                  BoxShadow(
+                    color: cor.withValues(alpha: escuro ? (apertado ? .25 : .45) : (apertado ? .18 : .32)),
+                    blurRadius: apertado ? 6 : 16,
+                    offset: Offset(0, apertado ? 2 : 6),
+                    spreadRadius: -4,
+                  ),
+                ],
+        ),
+        child: filho,
+      );
+    },
+  );
 }

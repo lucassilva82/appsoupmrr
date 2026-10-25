@@ -845,12 +845,7 @@ class _PrimeiroAcessoPageState extends State<_PrimeiroAcesso> {
           height: 50,
           child: ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: verde,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
-            ),
+            style: estiloBotaoCor(verde),
             child: const Text('Ir para o login',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           ),

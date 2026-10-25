@@ -8,6 +8,7 @@ import '../../core/log/registro_log.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/custom_appbar.dart';
 import '../../widgets/vidro.dart';
+import 'leitor_qr_page.dart';
 
 const _chave = 'rh.validar';
 
@@ -66,6 +67,16 @@ class _ValidarDocumentoPageState extends State<ValidarDocumentoPage> {
     if (d?.text != null) setState(() => _campo.text = d!.text!.trim());
   }
 
+  /// Abre a câmera; o código lido entra no campo e já é conferido.
+  Future<void> _lerQr() async {
+    // Em tela cheia, por cima da barra de abas.
+    final lido = await Navigator.of(context, rootNavigator: true).push<String>(
+        MaterialPageRoute(builder: (_) => const LeitorQrPage(), fullscreenDialog: true));
+    if (lido == null || !mounted) return;
+    setState(() => _campo.text = lido);
+    await _conferir();
+  }
+
   Future<void> _conferir() async {
     final c = entenderCodigo(_campo.text);
     if (c == null) {
@@ -98,10 +109,26 @@ class _ValidarDocumentoPageState extends State<ValidarDocumentoPage> {
               arte: Arte.de('rh'),
               icone: Icons.qr_code_2_rounded,
               titulo: 'Validar documento',
-              subtitulo: 'Para conferir pelo QR Code, aponte a câmera do celular para ele: a página de conferência '
-                  'abre sozinha. Sem o QR, digite ou cole aqui o código impresso no documento.',
+              subtitulo: 'Leia o QR Code impresso na certidão ou no contracheque, ou digite o código que vem '
+                  'junto dele.',
               margem: const EdgeInsets.only(bottom: 16),
             ),
+            // A câmera é o caminho principal; o código digitado fica embaixo.
+            ElevatedButton.icon(
+              onPressed: _lerQr,
+              icon: const Icon(Icons.qr_code_scanner_rounded, size: AppIconSize.md),
+              label: const Text('Ler QR Code com a câmera'),
+            ),
+            const SizedBox(height: 14),
+            Row(children: [
+              const Expanded(child: Divider()),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Text('ou digite o código', style: theme.textTheme.bodySmall),
+              ),
+              const Expanded(child: Divider()),
+            ]),
+            const SizedBox(height: 14),
             // O formulário numa seção com a arte discreta.
             CartaoVidro(
               arte: Arte.de('rh'),
@@ -124,10 +151,9 @@ class _ValidarDocumentoPageState extends State<ValidarDocumentoPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                ElevatedButton(
+                OutlinedButton(
                   onPressed: _conferir,
-                  style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-                  child: const Text('Conferir'),
+                  child: const Text('Conferir o código'),
                 ),
               ]),
             ),
