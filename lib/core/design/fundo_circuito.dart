@@ -1,3 +1,4 @@
+import 'dart:async' show scheduleMicrotask;
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
@@ -62,8 +63,10 @@ class _FundoCircuitoState extends State<FundoCircuito> with TickerProviderStateM
 
   @override
   void dispose() {
-    // Sem esperar o quadro: a tela já saiu (e o tema escuro deve sair junto).
-    if (_contado) FundoCircuito.abertos.value--;
+    // Fora do dispose: avisar aqui marca outras telas com a árvore travada
+    // ("widget tree was locked", AP-FATAL no painel em 25/10/2026). A
+    // microtarefa roda logo depois do quadro, antes do próximo.
+    if (_contado) scheduleMicrotask(() => FundoCircuito.abertos.value--);
     _entrada.dispose();
     _pulso.dispose();
     super.dispose();
