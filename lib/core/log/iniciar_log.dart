@@ -45,7 +45,10 @@ Future<void> iniciarLog({
   await log.evento('app.abrir', dados: {
     'abertura': 'fria',
     'ms': DateTime.now().difference(AmbienteApp.inicio).inMilliseconds,
-    'tema': tela.platformBrightness == Brightness.dark ? 'escuro' : 'claro',
+    // O tema que aparece na tela (a escolha do militar vence o sistema) e a
+    // escolha em si. Antes ia só o do sistema: com "Claro" escolhido e o
+    // aparelho no escuro, contava "escuro" (25/10/2026).
+    ...await temaParaLog(tela.platformBrightness),
     'fonte_escala': double.parse(tela.textScaleFactor.toStringAsFixed(2)),
     if (await _modelo() case final m?) 'modelo': m,
   });
@@ -112,4 +115,24 @@ class _CicloDoApp with WidgetsBindingObserver {
         break;
     }
   }
+}
+
+/// O tema da tela e a escolha do militar (Perfil › Aparência), no formato do
+/// log: `tema` claro|escuro e `escolha` auto|claro|escuro.
+Future<Map<String, String>> temaParaLog(Brightness sistema, {SharedPreferences? prefs}) async {
+  String? salvo;
+  try {
+    salvo = (prefs ?? await SharedPreferences.getInstance()).getString('appThemeMode');
+  } catch (_) {}
+  final escolha = switch (salvo) {
+    'dark' => 'escuro',
+    'light' => 'claro',
+    _ => 'auto',
+  };
+  final tema = switch (escolha) {
+    'escuro' => 'escuro',
+    'claro' => 'claro',
+    _ => sistema == Brightness.dark ? 'escuro' : 'claro',
+  };
+  return {'tema': tema, 'escolha': escolha};
 }
