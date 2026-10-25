@@ -14,6 +14,7 @@ import '../../models/auth_model.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/aviso_rapido.dart';
 import '../../widgets/custom_appbar.dart';
+import '../../widgets/dialogo_confirmacao.dart';
 import '../../widgets/vidro.dart';
 import 'chamados_api.dart';
 import '../../core/design/esqueleto.dart';
@@ -40,22 +41,22 @@ class _ErroChamados extends StatelessWidget {
 
   Future<void> _pedirSenha(BuildContext context) async {
     final ctrl = TextEditingController();
-    final senha = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Senha da intranet'),
-        content: TextField(
-          controller: ctrl,
-          obscureText: true,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: 'Senha da intranet'),
-          onSubmitted: (v) => Navigator.pop(ctx, v),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, ctrl.text), child: const Text('Entrar')),
-        ],
+    final senha = await mostrarDialogoArte<String>(
+      context,
+      arte: Arte.de('atendimento'),
+      icone: Icons.lock_outline,
+      titulo: 'Senha da intranet',
+      corpo: (ctx) => TextField(
+        controller: ctrl,
+        obscureText: true,
+        autofocus: true,
+        decoration: const InputDecoration(labelText: 'Senha da intranet'),
+        onSubmitted: (v) => Navigator.pop(ctx, v),
       ),
+      acoes: (ctx) => [
+        BotaoDialogo.secundario(rotulo: 'Cancelar', onPressed: () => Navigator.pop(ctx)),
+        BotaoDialogo.principal(rotulo: 'Entrar', onPressed: () => Navigator.pop(ctx, ctrl.text)),
+      ],
     );
     if (senha == null || senha.isEmpty || !context.mounted) return;
     try {
@@ -457,14 +458,13 @@ class _NovoChamadoPageState extends State<NovoChamadoPage> {
       registrar('chamado.abrir', chave: _chave, dados: {'assunto': _assunto!.id, 'anexos': _anexos.length});
       if (_anexos.isNotEmpty) registrar('chamado.anexo_enviar', chave: _chave, dados: {'quantos': _anexos.length});
       if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          icon: const Icon(Icons.task_alt),
-          title: Text('Chamado ${r.protocolo} aberto'),
-          content: Text('Situação: ${r.situacao}. ${RepositorioConfig.atual.textoChamados('confirmacao') ?? 'Você acompanha por Meus chamados e recebe aviso quando a equipe responder.'}'),
-          actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Acompanhar'))],
-        ),
+      await mostrarDialogoArte<void>(
+        context,
+        arte: Arte.de('atendimento'),
+        icone: Icons.task_alt,
+        titulo: 'Chamado ${r.protocolo} aberto',
+        mensagem: 'Situação: ${r.situacao}. ${RepositorioConfig.atual.textoChamados('confirmacao') ?? 'Você acompanha por Meus chamados e recebe aviso quando a equipe responder.'}',
+        acoes: (ctx) => [BotaoDialogo.principal(rotulo: 'Acompanhar', onPressed: () => Navigator.pop(ctx))],
       );
       if (mounted) Navigator.of(context).pop(true);
     } on FalhaApp catch (f) {

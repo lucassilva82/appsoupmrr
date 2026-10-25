@@ -4,7 +4,11 @@ import 'package:projetonovo/utils/app_theme.dart';
 import '../models/militar.dart';
 import '../models/telefone.dart';
 import '../services/dados_sql.dart';
+import '../core/design/arte_cartao.dart';
+import '../core/design/folha_arte.dart';
 import 'alerta.dart';
+import 'dialogo_confirmacao.dart';
+import 'vidro.dart';
 
 class DadosContato extends StatefulWidget {
   final Militar militar;
@@ -90,10 +94,12 @@ class _DadosContatoState extends State<DadosContato> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Verde do WhatsApp, usado como tingimento e como cor de texto.
-    const verdeZap = Color(0xFF25D366);
+    final aoFundo = theme.colorScheme.onSurface;
+    // Verde do WhatsApp, só como tingimento e cor do selo marcado; no claro,
+    // um tom mais escuro para o texto passar de 4,5:1.
     final isDark = theme.brightness == Brightness.dark;
-    const primaryBlue = AppColors.blue;
+    final verdeZap =
+        isDark ? const Color(0xFF25D366) : const Color(0xFF14713B);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,17 +108,15 @@ class _DadosContatoState extends State<DadosContato> {
         Row(
           children: [
             Text('Números cadastrados',
-                style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: aoFundo.withValues(alpha: 0.6))),
             const Spacer(),
             TextButton.icon(
-              icon: const Icon(Icons.add_call, size: 14),
-              label: const Text('Adicionar', style: TextStyle(fontSize: 12)),
+              icon: const Icon(Icons.add_call, size: AppIconSize.xs),
+              label: const Text('Adicionar'),
               style: TextButton.styleFrom(
-                foregroundColor: primaryBlue,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                minimumSize: const Size(44, 44),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
               ),
               onPressed: () async {
                 await _openDialogAdd(widget.militar.telefones);
@@ -120,16 +124,17 @@ class _DadosContatoState extends State<DadosContato> {
             ),
           ],
         ),
-        const SizedBox(height: 8),
 
         // ── Lista de telefones ────────────────────────────────────────────
+        // Linhas dentro da caixa da seção, separadas por divisor (lista
+        // agrupada); antes cada número era uma caixa branca própria.
         if (widget.militar.telefones.isEmpty)
           Center(
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Text('Nenhum contato cadastrado.',
                   style: theme.textTheme.bodySmall
-                      ?.copyWith(color: Colors.grey.shade500)),
+                      ?.copyWith(color: aoFundo.withValues(alpha: 0.6))),
             ),
           )
         else
@@ -138,116 +143,115 @@ class _DadosContatoState extends State<DadosContato> {
             final tel = entry.value;
             final isWhats = tel.value == true;
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.055)
-                    : Colors.white.withValues(alpha: 0.72),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color:
-                      isDark ? AppColors.darkBorder : const Color(0xFFE0E7F0),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  // Número
-                  const Icon(Icons.phone_outlined,
-                      size: 16, color: Color(0xFF1565C0)),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      tel.numeroTel,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+            return Column(
+              children: [
+                if (index > 0)
+                  Divider(height: 1, color: aoFundo.withValues(alpha: 0.08)),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 52),
+                  child: Row(
+                    children: [
+                      ExcludeSemantics(
+                        child: Icon(Icons.phone_outlined,
+                            size: AppIconSize.xs,
+                            color: theme.colorScheme.primary),
                       ),
-                    ),
-                  ),
-                  // WhatsApp toggle — toque no chip para salvar direto no banco
-                  GestureDetector(
-                    onTap: () => _salvarWhatsapp(tel, isWhats),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      // Marcado, o verde entra como tingimento e não como
-                      // bloco cheio: era o único elemento sólido da ficha.
-                      decoration: BoxDecoration(
-                        color: isWhats
-                            ? verdeZap.withValues(alpha: isDark ? 0.20 : 0.14)
-                            : (isDark
-                                ? Colors.white.withValues(alpha: 0.055)
-                                : Colors.white.withValues(alpha: 0.72)),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isWhats
-                              ? verdeZap.withValues(alpha: 0.55)
-                              : theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.15),
-                          width: 1,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          tel.numeroTel,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Image.asset(
-                            'assets/imagens/whatsapp.png',
-                            width: 14,
-                            height: 14,
-                            color: isWhats
-                                ? verdeZap
-                                : theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.45),
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            'WhatsApp',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: isWhats
-                                  ? verdeZap
-                                  : theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.55),
+                      // WhatsApp — toque no selo para salvar direto no banco
+                      Semantics(
+                        button: true,
+                        toggled: isWhats,
+                        label: 'WhatsApp',
+                        excludeSemantics: true,
+                        child: InkWell(
+                          onTap: () => _salvarWhatsapp(tel, isWhats),
+                          borderRadius: BorderRadius.circular(20),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 44),
+                            child: Center(
+                              widthFactor: 1,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeOut,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: isWhats
+                                      ? verdeZap.withValues(
+                                          alpha: isDark ? 0.20 : 0.12)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isWhats
+                                        ? verdeZap.withValues(alpha: 0.55)
+                                        : aoFundo.withValues(alpha: 0.15),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Image.asset(
+                                      'assets/imagens/whatsapp.png',
+                                      width: 14,
+                                      height: 14,
+                                      color: isWhats
+                                          ? verdeZap
+                                          : aoFundo.withValues(alpha: 0.45),
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      'WhatsApp',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: isWhats
+                                            ? verdeZap
+                                            : aoFundo.withValues(alpha: 0.6),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Excluir
-                  GestureDetector(
-                    onTap: () async {
-                      if (widget.militar.telefones.length <= 1) {
-                        alertaErro(context,
-                            titulo: 'Atenção',
-                            texto:
-                                'É necessário ter ao menos um contato cadastrado.',
-                            confirmar: 'OK');
-                      } else {
-                        await _openDialogExclui(
-                            widget.militar.telefones, index);
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.08),
-                        shape: BoxShape.circle,
+                      // Excluir (alvo de 44 pt)
+                      IconButton(
+                        tooltip: 'Excluir ${tel.numeroTel}',
+                        constraints:
+                            const BoxConstraints(minWidth: 44, minHeight: 44),
+                        icon: Icon(Icons.delete_outline_rounded,
+                            size: AppIconSize.sm,
+                            color: theme.colorScheme.error),
+                        onPressed: () async {
+                          if (widget.militar.telefones.length <= 1) {
+                            alertaErro(context,
+                                titulo: 'Atenção',
+                                texto:
+                                    'É necessário ter ao menos um contato cadastrado.',
+                                confirmar: 'OK');
+                          } else {
+                            await _openDialogExclui(
+                                widget.militar.telefones, index);
+                          }
+                        },
                       ),
-                      child: const Icon(Icons.delete_outline_rounded,
-                          size: 15, color: Colors.redAccent),
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             );
-          }).toList(),
+          }),
       ],
     );
   }
@@ -255,158 +259,63 @@ class _DadosContatoState extends State<DadosContato> {
   Future<void> _openDialogAdd(List<Telefone> lista) async {
     _telController.text = '95';
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => StatefulBuilder(
+    // Folha no padrão 2.2 (faixa com a arte da ficha), com o campo do tema.
+    final confirmed = await mostrarFolhaArte<bool>(
+      context,
+      arte: Arte.de('rh'),
+      icone: Icons.add_call,
+      titulo: 'Novo contato',
+      subtitulo: 'DDD + número (11 dígitos)',
+      corpo: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) {
-          final isDark = Theme.of(ctx).brightness == Brightness.dark;
           final isValid = _telController.text.length == 11;
-
-          return Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.055)
-                    : Colors.white.withValues(alpha: 0.72),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.15),
-                    blurRadius: 32,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _telController,
+                keyboardType: TextInputType.phone,
+                autofocus: true,
+                maxLength: 11,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  letterSpacing: 1.2,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'Número de telefone',
+                  hintText: '95912345678',
+                  counterText: '',
+                  prefixIcon:
+                      Icon(Icons.phone_outlined, size: AppIconSize.sm),
+                ),
+                onChanged: (_) => setDialogState(() {}),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+              const SizedBox(height: 16),
+              Row(
                 children: [
-                  // ── Gradient header ──────────────────────────────────
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [AppColors.blue, AppColors.navy],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(24)),
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.18),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.add_call,
-                              color: Colors.white, size: 26),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Novo Contato',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ],
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48)),
+                      child: const Text('Cancelar'),
                     ),
                   ),
-
-                  // ── Campo de número ──────────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TextField(
-                          controller: _telController,
-                          keyboardType: TextInputType.phone,
-                          autofocus: true,
-                          maxLength: 11,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                            letterSpacing: 1.2,
-                            color:
-                                isDark ? Colors.white : const Color(0xFF1A1A2E),
-                          ),
-                          decoration: InputDecoration(
-                            labelText: 'Número de telefone',
-                            hintText: '95912345678',
-                            counterText: '',
-                            prefixIcon: const Icon(Icons.phone_outlined,
-                                color: AppColors.blue, size: 20),
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14)),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(
-                                  color: AppColors.blue, width: 2),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                          ),
-                          onChanged: (_) => setDialogState(() {}),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'DDD + número (11 dígitos)',
-                          style: TextStyle(
-                              fontSize: 11, color: Colors.grey.shade500),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // ── Botões ───────────────────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 13),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: const Text('Cancelar'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: FilledButton(
-                            onPressed: isValid
-                                ? () => Navigator.of(ctx).pop(true)
-                                : null,
-                            style: FilledButton.styleFrom(
-                              disabledBackgroundColor:
-                                  AppColors.blue.withValues(alpha: 0.3),
-                              padding: const EdgeInsets.symmetric(vertical: 13),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: const Text('Adicionar',
-                                style: TextStyle(fontWeight: FontWeight.w600)),
-                          ),
-                        ),
-                      ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed:
+                          isValid ? () => Navigator.of(ctx).pop(true) : null,
+                      style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48)),
+                      child: const Text('Adicionar'),
                     ),
                   ),
                 ],
               ),
-            ),
+            ],
           );
         },
       ),
@@ -454,140 +363,15 @@ class _DadosContatoState extends State<DadosContato> {
   Future<void> _openDialogExclui(List<Telefone> lista, int index) async {
     final numero = lista[index].numeroTel;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) {
-        final isDark = Theme.of(ctx).brightness == Brightness.dark;
-
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.055)
-                  : Colors.white.withValues(alpha: 0.72),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.15),
-                  blurRadius: 32,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // ── Header perigo ────────────────────────────────────
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(24)),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.phone_disabled_outlined,
-                            color: Colors.white, size: 26),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Excluir Contato',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ── Corpo ────────────────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Deseja excluir o número',
-                        style: TextStyle(
-                          color: isDark ? Colors.white70 : Colors.black87,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        numero,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                          letterSpacing: 1.2,
-                          color: AppColors.blue,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Esta ação não pode ser desfeita.',
-                        style: TextStyle(
-                            fontSize: 11, color: Colors.grey.shade500),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ── Botões ───────────────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.of(ctx).pop(false),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text('Cancelar'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () => Navigator.of(ctx).pop(true),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFFE53935),
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text('Excluir',
-                              style: TextStyle(fontWeight: FontWeight.w600)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+    // Confirmação no desenho do app, em vermelho (DESIGN §5).
+    final confirmed = await dialogoConfirmacao(
+      context,
+      titulo: 'Excluir contato',
+      mensagem: 'Deseja excluir o número $numero? '
+          'Esta ação não pode ser desfeita.',
+      textoConfirmar: 'Excluir',
+      icone: Icons.phone_disabled_outlined,
+      cor: Theme.of(context).colorScheme.error,
     );
 
     if (confirmed != true) return;
@@ -633,61 +417,52 @@ class _DadosContatoState extends State<DadosContato> {
   }
 }
 
-// ── Loading dialog centralizado ───────────────────────────────────────────────
+// ── Aviso de "salvando" centralizado ─────────────────────────────────────────
+// Caixa de vidro do app (CartaoVidro), com o indicador da plataforma.
 class _LoadingDialog extends StatelessWidget {
   const _LoadingDialog();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
       child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 32),
-          decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.055)
-                : Colors.white.withValues(alpha: 0.72),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.12),
-                blurRadius: 32,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(
-                width: 48,
-                height: 48,
-                child: CircularProgressIndicator(
-                  color: AppColors.blue,
-                  strokeWidth: 3.5,
+        child: Semantics(
+          liveRegion: true,
+          label: 'Salvando. Aguarde um momento.',
+          excludeSemantics: true,
+          child: CartaoVidro(
+            raio: 22,
+            arte: Arte.de('rh'),
+            padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: CircularProgressIndicator.adaptive(),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Salvando...',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                const SizedBox(height: 18),
+                Text(
+                  'Salvando…',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Aguarde um momento',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                const SizedBox(height: 4),
+                Text(
+                  'Aguarde um momento',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

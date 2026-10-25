@@ -5,8 +5,10 @@ import '../models/events_model.dart';
 import '../models/plantao_model.dart';
 import '../utils/app_routes.dart';
 import '../widgets/calendar_widget.dart';
-import '../widgets/drawer_personalizado.dart';
 import '../widgets/vidro.dart';
+import '../widgets/dialogo_confirmacao.dart';
+import '../core/design/arte_cartao.dart';
+import '../utils/app_theme.dart';
 import '../core/erros/falha_de.dart';
 import '../core/erros/estado_erro.dart';
 
@@ -38,7 +40,6 @@ class _PlantaoPageState extends State<PlantaoPage> {
   @override
   Widget build(BuildContext context) {
     double hieght = MediaQuery.of(context).size.height;
-    double width = MediaQuery.of(context).size.height;
 
     // late bool? carregouDados;
 
@@ -56,9 +57,13 @@ class _PlantaoPageState extends State<PlantaoPage> {
             return FundoSuave(
                 child: Scaffold(
                     appBar: CustomAppBar(title: 'Meu Plantao'),
-                    body: EstadoErro(falha: falhaDe('ES', snapshot.error, tela: 'op.plantao'), tela: 'op.plantao')));
+                    body: EstadoErro(
+                        falha:
+                            falhaDe('ES', snapshot.error, tela: 'op.plantao'),
+                        tela: 'op.plantao')));
           } else {
-            return FundoSuave(child: Scaffold(
+            return FundoSuave(
+                child: Scaffold(
               appBar: CustomAppBar(title: 'Meu Plantao'),
               body: Container(
                 child: Column(
@@ -70,76 +75,70 @@ class _PlantaoPageState extends State<PlantaoPage> {
                     ),
                     SizedBox(height: hieght * 0.02),
                     widget.plantao.plantaoConfigurado == false
-                        ? Column(
-                            children: [
-                              Text(
-                                '* Nenhuma escala configurada',
-                                style: TextStyle(color: Colors.red),
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: CartaoVidro(
+                              arte: Arte.de('operacional'),
+                              padding: const EdgeInsets.all(14),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(children: [
+                                    Icon(Icons.event_busy_outlined,
+                                        size: AppIconSize.md,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .error),
+                                    const SizedBox(width: 10),
+                                    const Expanded(
+                                        child:
+                                            Text('Nenhuma escala configurada')),
+                                  ]),
+                                  const SizedBox(height: 12),
+                                  ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pushNamed(
+                                            AppRoutes.CONFIGURA_PLANTAO);
+                                      },
+                                      child: const Text('Configurar Escala')),
+                                ],
                               ),
-                              SizedBox(height: hieght * 0.03),
-                              ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.of(context)
-                                        .pushNamed(AppRoutes.CONFIGURA_PLANTAO);
-                                  },
-                                  child: Text('Configurar Escala')),
-                            ],
+                            ),
                           )
-                        : Column(
-                            children: [
-                              Container(
-                                height: hieght * 0.08,
-                                padding: EdgeInsets.symmetric(horizontal: 15),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Color.fromARGB(125, 87, 87, 224),
-                                      Color.fromARGB(226, 14, 1, 246),
-                                    ],
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.topRight,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          'Escala Configurada: ',
+                        : Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: CartaoVidro(
+                              arte: Arte.de('operacional'),
+                              padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text.rich(TextSpan(children: [
+                                      const TextSpan(
+                                          text: 'Escala configurada: ',
                                           style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white),
-                                        ),
-                                        SizedBox(width: width * 0.01),
-                                        Text(
-                                          widget.plantao.getTipoEscala(),
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                      ],
+                                              fontWeight: FontWeight.bold)),
+                                      TextSpan(
+                                          text: widget.plantao.getTipoEscala()),
+                                    ])),
+                                  ),
+                                  TextButton.icon(
+                                    style: TextButton.styleFrom(
+                                      foregroundColor:
+                                          Theme.of(context).colorScheme.error,
+                                      minimumSize: const Size(48, 44),
                                     ),
-                                    Container(
-                                      width: width * 0.09,
-                                      height: hieght * 0.04,
-                                      child: ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            foregroundColor: Color.fromARGB(
-                                                255, 59, 101, 255),
-                                          ),
-                                          onPressed: () async {
-                                            await openDialogExcluiEscala();
-                                          },
-                                          child: Text(
-                                            'Excluir',
-                                            style: TextStyle(fontSize: 11),
-                                          )),
-                                    )
-                                  ],
-                                ),
+                                    onPressed: () async {
+                                      await openDialogExcluiEscala();
+                                    },
+                                    icon: const Icon(
+                                        Icons.delete_outline_rounded,
+                                        size: AppIconSize.sm),
+                                    label: const Text('Excluir'),
+                                  ),
+                                ],
                               ),
-                              SizedBox(height: hieght * 0.02),
-                            ],
+                            ),
                           ),
                   ],
                 ),
@@ -155,41 +154,19 @@ class _PlantaoPageState extends State<PlantaoPage> {
   }
 
   openDialogExcluiEscala() async {
-    return showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Deseja excluir a escala: ${widget.plantao.getTipoEscala()}?',
-          style: TextStyle(fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(
-                backgroundColor: Colors.red, minimumSize: Size(10, 10)),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: Text(
-              'Cancelar',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
-          ),
-          TextButton(
-              style: TextButton.styleFrom(
-                  backgroundColor: Colors.green, minimumSize: Size(10, 10)),
-              onPressed: () async {
-                await widget.plantao.excluiEscalaMemoria();
-                await eventos.deletePrefs();
-                Navigator.of(context).pushReplacementNamed(AppRoutes.PLANTAO);
-              },
-              child: Text(
-                'Excluir',
-                style: TextStyle(color: Colors.white),
-              ))
-        ],
-      ),
+    final ok = await dialogoConfirmacao(
+      context,
+      titulo: 'Excluir a escala?',
+      mensagem:
+          'A escala ${widget.plantao.getTipoEscala()} sai deste aparelho.',
+      textoConfirmar: 'Excluir',
+      icone: Icons.delete_outline_rounded,
+      cor: Theme.of(context).colorScheme.error,
+      arte: Arte.de('operacional'),
     );
+    if (!ok) return;
+    await widget.plantao.excluiEscalaMemoria();
+    await eventos.deletePrefs();
+    if (mounted) Navigator.of(context).pushReplacementNamed(AppRoutes.PLANTAO);
   }
 }

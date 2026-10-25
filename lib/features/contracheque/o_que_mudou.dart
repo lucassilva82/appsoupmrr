@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/design/arte_cartao.dart';
+import '../../core/design/folha_arte.dart';
 import '../../core/erros/falha_app.dart';
 import '../../core/log/registro_log.dart';
 import '../../models/contracheque_model.dart';
@@ -135,7 +136,11 @@ class BotaoOQueMudou extends StatelessWidget {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      showDragHandle: true,
+      useRootNavigator: true,
+      // Folha no padrão 2.2 (FolhaArte): o fundo e a alça vêm do cabeçalho
+      // com a arte, desenhado em _FolhaMudancas.
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: .55),
       builder: (_) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.6,
@@ -247,20 +252,28 @@ class _FolhaMudancas extends StatelessWidget {
             ),
           ]);
         }
-        return ListView(
-          controller: rolagem,
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          children: [
-            TopoArte(
+        // Mesmo desenho da FolhaArte (faixa com a arte no topo, alça, ícone
+        // e título); a lista embaixo usa o controle da folha arrastável.
+        return Material(
+          color: escuro ? const Color(0xFF10161F) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          clipBehavior: Clip.antiAlias,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            CabecalhoFolhaArte(
               arte: Arte.de('cc'),
               icone: Icons.compare_arrows_rounded,
               titulo: 'O que mudou em ${mes.mesExtenso}/${mes.ano}',
               subtitulo: 'Rubricas que entraram, saíram ou mudaram de valor '
                   'em relação ao mês anterior da mesma folha.',
-              margem: const EdgeInsets.only(bottom: 14),
             ),
-            corpo,
-          ],
+            Expanded(
+              child: ListView(
+                controller: rolagem,
+                padding: EdgeInsets.fromLTRB(16, 14, 16, 24 + MediaQuery.of(context).padding.bottom),
+                children: [corpo],
+              ),
+            ),
+          ]),
         );
       },
     );

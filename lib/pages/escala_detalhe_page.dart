@@ -5,6 +5,9 @@ import '../services/escala_service.dart';
 import '../utils/app_theme.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/vidro.dart';
+import '../widgets/dialogo_confirmacao.dart';
+import '../core/design/arte_cartao.dart';
+import '../core/design/folha_arte.dart';
 import '../widgets/aviso_rapido.dart';
 
 // ── EscalaDetalhePage ─────────────────────────────────────────────────────────
@@ -94,36 +97,15 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
 
   // ── Dar Ciência ─────────────────────────────────────────────────────────────
   Future<void> _darCiencia() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.check_circle_rounded, color: Colors.green),
-            SizedBox(width: 10),
-            Text('Confirmar Ciência'),
-          ],
-        ),
-        content: const Text(
-            'Ao confirmar, você declara que tomou conhecimento desta escala de serviço.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.shade600,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child:
-                const Text('Confirmar', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+    final confirm = await dialogoConfirmacao(
+      context,
+      titulo: 'Confirmar Ciência',
+      mensagem:
+          'Ao confirmar, você declara que tomou conhecimento desta escala de serviço.',
+      textoConfirmar: 'Confirmar',
+      icone: Icons.check_circle_rounded,
+      cor: AppColors.acao,
+      arte: Arte.de('operacional'),
     );
 
     if (confirm != true || !mounted) return;
@@ -144,8 +126,7 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
       _logUi('darCiencia falhou code=${e.code} message=${e.message}');
       if (!mounted) return;
       setState(() => _actionLoading = false);
-      avisoErro(context, 'Não foi possível registrar',
-            texto: e.message);
+      avisoErro(context, 'Não foi possível registrar', texto: e.message);
     }
   }
 
@@ -185,8 +166,7 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
       _logUi('impossibilidade falhou code=${e.code} message=${e.message}');
       if (!mounted) return;
       setState(() => _actionLoading = false);
-      avisoErro(context, 'Não foi possível registrar',
-            texto: e.message);
+      avisoErro(context, 'Não foi possível registrar', texto: e.message);
     }
   }
 
@@ -196,8 +176,8 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return FundoSuave(child: Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+    return FundoSuave(
+        child: Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: Colors.transparent,
@@ -234,15 +214,10 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Status Banner ─────────────────────────────────────────
-          Container(
-            width: double.infinity,
+          CartaoVidro(
+            raio: 12,
+            tingimento: statusColor,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
-              border:
-                  Border.all(color: statusColor.withOpacity(0.35), width: 1),
-            ),
             child: Row(
               children: [
                 Icon(statusIcon, size: 16, color: statusColor),
@@ -361,9 +336,7 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
           // ── Ações ─────────────────────────────────────────────────
           const SizedBox(height: 24),
           if (_actionLoading)
-            const Center(
-                child: CircularProgressIndicator(
-                    color: AppColors.blue, strokeWidth: 2.5))
+            const Center(child: CircularProgressIndicator(strokeWidth: 2.5))
           else
             _buildActions(e),
         ],
@@ -372,26 +345,26 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
   }
 
   Widget _buildActions(EscalaModel e) {
+    final theme = Theme.of(context);
+    final verde = theme.brightness == Brightness.dark
+        ? AppColors.sucessoEscuro
+        : AppColors.sucesso;
+    final erro = theme.colorScheme.error;
     if (e.temCiencia && !e.temImpossibilidade) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.green.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.green.withOpacity(0.25), width: 1),
-        ),
+      return CartaoVidro(
+        raio: 12,
+        tingimento: verde,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.verified_rounded, color: Colors.green, size: 18),
+            Icon(Icons.verified_rounded, color: verde, size: AppIconSize.sm),
             const SizedBox(width: 8),
             Text(
               e.cienciaEmBr != null
                   ? 'Ciência registrada em ${e.cienciaEmBr}'
                   : 'Ciência registrada',
-              style: const TextStyle(
-                  color: Colors.green, fontWeight: FontWeight.w600),
+              style: TextStyle(color: verde, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -399,22 +372,17 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
     }
 
     if (e.temImpossibilidade) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.red.withOpacity(0.25), width: 1),
-        ),
-        child: const Row(
+      return CartaoVidro(
+        raio: 12,
+        tingimento: erro,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.block_rounded, color: Colors.redAccent, size: 18),
-            SizedBox(width: 8),
+            Icon(Icons.block_rounded, color: erro, size: AppIconSize.sm),
+            const SizedBox(width: 8),
             Text('Impossibilidade declarada',
-                style: TextStyle(
-                    color: Colors.redAccent, fontWeight: FontWeight.w600)),
+                style: TextStyle(color: erro, fontWeight: FontWeight.w600)),
           ],
         ),
       );
@@ -427,15 +395,8 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: _darCiencia,
-            icon: const Icon(Icons.check_circle_rounded, size: 18),
-            label: const Text('Dar Ciência',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
+            icon: const Icon(Icons.check_circle_rounded, size: AppIconSize.sm),
+            label: const Text('Dar Ciência'),
           ),
         ),
         const SizedBox(height: 10),
@@ -443,15 +404,11 @@ class _EscalaDetalhePageState extends State<EscalaDetalhePage> {
           width: double.infinity,
           child: OutlinedButton.icon(
             onPressed: _declararImpossibilidade,
-            icon:
-                const Icon(Icons.block_rounded, size: 18, color: Colors.orange),
-            label: const Text('Declarar Impossibilidade',
-                style: TextStyle(color: Colors.orange)),
+            icon: const Icon(Icons.block_rounded, size: AppIconSize.sm),
+            label: const Text('Declarar Impossibilidade'),
             style: OutlinedButton.styleFrom(
-              side: BorderSide(color: Colors.orange.withOpacity(0.5)),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              foregroundColor: kCorAtencao,
+              side: BorderSide(color: kCorAtencao.withValues(alpha: 0.5)),
             ),
           ),
         ),
@@ -478,14 +435,8 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppColors.darkBorder : const Color(0xFFE8EFFA),
-        ),
-      ),
+    return CartaoVidro(
+      arte: Arte.de('operacional'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -493,14 +444,8 @@ class _Section extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(7),
-                  decoration: BoxDecoration(
-                    color: AppColors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(icon, size: 15, color: AppColors.blue),
-                ),
+                Icon(icon,
+                    size: AppIconSize.sm, color: theme.colorScheme.primary),
                 const SizedBox(width: 10),
                 Text(title,
                     style: theme.textTheme.titleSmall
@@ -574,13 +519,13 @@ class _ComposicaoTile extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 18,
-            backgroundColor: AppColors.blue.withOpacity(0.12),
+            backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.14),
             child: Text(
               membro.nomeGuerra.isNotEmpty ? membro.nomeGuerra[0] : '?',
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.blue),
+                  color: theme.colorScheme.primary),
             ),
           ),
           const SizedBox(width: 10),
@@ -632,116 +577,63 @@ class _ImpossibilidadeSheetState extends State<_ImpossibilidadeSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
-    return Padding(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-        decoration: BoxDecoration(
-          color: isDark
-              ? AppColors.darkSurface.withOpacity(0.72)
-              : Colors.white.withOpacity(0.78),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2)),
-              ),
+    return FolhaArte(
+      arte: Arte.de('operacional'),
+      icone: Icons.block_rounded,
+      titulo: 'Declarar Impossibilidade',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Motivo',
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+          const SizedBox(height: 8),
+          if (widget.tipos.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Text('Nenhum tipo disponível.'),
+            )
+          else
+            ...widget.tipos.map((t) => RadioListTile<EscalaImpossibilidadeTipo>(
+                  value: t,
+                  groupValue: _selected,
+                  onChanged: (v) => setState(() => _selected = v),
+                  title: Text(t.descricao, style: theme.textTheme.bodyMedium),
+                  subtitle: t.requerAnexo
+                      ? const Text('* Requer anexo',
+                          style: TextStyle(color: kCorAtencao, fontSize: 11))
+                      : null,
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                )),
+          const SizedBox(height: 8),
+          Text('Observação (opcional)',
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _obs,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              hintText: 'Descreva o motivo...',
             ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.block_rounded,
-                      color: Colors.orange, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Text('Declarar Impossibilidade',
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.bold)),
-              ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _selected == null
+                  ? null
+                  : () => Navigator.of(context).pop({
+                        'tipo_id': _selected!.id,
+                        'observacao': _obs.text.trim(),
+                      }),
+              child: const Text('Registrar Impossibilidade'),
             ),
-            const SizedBox(height: 20),
-            Text('Motivo',
-                style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.bold, letterSpacing: 0.8)),
-            const SizedBox(height: 8),
-            if (widget.tipos.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 12),
-                child: Text('Nenhum tipo disponível.',
-                    style: TextStyle(color: Colors.grey)),
-              )
-            else
-              ...widget.tipos.map((t) =>
-                  RadioListTile<EscalaImpossibilidadeTipo>(
-                    value: t,
-                    groupValue: _selected,
-                    onChanged: (v) => setState(() => _selected = v),
-                    title: Text(t.descricao, style: theme.textTheme.bodyMedium),
-                    subtitle: t.requerAnexo
-                        ? const Text('* Requer anexo',
-                            style:
-                                TextStyle(color: Colors.orange, fontSize: 11))
-                        : null,
-                    dense: true,
-                    activeColor: AppColors.blue,
-                    contentPadding: EdgeInsets.zero,
-                  )),
-            const SizedBox(height: 8),
-            Text('Observação (opcional)',
-                style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.bold, letterSpacing: 0.8)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _obs,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: 'Descreva o motivo...',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                contentPadding: const EdgeInsets.all(12),
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _selected == null
-                    ? null
-                    : () => Navigator.of(context).pop({
-                          'tipo_id': _selected!.id,
-                          'observacao': _obs.text.trim(),
-                        }),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange.shade700,
-                  disabledBackgroundColor: Colors.grey.withOpacity(0.3),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Registrar Impossibilidade',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -753,8 +645,7 @@ class _LoadingBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Center(
-        child:
-            CircularProgressIndicator(color: AppColors.blue, strokeWidth: 2.5),
+        child: CircularProgressIndicator(strokeWidth: 2.5),
       );
 }
 
@@ -765,30 +656,30 @@ class _ErrorBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline_rounded,
-                size: 56, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(message,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Tentar novamente'),
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: CartaoVidro(
+          arte: Arte.de('operacional'),
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline_rounded,
+                  size: AppIconSize.xl, color: theme.colorScheme.error),
+              const SizedBox(height: 12),
+              Text(message,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded, size: AppIconSize.sm),
+                label: const Text('Tentar novamente'),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

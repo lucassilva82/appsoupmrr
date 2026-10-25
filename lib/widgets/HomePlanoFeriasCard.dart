@@ -347,7 +347,7 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
                           text: quando,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.primary,
+                            color: Arte.de('fe').destaque,
                           ),
                         ),
                         if (duracao != null)

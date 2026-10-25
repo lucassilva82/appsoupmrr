@@ -19,6 +19,7 @@ import '../core/erros/falha_de.dart';
 import '../core/erros/estado_erro.dart';
 import '../core/design/arte_cartao.dart';
 import '../utils/app_theme.dart';
+import '../widgets/cartao_painel.dart';
 
 class DetalhesMapaForcaComandoPage extends StatefulWidget {
   final MapBuscaDetalhesModel dadosBusca;
@@ -33,28 +34,6 @@ class _DetalhesMapaForcaComandoPageState
     extends State<DetalhesMapaForcaComandoPage> {
   late Future<Map<String, Map<String, List<MilitarDetalheModel>>>> _future;
   final TextEditingController _searchCtrl = TextEditingController();
-
-  // ---------- Paleta ----------
-  // Antes era azul sólido com texto branco por cima. Agora as superfícies são
-  // tingidas e translúcidas, e quem escreve é a cor do tema — o mesmo padrão
-  // das demais telas (ver DESIGN.md).
-  Color get _primaria => Theme.of(context).colorScheme.primary;
-  bool get _escuro => Theme.of(context).brightness == Brightness.dark;
-
-  // Dois tons, não cinco. O nível 1 (unidade) é tingido; do nível 2 para
-  // baixo não há superfície nova — a hierarquia é indentação e peso de texto.
-  // Cada nível com um cinza ligeiramente diferente deixava a tela com meia
-  // dúzia de pretos encavalados.
-  Color get _fundoNivel1 => _primaria.withValues(alpha: _escuro ? 0.14 : 0.10);
-  Color get _fundoNivel2 => Colors.transparent;
-  Gradient get _grad => LinearGradient(
-        colors: [
-          _primaria.withValues(alpha: _escuro ? 0.22 : 0.14),
-          _primaria.withValues(alpha: _escuro ? 0.10 : 0.07),
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      );
 
   @override
   void initState() {
@@ -233,12 +212,12 @@ class _DetalhesMapaForcaComandoPageState
                       .colorScheme
                       .onSurface
                       .withValues(alpha: 0.08),
-                  child: Icon(Icons.person,
+                  child: Icon(Icons.person_outline_rounded,
                       color: Theme.of(context)
                           .colorScheme
                           .onSurface
-                          .withValues(alpha: 0.35),
-                      size: 38),
+                          .withValues(alpha: 0.4),
+                      size: AppIconSize.xl),
                 ),
               ),
             ),
@@ -365,7 +344,28 @@ class _DetalhesMapaForcaComandoPageState
                 final mapa = _filtrar(baseMapa);
 
                 if (mapa.isEmpty) {
-                  return const Center(child: Text('Nenhum resultado.'));
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: CartaoVidro(
+                        arte: Arte.de('gestao'),
+                        padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.person_search_outlined,
+                                size: AppIconSize.xl,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.6)),
+                            const SizedBox(height: 10),
+                            const Text('Nenhum resultado.'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
                 }
 
                 // agora: adiciona um Expansion "Situação Funcional" para toda a unidade mãe (comando)
@@ -378,8 +378,6 @@ class _DetalhesMapaForcaComandoPageState
                 final topSituacaoTile = _SituacaoTile(
                   key: const ValueKey('situacao_comando_todo'),
                   militares: allMilitares,
-                  start: _fundoNivel1,
-                  mid: _fundoNivel2,
                 );
 
                 return ListView(
@@ -399,8 +397,6 @@ class _DetalhesMapaForcaComandoPageState
                       final unidadeSituacaoTile = _SituacaoTile(
                         key: ValueKey('situacao_unidade_${unid.key}'),
                         militares: unidadeMilitares,
-                        start: _fundoNivel1,
-                        mid: _fundoNivel2,
                       );
 
                       // construir lista de subunidades (cada uma é um _GradientTile)
@@ -421,8 +417,7 @@ class _DetalhesMapaForcaComandoPageState
                           final grupo = gruposPosto[pid]!;
                           children.add(_PostoHeader(
                               sigla: grupo.first.postoGraduacao,
-                              qtd: grupo.length,
-                              grad: _grad));
+                              qtd: grupo.length));
                           children.addAll(grupo.map(_militarCard));
                         }
 
@@ -430,8 +425,6 @@ class _DetalhesMapaForcaComandoPageState
                         final situacaoTile = _SituacaoTile(
                           key: ValueKey('situacao_${unid.key}_${sub.key}'),
                           militares: sub.value,
-                          start: _fundoNivel1,
-                          mid: _fundoNivel2,
                         );
 
                         return _GradientTile(
@@ -439,9 +432,6 @@ class _DetalhesMapaForcaComandoPageState
                           total: totalSub,
                           leadingIcon: Icons.account_tree_outlined,
                           isSubLevel: true,
-                          primaryStart: _fundoNivel1,
-                          primaryMid: _fundoNivel2,
-                          grad: _grad,
                           referenceTotal: totalUnid,
                           childTiles: [
                             situacaoTile,
@@ -461,9 +451,6 @@ class _DetalhesMapaForcaComandoPageState
                         total: totalUnid,
                         leadingIcon: Icons.domain,
                         isSubLevel: false,
-                        primaryStart: _fundoNivel1,
-                        primaryMid: _fundoNivel2,
-                        grad: _grad,
                         referenceTotal: allMilitares.length,
                         childTiles: unitChilds,
                       );
@@ -480,16 +467,16 @@ class _DetalhesMapaForcaComandoPageState
 }
 
 /* ============================================================================
-   EXPANSION TILE COM GRADIENTE E CONTADOR
+   UNIDADE / SUBUNIDADE (DESIGN §3b)
+   Nível 1 (unidade) é a única caixa: CartaoVidro com a arte discreta da
+   área. Do nível 2 para baixo não há superfície; a hierarquia é indentação
+   com uma guia de 2px desenhada uma vez para o bloco inteiro de filhos.
    ==========================================================================*/
 class _GradientTile extends StatelessWidget {
   final String title;
   final int total;
   final IconData leadingIcon;
   final bool isSubLevel;
-  final Color primaryStart;
-  final Color primaryMid;
-  final Gradient grad;
   final int? referenceTotal;
   final List<Widget> childTiles;
 
@@ -498,39 +485,15 @@ class _GradientTile extends StatelessWidget {
     required this.total,
     required this.leadingIcon,
     required this.isSubLevel,
-    required this.primaryStart,
-    required this.primaryMid,
-    required this.grad,
     this.referenceTotal,
     required this.childTiles,
   });
-
-  Widget _badge(BuildContext context) {
-    final cor = Theme.of(context).colorScheme.primary;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: cor.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cor.withValues(alpha: 0.35)),
-      ),
-      child: Text('$total',
-          style:
-              TextStyle(color: cor, fontSize: 11, fontWeight: FontWeight.w700)),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
     final aoFundo = tema.colorScheme.onSurface;
     final primaria = tema.colorScheme.primary;
-    // primaryStart/primaryMid já chegam translúcidos. Aberto, o fundo some:
-    // como os tiles são aninhados, pintar cada nível empilhava translucidez
-    // até virar um bloco azul chapado. Fechado é tingido, aberto é o fundo
-    // da tela com os filhos por cima.
-    final bgCollapsed = isSubLevel ? primaryMid : primaryStart;
-    const bgExpanded = Colors.transparent;
     final rawPct = referenceTotal == null || referenceTotal == 0
         ? 0.0
         : total / referenceTotal!;
@@ -538,138 +501,129 @@ class _GradientTile extends StatelessWidget {
     final visualPct = total > 0 && pct < 0.05 ? 0.05 : pct;
     final pctText = '${(pct * 100).toStringAsFixed(pct < 0.1 ? 1 : 0)}%';
 
-    // Nível 1 é a única caixa; do nível 2 para baixo a hierarquia é
-    // indentação. A guia à esquerda é desenhada uma vez para o bloco inteiro
-    // de filhos (abaixo), não uma por filho — senão vira linha tracejada.
-    return Container(
-      margin: EdgeInsets.fromLTRB(isSubLevel ? 0 : 8, isSubLevel ? 0 : 4,
-          isSubLevel ? 0 : 8, isSubLevel ? 0 : 4),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(isSubLevel ? 0 : 14),
-        child: ExpansionTile(
-          shape: const Border(),
-          collapsedShape: const Border(),
-          tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          collapsedBackgroundColor: bgCollapsed,
-          backgroundColor: bgExpanded,
-          leading:
-              Icon(leadingIcon, color: primaria, size: isSubLevel ? 18 : 22),
-          iconColor: aoFundo.withValues(alpha: 0.65),
-          collapsedIconColor: aoFundo.withValues(alpha: 0.65),
-          title: Row(
-            children: [
-              Expanded(
-                child: Text(title,
-                    style: TextStyle(
-                        color: aoFundo,
-                        fontSize: isSubLevel ? 13 : 14,
-                        fontWeight:
-                            isSubLevel ? FontWeight.w500 : FontWeight.bold)),
-              ),
-              if (referenceTotal != null) ...[
-                Text(
-                  pctText,
-                  style: TextStyle(
-                    color: aoFundo.withValues(alpha: 0.70),
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                SizedBox(
-                  width: isSubLevel ? 52 : 64,
-                  height: 6,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(99),
-                      border: Border.all(
-                          color: primaria.withValues(alpha: 0.35), width: .8),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(99),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Container(color: aoFundo.withValues(alpha: 0.08)),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: FractionallySizedBox(
-                              widthFactor: visualPct,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      primaria.withValues(alpha: 0.75),
-                                      primaria,
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-              _badge(context)
-            ],
+    final tile = ExpansionTile(
+      shape: const Border(),
+      collapsedShape: const Border(),
+      tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      collapsedBackgroundColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      leading: Icon(leadingIcon,
+          color: primaria, size: isSubLevel ? AppIconSize.sm : AppIconSize.md),
+      iconColor: aoFundo.withValues(alpha: 0.65),
+      collapsedIconColor: aoFundo.withValues(alpha: 0.65),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(title,
+                style: TextStyle(
+                    color: aoFundo,
+                    fontSize: isSubLevel ? 13 : 14,
+                    fontWeight:
+                        isSubLevel ? FontWeight.w600 : FontWeight.w700)),
           ),
-          childrenPadding: EdgeInsets.zero,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(left: 18, top: 2, bottom: 6),
-              padding: const EdgeInsets.only(left: 10),
-              decoration: BoxDecoration(
-                border: Border(
-                  left: BorderSide(
-                    color: primaria.withValues(alpha: 0.22),
-                    width: 2,
-                  ),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: childTiles,
+          if (referenceTotal != null) ...[
+            Text(
+              pctText,
+              style: TextStyle(
+                color: aoFundo.withValues(alpha: 0.70),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
               ),
             ),
+            const SizedBox(width: 6),
+            SizedBox(
+              width: isSubLevel ? 48 : 60,
+              child: BarraProgressoCartao(valor: visualPct),
+            ),
+            const SizedBox(width: 8),
           ],
+          _Contagem(total),
+        ],
+      ),
+      childrenPadding: EdgeInsets.zero,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(left: 18, top: 2, bottom: 8),
+          padding: const EdgeInsets.only(left: 10),
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(
+                color: primaria.withValues(alpha: 0.22),
+                width: 2,
+              ),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: childTiles,
+          ),
+        ),
+      ],
+    );
+
+    if (isSubLevel) return tile;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 5, 12, 5),
+      child: CartaoVidro(
+        raio: 14,
+        arte: Arte.de('gestao'),
+        padding: EdgeInsets.zero,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: tile,
         ),
       ),
     );
   }
 }
 
+/// Contagem ao lado do título: selo pequeno na primária (DESIGN §3, raio 10).
+class _Contagem extends StatelessWidget {
+  const _Contagem(this.valor);
+  final int valor;
+
+  @override
+  Widget build(BuildContext context) {
+    final cor = Theme.of(context).colorScheme.primary;
+    return Container(
+      constraints: const BoxConstraints(minWidth: 28),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text('$valor',
+          textAlign: TextAlign.center,
+          style:
+              TextStyle(color: cor, fontSize: 12, fontWeight: FontWeight.w700)),
+    );
+  }
+}
+
 /* ============================================================================
-   HEADER DO POSTO / GRADUAÇÃO (mini-card)
+   CABEÇALHO DO POSTO / GRADUAÇÃO (nível 2+: sem superfície, só rótulo)
    ==========================================================================*/
 class _PostoHeader extends StatelessWidget {
   final String sigla;
   final int qtd;
-  final Gradient grad;
-  const _PostoHeader(
-      {required this.sigla, required this.qtd, required this.grad});
+  const _PostoHeader({required this.sigla, required this.qtd});
 
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-          gradient: grad, borderRadius: BorderRadius.circular(12)),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 4),
       child: Row(
         children: [
-          Icon(Icons.military_tech, color: tema.colorScheme.primary, size: 16),
+          Icon(Icons.military_tech_outlined,
+              color: tema.colorScheme.primary, size: AppIconSize.xs),
           const SizedBox(width: 6),
           Expanded(
               child: Text('$sigla : $qtd militares',
                   style: TextStyle(
                       color: tema.colorScheme.onSurface,
                       fontSize: 12,
-                      fontWeight: FontWeight.w600)))
+                      fontWeight: FontWeight.w700)))
         ],
       ),
     );
@@ -677,36 +631,24 @@ class _PostoHeader extends StatelessWidget {
 }
 
 /* ============================================================================
-   TILE DE SITUAÇÃO FUNCIONAL (bordas discretas/invisíveis, radius alinhado)
+   SITUAÇÃO FUNCIONAL (seção neutra dentro da entidade, DESIGN §3b)
    ==========================================================================*/
 class _SituacaoTile extends StatelessWidget {
   final List<MilitarDetalheModel> militares;
-  final Color start;
-  final Color mid;
 
   const _SituacaoTile({
     Key? key,
     required this.militares,
-    required this.start,
-    required this.mid,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final primaria = theme.colorScheme.primary;
-    final cardBg = isDark
-        ? Colors.white.withValues(alpha: 0.055)
-        : Colors.white.withValues(alpha: 0.72);
     final onCard = theme.colorScheme.onSurface;
-    final subtleBorder = isDark
-        ? Colors.white.withOpacity(0.08)
-        : Colors.black.withOpacity(0.06);
-    // O fator 0.82 multiplicava tudo e gerava tamanhos como 10,66 e 9,43 —
-    // exatamente o que a skill chama de valor arbitrário. Agora são números
-    // da escala do app.
-    const double scale = 1.0;
+    final primaria = theme.colorScheme.primary;
+    // Seção neutra: um tom só, sem borda (antes branco a 72% com a borda
+    // feita à mão e um azul fixo nas barras).
+    final secao = onCard.withValues(alpha: 0.055);
 
     final Map<String, List<MilitarDetalheModel>> porSituacao = {};
     for (final m in militares) {
@@ -717,203 +659,120 @@ class _SituacaoTile extends StatelessWidget {
     }
 
     final situacoes = porSituacao.keys.toList()..sort();
-    // Selo tingido com a primária; o número usa a própria primária.
-    final LinearGradient pillGrad = LinearGradient(colors: [
-      primaria.withValues(alpha: isDark ? 0.22 : 0.16),
-      primaria.withValues(alpha: isDark ? 0.14 : 0.10),
-    ]);
-
-    const double rootTitleSize = 12;
-    const double rootBadgeSize = 10;
-    const double itemTitleSize = 12;
-    const double itemBadgeSize = 10;
-    const double listNameSize = 12;
-    const double listSubSize = 10;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-      child: Container(
-        decoration: BoxDecoration(
-          color: cardBg,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: subtleBorder, width: 0.5),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: ExpansionTile(
-            shape: const Border(),
-            collapsedShape: const Border(),
-            key: PageStorageKey('situacao_root_${militares.hashCode}'),
-            tilePadding: EdgeInsets.symmetric(
-                horizontal: 10.0 * scale, vertical: 4.0 * scale),
-            collapsedBackgroundColor: cardBg,
-            backgroundColor: cardBg,
-            leading: Icon(Icons.flag_outlined,
-                color: onCard.withOpacity(0.7), size: 16.0 * scale),
-            iconColor: onCard.withOpacity(0.6),
-            collapsedIconColor: onCard.withOpacity(0.6),
-            title: Row(
-              children: [
-                Expanded(
-                  child: Text('Situação Funcional',
-                      style: TextStyle(
-                          color: onCard,
-                          fontWeight: FontWeight.w700,
-                          fontSize: rootTitleSize)),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 7.0 * scale, vertical: 3.0 * scale),
-                  decoration: BoxDecoration(
-                      gradient: pillGrad,
-                      borderRadius: BorderRadius.circular(20.0 * scale)),
-                  child: Text('${militares.length}',
-                      style: TextStyle(
-                          color: primaria,
-                          fontSize: rootBadgeSize,
-                          fontWeight: FontWeight.w700)),
-                )
-              ],
-            ),
-            childrenPadding:
-                EdgeInsets.only(bottom: 5.0 * scale, top: 2.0 * scale),
-            children: situacoes.map((sit) {
-              final lista = porSituacao[sit]!;
-              final rawPct =
-                  militares.isEmpty ? 0.0 : lista.length / militares.length;
-              final pct = rawPct.clamp(0.0, 1.0);
-              final visualPct = lista.isNotEmpty && pct < 0.05 ? 0.05 : pct;
-              final pctText =
-                  '${(pct * 100).toStringAsFixed(pct < 0.1 ? 1 : 0)}%';
-
-              return Container(
-                margin: const EdgeInsets.symmetric(vertical: 1),
-                child: ExpansionTile(
-                  shape: const Border(),
-                  collapsedShape: const Border(),
-                  key: PageStorageKey(
-                      'situacao_item_${militares.hashCode}_$sit'),
-                  initiallyExpanded: false,
-                  tilePadding: EdgeInsets.symmetric(
-                      horizontal: 8.0 * scale, vertical: 3.0 * scale),
-                  collapsedBackgroundColor: Colors.transparent,
-                  backgroundColor: Colors.transparent,
-                  leading: Icon(Icons.work_outline,
-                      color: onCard.withOpacity(0.6), size: 13.0 * scale),
-                  iconColor: onCard.withOpacity(0.6),
-                  collapsedIconColor: onCard.withOpacity(0.6),
-                  title: Row(
-                    children: [
-                      Expanded(
-                        child: Text(sit,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                color: onCard,
-                                fontSize: itemTitleSize,
-                                fontWeight: FontWeight.w600)),
-                      ),
-                      Text(
-                        pctText,
-                        style: TextStyle(
-                          color: onCard.withOpacity(0.65),
-                          fontSize: 9.0 * scale,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(width: 5.0 * scale),
-                      SizedBox(
-                        width: 50.0 * scale,
-                        height: 5.0 * scale,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(99),
-                            border: Border.all(
-                              color: isDark
-                                  ? Colors.white.withOpacity(0.2)
-                                  : const Color(0xFF1976D2).withOpacity(0.3),
-                              width: .7,
-                            ),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(99),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                Container(
-                                  color: const Color(0xFF1976D2)
-                                      .withOpacity(isDark ? 0.12 : 0.08),
-                                ),
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: FractionallySizedBox(
-                                    widthFactor: visualPct,
-                                    child: Container(
-                                      decoration: const BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            Color(0xFF64B5F6),
-                                            Color(0xFF1976D2),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 5.0 * scale),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 6.0 * scale, vertical: 2.0 * scale),
-                        decoration: BoxDecoration(
-                            gradient: pillGrad,
-                            borderRadius: BorderRadius.circular(20.0 * scale)),
-                        child: Text('${lista.length}',
-                            style: TextStyle(
-                                color: primaria,
-                                fontSize: itemBadgeSize,
-                                fontWeight: FontWeight.w700)),
-                      )
-                    ],
-                  ),
-                  childrenPadding: const EdgeInsets.only(bottom: 4, top: 2),
-                  children: lista
-                      .map((m) => _situacaoListItem(context, m, pillGrad,
-                          listNameSize, listSubSize, scale, isDark, onCard))
-                      .toList(),
-                ),
-              );
-            }).toList(),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: ExpansionTile(
+          shape: const Border(),
+          collapsedShape: const Border(),
+          key: PageStorageKey('situacao_root_${militares.hashCode}'),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+          collapsedBackgroundColor: secao,
+          backgroundColor: secao,
+          leading: Icon(Icons.flag_outlined,
+              color: onCard.withValues(alpha: 0.7), size: AppIconSize.xs),
+          iconColor: onCard.withValues(alpha: 0.6),
+          collapsedIconColor: onCard.withValues(alpha: 0.6),
+          title: Row(
+            children: [
+              Expanded(
+                child: Text('Situação Funcional',
+                    style: TextStyle(
+                        color: onCard,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12)),
+              ),
+              _Contagem(militares.length),
+            ],
           ),
+          childrenPadding: const EdgeInsets.only(bottom: 6, top: 2),
+          children: situacoes.map((sit) {
+            final lista = porSituacao[sit]!;
+            final rawPct =
+                militares.isEmpty ? 0.0 : lista.length / militares.length;
+            final pct = rawPct.clamp(0.0, 1.0);
+            final visualPct = lista.isNotEmpty && pct < 0.05 ? 0.05 : pct;
+            final pctText =
+                '${(pct * 100).toStringAsFixed(pct < 0.1 ? 1 : 0)}%';
+
+            return ExpansionTile(
+              shape: const Border(),
+              collapsedShape: const Border(),
+              key: PageStorageKey('situacao_item_${militares.hashCode}_$sit'),
+              initiallyExpanded: false,
+              tilePadding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+              collapsedBackgroundColor: Colors.transparent,
+              backgroundColor: Colors.transparent,
+              leading: Icon(Icons.work_outline,
+                  color: onCard.withValues(alpha: 0.6),
+                  size: AppIconSize.xxs),
+              iconColor: onCard.withValues(alpha: 0.6),
+              collapsedIconColor: onCard.withValues(alpha: 0.6),
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Text(sit,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            color: onCard,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600)),
+                  ),
+                  Text(
+                    pctText,
+                    style: TextStyle(
+                      color: onCard.withValues(alpha: 0.65),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  SizedBox(
+                    width: 48,
+                    child: BarraProgressoCartao(valor: visualPct, altura: 5),
+                  ),
+                  const SizedBox(width: 6),
+                  _Contagem(lista.length),
+                ],
+              ),
+              childrenPadding: const EdgeInsets.only(bottom: 4, top: 2),
+              children: [
+                // Nível 2+: sem superfície; guia única para o bloco.
+                Container(
+                  margin: const EdgeInsets.only(left: 18),
+                  padding: const EdgeInsets.only(left: 6),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      left: BorderSide(
+                          color: primaria.withValues(alpha: 0.22), width: 2),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: lista
+                        .map((m) => _situacaoListItem(context, m, onCard))
+                        .toList(),
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
         ),
       ),
     );
   }
 
   Widget _situacaoListItem(
-      BuildContext context,
-      MilitarDetalheModel m,
-      LinearGradient pillGrad,
-      double nameSize,
-      double subSize,
-      double scale,
-      bool isDark,
-      Color onCard) {
-    final nameStyle = TextStyle(
-        fontSize: nameSize, fontWeight: FontWeight.w600, color: onCard);
+      BuildContext context, MilitarDetalheModel m, Color onCard) {
+    final nameStyle =
+        TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: onCard);
     final subStyle = TextStyle(
-        fontSize: subSize, color: onCard.withOpacity(0.55), height: 1.05);
-    final borderColor = isDark
-        ? Colors.white.withValues(alpha: 0.10)
-        : Colors.white.withValues(alpha: 0.80);
-    // Mesmo tom do cartão de situação: um só preto na tela toda.
-    final bgColor = isDark
-        ? Colors.white.withValues(alpha: 0.055)
-        : Colors.white.withValues(alpha: 0.72);
+        fontSize: 11, color: onCard.withValues(alpha: 0.6), height: 1.1);
+    final vazio = onCard.withValues(alpha: 0.08);
 
     String? resolveUrl(String? raw) {
       final v = (raw ?? '').trim().replaceAll('pmrr.net', 'pmrr.online');
@@ -928,90 +787,72 @@ class _SituacaoTile extends StatelessWidget {
     }
 
     final resolvedUrl = resolveUrl(m.imagemUrl);
+    final semFoto = Container(
+      width: 40,
+      height: 40,
+      color: vazio,
+      child: Icon(Icons.person_outline_rounded,
+          color: onCard.withValues(alpha: 0.4), size: AppIconSize.xs),
+    );
 
     return InkWell(
+      borderRadius: BorderRadius.circular(12),
       onTap: () {
         Navigator.of(context).push(MaterialPageRoute(
             builder: (_) => MilitarDetalheFullPage(
                 matricula: m.matricula,
                 preloadedImageUrl: resolveUrl(m.imagemUrl))));
       },
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(12, 4, 8, 4),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor, width: 0.8),
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6.0 * scale),
-              child: resolvedUrl != null
-                  ? CachedNetworkImage(
-                      imageUrl: resolvedUrl,
-                      width: 40.0 * scale,
-                      height: 40.0 * scale,
-                      fit: BoxFit.cover,
-                      alignment: Alignment.topCenter,
-                      cacheManager: DefaultCacheManager(),
-                      placeholder: (_, __) => Container(
-                        width: 40.0 * scale,
-                        height: 40.0 * scale,
-                        color: Colors.white.withValues(alpha: 0.06),
-                        child: const Center(
-                            child: SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 1.5))),
-                      ),
-                      errorWidget: (_, __, ___) => Container(
-                        width: 40.0 * scale,
-                        height: 40.0 * scale,
-                        color: Colors.white.withValues(alpha: 0.06),
-                        child: Icon(Icons.person,
-                            color: onCard.withValues(alpha: 0.35), size: 16),
-                      ),
-                    )
-                  : Container(
-                      width: 40.0 * scale,
-                      height: 40.0 * scale,
-                      decoration: BoxDecoration(
-                        color: onCard.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(6.0 * scale),
-                      ),
-                      child: Icon(Icons.person,
-                          color: onCard.withValues(alpha: 0.35), size: 16),
-                    ),
-            ),
-            SizedBox(width: 8.0 * scale),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(m.nome,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: nameStyle),
-                  SizedBox(height: 3.0 * scale),
-                  Text(m.postoGraduacao, style: subStyle, maxLines: 1),
-                ],
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: resolvedUrl != null
+                    ? CachedNetworkImage(
+                        imageUrl: resolvedUrl,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
+                        cacheManager: DefaultCacheManager(),
+                        placeholder: (_, __) => Container(
+                          width: 40,
+                          height: 40,
+                          color: vazio,
+                          child: const Center(
+                              child: SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 1.5))),
+                        ),
+                        errorWidget: (_, __, ___) => semFoto,
+                      )
+                    : semFoto,
               ),
-            ),
-            SizedBox(width: 6.0 * scale),
-            Container(
-              padding: EdgeInsets.symmetric(
-                  horizontal: 7.0 * scale, vertical: 5.0 * scale),
-              decoration: BoxDecoration(
-                  gradient: pillGrad,
-                  borderRadius: BorderRadius.circular(12.0 * scale)),
-              child: Icon(Icons.arrow_forward_ios,
-                  size: 10.0 * scale,
-                  color: Theme.of(context).colorScheme.primary),
-            )
-          ],
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(m.nome,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: nameStyle),
+                    const SizedBox(height: 3),
+                    Text(m.postoGraduacao, style: subStyle, maxLines: 1),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(Icons.chevron_right_rounded,
+                  size: AppIconSize.sm, color: onCard.withValues(alpha: 0.4)),
+            ],
+          ),
         ),
       ),
     );

@@ -306,10 +306,16 @@ class _Conteudo extends StatelessWidget {
                         'Recursos Humanos - PMRR.',
                 style: theme.textTheme.bodyMedium),
           ),
-        for (final MapEntry(key: ano, value: marcos) in anos.entries) ...[
+        // A linha vertical só começa no primeiro marco e só termina no último
+        // da lista inteira: entre os anos ela segue, ligando a carreira.
+        for (final (a, MapEntry(key: ano, value: marcos)) in anos.entries.indexed) ...[
           _Ano(ano: ano, quantos: marcos.length),
           for (final (i, m) in marcos.indexed)
-            _Marco(marco: m, primeiro: i == 0, ultimo: i == marcos.length - 1),
+            _Marco(
+              marco: m,
+              primeiro: a == 0 && i == 0,
+              ultimo: a == anos.length - 1 && i == marcos.length - 1,
+            ),
         ],
       ],
     );
@@ -558,7 +564,7 @@ class _CardCarreiraState extends State<CardCarreira> {
                   ),
                   TextSpan(
                     text: ultimo.titulo,
-                    style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary),
+                    style: TextStyle(fontWeight: FontWeight.w600, color: Arte.de('rh').destaque),
                   ),
                 ]),
                 maxLines: 2,

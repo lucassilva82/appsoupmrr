@@ -275,12 +275,26 @@ class _CardTempoServicoState extends State<CardTempoServico> {
                         icone: Icons.military_tech_outlined,
                         titulo: 'Tempo de serviço',
                         mostrarSeta: false,
-                        acao: Text(
-                          '$pct%',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Theme.of(context).colorScheme.primary,
+                        // Na cor de destaque da própria arte (dourado), numa
+                        // pílula discreta: o azul da primária destoava do card.
+                        acao: Semantics(
+                          label: '$pct% do tempo para a reserva',
+                          excludeSemantics: true,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Arte.de('ts').destaque.withValues(alpha: .14),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Arte.de('ts').destaque.withValues(alpha: .40)),
+                            ),
+                            child: Text(
+                              '$pct%',
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: Arte.de('ts').destaque,
+                              ),
+                            ),
                           ),
                         ),
                       ),

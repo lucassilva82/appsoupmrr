@@ -36,6 +36,7 @@ class FaixaComando extends StatelessWidget {
     final cursos = c['cursos'] is List ? (c['cursos'] as List).map((e) => '$e').join(' · ') : '';
     final completo = '${c['nome'] ?? ''}'.trim();
     return {
+      'do_painel': true,
       'img': c['foto'] ?? '',
       'title': [posto, nome].where((e) => e.isNotEmpty).join(' '),
       'posto': posto,
@@ -307,9 +308,13 @@ class _ComandanteAberto extends StatelessWidget {
                           ]),
                         ),
                       ],
-                      const SizedBox(height: 10),
-                      Text('Dados do SIGRH, aprovados no painel.',
-                          textAlign: TextAlign.center, style: TextStyle(fontSize: 11.5, color: mudo)),
+                      // Só os dados aprovados no painel vêm do SIGRH; os do
+                      // Firestore (2.1.x) são o cartaz antigo, sem a ficha.
+                      if (dados['do_painel'] == true) ...[
+                        const SizedBox(height: 10),
+                        Text('Dados do SIGRH, aprovados no painel.',
+                            textAlign: TextAlign.center, style: TextStyle(fontSize: 11.5, color: mudo)),
+                      ],
                     ]),
                   ),
                 ]),

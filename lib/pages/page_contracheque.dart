@@ -1,7 +1,6 @@
 // ignore_for_file: must_be_immutable
 import 'dart:convert';
 import 'dart:io';
-import 'dart:ui' show ImageFilter;
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
@@ -17,6 +16,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../core/design/arte_cartao.dart';
+import '../core/design/folha_arte.dart';
 import '../core/erros/falha_app.dart';
 import '../core/log/registro_log.dart';
 import '../core/rede/api_client.dart';
@@ -833,128 +833,93 @@ class _PageContrachequeState extends State<PageContracheque> {
       required VoidCallback aoTocar,
     }) =>
         Expanded(
-          child: Material(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
+          child: Semantics(
+            button: true,
+            label: 'Enviar como $titulo, $detalhe',
+            excludeSemantics: true,
+            child: CartaoVidro(
+              raio: 14,
               onTap: aoTocar,
-              borderRadius: BorderRadius.circular(12),
-              child: Ink(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color:
-                          theme.colorScheme.onSurface.withValues(alpha: 0.10)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 13, 12, 12),
-                  child: Row(
-                    children: [
-                      icone,
-                      const SizedBox(width: 11),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(titulo,
-                                style: TextStyle(
-                                    fontSize: 13.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: theme.colorScheme.onSurface)),
-                            const SizedBox(height: 1),
-                            Text(detalhe,
-                                style:
-                                    TextStyle(fontSize: 11, color: apagado)),
-                          ],
-                        ),
-                      ),
-                    ],
+              padding: const EdgeInsets.fromLTRB(12, 13, 12, 12),
+              child: Row(
+                children: [
+                  icone,
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(titulo,
+                            style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.onSurface)),
+                        const SizedBox(height: 1),
+                        Text(detalhe,
+                            style: TextStyle(fontSize: 12, color: apagado)),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
         );
 
-    return showModalBottomSheet<_FormatoEnvio>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: theme.colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
+    // Folha no padrão 2.2 (faixa com a arte do contracheque no topo).
+    return mostrarFolhaArte<_FormatoEnvio>(
+      context,
+      arte: Arte.de('cc'),
+      icone: Icons.ios_share_rounded,
+      titulo: 'Confira antes de enviar',
+      subtitulo:
+          'Contracheque de ${widget.mesSelecionado.mesExtenso}/${widget.mesSelecionado.ano}',
+      corpo: (ctx) {
         final altura = MediaQuery.of(ctx).size.height;
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // A página inteira, com zoom. Rubrica pequena num celular
+            // pequeno fica ilegível sem isso, e conferir é o objetivo.
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: altura * 0.46),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: ColoredBox(
+                  // A prévia é o papel do documento: branco nos dois temas.
+                  color: Colors.white,
+                  child: InteractiveViewer(
+                    maxScale: 4,
+                    child: Image.memory(pagina, fit: BoxFit.contain),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
               children: [
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                opcao(
+                  icone: const _IconePdf(altura: 30),
+                  titulo: 'PDF',
+                  detalhe: _tamanhoLegivel(bytesPdf),
+                  aoTocar: () => Navigator.of(ctx).pop(_FormatoEnvio.pdf),
                 ),
-                const SizedBox(height: 14),
-                Text('Confira antes de enviar',
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 4),
-                Text(
-                  'Contracheque de ${widget.mesSelecionado.mesExtenso}/${widget.mesSelecionado.ano}',
-                  style: theme.textTheme.bodySmall?.copyWith(color: apagado),
-                ),
-                const SizedBox(height: 14),
-
-                // A página inteira, com zoom. Rubrica pequena num celular
-                // pequeno fica ilegível sem isso, e conferir é o objetivo.
-                Flexible(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: altura * 0.52),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        color: Colors.white,
-                        child: InteractiveViewer(
-                          maxScale: 4,
-                          child: Image.memory(pagina, fit: BoxFit.contain),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    opcao(
-                      icone: const _IconePdf(altura: 30),
-                      titulo: 'PDF',
-                      detalhe: _tamanhoLegivel(bytesPdf),
-                      aoTocar: () => Navigator.of(ctx).pop(_FormatoEnvio.pdf),
-                    ),
-                    const SizedBox(width: 10),
-                    opcao(
-                      icone: const _IconeImagem(altura: 30),
-                      titulo: 'Imagem',
-                      detalhe: _tamanhoLegivel(bytesImagem),
-                      aoTocar: () =>
-                          Navigator.of(ctx).pop(_FormatoEnvio.imagem),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('Cancelar'),
+                const SizedBox(width: 10),
+                opcao(
+                  icone: const _IconeImagem(altura: 30),
+                  titulo: 'Imagem',
+                  detalhe: _tamanhoLegivel(bytesImagem),
+                  aoTocar: () => Navigator.of(ctx).pop(_FormatoEnvio.imagem),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              style: TextButton.styleFrom(minimumSize: const Size(88, 44)),
+              child: const Text('Cancelar'),
+            ),
+          ],
         );
       },
     );
@@ -1084,7 +1049,7 @@ class _PageContrachequeState extends State<PageContracheque> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 132),
               children: [
                 _tituloCompetencia(theme),
-                const SizedBox(height: 18),
+                const SizedBox(height: 14),
                 _cartaoServidor(auth, theme),
                 const SizedBox(height: 14),
                 _cartaoLiquido(theme),
@@ -1144,34 +1109,15 @@ class _PageContrachequeState extends State<PageContracheque> {
   String get _oculto => '••••••';
 
   // ── Competência ───────────────────────────────────────────────────────
+  // Topo da tela no padrão 2.2: a arte do contracheque com o mês e o ano.
   Widget _tituloCompetencia(ThemeData theme) {
     final mes = widget.mesSelecionado.mesExtenso;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        RichText(
-          text: TextSpan(
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontSize: 23,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-              letterSpacing: -0.3,
-            ),
-            children: [
-              TextSpan(text: '$mes '),
-              TextSpan(
-                text: widget.mesSelecionado.ano,
-                style: TextStyle(
-                    fontWeight: FontWeight.w400, color: _apagado(theme)),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 3),
-        Text('Demonstrativo de pagamento',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: _apagado(theme), fontSize: 11.5)),
-      ],
+    return TopoArte(
+      arte: Arte.de('cc'),
+      icone: Icons.receipt_long_outlined,
+      titulo: '$mes ${widget.mesSelecionado.ano}',
+      subtitulo: 'Demonstrativo de pagamento',
+      margem: EdgeInsets.zero,
     );
   }
 
@@ -1483,73 +1429,29 @@ class _PageContrachequeState extends State<PageContracheque> {
   // não rouba uma faixa fixa da tela, que numa lista longa de rubricas faz
   // falta. O formato — PDF ou imagem — é escolhido na prévia, depois de o
   // militar ver o documento.
+  // Ação principal da tela: botão cheio do tema (AppColors.acao), como os
+  // outros botões principais do app (DESIGN §5).
   Widget _botaoCompartilhar(Auth auth) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final primaria = theme.colorScheme.primary;
     final ocupado = _sharingPdf || _sharingImage;
-
-    // Mesma receita da pílula do item ativo no menu inferior
-    // (barra_navegacao.dart): primária a 22% com borda a 35%, raio 18 e o
-    // mesmo desfoque de fundo. Assim o botão pertence ao app em vez de
-    // parecer um elemento colado por cima.
-    final conteudo = Container(
-      decoration: BoxDecoration(
-        color: primaria.withValues(alpha: isDark ? 0.22 : 0.12),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: primaria.withValues(alpha: isDark ? 0.35 : 0.22),
-          width: 0.8,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: ocupado ? null : () => _compartilhar(auth),
-          borderRadius: BorderRadius.circular(18),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 13, 20, 13),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ocupado
-                    ? SizedBox(
-                        width: 17,
-                        height: 17,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: primaria),
-                      )
-                    : Icon(Icons.ios_share_rounded, size: 18, color: primaria),
-                const SizedBox(width: 9),
-                Text(
-                  ocupado ? 'Gerando…' : 'Compartilhar',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.1,
-                    color: primaria,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
     return Semantics(
       button: true,
-      label: 'Compartilhar contracheque',
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        // Vidro só no iOS, como na barra de navegação: no Android o desfoque
-        // de fundo custa caro e a superfície do Material já resolve.
-        child: Platform.isAndroid
-            ? conteudo
-            : BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-                child: conteudo,
-              ),
+      label: ocupado ? 'Gerando o arquivo' : 'Compartilhar contracheque',
+      excludeSemantics: true,
+      child: FilledButton.icon(
+        style: FilledButton.styleFrom(
+          elevation: 4,
+          minimumSize: const Size(48, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+        ),
+        onPressed: ocupado ? null : () => _compartilhar(auth),
+        icon: ocupado
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.ios_share_rounded, size: AppIconSize.sm),
+        label: Text(ocupado ? 'Gerando…' : 'Compartilhar'),
       ),
     );
   }
@@ -1580,21 +1482,28 @@ class _BotaoOlho extends StatelessWidget {
       child: InkWell(
         onTap: aoTocar,
         borderRadius: BorderRadius.circular(20),
-        child: Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.blue.withValues(alpha: 0.16),
-            border:
-                Border.all(color: AppColors.lightBlue.withValues(alpha: 0.45)),
-          ),
-          child: Icon(
-            visivel
-                ? Icons.visibility_outlined
-                : Icons.visibility_off_outlined,
-            size: 19,
-            color: AppColors.lightBlue,
+        // Alvo de 44 pt; o desenho é o mesmo vidro claro dos botões da
+        // barra (a barra é sempre escura, então branco passa nos dois temas).
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Center(
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.12),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
+              ),
+              child: Icon(
+                visivel
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                size: AppIconSize.sm,
+                color: Colors.white,
+              ),
+            ),
           ),
         ),
       ),

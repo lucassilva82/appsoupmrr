@@ -83,8 +83,16 @@ class _ContrachequeState extends State<Contracheque> {
 
     return FundoSuave(child: Scaffold(
       appBar: CustomAppBar(title: 'Contracheques'),
-      floatingActionButton: _ShimmerFab(
-        onTap: () {
+      // Ação principal da tela: botão cheio do tema (AppColors.acao), sem o
+      // degradê com brilho passando que o FAB antigo tinha (DESIGN §7: nada
+      // se move sem motivo).
+      floatingActionButton: FilledButton.icon(
+        style: FilledButton.styleFrom(
+          elevation: 4,
+          minimumSize: const Size(48, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+        ),
+        onPressed: () {
           final auth = Provider.of<Auth>(context, listen: false);
           Navigator.of(context).pushNamed(
             AppRoutes.CONTRACHEQUE_GRAFICO_PAGE,
@@ -94,20 +102,23 @@ class _ContrachequeState extends State<Contracheque> {
             },
           );
         },
+        icon: const Icon(Icons.insights_rounded, size: AppIconSize.sm),
+        label: const Text('Análise salarial'),
       ),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Topo com a arte da área; o seletor de ano mora dentro dele, como
+          // continuação do cartão (antes era uma faixa de pílulas solta).
           TopoArte(
             arte: Arte.de('cc'),
             icone: Icons.receipt_long_outlined,
             titulo: 'Contracheques',
             subtitulo: 'Escolha o ano e toque no mês para ver o '
                 'contracheque e baixar o PDF.',
-            margem: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            margem: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: _buildYearBar(),
           ),
-          // ── Seletor de ano ─────────────────────────────────────────────
-          _buildYearBar(isDark),
 
           // ── Lista agrupada ────────────────────────────────────────────
           Expanded(
@@ -133,74 +144,67 @@ class _ContrachequeState extends State<Contracheque> {
   }
 
   // ── Seletor de anos ───────────────────────────────────────────────────
-  // Sem faixa de fundo: as pílulas ficam direto sobre o fundo da tela, como
-  // os demais seletores do app. A selecionada é tingida com a primária, não
-  // pintada de azul sólido.
-  Widget _buildYearBar(bool isDark) {
-    return Builder(builder: (context) {
-      final theme = Theme.of(context);
-      final primaria = theme.colorScheme.primary;
-
-      return SizedBox(
-        height: 54,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.fromLTRB(16, 11, 16, 11),
-          itemCount: listaAnos.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 8),
-          itemBuilder: (context, i) {
-            final anoStr = listaAnos[i].toString();
-            final isSelected = anoStr == _anoSelecionado;
-
-            return GestureDetector(
-              onTap: () => _selecionaAno(anoStr),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? primaria.withValues(alpha: isDark ? 0.26 : 0.16)
-                      : theme.colorScheme.onSurface
-                          .withValues(alpha: isDark ? 0.05 : 0.035),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isSelected
-                        ? primaria.withValues(alpha: 0.55)
-                        : theme.colorScheme.onSurface
-                            .withValues(alpha: 0.12),
-                    width: isSelected ? 1.2 : 1,
-                  ),
-                ),
-                child: AnimatedDefaultTextStyle(
+  // Dentro do TopoArte: pílulas de vidro claro sobre a arte (texto branco),
+  // a selecionada mais clara e com contorno. Alvo de 44 pt de altura.
+  Widget _buildYearBar() {
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: listaAnos.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final anoStr = listaAnos[i].toString();
+          final isSelected = anoStr == _anoSelecionado;
+          return Semantics(
+            button: true,
+            selected: isSelected,
+            label: 'Ano $anoStr',
+            excludeSemantics: true,
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                onTap: () => _selecionaAno(anoStr),
+                borderRadius: BorderRadius.circular(12),
+                child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  style: TextStyle(
-                    color: isSelected
-                        ? primaria
-                        : theme.colorScheme.onSurface
-                            .withValues(alpha: 0.62),
-                    fontWeight:
-                        isSelected ? FontWeight.w700 : FontWeight.w500,
-                    fontSize: 13,
-                    letterSpacing: 0.2,
+                  curve: Curves.easeOut,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white
+                        .withValues(alpha: isSelected ? 0.24 : 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white
+                          .withValues(alpha: isSelected ? 0.55 : 0.16),
+                    ),
                   ),
-                  child: Text(anoStr),
+                  child: Text(
+                    anoStr,
+                    style: TextStyle(
+                      color: Colors.white
+                          .withValues(alpha: isSelected ? 1 : 0.80),
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
               ),
-            );
-          },
-        ),
-      );
-    });
+            ),
+          );
+        },
+      ),
+    );
   }
 
   // ── Lista agrupada por mês ────────────────────────────────────────────
   Widget _buildGroupedList(List<MesesContracheque> lista, bool isDark) {
     final groups = _groupByMonth(lista);
     return ListView.builder(
-      // Embaixo, espaço para o botão "Análise Salarial" não cobrir o último.
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+      // Embaixo, espaço para o botão "Análise salarial" não cobrir o último.
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
       itemCount: groups.length,
       itemBuilder: (ctx, i) {
         final entry = groups[i];
@@ -212,6 +216,9 @@ class _ContrachequeState extends State<Contracheque> {
   }
 
   // ── Grupo de um mês ───────────────────────────────────────────────────
+  // Lista agrupada no padrão do app (como a central de comunicados): rótulo
+  // do mês em cima e as folhas daquele mês juntas numa caixa de vidro, uma
+  // linha por folha, separadas por divisor.
   Widget _buildMonthGroup(String mesExtenso, List<MesesContracheque> items,
       bool isDark, BuildContext ctx) {
     final theme = Theme.of(ctx);
@@ -222,58 +229,62 @@ class _ContrachequeState extends State<Contracheque> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header do mês
-          Row(
-            children: [
-              Text(
-                mesExtenso,
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                  color: aoFundo.withValues(alpha: 0.62),
-                  letterSpacing: 0.3,
-                ),
-              ),
-              if (items.length > 1) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: primaria.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '${items.length} folhas',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: primaria,
-                      fontWeight: FontWeight.w600,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 6),
+            child: Row(
+              children: [
+                Flexible(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      mesExtenso.toUpperCase(),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                        color: primaria,
+                        letterSpacing: 0.8,
+                      ),
                     ),
                   ),
                 ),
+                if (items.length > 1) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    '· ${items.length} folhas',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: aoFundo.withValues(alpha: 0.60),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ],
-              const SizedBox(width: 8),
-              Expanded(
-                child: Divider(
-                  color: aoFundo.withValues(alpha: 0.10),
-                  height: 1,
-                ),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 6),
-          // Cards do mês
-          ...items.map((item) => _buildPayslipCard(item, isDark, ctx)),
+          CartaoVidro(
+            raio: 14,
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                for (var j = 0; j < items.length; j++) ...[
+                  if (j > 0)
+                    Divider(
+                      height: 1,
+                      indent: 46,
+                      color: aoFundo.withValues(alpha: 0.08),
+                    ),
+                  _buildPayslipCard(items[j], isDark, ctx),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  // ── Card de cada contracheque ─────────────────────────────────────────
-  // Item de lista: CartaoVidro sem arte (a arte discreta em cada item de uma
-  // lista longa deixa a tela carregada). A cor do tipo de folha fica só no
-  // ícone e no selo.
+  // ── Linha de cada contracheque ────────────────────────────────────────
+  // A cor do tipo de folha fica só no ícone e no selo.
   Widget _buildPayslipCard(
       MesesContracheque item, bool isDark, BuildContext ctx) {
     final theme = Theme.of(ctx);
@@ -290,88 +301,90 @@ class _ContrachequeState extends State<Contracheque> {
 
     final badgeLabel = isAtivo ? 'Ativo' : item.tipo;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: CartaoVidro(
-        raio: 12,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        onTap: () {
-          item.cpf = Provider.of<Auth>(ctx, listen: false).cpf!;
-          Navigator.of(ctx)
-              .pushNamed(AppRoutes.PAGE_VIEW_CONTRACHEQUE, arguments: item);
-        },
-        child: Row(
-          children: [
-            // Ícone do tipo de folha (sem quadradinho tingido, DESIGN §2b)
-            ExcludeSemantics(
-              child: Icon(
-                Icons.receipt_long_outlined,
-                size: AppIconSize.sm,
-                color: accentColor,
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            // Texto principal
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          primaryText,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13.5,
-                            color: aoFundo,
-                          ),
-                        ),
-                      ),
-                      if (_isThisMonth(item)) ...[
-                        const SizedBox(width: 6),
-                        const _NovoBadge(),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Mat. ${item.matricula}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: aoFundo.withValues(alpha: 0.60),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Badge tipo
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                badgeLabel,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
+    return InkWell(
+      onTap: () {
+        item.cpf = Provider.of<Auth>(ctx, listen: false).cpf!;
+        Navigator.of(ctx)
+            .pushNamed(AppRoutes.PAGE_VIEW_CONTRACHEQUE, arguments: item);
+      },
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 56),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            children: [
+              // Ícone do tipo de folha (sem quadradinho tingido, DESIGN §2b)
+              ExcludeSemantics(
+                child: Icon(
+                  Icons.receipt_long_outlined,
+                  size: AppIconSize.sm,
                   color: accentColor,
                 ),
               ),
-            ),
-            const SizedBox(width: 6),
-            ExcludeSemantics(
-              child: Icon(
-                Icons.chevron_right_rounded,
-                size: AppIconSize.sm,
-                color: aoFundo.withValues(alpha: 0.35),
+              const SizedBox(width: 12),
+
+              // Texto principal
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            primaryText,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: aoFundo,
+                            ),
+                          ),
+                        ),
+                        if (_isThisMonth(item)) ...[
+                          const SizedBox(width: 6),
+                          const _NovoBadge(),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Mat. ${item.matricula}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: aoFundo.withValues(alpha: 0.60),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+
+              // Selo do tipo
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  badgeLabel,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: accentColor,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              ExcludeSemantics(
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  size: AppIconSize.sm,
+                  color: aoFundo.withValues(alpha: 0.35),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -381,26 +394,35 @@ class _ContrachequeState extends State<Contracheque> {
     final theme = Theme.of(context);
     final aoFundo = theme.colorScheme.onSurface;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
       children: [
         CartaoVidro(
           arte: Arte.de('cc'),
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+          padding: const EdgeInsets.fromLTRB(20, 28, 20, 28),
           child: Column(
             children: [
               ExcludeSemantics(
                 child: Icon(Icons.receipt_long_outlined,
                     size: AppIconSize.xl,
-                    color: aoFundo.withValues(alpha: 0.45)),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.70)),
               ),
               const SizedBox(height: 12),
               Text(
                 'Nenhum contracheque em $_anoSelecionado',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 14,
-                  color: aoFundo.withValues(alpha: 0.70),
-                  fontWeight: FontWeight.w500,
+                  fontSize: 15,
+                  color: aoFundo,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Escolha outro ano no topo da tela.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: aoFundo.withValues(alpha: 0.62),
                 ),
               ),
             ],
@@ -411,175 +433,31 @@ class _ContrachequeState extends State<Contracheque> {
   }
 }
 
-// ── Badge pulsante "NOVO" ────────────────────────────────────────────────────
-class _NovoBadge extends StatefulWidget {
+// ── Selo "NOVO" ──────────────────────────────────────────────────────────────
+// Parado: selo não pisca (DESIGN §2b). Verde do tema de proventos (§3).
+class _NovoBadge extends StatelessWidget {
   const _NovoBadge();
 
   @override
-  State<_NovoBadge> createState() => _NovoBadgeState();
-}
-
-class _NovoBadgeState extends State<_NovoBadge>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _anim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
-    _anim = Tween<double>(begin: 0.45, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _anim,
-      builder: (_, __) => Opacity(
-        opacity: _anim.value,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-          decoration: BoxDecoration(
-            color: const Color(0xFF2E7D32),
-            borderRadius: BorderRadius.circular(5),
-          ),
-          child: const Text(
-            'NOVO',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.8,
-            ),
-          ),
+    final escuro = Theme.of(context).brightness == Brightness.dark;
+    final cor = escuro ? const Color(0xFF6EE7A0) : const Color(0xFF14713B);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: cor.withValues(alpha: 0.40)),
+      ),
+      child: Text(
+        'NOVO',
+        style: TextStyle(
+          color: cor,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.6,
         ),
       ),
-    );
-  }
-}
-
-// ── FAB Shimmer ────────────────────────────────────────────────────────────
-class _ShimmerFab extends StatefulWidget {
-  final VoidCallback onTap;
-  const _ShimmerFab({required this.onTap});
-
-  @override
-  State<_ShimmerFab> createState() => _ShimmerFabState();
-}
-
-class _ShimmerFabState extends State<_ShimmerFab>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2400),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (context, _) {
-        final pos = _ctrl.value * 4.0 - 1.5;
-        // Sombra fica FORA do clip para seguir o shape arredondado
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.blue.withValues(alpha: isDark ? 0.45 : 0.30),
-                blurRadius: 14,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(30),
-            child: Material(
-              type: MaterialType.transparency,
-              child: InkWell(
-                onTap: widget.onTap,
-                splashColor: Colors.white.withValues(alpha: 0.18),
-                highlightColor: Colors.white.withValues(alpha: 0.08),
-                child: Ink(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                          ? [
-                              const Color(0xFF0D2137),
-                              AppColors.blue,
-                              const Color(0xFF42A5F5),
-                            ]
-                          : [
-                              AppColors.navy,
-                              AppColors.blue,
-                              const Color(0xFF64B5F6),
-                            ],
-                      stops: const [0.0, 0.55, 1.0],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    foregroundDecoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment(pos - 0.7, -0.5),
-                        end: Alignment(pos + 0.7, 0.5),
-                        colors: [
-                          Colors.white.withValues(alpha: 0.0),
-                          Colors.white.withValues(alpha: 0.28),
-                          Colors.white.withValues(alpha: 0.0),
-                        ],
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.auto_awesome,
-                            color: Colors.white, size: 15),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'Análise Salarial',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }

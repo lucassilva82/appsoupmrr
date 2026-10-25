@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/config/app_config.dart';
 import '../../core/design/arte_cartao.dart';
+import '../../core/design/folha_arte.dart';
 import '../../core/navegacao/abrir_funcao.dart';
 import '../../models/auth_model.dart';
 import '../../utils/app_theme.dart';
@@ -74,7 +75,8 @@ class LinhaAtalhos extends StatelessWidget {
   Widget build(BuildContext context) {
     final gestor = context.select<Auth, bool>((a) => a.isSuperUser);
     return ListenableBuilder(
-      listenable: Listenable.merge([RepositorioConfig.emUso, InicioPreferenciasRepositorio.emUso]),
+      listenable: Listenable.merge(
+          [RepositorioConfig.emUso, InicioPreferenciasRepositorio.emUso]),
       builder: (context, _) {
         final config = RepositorioConfig.atual;
         final doMilitar = InicioPreferenciasRepositorio.emUso.value?.atalhos;
@@ -82,22 +84,27 @@ class LinhaAtalhos extends StatelessWidget {
         final atalhos = resolverAtalhos(
             menuEmUso(config, gestor: gestor),
             doMilitar ??
-                (doPainel == null || doPainel.isEmpty ? atalhosPadrao(gestor: gestor) : doPainel));
+                (doPainel == null || doPainel.isEmpty
+                    ? atalhosPadrao(gestor: gestor)
+                    : doPainel));
         if (atalhos.isEmpty) return const SizedBox.shrink();
         // Cabeçalho "Atalhos" com "Editar" e a caixa de vidro com a arte
         // discreta (protótipo `.vidro.atalhos`).
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             CabecalhoSecao(
               titulo: 'Atalhos',
               direita: TextButton(
-                onPressed: () =>
-                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PersonalizarInicioPage())),
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const PersonalizarInicioPage())),
                 style: TextButton.styleFrom(minimumSize: const Size(44, 36)),
                 child: Text('Editar',
                     style: TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary)),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.primary)),
               ),
             ),
             CartaoVidro(
@@ -105,31 +112,35 @@ class LinhaAtalhos extends StatelessWidget {
               child: Stack(children: [
                 ArteDiscreta(arte: Arte.de('cc')),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                   child: LayoutBuilder(builder: (context, c) {
                     final n = atalhosQueCabem(c.maxWidth, atalhos.length);
                     final mais = n < atalhos.length;
-                    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      for (final a in atalhos.take(n))
-                        Expanded(
-                          child: _Atalho(
-                            icone: iconePorChave(a.item.icone),
-                            cor: Arte.de(a.area.arte).destaque,
-                            rotulo: rotuloCurto(a.item),
-                            bloqueado: a.item.bloqueado,
-                            aoTocar: () => abrirFuncao(context, a.item, origem: 'atalho'),
-                          ),
-                        ),
-                      if (mais)
-                        Expanded(
-                          child: _Atalho(
-                            icone: Icons.apps_rounded,
-                            cor: Theme.of(context).colorScheme.primary,
-                            rotulo: 'Mais',
-                            aoTocar: () => _todos(context, atalhos),
-                          ),
-                        ),
-                    ]);
+                    return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (final a in atalhos.take(n))
+                            Expanded(
+                              child: _Atalho(
+                                icone: iconePorChave(a.item.icone),
+                                cor: Arte.de(a.area.arte).destaque,
+                                rotulo: rotuloCurto(a.item),
+                                bloqueado: a.item.bloqueado,
+                                aoTocar: () => abrirFuncao(context, a.item,
+                                    origem: 'atalho'),
+                              ),
+                            ),
+                          if (mais)
+                            Expanded(
+                              child: _Atalho(
+                                icone: Icons.apps_rounded,
+                                cor: Theme.of(context).colorScheme.primary,
+                                rotulo: 'Mais',
+                                aoTocar: () => _todos(context, atalhos),
+                              ),
+                            ),
+                        ]);
                   }),
                 ),
               ]),
@@ -141,43 +152,41 @@ class LinhaAtalhos extends StatelessWidget {
   }
 
   void _todos(BuildContext context, List<({ItemMenu item, ItemMenu area})> l) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: Wrap(runSpacing: 12, children: [
-            SizedBox(
-              width: double.infinity,
-              child: TextButton.icon(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PersonalizarInicioPage()));
-                },
-                icon: const Icon(Icons.edit_outlined),
-                label: const Text('Editar atalhos'),
-              ),
-            ),
-            for (final a in l)
-              SizedBox(
-                width: (MediaQuery.sizeOf(ctx).width - 32) / 4,
-                child: _Atalho(
-                  icone: iconePorChave(a.item.icone),
-                  cor: Arte.de(a.area.arte).destaque,
-                  rotulo: a.item.rotulo,
-                  bloqueado: a.item.bloqueado,
-                  aoTocar: () {
-                    Navigator.of(ctx).pop();
-                    abrirFuncao(context, a.item, origem: 'atalho');
-                  },
-                ),
-              ),
-          ]),
+    mostrarFolhaArte<void>(
+      context,
+      arte: Arte.de('rh'),
+      icone: Icons.apps_rounded,
+      titulo: 'Atalhos',
+      subtitulo: 'Todos os seus atalhos da tela inicial.',
+      paddingCorpo: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      corpo: (ctx) => Wrap(runSpacing: 12, children: [
+        SizedBox(
+          width: double.infinity,
+          child: TextButton.icon(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const PersonalizarInicioPage()));
+            },
+            icon: const Icon(Icons.edit_outlined, size: AppIconSize.sm),
+            label: const Text('Editar atalhos'),
+          ),
         ),
-      ),
+        for (final a in l)
+          SizedBox(
+            width: (MediaQuery.sizeOf(ctx).width - 32) / 4,
+            child: _Atalho(
+              icone: iconePorChave(a.item.icone),
+              cor: Arte.de(a.area.arte).destaque,
+              rotulo: a.item.rotulo,
+              bloqueado: a.item.bloqueado,
+              aoTocar: () {
+                Navigator.of(ctx).pop();
+                abrirFuncao(context, a.item, origem: 'atalho');
+              },
+            ),
+          ),
+      ]),
     );
   }
 }
@@ -197,8 +206,11 @@ class _Atalho extends StatelessWidget {
   final VoidCallback aoTocar;
   final bool bloqueado;
 
-  static TextStyle _estilo(ThemeData t) =>
-      TextStyle(fontSize: 10.5, height: 1.2, letterSpacing: -0.21, color: t.colorScheme.onSurface);
+  static TextStyle _estilo(ThemeData t) => TextStyle(
+      fontSize: 10.5,
+      height: 1.2,
+      letterSpacing: -0.21,
+      color: t.colorScheme.onSurface);
 
   @override
   Widget build(BuildContext context) {

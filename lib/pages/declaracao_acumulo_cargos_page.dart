@@ -1,3 +1,5 @@
+import 'package:projetonovo/widgets/alerta.dart';
+import 'package:projetonovo/widgets/dialogo_confirmacao.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -538,93 +540,31 @@ class _DeclaracaoAcumuloCargosPageState
   Future<bool> _showConfirmDialog({
     required String title,
     required String message,
-  }) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(title),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Confirmar'),
-            ),
-          ],
-        );
-      },
-    );
-    return result == true;
-  }
+  }) =>
+      dialogoConfirmacao(
+        context,
+        titulo: title,
+        mensagem: message,
+        // Todas as confirmações desta tela são de exclusão.
+        textoConfirmar: 'Excluir',
+        icone: Icons.delete_outline_rounded,
+        cor: Theme.of(context).colorScheme.error,
+        arte: Arte.de('rh'),
+      );
 
   Future<void> _showNotice({
     required String title,
     required String message,
     required bool isError,
-  }) async {
-    final color = isError ? Colors.red.shade700 : Colors.green.shade700;
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: [
-              Icon(
-                isError ? Icons.error_outline_rounded : Icons.check_circle,
-                color: color,
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Text(title),
-            ],
-          ),
-          content: Text(message),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  }) =>
+      isError
+          ? alertaErro(context,
+              titulo: title, texto: message, arte: Arte.de('rh'))
+          : alertaSucesso(context,
+              titulo: title, texto: message, arte: Arte.de('rh'));
 
-  void _showBusyDialog(String message) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2.2),
-                ),
-                const SizedBox(width: 10),
-                Text(message),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  void _showBusyDialog(String message) =>
+      mostrarCarregandoDialogo(context, message, arte: Arte.de('rh'));
 
   void _dismissDialogIfOpen() {
     if (!mounted) return;

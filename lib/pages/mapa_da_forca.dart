@@ -96,16 +96,11 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
           // ── TabBar ─────────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Container(
-              height: 36,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface
-                    .withValues(alpha: isDark ? 0.06 : 0.04),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.15),
-                ),
-              ),
+            // Seletor das abas numa superfície de vidro (padrão 2.2), no
+            // lugar da caixa cinza feita à mão.
+            child: CartaoVidro(
+              raio: 12,
+              padding: const EdgeInsets.all(3),
               child: TabBar(
                 controller: _tabController,
                 // Pílula tingida, no padrão dos chips e da barra inferior.
@@ -122,16 +117,16 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
                 unselectedLabelColor:
                     theme.colorScheme.onSurface.withValues(alpha: 0.55),
                 labelStyle:
-                    const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 unselectedLabelStyle:
-                    const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                 dividerColor: Colors.transparent,
                 splashFactory: NoSplash.splashFactory,
                 overlayColor: WidgetStateProperty.all(Colors.transparent),
                 tabs: const [
-                  Tab(text: 'Gráficos'),
-                  Tab(text: 'Mapa Geral'),
-                  Tab(text: 'Comandos'),
+                  Tab(height: 36, text: 'Gráficos'),
+                  Tab(height: 36, text: 'Mapa Geral'),
+                  Tab(height: 36, text: 'Comandos'),
                 ],
               ),
             ),

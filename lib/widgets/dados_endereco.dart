@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import '../utils/app_theme.dart';
 
 import '../models/militar.dart';
-import '../utils/app_routes.dart';
 
 class DadosEndereco extends StatelessWidget {
   final Militar militar;
@@ -33,7 +33,7 @@ class DadosEndereco extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon,
-              size: 16,
+              size: AppIconSize.xs,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
           const SizedBox(width: 10),
           Expanded(

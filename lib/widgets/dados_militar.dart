@@ -96,6 +96,7 @@ class _DadosMilitarState extends State<DadosMilitar> {
           icon: Icons.phone_outlined,
           title: 'Contato',
           isDark: isDark,
+          arte: Arte.de('rh'),
           child: DadosContato(
             militar: widget.militar,
           ),
@@ -106,6 +107,7 @@ class _DadosMilitarState extends State<DadosMilitar> {
           icon: Icons.home_outlined,
           title: 'Endereço',
           isDark: isDark,
+          arte: Arte.de('rh'),
           trailingAction: IconButton(
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
@@ -125,6 +127,7 @@ class _DadosMilitarState extends State<DadosMilitar> {
           icon: Icons.work_history_outlined,
           title: 'Situação Funcional',
           isDark: isDark,
+          arte: Arte.de('rh'),
           child: DadosSituacaoFuncional(militar: widget.militar),
         ),
 

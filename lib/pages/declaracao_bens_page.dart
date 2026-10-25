@@ -1,3 +1,4 @@
+import 'package:projetonovo/widgets/dialogo_confirmacao.dart';
 // DeclaracaoBensPage
 // Versão com melhorias visuais – mantém toda a lógica original.
 //
@@ -393,61 +394,29 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   /// Atalho local: sucesso ou erro, com o visual dos alertas do app.
   void _alerta(String message, {bool erro = false}) {
     if (erro) {
-      alertaErro(context, titulo: 'Atenção', texto: message);
+      alertaErro(context, titulo: 'Atenção', texto: message, arte: Arte.de('rh'));
     } else {
-      alertaSucesso(context, titulo: 'Sucesso', texto: message);
+      alertaSucesso(context, titulo: 'Sucesso', texto: message, arte: Arte.de('rh'));
     }
   }
 
-  void _showLoading() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2.2),
-              ),
-              SizedBox(width: 10),
-              Text('Processando...'),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  void _showLoading() =>
+      mostrarCarregandoDialogo(context, 'Processando...', arte: Arte.de('rh'));
 
   Future<bool> _showConfirmDialog({
     required String title,
     required String message,
-  }) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Confirmar'),
-          ),
-        ],
-      ),
-    );
-    return result == true;
-  }
+  }) =>
+      dialogoConfirmacao(
+        context,
+        titulo: title,
+        mensagem: message,
+        // Todas as confirmações desta tela são de exclusão.
+        textoConfirmar: 'Excluir',
+        icone: Icons.delete_outline_rounded,
+        cor: Theme.of(context).colorScheme.error,
+        arte: Arte.de('rh'),
+      );
 
   //--------------------------------------------------------------------
   // BUILD
@@ -700,46 +669,41 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
             itemBuilder: (ctx, i) {
               final bem = bensEnviados[i];
               final tipoTexto = bem['tipo_bem'] == 1 ? 'Imóvel' : 'Móvel';
-              return Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                elevation: 0,
-                color: theme.cardColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: theme.dividerColor.withValues(alpha: 0.28),
-                  ),
-                ),
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: 1),
-                  duration: Duration(milliseconds: 240 + (i * 45)),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, child) => Opacity(
-                    opacity: value,
-                    child: Transform.translate(
-                      offset: Offset(0, (1 - value) * 8),
-                      child: child,
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: CartaoVidro(
+                  raio: 12,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: 1),
+                    duration: Duration(milliseconds: 240 + (i * 45)),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, child) => Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, (1 - value) * 8),
+                        child: child,
+                      ),
                     ),
-                  ),
-                  child: ListTile(
-                    dense: true,
-                    visualDensity: const VisualDensity(vertical: -2),
-                    title: Text('$tipoTexto: ${bem['descricao'] ?? ''}',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: _fs(context, 12.5))),
-                    subtitle: bem['valor'] != null
-                        ? Text(
-                            'R\$ ${NumberFormat.currency(locale: 'pt_BR', symbol: '').format(double.tryParse((bem['valor'] as String).replaceAll(',', '.')) ?? 0)}',
-                            style: _labelStyle(context)
-                                .copyWith(color: Colors.green.shade700))
-                        : null,
-                    trailing: IconButton(
-                      visualDensity: VisualDensity.compact,
-                      iconSize: AppIconSize.sm,
-                      icon: Icon(Icons.delete_outline_rounded,
-                          color: theme.colorScheme.error),
-                      onPressed: () => _excluirBem(i),
+                    child: ListTile(
+                      dense: true,
+                      visualDensity: const VisualDensity(vertical: -2),
+                      title: Text('$tipoTexto: ${bem['descricao'] ?? ''}',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: _fs(context, 12.5))),
+                      subtitle: bem['valor'] != null
+                          ? Text(
+                              'R\$ ${NumberFormat.currency(locale: 'pt_BR', symbol: '').format(double.tryParse((bem['valor'] as String).replaceAll(',', '.')) ?? 0)}',
+                              style: _labelStyle(context)
+                                  .copyWith(color: Colors.green.shade700))
+                          : null,
+                      trailing: IconButton(
+                        visualDensity: VisualDensity.compact,
+                        iconSize: AppIconSize.sm,
+                        icon: Icon(Icons.delete_outline_rounded,
+                            color: theme.colorScheme.error),
+                        onPressed: () => _excluirBem(i),
+                      ),
                     ),
                   ),
                 ),

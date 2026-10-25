@@ -132,7 +132,8 @@ class _DocumentosPageState extends State<DocumentosPage> {
         mensagem: 'O PDF de ${c.titulo} sai só deste aparelho. Você pode baixar de novo em Contracheques.',
         textoConfirmar: 'Remover',
         icone: Icons.delete_outline_rounded,
-        cor: Theme.of(context).colorScheme.error);
+        cor: Theme.of(context).colorScheme.error,
+        arte: Arte.de('rh'));
     if (!ok) return;
     await DocumentosLocais().remover(_matricula, c.id);
     registrar('documentos.remover', chave: _chave, dados: {'tipo': 'contracheque'});

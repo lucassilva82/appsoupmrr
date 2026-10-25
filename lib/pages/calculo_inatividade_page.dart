@@ -16,6 +16,8 @@ import '../widgets/barra_vidro.dart';
 import '../widgets/cartao_painel.dart';
 import '../widgets/vidro.dart';
 import '../widgets/aviso_rapido.dart';
+import '../widgets/dialogo_confirmacao.dart';
+import '../core/design/folha_arte.dart';
 
 class CalculoInatividadePage extends StatefulWidget {
   const CalculoInatividadePage({Key? key}) : super(key: key);
@@ -169,27 +171,17 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
 
   /// Descarta o cálculo e todos os dados, voltando ao formulário em branco.
   Future<void> _novoCalculo() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Novo cálculo'),
-        content: const Text(
-            'Os dados informados e o resultado atual serão apagados. '
-            'Você preencherá tudo de novo.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Apagar e recomeçar'),
-          ),
-        ],
-      ),
+    // Ação destrutiva: confirmação no desenho do app, em vermelho (DESIGN §5).
+    final ok = await dialogoConfirmacao(
+      context,
+      titulo: 'Novo cálculo',
+      mensagem: 'Os dados informados e o resultado atual serão apagados. '
+          'Você preencherá tudo de novo.',
+      textoConfirmar: 'Apagar e recomeçar',
+      icone: Icons.restart_alt_rounded,
+      cor: Theme.of(context).colorScheme.error,
     );
-    if (ok != true || !mounted) return;
+    if (!ok || !mounted) return;
 
     _timer?.cancel();
     await Store.saveMap(_storeKey, {});
@@ -301,7 +293,7 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
             elevation: 0,
             flexibleSpace: const FundoBarraVidro(),
             title: const Text('Cálculo de Inatividade')),
-        body: const Center(child: CircularProgressIndicator()),
+        body: const Center(child: CircularProgressIndicator.adaptive()),
       ));
     }
 
@@ -400,8 +392,6 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
                         label: const Text('Novo cálculo'),
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size.fromHeight(48),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -446,12 +436,9 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
           onPressed: _calcular,
           icon: const Icon(Icons.calculate_rounded),
           label: const Text('Calcular'),
+          // Cor, forma e texto vêm do filledButtonTheme (DESIGN §5).
           style: FilledButton.styleFrom(
             minimumSize: const Size.fromHeight(50),
-            textStyle: const TextStyle(
-                fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.2),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           ),
         ),
       ),
@@ -526,7 +513,6 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
           decoration: InputDecoration(
             labelText: 'Posto / graduação atual',
             isDense: true,
-            filled: true,
           ),
           items: PostoGraduacao.values
               .map((p) => DropdownMenuItem(value: p, child: Text(p.label)))
@@ -569,12 +555,10 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
         ),
         if (_iperDoSistema != null && _iperDoSistema! > 0) ...[
           const SizedBox(height: 6),
-          Container(
+          CartaoVidro(
+            raio: 12,
+            tingimento: _ambar(context),
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.055),
-              borderRadius: BorderRadius.circular(12),
-            ),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               ExcludeSemantics(
                 child: Icon(Icons.call_split_rounded,
@@ -636,7 +620,7 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
           alignment: Alignment.centerRight,
           child: TextButton.icon(
             onPressed: _restaurarDoSistema,
-            icon: const Icon(Icons.restore_rounded, size: 16),
+            icon: const Icon(Icons.restore_rounded, size: AppIconSize.xs),
             label: const Text('Restaurar do sistema'),
             style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
           ),
@@ -676,7 +660,7 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
           );
           if (d != null) onChanged(d);
         },
-        icon: const Icon(Icons.calendar_today_rounded, size: 16),
+        icon: const Icon(Icons.calendar_today_rounded, size: AppIconSize.xs),
         label: Align(
           alignment: Alignment.centerLeft,
           child: Text(valor == null ? 'Selecionar…' : TempoFmt.data(valor)),
@@ -772,10 +756,14 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
   }
 
   void _mostrarBaseLegal() {
+    // Folha no padrão 2.2 (FolhaArte): faixa com a arte do tempo de serviço,
+    // alça, ícone e título; a lista embaixo rola com a folha arrastável.
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      showDragHandle: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: .55),
       builder: (ctx) {
         final t = Theme.of(ctx);
         Widget item(String titulo, String corpo) => Padding(
@@ -798,14 +786,25 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
           expand: false,
           initialChildSize: 0.75,
           maxChildSize: 0.95,
-          builder: (_, controller) => ListView(
+          builder: (_, controller) => Material(
+            color: t.brightness == Brightness.dark
+                ? const Color(0xFF10161F)
+                : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            clipBehavior: Clip.antiAlias,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            CabecalhoFolhaArte(
+              arte: Arte.de('ts'),
+              icone: Icons.gavel_rounded,
+              titulo: 'Base legal',
+              subtitulo: 'As normas que este cálculo aplica.',
+            ),
+            Expanded(
+            child: ListView(
             controller: controller,
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+            padding: EdgeInsets.fromLTRB(
+                20, 16, 20, 28 + MediaQuery.of(ctx).padding.bottom),
             children: [
-              Text('Base legal',
-                  style: t.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 14),
               item(
                 'DL 667/1969, art. 24-A, I, "a" — regra permanente',
                 'Integral desde que cumprido o tempo mínimo de 35 anos de '
@@ -867,19 +866,22 @@ class _CalculoInatividadePageState extends State<CalculoInatividadePage> {
               ),
             ],
           ),
+            ),
+            ]),
+          ),
         );
       },
     );
   }
 
-  Widget _disclaimer(ThemeData theme) => Container(
+  Widget _disclaimer(ThemeData theme) => CartaoVidro(
+        raio: 14,
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.055),
-          borderRadius: BorderRadius.circular(12),
-        ),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(Icons.info_outline_rounded, size: 15, color: theme.hintColor),
+          ExcludeSemantics(
+            child: Icon(Icons.info_outline_rounded,
+                size: AppIconSize.xs, color: theme.hintColor),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -958,53 +960,52 @@ class _TelaEtapas extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final progresso = (etapaAtual + 1) / _etapas.length;
 
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              SizedBox(
-                width: 34,
-                height: 34,
-                child: CircularProgressIndicator(
-                  strokeWidth: 3,
-                  value: progresso,
-                  backgroundColor: theme.hintColor.withOpacity(0.15),
-                ),
+    // Topo com a arte do tempo de serviço (padrão 2.2): título, etapa e a
+    // barra de progresso sobre a arte; as etapas numa caixa de vidro.
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      children: [
+        TopoArte(
+          arte: Arte.de('ts'),
+          icone: Icons.hourglass_top_rounded,
+          titulo: 'Apurando sua inatividade',
+          subtitulo: 'Etapa ${etapaAtual + 1} de ${_etapas.length}',
+          margem: const EdgeInsets.only(bottom: 16),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0, end: progresso),
+            duration: const Duration(milliseconds: 320),
+            curve: Curves.easeOutCubic,
+            builder: (_, v, __) => ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: v,
+                minHeight: 6,
+                backgroundColor: Colors.white.withValues(alpha: 0.18),
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(Colors.white),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Apurando sua inatividade',
-                          style: theme.textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold)),
-                      Text(
-                        'Etapa ${etapaAtual + 1} de ${_etapas.length}',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: theme.hintColor),
-                      ),
-                    ]),
-              ),
-            ]),
-            const SizedBox(height: 26),
-            for (var i = 0; i < _etapas.length; i++)
-              _LinhaEtapa(
-                etapa: _etapas[i],
-                estado: i < etapaAtual
-                    ? _EstadoEtapa.concluida
-                    : i == etapaAtual
-                        ? _EstadoEtapa.ativa
-                        : _EstadoEtapa.pendente,
-                isDark: isDark,
-              ),
-          ],
+            ),
+          ),
         ),
-      ),
+        CartaoVidro(
+          arte: Arte.de('ts'),
+          padding: const EdgeInsets.fromLTRB(8, 10, 8, 0),
+          child: Column(
+            children: [
+              for (var i = 0; i < _etapas.length; i++)
+                _LinhaEtapa(
+                  etapa: _etapas[i],
+                  estado: i < etapaAtual
+                      ? _EstadoEtapa.concluida
+                      : i == etapaAtual
+                          ? _EstadoEtapa.ativa
+                          : _EstadoEtapa.pendente,
+                  isDark: isDark,
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1051,10 +1052,11 @@ class _LinhaEtapa extends StatelessWidget {
             width: 22,
             height: 22,
             child: feita
-                ? Icon(Icons.check_circle_rounded, size: 20, color: cor)
+                ? Icon(Icons.check_circle_rounded,
+                    size: AppIconSize.sm, color: cor)
                 : ativa
                     ? CircularProgressIndicator(strokeWidth: 2.2, color: cor)
-                    : Icon(etapa.icone, size: 18, color: cor),
+                    : Icon(etapa.icone, size: AppIconSize.sm, color: cor),
           ),
           const SizedBox(width: 13),
           Expanded(
@@ -1143,7 +1145,7 @@ class _TagSistema extends StatelessWidget {
       ),
       child: Text('do sistema',
           style: TextStyle(
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.primary)),
     );
@@ -1206,7 +1208,6 @@ class _MiniNumeroState extends State<_MiniNumero> {
         hintText: '0',
         isDense: true,
         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 13),
-        filled: true,
       ),
       onChanged: (s) {
         final n = int.tryParse(s) ?? 0;
@@ -1224,7 +1225,6 @@ class _CardRegime extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     late final Color cor;
     late final IconData icone;
@@ -1243,20 +1243,15 @@ class _CardRegime extends StatelessWidget {
         break;
     }
 
-    return Container(
+    // Vidro tingido pela cor do regime (DESIGN §11: aviso dentro da tela),
+    // sem círculo tingido atrás do ícone (§2b).
+    return CartaoVidro(
+      raio: 16,
+      tingimento: cor,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: cor.withOpacity(isDark ? 0.16 : 0.09),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cor.withOpacity(0.3)),
-      ),
       child: Row(children: [
-        Container(
-          padding: const EdgeInsets.all(9),
-          decoration: BoxDecoration(
-              color: cor.withOpacity(0.16), shape: BoxShape.circle),
-          child: Icon(icone, color: cor, size: 20),
-        ),
+        ExcludeSemantics(
+            child: Icon(icone, color: cor, size: AppIconSize.md)),
         const SizedBox(width: 12),
         Expanded(
           child:
@@ -1330,14 +1325,10 @@ class _CardPrevisao extends StatelessWidget {
         ],
         if (resultado.idadeLimiteAntesDaIntegralidade) ...[
           const SizedBox(height: 10),
-          Container(
+          CartaoVidro(
+            raio: 12,
+            tingimento: theme.colorScheme.error,
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.error.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                  color: theme.colorScheme.error.withValues(alpha: 0.25)),
-            ),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Icon(Icons.warning_amber_rounded,
                   size: AppIconSize.xs, color: theme.colorScheme.error),
@@ -1737,16 +1728,14 @@ class _CardReforma extends StatelessWidget {
     final hip = r.entrada.incapacidade;
 
     Widget bloco(String titulo, String corpo, {Color? cor, String? tag}) =>
-        Container(
-          width: double.infinity,
-          margin: const EdgeInsets.only(top: 10),
+        Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: CartaoVidro(
+          raio: 12,
+          tingimento: cor,
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: (cor ?? theme.hintColor).withOpacity(0.07),
-            borderRadius: BorderRadius.circular(10),
-            border:
-                Border.all(color: (cor ?? theme.hintColor).withOpacity(0.25)),
-          ),
+          child: SizedBox(
+          width: double.infinity,
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             if (tag != null) ...[
               Container(
@@ -1777,6 +1766,8 @@ class _CardReforma extends StatelessWidget {
                   ]),
             ),
           ]),
+          ),
+          ),
         );
 
     return _Card(
@@ -1879,14 +1870,12 @@ class _CardOficioOutras extends StatelessWidget {
               ]),
             )),
         const SizedBox(height: 6),
-        Container(
-          width: double.infinity,
+        CartaoVidro(
+          raio: 12,
+          tingimento: cor,
           padding: const EdgeInsets.all(11),
-          decoration: BoxDecoration(
-            color: cor.withOpacity(0.09),
-            borderRadius: BorderRadius.circular(9),
-            border: Border.all(color: cor.withOpacity(0.25)),
-          ),
+          child: SizedBox(
+          width: double.infinity,
           child: Text(
             ok
                 ? 'Você já conta os 20 anos de contribuição que essas '
@@ -1898,6 +1887,7 @@ class _CardOficioOutras extends StatelessWidget {
                     'parágrafo único).',
             style: theme.textTheme.bodySmall
                 ?.copyWith(fontSize: 11.5, height: 1.4, color: cor),
+          ),
           ),
         ),
       ]),

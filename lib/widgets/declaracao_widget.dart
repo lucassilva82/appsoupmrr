@@ -1,3 +1,5 @@
+import 'package:projetonovo/widgets/alerta.dart';
+import 'package:projetonovo/widgets/dialogo_confirmacao.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -534,66 +536,20 @@ class _DeclaracaoWidgetState extends State<DeclaracaoWidget> {
   Future<bool> _showConfirmDialog({
     required String title,
     required String message,
-  }) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(title,
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700)),
-          content: Text(message,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(height: 1.35, fontSize: 13)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Confirmar'),
-            ),
-          ],
-        );
-      },
-    );
-    return result == true;
-  }
+  }) =>
+      dialogoConfirmacao(
+        context,
+        titulo: title,
+        mensagem: message,
+        // Todas as confirmações desta tela são de exclusão.
+        textoConfirmar: 'Excluir',
+        icone: Icons.delete_outline_rounded,
+        cor: Theme.of(context).colorScheme.error,
+        arte: Arte.de('rh'),
+      );
 
-  void _showBusyDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        return Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2.3),
-                ),
-                const SizedBox(width: 12),
-                Text('Processando...',
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600)),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  void _showBusyDialog() =>
+      mostrarCarregandoDialogo(context, 'Processando...', arte: Arte.de('rh'));
 
   void _dismissIfOpen() {
     if (!mounted) return;
@@ -606,38 +562,12 @@ class _DeclaracaoWidgetState extends State<DeclaracaoWidget> {
     required String title,
     required String message,
     required bool isError,
-  }) async {
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        final color = isError ? Colors.red.shade700 : Colors.green.shade700;
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: [
-              Icon(isError ? Icons.error_outline : Icons.check_circle_outline,
-                  color: color, size: 18),
-              const SizedBox(width: 8),
-              Text(title,
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700)),
-            ],
-          ),
-          content: Text(message,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(height: 1.35, fontSize: 13)),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  }) =>
+      isError
+          ? alertaErro(context,
+              titulo: title, texto: message, arte: Arte.de('rh'))
+          : alertaSucesso(context,
+              titulo: title, texto: message, arte: Arte.de('rh'));
 
   List<_DeclaracaoItem> _mapItens(Map<String, dynamic> payload) {
     return [

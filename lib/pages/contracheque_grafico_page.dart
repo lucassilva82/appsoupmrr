@@ -357,7 +357,7 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
                 const SizedBox(width: 2),
                 Expanded(
                   child: Text(
-                    'Salário Líquido × Bruto',
+                    'Salário líquido × bruto',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -587,7 +587,7 @@ class _ContrachequeGraficoPageState extends State<ContrachequeGraficoPage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
             child: Text(
-              'Detalhamento por Mês',
+              'Detalhamento por mês',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -935,7 +935,7 @@ class _TooltipItem extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 9,
+            fontSize: 10,
             color: color.withValues(alpha: 0.7),
             fontWeight: FontWeight.w500,
           ),
@@ -1001,14 +1001,14 @@ class _MonthRow extends StatelessWidget {
                         Text(
                           'Bruto ${fmt.format(data.bruto)}',
                           style: TextStyle(
-                            fontSize: 9,
+                            fontSize: 10,
                             color: cores.texto.withValues(alpha: 0.60),
                           ),
                         ),
                         Text(
                           '- ${fmt.format(data.descontos)}',
                           style: TextStyle(
-                            fontSize: 9,
+                            fontSize: 10,
                             color: cores.desconto,
                           ),
                         ),

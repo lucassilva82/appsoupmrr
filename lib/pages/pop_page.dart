@@ -165,11 +165,15 @@ class _PopPageState extends State<PopPage> {
       barrierDismissible: false,
       builder: (_) => WillPopScope(
         onWillPop: () async => false,
+        // Aviso de espera no vidro do app (padrão 2.2), no lugar do
+        // Dialog branco/cinza do Material.
         child: Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: CartaoVidro(
+            raio: 20,
+            arte: Arte.de('normas'),
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: const [
@@ -220,7 +224,6 @@ class _PopPageState extends State<PopPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return FundoSuave(
         child: Scaffold(
@@ -310,9 +313,6 @@ class _PopPageState extends State<PopPage> {
                   labelText: 'Ordenar por',
                   isDense: true,
                 ),
-                dropdownColor: isDark
-                    ? theme.colorScheme.surface
-                    : theme.colorScheme.background,
                 onChanged: (value) {
                   if (value == null) return;
                   setState(() {
@@ -357,8 +357,11 @@ class _PopPageState extends State<PopPage> {
       if (_errorMsg != null) {
         return Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
+            padding: const EdgeInsets.all(16),
+            child: CartaoVidro(
+              tingimento: theme.colorScheme.error,
+              padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.error_outline_rounded,
@@ -376,10 +379,12 @@ class _PopPageState extends State<PopPage> {
                 FilledButton.icon(
                   style: _compactActionStyle(theme),
                   onPressed: () => _applyFilters(),
-                  icon: const Icon(Icons.refresh),
+                  icon: const Icon(Icons.refresh_rounded,
+                      size: AppIconSize.sm),
                   label: const Text('Tentar novamente'),
                 ),
               ],
+            ),
             ),
           ),
         );
@@ -464,17 +469,12 @@ class _PopCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.error.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+              // Sem o quadradinho tingido atrás do ícone (DESIGN §2b).
+              ExcludeSemantics(
                 child: Icon(
                   Icons.picture_as_pdf_outlined,
                   color: theme.colorScheme.error,
-                  size: AppIconSize.sm,
+                  size: AppIconSize.md,
                 ),
               ),
               const SizedBox(width: 12),
@@ -568,7 +568,6 @@ class _PdfViewerPop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final rawTitle = title.isEmpty ? 'POP' : title;
     final compactTitle = rawTitle.replaceAll(RegExp(r'\s+'), ' ').trim();
     final shownTitle = compactTitle.length > 48
@@ -586,9 +585,11 @@ class _PdfViewerPop extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: null,
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-        icon: const Icon(Icons.share_outlined),
+        // Botão cheio na cor de ação do app (DESIGN §5), nunca na
+        // primária, que é clara no escuro.
+        backgroundColor: AppColors.acao,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.share_outlined, size: AppIconSize.md),
         label: const Text('Compartilhar'),
         onPressed: () async {
           try {

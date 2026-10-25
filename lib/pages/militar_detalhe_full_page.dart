@@ -167,7 +167,27 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
           final tuple = s.data!;
           final m = tuple.pessoal;
           if (m == null) {
-            return const Center(child: Text('Não possui dados.'));
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: CartaoVidro(
+                  arte: Arte.de('gestao'),
+                  padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.person_off_outlined,
+                          size: AppIconSize.xl,
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.6)),
+                      const SizedBox(height: 10),
+                      Text('Não possui dados.',
+                          style: theme.textTheme.bodyMedium),
+                    ],
+                  ),
+                ),
+              ),
+            );
           }
 
           return SingleChildScrollView(
@@ -191,7 +211,8 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
                   isDark: isDark,
                   child: Row(
                     children: [
-                      _iconBox(Icons.phone_rounded, Colors.green, isDark),
+                      _iconBox(Icons.phone_rounded,
+                          theme.colorScheme.primary, isDark),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -209,13 +230,15 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
                       ),
                       IconButton(
                         tooltip: 'Ligar',
-                        icon: const Icon(Icons.call_rounded),
-                        color: Colors.green.shade600,
+                        icon: const Icon(Icons.call_rounded,
+                            size: AppIconSize.md),
+                        color: theme.colorScheme.primary,
                         onPressed: () => _ligar(context, m.telefone),
+                        // Cor do tema (o verde fixo saiu) e alvo de 44 pt.
                         style: IconButton.styleFrom(
-                          backgroundColor: Colors.green
-                              .withValues(alpha: isDark ? 0.15 : 0.08),
-                          minimumSize: const Size(38, 38),
+                          backgroundColor: theme.colorScheme.primary
+                              .withValues(alpha: isDark ? 0.16 : 0.10),
+                          minimumSize: const Size(44, 44),
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -225,9 +248,9 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
                             width: 22, height: 22),
                         onPressed: () => _whats(m.telefone),
                         style: IconButton.styleFrom(
-                          backgroundColor: Colors.green
-                              .withValues(alpha: isDark ? 0.15 : 0.08),
-                          minimumSize: const Size(38, 38),
+                          backgroundColor: theme.colorScheme.onSurface
+                              .withValues(alpha: isDark ? 0.08 : 0.05),
+                          minimumSize: const Size(44, 44),
                         ),
                       ),
                     ],
@@ -341,8 +364,8 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
                                         strokeWidth: 2, color: Colors.white))),
                             errorWidget: (_, __, ___) => Container(
                               color: Colors.white.withValues(alpha: 0.1),
-                              child: const Icon(Icons.person,
-                                  size: 48, color: Colors.white54),
+                              child: const Icon(Icons.person_outline_rounded,
+                                  size: AppIconSize.xl, color: Colors.white54),
                             ),
                           ),
                           IgnorePointer(
@@ -505,8 +528,8 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
       context: context,
       barrierLabel: "Exibir Imagem",
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.7),
-      transitionDuration: const Duration(milliseconds: 300),
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      transitionDuration: const Duration(milliseconds: 240),
       pageBuilder: (context, animation, secondaryAnimation) {
         final size = MediaQuery.of(context).size;
         return Center(
@@ -579,10 +602,15 @@ class _MilitarDetalheFullPageState extends State<MilitarDetalheFullPage> {
                     top: 10,
                     right: 10,
                     child: IconButton(
+                      tooltip: 'Fechar',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.black.withValues(alpha: 0.45),
+                        minimumSize: const Size(44, 44),
+                      ),
                       icon: const Icon(
-                        Icons.close,
+                        Icons.close_rounded,
                         color: Colors.white,
-                        size: 28,
+                        size: AppIconSize.md,
                       ),
                       onPressed: () {
                         Navigator.of(context).pop();

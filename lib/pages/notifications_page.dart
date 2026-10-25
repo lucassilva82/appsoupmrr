@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:projetonovo/core/design/arte_cartao.dart';
+import 'package:projetonovo/core/design/folha_arte.dart';
 import 'package:projetonovo/widgets/dialogo_confirmacao.dart';
 import 'package:projetonovo/main.dart' show abrirAviso, navegarPorNotificacao;
 import 'package:projetonovo/models/aviso_model.dart';
@@ -88,6 +90,7 @@ class NotificationsBody extends StatelessWidget {
       textoConfirmar: 'Limpar tudo',
       icone: Icons.delete_sweep_outlined,
       cor: Theme.of(context).colorScheme.error,
+      arte: Arte.de('institucional'),
     );
     if (!confirmar) return;
     await provider.clearAll();
@@ -114,8 +117,10 @@ class NotificationsBody extends StatelessWidget {
     if (!notif.clicked) provider.markAsClicked(notif);
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: .55),
       builder: (_) => _NotifDetailSheet(notif: notif),
     );
   }
@@ -311,173 +316,63 @@ class _NotifDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final cat = _categoriaDe(notif, theme);
     final aviso = notif.dadosAviso;
     final temRota =
         aviso != null || (notif.route != null && notif.route!.isNotEmpty);
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.5,
-      minChildSize: 0.3,
-      maxChildSize: 0.9,
-      expand: false,
-      builder: (context, scrollController) {
-        // Folha sobre a lista: superfície opaca, como a de emitir certidão.
-        // A cor de vidro dos cartões (translúcida) deixava a lista aparecer
-        // por trás do texto.
-        return Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+    // Folha do padrão 2.2 (FolhaArte): faixa com a arte de avisos no topo,
+    // o título do aviso nela e o texto no fundo opaco do tema.
+    return FolhaArte(
+      arte: Arte.de('institucional'),
+      icone: cat.icon,
+      titulo: notif.title,
+      subtitulo: '${cat.label} · ${_formatFull(notif.timestamp)}',
+      paddingCorpo: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            notif.body,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              height: 1.6,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+            ),
           ),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurface.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+          const SizedBox(height: 20),
+          if (temRota)
+            Row(children: [
               Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: cat.color.withOpacity(isDark ? 0.22 : 0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(cat.icon, color: cat.color, size: 24),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: cat.color.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  cat.label,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: cat.color,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _formatFull(notif.timestamp),
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.5),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    Text(
-                      notif.title,
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      notif.body,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        height: 1.6,
-                        color: theme.colorScheme.onSurface.withOpacity(0.8),
-                      ),
-                    ),
-                  ],
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Fechar'),
                 ),
               ),
-              // Ações
-              Container(
-                padding: EdgeInsets.fromLTRB(
-                    20, 12, 20, 16 + MediaQuery.of(context).padding.bottom),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(
-                      color: theme.colorScheme.outlineVariant.withOpacity(0.3),
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    if (temRota) ...[
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text('Fechar'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            if (aviso != null) {
-                              abrirAviso(AvisoAberto.doPush(aviso));
-                            } else {
-                              navegarPorNotificacao(notif.route);
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: theme.colorScheme.onPrimary,
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          icon:
-                              const Icon(Icons.arrow_forward_rounded, size: 18),
-                          label: Text(aviso != null ? 'Ver detalhes' : 'Abrir',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    ] else
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: theme.colorScheme.onPrimary,
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text('Fechar',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                  ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    if (aviso != null) {
+                      abrirAviso(AvisoAberto.doPush(aviso));
+                    } else {
+                      navegarPorNotificacao(notif.route);
+                    }
+                  },
+                  icon: const Icon(Icons.arrow_forward_rounded,
+                      size: AppIconSize.sm),
+                  label: Text(aviso != null ? 'Ver detalhes' : 'Abrir'),
                 ),
               ),
-            ],
-          ),
-        );
-      },
+            ])
+          else
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Fechar'),
+            ),
+        ],
+      ),
     );
   }
 }

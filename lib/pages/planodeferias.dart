@@ -155,35 +155,61 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
   }
 
   // ── UI: barra de seleção de ano ─────────────────────────────────────
+  // Dentro do TopoArte (padrão 2.2): pílulas de vidro claro sobre a arte,
+  // texto branco, a selecionada mais clara e com contorno. Alvo de 44 pt.
   Widget _buildYearBar(bool isDark) {
     if (_years.isEmpty) return const SizedBox.shrink();
     return SizedBox(
       height: 44,
-      child: ListView(
+      child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: _years.map((year) {
+        itemCount: _years.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final year = _years[i];
           final isSelected = year == _selectedYear;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(year.toString()),
-              selected: isSelected,
-              onSelected: (_) {
-                setState(() => _selectedYear = year);
-                _loadData();
-              },
-              // cor, borda e tipografia vêm do chipTheme
-              side: isSelected
-                  ? BorderSide(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withValues(alpha: 0.55))
-                  : null,
+          return Semantics(
+            button: true,
+            selected: isSelected,
+            label: 'Ano $year',
+            excludeSemantics: true,
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () {
+                  setState(() => _selectedYear = year);
+                  _loadData();
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white
+                        .withValues(alpha: isSelected ? 0.24 : 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white
+                          .withValues(alpha: isSelected ? 0.55 : 0.16),
+                    ),
+                  ),
+                  child: Text(
+                    year.toString(),
+                    style: TextStyle(
+                      color: Colors.white
+                          .withValues(alpha: isSelected ? 1 : 0.80),
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
             ),
           );
-        }).toList(),
+        },
       ),
     );
   }
@@ -212,7 +238,9 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
                             ? Icons.cloud_off_outlined
                             : Icons.beach_access_outlined,
                         size: AppIconSize.xl,
-                        color: aoFundo.withValues(alpha: 0.45),
+                        color: isError
+                            ? tema.colorScheme.error
+                            : tema.colorScheme.primary.withValues(alpha: 0.70),
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -723,12 +751,10 @@ class _PlanoDeFeriasPageState extends State<PlanoDeFeriasPage> {
             titulo: 'Plano de férias',
             subtitulo: 'Seus períodos de férias no ano escolhido, '
                 'com a situação de cada um.',
+            margem: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            // Seletor de ano dentro do topo, como continuação da arte.
+            child: _years.isNotEmpty ? _buildYearBar(isDark) : null,
           ),
-          // Seletor de ano (chips)
-          if (_years.isNotEmpty) ...[
-            _buildYearBar(isDark),
-            const SizedBox(height: 4),
-          ],
 
           // Conteúdo principal
           Expanded(

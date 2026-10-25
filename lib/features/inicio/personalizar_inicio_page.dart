@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/config/app_config.dart';
 import '../../core/design/arte_cartao.dart';
+import '../../core/design/folha_arte.dart';
 import '../../core/erros/falha_app.dart';
 import '../../core/log/registro_log.dart';
 import '../../core/rede/api_client.dart';
@@ -44,7 +45,9 @@ String nomeBloco(BlocoInicio b) => switch (b.chave) {
       'home.contracheque' => 'Contracheque',
       'home.tempo_servico' => 'Tempo de serviço',
       'home.ferias' => 'Plano de férias',
-      _ => b.bruto['dados'] is Map ? '${(b.bruto['dados'] as Map)['titulo'] ?? 'Card'}' : 'Card',
+      _ => b.bruto['dados'] is Map
+          ? '${(b.bruto['dados'] as Map)['titulo'] ?? 'Card'}'
+          : 'Card',
     };
 
 /// Personalizar a tela inicial (§4.5): arrastar pela alça, esconder com o
@@ -59,7 +62,8 @@ class PersonalizarInicioPage extends StatefulWidget {
 }
 
 class _PersonalizarInicioPageState extends State<PersonalizarInicioPage> {
-  late final InicioPreferenciasRepositorio _repo = widget.repositorio ?? repositorioPreferencias(context);
+  late final InicioPreferenciasRepositorio _repo =
+      widget.repositorio ?? repositorioPreferencias(context);
   late List<BlocoInicio> _blocos;
   late Set<String> _escondidos;
   late List<String> _atalhos;
@@ -69,7 +73,8 @@ class _PersonalizarInicioPageState extends State<PersonalizarInicioPage> {
   @override
   void initState() {
     super.initState();
-    registrar('tela.abrir', chave: 'apar.tema', dados: {'tela': 'personalizar_inicio'});
+    registrar('tela.abrir',
+        chave: 'apar.tema', dados: {'tela': 'personalizar_inicio'});
     _montar(InicioPreferenciasRepositorio.emUso.value);
   }
 
@@ -78,9 +83,13 @@ class _PersonalizarInicioPageState extends State<PersonalizarInicioPage> {
     final doPainel = config.home ?? blocosPadrao();
     final porChave = {for (final b in doPainel) b.chave: b};
     // A ordem atual, com os escondidos também (para voltarem de onde saíram).
-    final todos = ordenarBlocos(doPainel, pref == null ? null : PreferenciasInicio(blocos: [
-      for (final b in pref.blocos) (chave: b.chave, visivel: true),
-    ]));
+    final todos = ordenarBlocos(
+        doPainel,
+        pref == null
+            ? null
+            : PreferenciasInicio(blocos: [
+                for (final b in pref.blocos) (chave: b.chave, visivel: true),
+              ]));
     _blocos = [for (final c in todos) porChave[c]!];
     _escondidos = {
       for (final b in pref?.blocos ?? const <({String chave, bool visivel})>[])
@@ -88,7 +97,12 @@ class _PersonalizarInicioPageState extends State<PersonalizarInicioPage> {
     };
     final gestor = context.read<Auth>().isSuperUser;
     final doPainelAtalhos = config.bloco('home.atalhos')?.dados;
-    _atalhos = [...pref?.atalhos ?? (doPainelAtalhos == null || doPainelAtalhos.isEmpty ? atalhosPadrao(gestor: gestor) : doPainelAtalhos)];
+    _atalhos = [
+      ...pref?.atalhos ??
+          (doPainelAtalhos == null || doPainelAtalhos.isEmpty
+              ? atalhosPadrao(gestor: gestor)
+              : doPainelAtalhos)
+    ];
   }
 
   Future<void> _concluir() async {
@@ -98,7 +112,10 @@ class _PersonalizarInicioPageState extends State<PersonalizarInicioPage> {
     }
     setState(() => _salvando = true);
     final pref = PreferenciasInicio(
-      blocos: [for (final b in _blocos) (chave: b.chave, visivel: !_escondidos.contains(b.chave))],
+      blocos: [
+        for (final b in _blocos)
+          (chave: b.chave, visivel: !_escondidos.contains(b.chave))
+      ],
       atalhos: _atalhos,
     );
     try {
@@ -114,7 +131,8 @@ class _PersonalizarInicioPageState extends State<PersonalizarInicioPage> {
       registrarErro(f, tela: 'personalizar_inicio', mostrado: true);
       if (mounted) {
         avisoAtencao(context, 'Guardado só neste aparelho',
-            texto: 'O servidor não recebeu agora; em outro aparelho a Início fica como antes. Código ${f.codigo}.');
+            texto:
+                'O servidor não recebeu agora; em outro aparelho a Início fica como antes. Código ${f.codigo}.');
       }
     }
     if (mounted) Navigator.of(context).pop();
@@ -123,8 +141,11 @@ class _PersonalizarInicioPageState extends State<PersonalizarInicioPage> {
   Future<void> _restaurar() async {
     final ok = await dialogoConfirmacao(context,
         titulo: 'Restaurar o padrão da PMRR?',
-        mensagem: 'A ordem dos blocos, os escondidos e os atalhos voltam a ser os do padrão.',
-        textoConfirmar: 'Restaurar');
+        mensagem:
+            'A ordem dos blocos, os escondidos e os atalhos voltam a ser os do padrão.',
+        textoConfirmar: 'Restaurar',
+        icone: Icons.restart_alt_rounded,
+        arte: Arte.de('rh'));
     if (ok != true || !mounted) return;
     try {
       await _repo.restaurar();
@@ -146,13 +167,18 @@ class _PersonalizarInicioPageState extends State<PersonalizarInicioPage> {
     final opcoes = [
       for (final area in menu)
         for (final f in area.filhos)
-          if (f.tipo == 'funcao' && !_atalhos.contains(f.chave)) (item: f, area: area),
+          if (f.tipo == 'funcao' && !_atalhos.contains(f.chave))
+            (item: f, area: area),
     ];
-    final escolhido = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (ctx) => _EscolherAtalho(opcoes: opcoes),
+    final escolhido = await mostrarFolhaArte<String>(
+      context,
+      arte: Arte.de('rh'),
+      icone: Icons.add_circle_outline_rounded,
+      titulo: 'Adicionar atalho',
+      subtitulo: 'Escolha a função que vai para a tela inicial.',
+      rolavel: false,
+      paddingCorpo: const EdgeInsets.fromLTRB(0, 12, 0, 8),
+      corpo: (ctx) => _EscolherAtalho(opcoes: opcoes),
     );
     if (escolhido == null) return;
     setState(() {
@@ -164,20 +190,28 @@ class _PersonalizarInicioPageState extends State<PersonalizarInicioPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final menu = menuEmUso(RepositorioConfig.atual, gestor: context.read<Auth>().isSuperUser);
-    final nomes = {for (final a in menu) for (final f in a.filhos) f.chave: (f, a)};
+    final menu = menuEmUso(RepositorioConfig.atual,
+        gestor: context.read<Auth>().isSuperUser);
+    final nomes = {
+      for (final a in menu)
+        for (final f in a.filhos) f.chave: (f, a)
+    };
     return PopScope(
       canPop: !_salvando,
       child: FundoSuave(
         child: Scaffold(
           appBar: CustomAppBar(title: 'Personalizar início', actions: [
-            TextButton(onPressed: _salvando ? null : _concluir, child: const Text('Concluído')),
+            TextButton(
+                onPressed: _salvando ? null : _concluir,
+                child: const Text('Concluído')),
           ]),
           body: ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
             children: [
-              Text('Arraste pela alça para mudar a ordem e use o interruptor para esconder. '
-                  'Os blocos com cadeado são fixos.', style: theme.textTheme.bodySmall),
+              Text(
+                  'Arraste pela alça para mudar a ordem e use o interruptor para esconder. '
+                  'Os blocos com cadeado são fixos.',
+                  style: theme.textTheme.bodySmall),
               const SizedBox(height: 12),
               CartaoVidro(
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -204,7 +238,9 @@ class _PersonalizarInicioPageState extends State<PersonalizarInicioPage> {
                         fixo: !b.escondivel,
                         visivel: !_escondidos.contains(b.chave),
                         aoMudar: (v) => setState(() {
-                          v ? _escondidos.remove(b.chave) : _escondidos.add(b.chave);
+                          v
+                              ? _escondidos.remove(b.chave)
+                              : _escondidos.add(b.chave);
                           _mudou = true;
                         }),
                         aoMover: (para) => setState(() {
@@ -217,10 +253,17 @@ class _PersonalizarInicioPageState extends State<PersonalizarInicioPage> {
               ),
               const SizedBox(height: 20),
               Row(children: [
-                Expanded(child: Text('ATALHOS (${_atalhos.length} de $_maxAtalhos)', style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.primary, fontWeight: FontWeight.w700, letterSpacing: 1))),
+                Expanded(
+                    child: Text('ATALHOS (${_atalhos.length} de $_maxAtalhos)',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1))),
                 if (_atalhos.length < _maxAtalhos)
-                  TextButton.icon(onPressed: _adicionarAtalho, icon: const Icon(Icons.add), label: const Text('Adicionar')),
+                  TextButton.icon(
+                      onPressed: _adicionarAtalho,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Adicionar')),
               ]),
               CartaoVidro(
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -237,9 +280,12 @@ class _PersonalizarInicioPageState extends State<PersonalizarInicioPage> {
                     for (final c in _atalhos)
                       ListTile(
                         key: ValueKey('atalho-$c'),
-                        leading: Icon(iconePorChave(nomes[c]?.$1.icone), color: Arte.de(nomes[c]?.$2.arte).destaque),
+                        leading: Icon(iconePorChave(nomes[c]?.$1.icone),
+                            color: Arte.de(nomes[c]?.$2.arte).destaque),
                         title: Text(nomes[c]?.$1.rotulo ?? c),
-                        subtitle: nomes[c] == null ? const Text('Indisponível para você agora') : null,
+                        subtitle: nomes[c] == null
+                            ? const Text('Indisponível para você agora')
+                            : null,
                         trailing: IconButton(
                           tooltip: 'Tirar dos atalhos',
                           icon: const Icon(Icons.remove_circle_outline),
@@ -267,8 +313,15 @@ class _PersonalizarInicioPageState extends State<PersonalizarInicioPage> {
 }
 
 class _LinhaBloco extends StatelessWidget {
-  const _LinhaBloco({super.key, required this.indice, required this.total, required this.nome, required this.fixo,
-      required this.visivel, required this.aoMudar, required this.aoMover});
+  const _LinhaBloco(
+      {super.key,
+      required this.indice,
+      required this.total,
+      required this.nome,
+      required this.fixo,
+      required this.visivel,
+      required this.aoMudar,
+      required this.aoMover});
 
   final int indice;
   final int total;
@@ -284,20 +337,31 @@ class _LinhaBloco extends StatelessWidget {
     // Leitor de tela e teclado: a alça aceita "subir" e "descer" (§4.5).
     return Semantics(
       customSemanticsActions: {
-        if (indice > 0) const CustomSemanticsAction(label: 'Subir'): () => aoMover(indice - 1),
-        if (indice < total - 1) const CustomSemanticsAction(label: 'Descer'): () => aoMover(indice + 1),
+        if (indice > 0)
+          const CustomSemanticsAction(label: 'Subir'): () =>
+              aoMover(indice - 1),
+        if (indice < total - 1)
+          const CustomSemanticsAction(label: 'Descer'): () =>
+              aoMover(indice + 1),
       },
       child: ListTile(
         leading: ReorderableDragStartListener(
           index: indice,
-          child: const SizedBox(width: 44, height: 44, child: Icon(Icons.drag_handle_rounded)),
+          child: const SizedBox(
+              width: 44, height: 44, child: Icon(Icons.drag_handle_rounded)),
         ),
-        title: Text(nome, style: TextStyle(color: visivel ? null : theme.colorScheme.onSurfaceVariant)),
-        subtitle: fixo ? const Text('Fixo') : (visivel ? null : const Text('Escondido')),
+        title: Text(nome,
+            style: TextStyle(
+                color: visivel ? null : theme.colorScheme.onSurfaceVariant)),
+        subtitle: fixo
+            ? const Text('Fixo')
+            : (visivel ? null : const Text('Escondido')),
         trailing: fixo
             ? Padding(
                 padding: const EdgeInsets.only(right: 12),
-                child: Icon(Icons.lock_outline, size: AppIconSize.sm, color: theme.colorScheme.onSurfaceVariant),
+                child: Icon(Icons.lock_outline,
+                    size: AppIconSize.sm,
+                    color: theme.colorScheme.onSurfaceVariant),
               )
             : Switch(value: visivel, onChanged: aoMudar),
       ),
@@ -321,34 +385,48 @@ class _EscolherAtalhoState extends State<_EscolherAtalho> {
     final termo = normalizar(_busca);
     final lista = [
       for (final o in widget.opcoes)
-        if (termo.isEmpty || normalizar('${o.item.rotulo} ${o.item.descricao ?? ''} ${o.item.sinonimos.join(' ')}').contains(termo)) o,
+        if (termo.isEmpty ||
+            normalizar(
+                    '${o.item.rotulo} ${o.item.descricao ?? ''} ${o.item.sinonimos.join(' ')}')
+                .contains(termo))
+          o,
     ];
-    return SafeArea(
-      child: SizedBox(
-        height: MediaQuery.sizeOf(context).height * 0.7,
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              autofocus: true,
-              decoration: const InputDecoration(labelText: 'Buscar função', prefixIcon: Icon(Icons.search)),
-              onChanged: (v) => setState(() => _busca = v),
-            ),
+    // A lista tem altura própria dentro da FolhaArte; com o teclado aberto
+    // (a busca abre com foco) ela encolhe para a folha não passar de 90%.
+    final mq = MediaQuery.of(context);
+    final cabe =
+        mq.size.height * 0.9 - 150 - mq.viewInsets.bottom - mq.padding.bottom;
+    final altura =
+        (mq.size.height * 0.6).clamp(0.0, cabe).clamp(160.0, double.infinity);
+    return SizedBox(
+      height: altura,
+      child: Column(children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: TextField(
+            autofocus: true,
+            decoration: const InputDecoration(
+                labelText: 'Buscar função', prefixIcon: Icon(Icons.search)),
+            onChanged: (v) => setState(() => _busca = v),
           ),
-          Expanded(
-            child: ListView(children: [
-              for (final o in lista)
-                ListTile(
-                  leading: Icon(iconePorChave(o.item.icone), color: Arte.de(o.area.arte).destaque),
-                  title: Text(o.item.rotulo),
-                  subtitle: Text(o.area.rotulo),
-                  onTap: () => Navigator.of(context).pop(o.item.chave),
-                ),
-              if (lista.isEmpty) const Padding(padding: EdgeInsets.all(24), child: Center(child: Text('Nenhuma função com esse nome.'))),
-            ]),
-          ),
-        ]),
-      ),
+        ),
+        Expanded(
+          child: ListView(children: [
+            for (final o in lista)
+              ListTile(
+                leading: Icon(iconePorChave(o.item.icone),
+                    color: Arte.de(o.area.arte).destaque),
+                title: Text(o.item.rotulo),
+                subtitle: Text(o.area.rotulo),
+                onTap: () => Navigator.of(context).pop(o.item.chave),
+              ),
+            if (lista.isEmpty)
+              const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(child: Text('Nenhuma função com esse nome.'))),
+          ]),
+        ),
+      ]),
     );
   }
 }

@@ -1,8 +1,8 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
+import '../core/design/arte_cartao.dart';
 import '../utils/app_theme.dart';
+import 'dialogo_confirmacao.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Alertas de sucesso, erro e aviso
@@ -24,8 +24,10 @@ Future<void> alertaSucesso(
   required String texto,
   String confirmar = 'Ok',
   VoidCallback? aoConfirmar,
+  Arte? arte,
 }) =>
-    _mostrar(context, _Tipo.sucesso, titulo, texto, confirmar, aoConfirmar);
+    _mostrar(context, _Tipo.sucesso, titulo, texto, confirmar, aoConfirmar,
+        arte);
 
 Future<void> alertaErro(
   BuildContext context, {
@@ -33,8 +35,10 @@ Future<void> alertaErro(
   required String texto,
   String confirmar = 'Ok',
   VoidCallback? aoConfirmar,
+  Arte? arte,
 }) =>
-    _mostrar(context, _Tipo.erro, titulo, texto, confirmar, aoConfirmar);
+    _mostrar(
+        context, _Tipo.erro, titulo, texto, confirmar, aoConfirmar, arte);
 
 Future<void> alertaAviso(
   BuildContext context, {
@@ -42,8 +46,18 @@ Future<void> alertaAviso(
   required String texto,
   String confirmar = 'Ok',
   VoidCallback? aoConfirmar,
+  Arte? arte,
 }) =>
-    _mostrar(context, _Tipo.aviso, titulo, texto, confirmar, aoConfirmar);
+    _mostrar(
+        context, _Tipo.aviso, titulo, texto, confirmar, aoConfirmar, arte);
+
+/// Arte padrão de cada tipo (DESIGN §11): `fe` para o sucesso, `pe` para o
+/// erro e `ts` (dourado) para o aviso. A tela pode passar a da área dela.
+String _artePadrao(_Tipo tipo) => switch (tipo) {
+      _Tipo.sucesso => 'fe',
+      _Tipo.erro => 'pe',
+      _Tipo.aviso => 'ts',
+    };
 
 Future<void> _mostrar(
   BuildContext context,
@@ -52,26 +66,31 @@ Future<void> _mostrar(
   String texto,
   String confirmar,
   VoidCallback? aoConfirmar,
+  Arte? arte,
 ) async {
   await showGeneralDialog<void>(
     context: context,
     barrierDismissible: false,
     barrierLabel: titulo,
-    barrierColor: Colors.black.withOpacity(0.62),
+    barrierColor: Colors.black.withValues(alpha: 0.62),
     transitionDuration: const Duration(milliseconds: 260),
     pageBuilder: (_, __, ___) => const SizedBox.shrink(),
     transitionBuilder: (context, anim, _, __) {
-      final curva = CurvedAnimation(parent: anim, curve: Curves.easeOutBack);
+      final reduzir = MediaQuery.of(context).disableAnimations;
+      final curva = CurvedAnimation(
+          parent: anim, curve: reduzir ? Curves.linear : Curves.easeOutBack);
       return FadeTransition(
         opacity: anim,
         child: ScaleTransition(
-          scale: Tween<double>(begin: 0.88, end: 1.0).animate(curva),
+          scale: Tween<double>(begin: reduzir ? 1.0 : 0.88, end: 1.0)
+              .animate(curva),
           child: _Cartao(
             tipo: tipo,
             titulo: titulo,
             texto: texto,
             confirmar: confirmar,
             entrada: anim,
+            arte: arte ?? Arte.de(_artePadrao(tipo)),
           ),
         ),
       );
@@ -86,6 +105,7 @@ class _Cartao extends StatelessWidget {
   final String texto;
   final String confirmar;
   final Animation<double> entrada;
+  final Arte arte;
 
   const _Cartao({
     required this.tipo,
@@ -93,6 +113,7 @@ class _Cartao extends StatelessWidget {
     required this.texto,
     required this.confirmar,
     required this.entrada,
+    required this.arte,
   });
 
   ({Color cor, IconData icone}) _estilo(bool isDark) {
@@ -114,110 +135,24 @@ class _Cartao extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final estilo = _estilo(isDark);
-    // O botão acompanha a luminância da cor: sobre o verde/vermelho claros do
-    // modo escuro, texto branco ficaria em ~2:1.
-    final sobreCor =
-        ThemeData.estimateBrightnessForColor(estilo.cor) == Brightness.dark
-            ? Colors.white
-            : Colors.black87;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Material(
-          color: Colors.transparent,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 360),
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: isDark
-                        ? [
-                            Color.alphaBlend(Colors.white.withOpacity(0.10),
-                                AppColors.darkCard),
-                            Color.alphaBlend(Colors.white.withOpacity(0.04),
-                                AppColors.darkCard),
-                          ]
-                        : [
-                            Colors.white.withOpacity(0.96),
-                            Colors.white.withOpacity(0.90),
-                          ],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.16)
-                        : Colors.white.withOpacity(0.80),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(isDark ? 0.55 : 0.18),
-                      blurRadius: 32,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _Simbolo(
-                      cor: estilo.cor,
-                      icone: estilo.icone,
-                      entrada: entrada,
-                    ),
-                    const SizedBox(height: 18),
-                    Text(
-                      titulo,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      texto,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        height: 1.4,
-                        color: theme.colorScheme.onSurface.withOpacity(0.72),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 46,
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: estilo.cor,
-                          foregroundColor: sobreCor,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          confirmar,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+    return CaixaDialogo(
+      arte: arte,
+      topo: _Simbolo(cor: estilo.cor, icone: estilo.icone, entrada: entrada),
+      titulo: titulo,
+      mensagem: texto,
+      acoes: [
+        // O botão acompanha a cor do tipo; a luminância decide o texto
+        // (sobre o verde/vermelho claros do modo escuro, branco ficaria em
+        // ~2:1).
+        BotaoDialogo.principal(
+          rotulo: confirmar,
+          cor: estilo.cor,
+          onPressed: () => Navigator.of(context).pop(),
         ),
-      ),
+      ],
     );
   }
 }
@@ -254,7 +189,7 @@ class _Simbolo extends StatelessWidget {
               height: 96,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: cor.withOpacity(0.10),
+                color: cor.withValues(alpha: 0.10),
               ),
             ),
           ),
@@ -263,8 +198,8 @@ class _Simbolo extends StatelessWidget {
             height: 68,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: cor.withOpacity(0.18),
-              border: Border.all(color: cor.withOpacity(0.45), width: 1.5),
+              color: cor.withValues(alpha: 0.18),
+              border: Border.all(color: cor.withValues(alpha: 0.45), width: 1.5),
             ),
           ),
           ScaleTransition(
