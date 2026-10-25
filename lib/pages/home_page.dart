@@ -7,6 +7,7 @@ import 'package:projetonovo/widgets/HomeContrachequeCard.dart';
 import 'package:projetonovo/widgets/HomePlanoFeriasCard.dart';
 import 'package:projetonovo/widgets/card_tempo_servico.dart';
 import 'package:projetonovo/core/config/app_config.dart';
+import 'package:projetonovo/core/navegacao/abrir_funcao.dart';
 import 'package:projetonovo/features/comunicados/comunicados_page.dart';
 import 'package:projetonovo/core/ambiente_app.dart';
 import 'package:projetonovo/features/inicio/card_painel.dart';
@@ -53,15 +54,89 @@ List<String> blocosDaInicio(AppConfig config, [PreferenciasInicio? pref]) =>
     ordenarBlocos(config.home ?? blocosPadrao(), pref);
 
 class _Card extends StatelessWidget {
-  const _Card(this.child);
+  const _Card(this.child, {required this.chave});
   final Widget child;
+
+  /// A função que o card abre. Bloqueada no painel, o card fica apagado com
+  /// o selo e o toque abre a folha de bloqueio com o código `MD-` (§5.2), em
+  /// vez de abrir a tela (bug de 25/10/2026).
+  final String chave;
 
   // Os cards de dado são cards com arte, escuros nos dois temas: as cores
   // que eles tiram do tema precisam ser as de sobre a arte.
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Theme(data: temaSobreArte(Theme.of(context)), child: child),
+        child: ValueListenableBuilder<AppConfig>(
+          valueListenable: RepositorioConfig.emUso,
+          builder: (context, config, _) {
+            final card = Theme(data: temaSobreArte(Theme.of(context)), child: child);
+            final item = config.item(chave);
+            if (item == null || !item.bloqueado) return card;
+            // Não desenha o card de verdade: ele consulta a API ao nascer, e a
+            // API recusa função bloqueada. No lugar, o mesmo card com arte,
+            // curto, com o selo e o motivo; o toque abre a folha de bloqueio.
+            final m = mensagemDoBloqueio(item);
+            return Semantics(
+              button: true,
+              label: '${item.rotulo}: ${item.selo ?? 'indisponível'}. ${m.titulo}',
+              excludeSemantics: true,
+              child: CartaoArte(
+                arte: Arte.de(_arteDoCard[chave] ?? 'rh'),
+                onTap: () => abrirFuncao(context, item, origem: 'card'),
+                child: Row(children: [
+                  Icon(iconePorChave(item.icone), color: Colors.white.withValues(alpha: .7), size: AppIconSize.lg),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(item.rotulo.toUpperCase(),
+                          style: TextStyle(
+                              fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.w700,
+                              color: Colors.white.withValues(alpha: .78))),
+                      const SizedBox(height: 4),
+                      Text(m.titulo,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+                    ]),
+                  ),
+                  const SizedBox(width: 8),
+                  SeloBloqueio(texto: item.selo ?? 'Indisponível'),
+                ]),
+              ),
+            );
+          },
+        ),
+      );
+}
+
+/// A arte de cada card de dado (DESIGN §11).
+const _arteDoCard = {
+  'rh.contracheques': 'cc',
+  'rh.tempo_servico': 'ts',
+  'rh.ferias': 'fe',
+  'rh.carreira': 'rh',
+};
+
+/// O selo de função bloqueada sobre um card ("Manutenção", "Em breve").
+class SeloBloqueio extends StatelessWidget {
+  const SeloBloqueio({super.key, required this.texto});
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: const Color(0xFF3A1E00).withValues(alpha: .92),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFFFC968).withValues(alpha: .7)),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.construction_rounded, size: AppIconSize.xxs, color: Color(0xFFFFC968)),
+          const SizedBox(width: 5),
+          Text(texto,
+              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFFFFE2A8))),
+        ]),
       );
 }
 
@@ -226,10 +301,10 @@ class _HomeBodyState extends State<HomeBody>
         'home.anuncio' when RepositorioConfig.atual.fonteComunicados == 'api' => const BlocoComunicados(),
         'home.dicas' => WidgetDicasApp(),
         'home.atalhos' => const LinhaAtalhos(),
-        'home.contracheque' => const _Card(HomeContrachequeCard()),
-        'home.tempo_servico' => _Card(CardTempoServico()),
-        'home.ferias' => const _Card(HomePlanoFeriasCard()),
-        'home.carreira' => const _Card(CardCarreira()),
+        'home.contracheque' => const _Card(HomeContrachequeCard(), chave: 'rh.contracheques'),
+        'home.tempo_servico' => _Card(CardTempoServico(), chave: 'rh.tempo_servico'),
+        'home.ferias' => const _Card(HomePlanoFeriasCard(), chave: 'rh.ferias'),
+        'home.carreira' => const _Card(CardCarreira(), chave: 'rh.carreira'),
         _ when chave.startsWith('home.livre.') =>
           switch (RepositorioConfig.atual.bloco(chave)) {
             final b? when CardPainel.desenha(b) => CardPainel(bloco: b),

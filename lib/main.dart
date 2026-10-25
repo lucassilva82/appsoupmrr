@@ -27,6 +27,7 @@ import 'package:projetonovo/pages/certidoes_page.dart';
 import 'package:projetonovo/pages/legislacoes_page.dart';
 import 'package:projetonovo/pages/militar_detalhe_full_page.dart';
 import 'package:projetonovo/pages/planodeferias.dart';
+import 'package:projetonovo/core/navegacao/guarda_funcao.dart';
 import 'package:projetonovo/pages/pop_page.dart';
 import 'package:projetonovo/utils/notification_provider.dart';
 import 'package:projetonovo/utils/theme_provider.dart';
@@ -874,7 +875,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             ],
           ),
           home: const AuthOrHome(),
-          routes: {
+          routes: protegerRotas({
             AppRoutes.AUTH_PAGE: (_) => const AuthPage(),
             AppRoutes.BIOMETRIC_AUTH_PAGE: (_) => const BiometricAuthPage(),
             AppRoutes.PAGE_MILITAR: (_) => const PageMilitar(),
@@ -960,7 +961,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             AppRoutes.POP_PAGE: (_) => PopPage(),
             AppRoutes.CALCULO_INATIVIDADE_PAGE: (_) =>
                 const CalculoInatividadePage(),
-          },
+          }),
         );
       },
     );

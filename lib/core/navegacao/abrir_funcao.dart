@@ -26,12 +26,7 @@ Future<void> abrirFuncao(BuildContext context, ItemMenu item,
       dados: {'origem': origem, 'estado': item.bloqueado ? 'bloqueado' : 'ativo'});
 
   if (item.bloqueado) {
-    final m = item.mensagem ??
-        MensagemBloqueio(
-            motivo: 'indisponivel',
-            titulo: '${item.rotulo} indisponível',
-            texto: 'Esta função está temporariamente indisponível.',
-            codigo: 'MD-${item.chave.toUpperCase()}-INDISPONIVEL');
+    final m = mensagemDoBloqueio(item);
     registrar('modulo.bloqueio_visto',
         chave: item.chave, codigo: m.codigo, dados: {'motivo': m.motivo});
     return mostrarFolhaBloqueio(context, m, arte: arteDaChave(item.chave));
@@ -66,6 +61,23 @@ Future<void> abrirFuncao(BuildContext context, ItemMenu item,
           texto: 'Feche e abra o app de novo. Código AP-ROTA.');
     }
   }
+}
+
+/// A mensagem do painel para uma função bloqueada, ou a de reserva.
+MensagemBloqueio mensagemDoBloqueio(ItemMenu item) =>
+    item.mensagem ??
+    MensagemBloqueio(
+        motivo: 'indisponivel',
+        titulo: '${item.rotulo} indisponível',
+        texto: 'Esta função está temporariamente indisponível.',
+        codigo: 'MD-${item.chave.toUpperCase()}-INDISPONIVEL');
+
+/// Abre a função pela chave, com o estado do painel (para cards e links que
+/// só sabem a chave). Procura na árvore inteira, inclusive fora do menu.
+Future<void> abrirFuncaoPorChave(BuildContext context, String chave, {String origem = 'card'}) {
+  final item = RepositorioConfig.atual.item(chave) ?? itemPorChave(chave, menu: const []);
+  if (item == null) return Future.value();
+  return abrirFuncao(context, item, origem: origem);
 }
 
 /// A arte da área de uma função pela chave (`rh.…`, `op.…`, `atend.…`),
