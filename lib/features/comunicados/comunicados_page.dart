@@ -295,112 +295,132 @@ class CartaoComunicado extends StatelessWidget {
           type: MaterialType.transparency,
           child: InkWell(
             onTap: aoTocar,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Icon(c.categoria.icone, size: 20, color: branco.withValues(alpha: .92)),
-                  Container(
-                      width: 1,
-                      height: 17,
-                      margin: const EdgeInsets.symmetric(horizontal: 10),
-                      color: branco.withValues(alpha: .28)),
-                  Flexible(
-                    child: Text(c.categoria.nome.toUpperCase(),
-                        overflow: TextOverflow.ellipsis,
-                        style:
-                            TextStyle(fontSize: 11.5, letterSpacing: 1.84, fontWeight: FontWeight.w600, color: claro)),
-                  ),
-                  if (!c.lido) ...[
-                    const SizedBox(width: 10),
+            // Cartão de altura limitada (cresce até 310): a fonte do sistema
+            // vale até 1,2× aqui, como nos números herói (§15.2); o leitor de
+            // tela continua lendo tudo pelo rótulo acima.
+            child: MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.2,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Icon(c.categoria.icone, size: 20, color: branco.withValues(alpha: .92)),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: cor.withValues(alpha: .42),
-                        border: Border.all(color: cor.withValues(alpha: .6)),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text('NOVO',
+                        width: 1,
+                        height: 17,
+                        margin: const EdgeInsets.symmetric(horizontal: 10),
+                        color: branco.withValues(alpha: .28)),
+                    Flexible(
+                      child: Text(c.categoria.nome.toUpperCase(),
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                              fontSize: 10.5, letterSpacing: .42, fontWeight: FontWeight.w600, color: branco)),
+                              fontSize: 11.5, letterSpacing: 1.84, fontWeight: FontWeight.w600, color: claro)),
                     ),
-                  ],
-                ]),
-                const SizedBox(height: 10),
-                // Título e resumo dividem o espaço que sobra: com fonte grande
-                // o resumo encolhe (reticências) em vez de estourar o cartão.
-                Expanded(
-                  child: FractionallySizedBox(
-                    widthFactor: compacto ? 1 : 0.62,
-                    alignment: Alignment.topLeft,
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Flexible(
-                        child: Text(c.titulo,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                fontSize: compacto ? 18 : 22,
-                                height: 1.12,
-                                letterSpacing: -.44,
-                                fontWeight: FontWeight.w700,
-                                color: branco)),
-                      ),
-                      if (c.resumo.isNotEmpty) ...[
-                        const SizedBox(height: 3),
-                        Flexible(
-                          child: Text(c.resumo,
-                              maxLines: compacto ? 1 : 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 13.5, height: 1.3, color: Color(0xC7E2E8FF))),
+                    if (!c.lido) ...[
+                      const SizedBox(width: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: cor.withValues(alpha: .42),
+                          border: Border.all(color: cor.withValues(alpha: .6)),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                      ],
+                        child: const Text('NOVO',
+                            style: TextStyle(
+                                fontSize: 10.5, letterSpacing: .42, fontWeight: FontWeight.w600, color: branco)),
+                      ),
+                    ],
+                  ]),
+                  const SizedBox(height: 10),
+                  // Título e resumo dividem o espaço que sobra: com fonte grande
+                  // o resumo encolhe (reticências) em vez de estourar o cartão.
+                  Expanded(
+                    child: FractionallySizedBox(
+                      widthFactor: compacto ? 1 : 0.62,
+                      alignment: Alignment.topLeft,
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        // Texto num Flexible não corta na vertical: sem o ClipRect, o
+                        // título passava por cima do resumo com fonte 1,3×.
+                        Flexible(
+                          flex: 2,
+                          child: ClipRect(
+                            child: Text(c.titulo,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontSize: compacto ? 18 : 22,
+                                    height: 1.12,
+                                    letterSpacing: -.44,
+                                    fontWeight: FontWeight.w700,
+                                    color: branco)),
+                          ),
+                        ),
+                        if (c.resumo.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Flexible(
+                            // Só as linhas que cabem inteiras (meia linha cortada
+                            // parecia defeito).
+                            child: LayoutBuilder(builder: (context, caixa) {
+                              final linha = MediaQuery.textScalerOf(context).scale(13.5) * 1.3;
+                              final cabem = (caixa.maxHeight / linha).floor().clamp(0, compacto ? 1 : 2);
+                              if (cabem == 0) return const SizedBox.shrink();
+                              return Text(c.resumo,
+                                  maxLines: cabem,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 13.5, height: 1.3, color: Color(0xC7E2E8FF)));
+                            }),
+                          ),
+                        ],
+                      ]),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 6, runSpacing: 6, children: [
+                    if (c.pilula != null)
+                      _Pilula(
+                          texto: c.pilula!.texto,
+                          icone: c.pilula!.icone,
+                          fundo: branco.withValues(alpha: .06),
+                          borda: branco.withValues(alpha: .22),
+                          cor: branco),
+                    if (c.cienciaPendente)
+                      const _Pilula(
+                          texto: 'Ciência pendente',
+                          icone: Icons.edit_note_rounded,
+                          fundo: Color(0x1FFFC968),
+                          borda: Color(0x80FFC968),
+                          cor: Color(0xFFFFD892)),
+                    if (c.urgente)
+                      const _Pilula(
+                          texto: 'Urgente',
+                          icone: Icons.priority_high_rounded,
+                          fundo: Color(0x29E5484D),
+                          borda: Color(0x99FF9E9E),
+                          cor: Color(0xFFFFB4B4)),
+                  ]),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.only(top: 8),
+                    decoration: BoxDecoration(border: Border(top: BorderSide(color: cor.withValues(alpha: .32)))),
+                    child: Row(children: [
+                      Expanded(
+                        child: Text('${c.origem}${c.inicio != null ? ' · ${_data(c.inicio)}' : ''}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 12.5, color: claro)),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                            shape: BoxShape.circle, border: Border.all(color: branco.withValues(alpha: .3))),
+                        child: const Icon(Icons.arrow_forward_rounded, size: 20, color: branco),
+                      ),
                     ]),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(spacing: 6, runSpacing: 6, children: [
-                  if (c.pilula != null)
-                    _Pilula(
-                        texto: c.pilula!.texto,
-                        icone: c.pilula!.icone,
-                        fundo: branco.withValues(alpha: .06),
-                        borda: branco.withValues(alpha: .22),
-                        cor: branco),
-                  if (c.cienciaPendente)
-                    const _Pilula(
-                        texto: 'Ciência pendente',
-                        icone: Icons.edit_note_rounded,
-                        fundo: Color(0x1FFFC968),
-                        borda: Color(0x80FFC968),
-                        cor: Color(0xFFFFD892)),
-                  if (c.urgente)
-                    const _Pilula(
-                        texto: 'Urgente',
-                        icone: Icons.priority_high_rounded,
-                        fundo: Color(0x29E5484D),
-                        borda: Color(0x99FF9E9E),
-                        cor: Color(0xFFFFB4B4)),
                 ]),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.only(top: 8),
-                  decoration: BoxDecoration(border: Border(top: BorderSide(color: cor.withValues(alpha: .32)))),
-                  child: Row(children: [
-                    Expanded(
-                      child: Text('${c.origem}${c.inicio != null ? ' · ${_data(c.inicio)}' : ''}',
-                          maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: claro)),
-                    ),
-                    const SizedBox(width: 10),
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                          shape: BoxShape.circle, border: Border.all(color: branco.withValues(alpha: .3))),
-                      child: const Icon(Icons.arrow_forward_rounded, size: 20, color: branco),
-                    ),
-                  ]),
-                ),
-              ]),
+              ),
             ),
           ),
         ),
@@ -1152,7 +1172,8 @@ class _LinhaComunicado extends StatelessWidget {
               Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
                 _Selo(c.categoria.nome, cor: mudo, fundo: theme.colorScheme.onSurface.withValues(alpha: .06)),
                 if (c.urgente) _Selo('Urgente', cor: theme.colorScheme.error),
-                if (c.ciencia) c.ciente ? _Selo('Ciente', cor: ok) : _Selo('Ciência pendente', cor: corAtencao(Theme.of(context))),
+                if (c.ciencia)
+                  c.ciente ? _Selo('Ciente', cor: ok) : _Selo('Ciência pendente', cor: corAtencao(Theme.of(context))),
                 if (d != null) Text('${dois(d.day)}/${dois(d.month)}', style: TextStyle(fontSize: 12.5, color: mudo)),
               ]),
             ]),
