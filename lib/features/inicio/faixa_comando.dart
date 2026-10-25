@@ -44,7 +44,10 @@ class FaixaComando extends StatelessWidget {
       'cargo': c['cargo'],
       'subtitle': '${c['mensagem'] ?? ''}'.trim(),
       'detalhes': [
-        if ('${c['quadro'] ?? ''}'.trim().isNotEmpty) (Icons.military_tech_outlined, 'Quadro', '${c['quadro']}'),
+        // O SIGRH já põe o quadro no posto ("Cel QOCPM PM"): a linha só
+        // aparece quando o posto não o traz.
+        if ('${c['quadro'] ?? ''}'.trim().isNotEmpty && !posto.contains('${c['quadro']}'.trim()))
+          (Icons.military_tech_outlined, 'Quadro', '${c['quadro']}'),
         if (data(c['desde']).isNotEmpty) (Icons.event_outlined, 'No cargo desde', data(c['desde'])),
         if (data(c['inclusao']).isNotEmpty) (Icons.badge_outlined, 'Na PMRR desde', data(c['inclusao'])),
         if ('${c['lotacao'] ?? ''}'.trim().isNotEmpty) (Icons.location_city_outlined, 'Lotação', '${c['lotacao']}'),
