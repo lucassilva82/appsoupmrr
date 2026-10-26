@@ -173,8 +173,12 @@ API mexidos no dia estão iguais no servidor (conferido com `cmp`). No iMac:
    confirmada pode ser ligado) e o "Simular para uma matrícula" do painel, que
    não chega à API (com a sessão do painel).
 3. ~~Rodar o SQL do catálogo~~ rodado em 25/10/2026.
-5. Liberar o acesso ao simulador do iPad para a revisão das telas no iPad
-   (as duas rejeições da Apple foram em iPad).
+5. ~~Revisão no iPad~~ **feita em 26/10/2026** (iPad Air 11", vitrine): Início,
+   Serviços em 3 colunas, Contracheque, compartilhar (balão do sistema, sem
+   travar), Perfil e horizontal, sem erro de layout no log. Corrigido: o Perfil
+   dizia "iPhone" no iPad (1520a19). Fica para depois: lista e detalhe lado a
+   lado no iPad (§15.4) e o teste em Split View, que o simulador não faz por
+   comando.
 4. Antes da loja: TestFlight em iPhone e iPad físicos, capturas novas em
    todos os tamanhos (vitrine), "O que há de novo" separado por loja
    (APRENDIZADOS §31–32).
