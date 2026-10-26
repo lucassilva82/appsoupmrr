@@ -170,8 +170,8 @@ API mexidos no dia estão iguais no servidor (conferido com `cmp`). No iMac:
    "Em breve", fora do menu, card do painel, comunicado como card e bloco da
    Início conferidos no app e desfeitos; um defeito da API corrigido
    (e6c62d4). Falta: **homologar um tipo de pendência** (só tipo com fonte
-   confirmada pode ser ligado) e o "Simular para uma matrícula" do painel, que
-   não chega à API (com a sessão do painel).
+   confirmada pode ser ligado). O "Simular para uma matrícula" voltou a
+   funcionar em 26/10 (faltava o `config_painel.php` em `~/private`).
 3. ~~Rodar o SQL do catálogo~~ rodado em 25/10/2026.
 5. ~~Revisão no iPad~~ **feita em 26/10/2026** (iPad Air 11", vitrine): Início,
    Serviços em 3 colunas, Contracheque, compartilhar (balão do sistema, sem
