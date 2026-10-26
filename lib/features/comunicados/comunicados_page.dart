@@ -25,6 +25,7 @@ import '../pendencias/pendencias_repositorio.dart';
 import '../servicos/servicos_page.dart' show menuEmUso;
 import 'comunicados_repositorio.dart';
 import '../../core/design/esqueleto.dart';
+import '../../core/design/entrada_inicio.dart' show EntradaInicio;
 
 const _chave = 'com.central';
 
@@ -105,6 +106,8 @@ class _BlocoComunicadosState extends State<BlocoComunicados> {
     for (var i = 0; i < 200 && mounted && !livre(); i++) {
       await Future<void>.delayed(const Duration(milliseconds: 300));
     }
+    // Nem por cima da Início enquanto ela entra em cascata.
+    await EntradaInicio.esperarTerminar();
     if (!mounted || !livre()) return;
     final marca = 'comunicado_abertura_${c.id}_${c.versao}';
     try {

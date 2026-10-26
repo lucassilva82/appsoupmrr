@@ -16,6 +16,7 @@ import '../utils/auth_exception.dart';
 import '../widgets/abertura_soupmrr.dart';
 import '../widgets/aviso_rapido.dart';
 import '../widgets/erro_login.dart';
+import 'main_shell.dart' show abrirInicioDepoisDoLogin;
 
 /// Entrada por Face ID ou digital (padrão 2.2, pedido do usuário de
 /// 25/10/2026): a tela que o militar vê toda vez que abre o app depois do
@@ -165,7 +166,7 @@ class _BiometricAuthPageState extends State<BiometricAuthPage> with TickerProvid
 
       await auth.loginSemNotificar(auth.matricula!, auth.password!);
       auth.finalizarLogin();
-      if (mounted) Navigator.of(context).pushReplacementNamed(AppRoutes.HOME_PAGE);
+      if (mounted) abrirInicioDepoisDoLogin(context);
     } on AuthException catch (e) {
       // O rosto confere, mas o servidor recusou ou não respondeu: o mesmo
       // cartão de erro do login, com o código LG-.

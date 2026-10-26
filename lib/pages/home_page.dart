@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:projetonovo/core/design/arte_cartao.dart';
+import 'package:projetonovo/core/design/entrada_inicio.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:projetonovo/widgets/HomeContrachequeCard.dart';
 import 'package:projetonovo/widgets/HomePlanoFeriasCard.dart';
@@ -269,6 +270,8 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // A cascata vale só para este primeiro quadro depois do login.
+      EntradaInicio.pendente = false;
       if (!mounted) return;
       _carregarPreferencias();
       RepositorioConfig.emUso.addListener(_carregarPreferencias);
@@ -508,8 +511,8 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // 12 entre um bloco e outro (protótipo `.pilha`, §15.2).
-                      for (final chave
-                          in blocosDaInicio(RepositorioConfig.atual, InicioPreferenciasRepositorio.emUso.value))
+                      for (final (i, chave)
+                          in blocosDaInicio(RepositorioConfig.atual, InicioPreferenciasRepositorio.emUso.value).indexed)
                         if (_bloco(chave) case final w?)
                           // Segurar entra em edição, como na tela do iOS. Para quem
                           // usa leitor de tela o gesto não serve, então a mesma
@@ -521,7 +524,11 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                             child: GestureDetector(
                               behavior: HitTestBehavior.deferToChild,
                               onLongPress: _entrarEdicao,
-                              child: Padding(padding: const EdgeInsets.only(bottom: 12), child: w),
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                // Depois do login, os blocos entram um a um.
+                                child: SurgeEntrada(key: ValueKey('surge-$chave'), indice: i + 1, child: w),
+                              ),
                             ),
                           ),
                     ],

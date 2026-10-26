@@ -35,6 +35,10 @@ class _AuthOrHomeState extends State<AuthOrHome> {
   String _instalada = '';
   RegraVersao? _regra;
 
+  /// A tela de entrada (login ou Face ID) mostrada aqui, se houve. Abrir o
+  /// app já logado vai direto à Início, sem animação.
+  Widget? _entrada;
+
   @override
   void initState() {
     super.initState();
@@ -183,6 +187,20 @@ class _AuthOrHomeState extends State<AuthOrHome> {
     return 0;
   }
 
+  /// Leva à Início depois da entrada. Se houver uma janela do app por cima
+  /// (a rota não é a do topo), espera ela fechar: trocar a rota agora
+  /// trocaria a janela, não a entrada. Quando a própria tela de entrada já
+  /// abriu a Início, esta tela sai e não faz nada.
+  Future<void> _irParaInicio() async {
+    for (var i = 0; i < 100 && mounted; i++) {
+      if (ModalRoute.of(context)?.isCurrent == true) {
+        abrirInicioDepoisDoLogin(context);
+        return;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     debugPrint("[LOG] AuthOrHome build()...");
@@ -224,16 +242,26 @@ class _AuthOrHomeState extends State<AuthOrHome> {
           }
 
           // Caso contrário, exibe a lógica normal
+          if (auth.isAuth && _entrada != null) {
+            // Acabou de entrar pela senha ou pelo Face ID: a tela de entrada
+            // fica até a Início chegar por cima, com esmaecimento e os blocos
+            // em cascata. Montar outra Início aqui embaixo era montar duas: a
+            // de baixo desligava a cascata da de cima, e tudo aparecia de uma
+            // vez. Só uma das entradas leva à Início (a primeira que rodar).
+            debugPrint("[LOG] FutureBuilder: auth.isAuth => Início pela rota de entrada");
+            WidgetsBinding.instance.addPostFrameCallback((_) => _irParaInicio());
+            return _entrada!;
+          }
           if (auth.isAuth) {
             debugPrint("[LOG] FutureBuilder: auth.isAuth => MainShell");
             return const MainShell();
           } else if (auth.useBiometrics) {
             debugPrint(
                 "[LOG] FutureBuilder: auth.useBiometrics => BiometricAuthPage");
-            return const BiometricAuthPage();
+            return _entrada = const BiometricAuthPage();
           } else {
             debugPrint("[LOG] FutureBuilder: => AuthPage");
-            return const AuthPage();
+            return _entrada = const AuthPage();
           }
         }
       },

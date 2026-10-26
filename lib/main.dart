@@ -85,6 +85,7 @@ import 'widgets/aviso_rapido.dart';
 import 'package:http/http.dart' as http;
 import 'widgets/dialogo_confirmacao.dart';
 import 'widgets/convite_biometria.dart' show entradaEmAndamento;
+import 'core/design/entrada_inicio.dart' show EntradaInicio;
 import 'features/comunicados/comunicados_page.dart' show aberturaEmAndamento;
 import 'vitrine/vitrine.dart';
 import 'core/erros/captura_global.dart';
@@ -203,6 +204,9 @@ Future<void> _iniciar() async {
   } catch (e) {
     debugPrint('[INIT] initializeDateFormatting falhou: $e');
   }
+
+  // A cascata da Início espera o convite do Face ID/digital fechar.
+  EntradaInicio.aguardar = entradaEmAndamento;
 
   runApp(
     MultiProvider(

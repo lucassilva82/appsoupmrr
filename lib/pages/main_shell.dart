@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:projetonovo/core/design/entrada_inicio.dart';
 import 'package:provider/provider.dart';
 
 import '../core/log/registro_log.dart';
@@ -402,7 +403,7 @@ class _RaizAba extends StatelessWidget {
         // Título dinâmico por aba
         Expanded(
           child: indice == 0
-              ? _titleHome(context, nome, isSuperUser, isAdmin)
+              ? SurgeEntrada(indice: 0, child: _titleHome(context, nome, isSuperUser, isAdmin))
               : Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -603,4 +604,15 @@ class _ObservaPilha extends NavigatorObserver {
 
   @override
   void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) => _avisar(-1);
+}
+
+/// Leva à Início depois do login ou do Face ID/digital, com a entrada suave
+/// (esmaece e sobe, e os blocos em cascata). Só aqui: abrir o app já logado
+/// e trocar de aba continuam sem animação.
+void abrirInicioDepoisDoLogin(BuildContext context) {
+  EntradaInicio.pendente = true;
+  Navigator.of(context).pushReplacement(rotaEntradaInicio(
+    (_) => MainShell(),
+    settings: const RouteSettings(name: AppRoutes.HOME_PAGE),
+  ));
 }

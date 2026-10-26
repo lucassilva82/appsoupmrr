@@ -8,10 +8,10 @@ import 'package:provider/provider.dart';
 
 import '../core/design/fundo_circuito.dart';
 import '../models/auth_model.dart';
-import '../utils/app_routes.dart';
 import '../widgets/abertura_soupmrr.dart';
 import '../widgets/auth_form.dart';
 import '../widgets/versao_app.dart';
+import 'main_shell.dart' show abrirInicioDepoisDoLogin;
 
 /// Tela de login da 2.2 (pedido do usuário, 24/10/2026).
 ///
@@ -82,7 +82,9 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
     final auth = Provider.of<Auth>(context);
     if (auth.isAuth) {
       WidgetsBinding.instance.addPostFrameCallback(
-        (_) => Navigator.of(context).pushReplacementNamed(AppRoutes.HOME_PAGE),
+        (_) {
+          if (mounted && ModalRoute.of(context)?.isCurrent == true) abrirInicioDepoisDoLogin(context);
+        },
       );
     }
     final teclado = MediaQuery.viewInsetsOf(context).bottom;
