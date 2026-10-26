@@ -68,7 +68,7 @@ class SettingsBody extends StatelessWidget {
             icone: Platform.isIOS ? Icons.face_rounded : Icons.fingerprint_rounded,
             titulo: nomeBiometria,
             texto: Platform.isIOS
-                ? 'Entrar no app olhando para o iPhone · ${auth.useBiometrics ? 'ligado' : 'desligado'}'
+                ? 'Entrar no app olhando para o ${aparelhoApple(context)} · ${auth.useBiometrics ? 'ligado' : 'desligado'}'
                 : 'Entrar com a digital ou o rosto · ${auth.useBiometrics ? 'ligada' : 'desligada'}',
             aoTocar: () => Navigator.of(context)
                 .push(MaterialPageRoute(builder: (_) => const BiometriaPage())),
@@ -654,7 +654,7 @@ class NotificacoesPreferenciasPage extends StatelessWidget {
           icone: Icons.notifications_active_outlined,
           titulo: 'Notificações neste aparelho',
           texto: Platform.isIOS
-              ? 'O sistema também pode desligar, no Ajustes do iPhone'
+              ? 'O sistema também pode desligar, no Ajustes do ${aparelhoApple(context)}'
               : 'O sistema também pode desligar, nas configurações do aparelho',
           seta: false,
           direita: Switch.adaptive(
@@ -749,7 +749,7 @@ class BiometriaPage extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(4, 12, 4, 0),
         child: Text(
           Platform.isIOS
-              ? 'Com Face ID ligado, o app abre sem pedir a senha, olhando para o iPhone. '
+              ? 'Com Face ID ligado, o app abre sem pedir a senha, olhando para o ${aparelhoApple(context)}. '
                   'Vale só para este aparelho.'
               : 'Com a biometria ligada, o app abre sem pedir a senha, com a digital ou o rosto. '
                   'Vale só para este aparelho.',
@@ -787,3 +787,8 @@ String _escopoNivel(AppConfig config, Auth auth) =>
     (auth.nivel == 1
         ? 'Toda a PMRR, com acesso à configuração do app'
         : (auth.isSuperUser ? 'Militares do seu escopo de comando' : 'Seus próprios dados'));
+
+/// "iPad" ou "iPhone", pelo tamanho da tela: no iPad o texto dizia "iPhone"
+/// (a Apple revisa no iPad; achado na revisão de 26/10/2026).
+String aparelhoApple(BuildContext context) =>
+    MediaQuery.sizeOf(context).shortestSide >= 600 ? 'iPad' : 'iPhone';
