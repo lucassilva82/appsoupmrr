@@ -166,12 +166,15 @@ API mexidos no dia estão iguais no servidor (conferido com `cmp`). No iMac:
 
 **Falta (depende do usuário)**
 1. Testar no aparelho (TestFlight e APK) a branch `feature/soupm-2-2`.
-2. Teste dos interruptores do painel em produção (manutenção, "Em breve",
-   tirar do menu, card, comunicado como card, pendência, bloco da Início):
-   o usuário autoriza direto na sessão ou mexe ele mesmo e a sessão confere.
-   Versão mínima e recomendada só na vitrine (`--dart-define=VITRINE_MINIMA`).
-3. Rodar o SQL `2026-10-25_soupm_catalogo_atualizar.sql` (catálogo:
-   `inicio.atualizar` e `CM-FORA-DO-AR`).
+2. ~~Teste dos interruptores do painel~~ **feito em 26/10/2026**: manutenção,
+   "Em breve", fora do menu, card do painel, comunicado como card e bloco da
+   Início conferidos no app e desfeitos; um defeito da API corrigido
+   (e6c62d4). Falta: **homologar um tipo de pendência** (só tipo com fonte
+   confirmada pode ser ligado) e o "Simular para uma matrícula" do painel, que
+   não chega à API (com a sessão do painel).
+3. ~~Rodar o SQL do catálogo~~ rodado em 25/10/2026.
+5. Liberar o acesso ao simulador do iPad para a revisão das telas no iPad
+   (as duas rejeições da Apple foram em iPad).
 4. Antes da loja: TestFlight em iPhone e iPad físicos, capturas novas em
    todos os tamanhos (vitrine), "O que há de novo" separado por loja
    (APRENDIZADOS §31–32).
