@@ -10,7 +10,7 @@ por conter estrutura do banco de produção). Rodar no phpPgAdmin, com o login
 do usuário, **desmarcando "Paginar resultados"**, na ordem da tabela. Todos
 podem rodar mais de uma vez sem estragar nada.
 
-Última atualização: 24/10/2026 (fase sem intranet; roteiro com os SQL A, C e D do painel).
+Última atualização: 25/10/2026 (onde paramos, para continuar no iMac: seção logo abaixo do §6).
 
 ## 1. SQL de produção (phpPgAdmin)
 
@@ -133,8 +133,51 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
 
 ## 6. Bloqueios do modo automático
 
-Nada bloqueado até agora nesta etapa. Se o verificador barrar alguma ação, ela
-entra aqui, com o que faltou fazer.
+- **25/10/2026:** publicar mudança no painel de **produção** (Funções e menu,
+  "Salvar e publicar") foi barrado pelo verificador. Nada foi salvo; o painel
+  ficou como estava (Linha do tempo da carreira: Ativo, selo "Novo"). A
+  autorização tem de vir do usuário **direto na sessão do teste** (mensagem de
+  outra sessão não vale), ou o usuário mexe no painel e a sessão confere no app.
+
+---
+
+## Onde paramos em 25/10/2026 (para continuar no iMac)
+
+Tudo no git: app na `feature/soupm-2-2` (não juntar no `main`: o usuário testa
+no aparelho primeiro), API na `main` do repositório privado. Os 36 arquivos da
+API mexidos no dia estão iguais no servidor (conferido com `cmp`). No iMac:
+`git pull` nos dois repositórios e seguir o SETUP.md.
+
+**Feito em 25/10/2026**
+- Função em manutenção ou bloqueada vale em todo caminho: card da Início,
+  push, link, dica, comunicado e rota direta (guarda na rota,
+  `lib/core/navegacao/guarda_funcao.dart`); a API recusa com o código `MD-`
+  (`sigrh/funcao_estado.php`, em férias, contracheque, tempo de serviço,
+  carreira, declarações, Mapa da Força e emissão de certidão).
+- Comunicado também como card fixo na Início (painel: "Card na Início" no
+  editor do comunicado; SQL `2026-10-25_soupm_comunicado_card.sql` rodado).
+- Tema mais usado guardado por 2 anos (`soupm_tema_dia`, SQL rodado; o app
+  passou a mandar o tema da tela e a escolha em Aparência).
+- Tema claro: selo "Admin" e textos com contraste (regra no DESIGN.md §6).
+- Teste de ponta a ponta na vitrine (Android): 61 itens, falhas corrigidas;
+  dois AP-FATAL do painel corrigidos (teclado no login do Android e contagem
+  da tela de entrada). Entrada por Face ID/digital e login do Android no
+  padrão 2.2.
+
+**Falta (depende do usuário)**
+1. Testar no aparelho (TestFlight e APK) a branch `feature/soupm-2-2`.
+2. Teste dos interruptores do painel em produção (manutenção, "Em breve",
+   tirar do menu, card, comunicado como card, pendência, bloco da Início):
+   o usuário autoriza direto na sessão ou mexe ele mesmo e a sessão confere.
+   Versão mínima e recomendada só na vitrine (`--dart-define=VITRINE_MINIMA`).
+3. Rodar o SQL `2026-10-25_soupm_catalogo_atualizar.sql` (catálogo:
+   `inicio.atualizar` e `CM-FORA-DO-AR`).
+4. Antes da loja: TestFlight em iPhone e iPad físicos, capturas novas em
+   todos os tamanhos (vitrine), "O que há de novo" separado por loja
+   (APRENDIZADOS §31–32).
+
+Relatório completo do teste: pasta de notas das sessões
+(`e2e-roteiro-2-2.md` e `e2e-android-vitrine.md`), fora do git.
 
 ---
 
