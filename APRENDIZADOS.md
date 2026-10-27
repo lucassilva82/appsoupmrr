@@ -1871,3 +1871,29 @@ degrau: ninguém seria gestor e a área Gestão sumiria do menu **para todos**.
 O interruptor já exigia "cadastrar as regras no painel", mas sem dizer o que
 acontece se alguém pular isso. Interruptor que estraga a tela quando ligado
 cedo demais precisa dizer **o estrago**, não só a precondição.
+
+**Como o episódio terminou, e é a parte mais útil.** Desbloqueada a
+pergunta, a medição percorreu três fontes no mesmo dia e a resposta não foi
+nenhuma das duas primeiras:
+
+| Fonte | O que pareceu | O que a medição disse |
+|---|---|---|
+| `tipo_funcao` (função de lotação) | o nome promete | só *Administrativo* e *Operacional*: grosso demais |
+| `funcoes_servico` (função de serviço) | **parecia certa**: *Comandante Geral* com exatamente 1 | **não serve**: ver abaixo |
+| **subunidade de lotação** | ninguém tinha olhado | **é a fonte**: efetivo 1, com o cargo no nome do lugar |
+
+A função de serviço reprovou por um detalhe que só apareceu ao listar
+**quem** está em cada código, em vez de contar quantos: entre os 140 de
+*Chefe / Diretor* há **7 militares lotados na subunidade `Cmt`** —
+comandantes cadastrados como "Chefe / Diretor". Uma regra sobre a função
+"Comandante de Companhia" não erraria: ela **não acharia** esses sete, sem
+erro nenhum, e sete comandantes ficariam sem acesso. É o §37 deslocado para
+a escolha da fonte — a contagem fecha, o campo responde, e o que falta não
+aparece em lugar nenhum.
+
+**A regra que fica.** Contagem valida a existência de um cadastro; só a
+lista nominal valida que ele serve para decidir. Antes de pendurar permissão
+num campo, listar quem está nele e cruzar com **outra fonte que diga a mesma
+coisa** — aqui, a lotação dizia "comandante" de quem a função dizia "chefe".
+Duas fontes que discordam é informação; uma fonte sozinha que fecha a conta
+não é.

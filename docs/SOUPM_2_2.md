@@ -2351,12 +2351,20 @@ a regra tem de ser escrita:
   renomeação no SIGRH, que derruba a regra em silêncio, então a prévia do
   painel (quantos militares cada regra pega agora) passa a ser parte da regra,
   não só conferência.
-- **Não existe "Comandante de Batalhão"** em `funcoes_servico`. O nível 3
-  (*Gestor de unidade*) **não está sem fonte: está partido em dois públicos**,
-  e este plano o tratava como um só. Quem **comanda** sai da **lotação** (a
-  terceira fonte, abaixo); quem **dirige** uma diretoria sairia de *Chefe /
-  Diretor*, que tem 140 militares para umas 28 diretorias — inclui gente
-  demais e não serve sem antes olhar quem são.
+- **A função de serviço NÃO entra como fonte de nível.** Medidos um por um
+  os 140 de *Chefe / Diretor* (código 17): o mesmo código cobre chefia de
+  seção, situações que não são chefia (`Reserva`, `Agregado Proc.
+  Reserva/Reforma`) e **7 militares lotados na subunidade `Cmt`**, isto é,
+  comandantes cadastrados como "Chefe / Diretor". O que isso prova não é que
+  o código 17 é um saco de gatos: é que **o campo de função não identifica o
+  comandante de forma confiável**. Uma regra sobre a função 54 não erraria —
+  ela apenas **não acharia** esses 7, sem erro nenhum, e sete comandantes
+  ficariam sem Gestão. É o §37 na escolha da fonte.
+- **O nível 3 (*Gestor de unidade*) atende dois públicos, mas de uma fonte
+  só.** Este plano o tratava como um público; são dois — quem comanda e quem
+  dirige —, e os dois saem da **lotação**: os dirigentes aparecem do mesmo
+  jeito que os comandantes, em subunidade de efetivo 1 com o cargo no nome
+  (`Diretor`, `Dir DRH`, `Ch Gab`, `Dir Polic`, `Dir do SS`).
 - **Terceira fonte, medida e boa: a lotação.** Cada unidade operacional tem
   uma **subunidade de comando com efetivo 1** onde o comandante é lotado
   (`Cmt` nos BPM e CIPM, `Cmt Geral` no Gab Cmdo Geral, `Cmt CPC` no E.M.
@@ -2369,8 +2377,9 @@ a regra tem de ser escrita:
   livre, nas duas fontes — e **sem chave estrangeira que proteja**. Mudou o
   nome, a regra para de casar sem erro algum.
 - **A lotação tem cinco grafias** (`Cmt`, `Cmte`, `CMT`, `Cmt Geral`,
-  `Cmt CPC`, `Com da …`) e dois falsos positivos que **não** são comando de
-  unidade: `Cmte Guarn` e `Cmte do Gp de Cons. e Seg.`. Um `ILIKE 'cmt%'`
+  `Cmt CPC`, `Com da …`), mais as da direção (`Diretor`, `Dir DRH`, `Ch Gab`,
+  `Dir Polic`, `Dir do SS`), e dois falsos positivos que **não** são comando
+  de unidade: `Cmte Guarn` e `Cmte do Gp de Cons. e Seg.`. Um `ILIKE 'cmt%'`
   pegaria os dois — plausível e errado. Então a regra de lotação é **lista
   explícita de nomes**, nunca padrão; e, como lista explícita envelhece em
   silêncio quando nasce uma unidade com grafia nova, ela vem com um **vigia

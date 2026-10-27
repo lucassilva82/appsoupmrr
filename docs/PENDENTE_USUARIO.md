@@ -123,11 +123,28 @@ têm chefe ou diretor, não comandante**. É coerente que não tenham subunidade
 "Cmt".
 
 **Isso corrige o achado do nível 3.** O *Gestor de unidade* não está sem
-fonte: está **partido em dois públicos diferentes**, e o plano o tratava
-como um. Quem **comanda** sai da lotação (22 unidades, efetivo 1, nome do
-lugar). Quem **dirige** sairia de *Chefe / Diretor* — mas aquela função tem
-140 militares para umas 28 diretorias, então inclui gente demais e não serve
-sem antes olhar quem são.
+fonte. Ele atende **dois públicos** — quem comanda e quem dirige —, e o
+plano o tratava como um só; mas os dois saem **da mesma fonte**, a lotação.
+Os dirigentes aparecem do mesmo jeito que os comandantes: subunidade de
+efetivo 1 com o cargo no nome — `Diretor` (Gab DEP), `Dir DRH` (GAB DRH),
+`Ch Gab` (Gab Sub Cmt Geral), `Dir Polic`, `Dir do SS`. Muda só a lista de
+nomes: `Cmt*`, `Com da *`, `Dir*`, `Diretor`, `Ch Gab`.
+
+**E a função de serviço saiu de vez como fonte de nível.** Medidos os 140 de
+*Chefe / Diretor* (código 17), um por um: eles se espalham por 43 unidades e
+o mesmo código cobre chefia de seção (`P2/P3`, `SPA`, `Ch DP`), **situações
+que não são chefia nenhuma** (`Agregado Proc. Reserva/Reforma`, `Reserva`)
+e — o que fecha o assunto — **7 militares lotados na subunidade `Cmt`**, ou
+seja, **comandantes cadastrados como "Chefe / Diretor"**.
+
+O problema não é o código 17 ser um saco de gatos. É o que esses 7 provam:
+**o campo de função não identifica o comandante de forma confiável.** Uma
+regra sobre a função 54 não erraria — ela simplesmente **não acharia** esses
+7, sem dar erro, e sete comandantes ficariam sem Gestão no menu. É o §37 na
+escolha da fonte: o campo responde, o número é plausível, e o que falta não
+aparece em lugar nenhum. Por isso `funcao_sigrh` **não entra como fonte de
+nível**, nem no degrau 3 nem nos outros, apesar de *Comandante Geral* e
+*Subcomandante Geral* terem exatamente 1 cada.
 
 **Nenhuma classificação marca comando.** `subunidades_tipo` é só
 *Administrativa* (416) e *Operacional* (126), e a função de lotação é o
