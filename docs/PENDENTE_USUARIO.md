@@ -120,8 +120,8 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
 - **Comparar o contracheque** novo com o de hoje com uma conta real (§12.3). O
   modelo já está sem a Diretoria de Recursos Humanos e com o QR (APRENDIZADOS
   §44).
-- **Ver a barra lateral no iPad:** liberar o iPad Air 11" no painel do
-  simulador do Claude Code. Hoje ela só foi conferida por teste automático.
+- ~~**Ver a barra lateral no iPad**~~ **visto em 27/10/2026**, num iPad
+  físico, no teste do build 4. Antes só havia passado por teste automático.
 - **"Avisar quando voltar" na folha de bloqueio:** o app já mostra o botão
   quando o painel escolhe essa ação e grava o pedido no log
   (`modulo.avisar_quando_voltar`, com o código `MD-` da função). Falta a API
@@ -154,8 +154,11 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
   juntada no `main`**. Juntar depois de aprovada nas duas lojas.
 
 **Falta (depende do usuário)**
-1. Instalar o build 4 pela TestFlight num iPhone e num iPad e abrir o app
-   (APRENDIZADOS §1). Ele não foi testado em aparelho antes do envio.
+1. ~~Instalar o build 4 pela TestFlight num iPhone e num iPad e abrir o
+   app~~ **feito em 27/10/2026**: o usuário testou nos dois aparelhos
+   físicos e estava tudo certo. O teste saiu **depois** do envio, não
+   antes, como manda o APRENDIZADOS §1 — deu certo, mas a ordem foi a de
+   risco: se tivesse quebrado, a correção pegaria a fila da Apple de novo.
 2. Acompanhar a revisão da Apple, que leva até 48 h. As notas para a revisão
    são antigas: citam "escalas", que estão "Em breve", e as rejeições da
    2.1.x. Se a Apple questionar as funções "Em breve", responder que Escalas,
