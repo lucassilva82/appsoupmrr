@@ -2352,8 +2352,10 @@ gerado (até 24 meses, fila única de leitura e gravação). P5, Linha do tempo
 comportamento, escolaridade e tempo averbado, cada seção isolada (a que falhar
 aparece como "não foi possível conferir", `CR-<SEÇÃO>`). P6, Validar documento
 (`rh.validar`): o código impresso ou o link do QR abre a página pública de
-conferência (`verificar.php` ou `doc/conferir.php`); o leitor de QR dentro do
-app fica para depois, porque pede câmera e um pacote nativo novo. No menu:
+conferência (`verificar.php` ou `doc/conferir.php`). O **leitor de QR dentro
+do app entrou** (`mobile_scanner` 7.4.2), ao contrário do que este plano
+dizia: conferido em aparelho pelo usuário em 27/10/2026, lendo o QR de uma
+certidão. No menu:
 `sql/2026-10-23_soupm_funcoes_novas.sql`, com o selo "Novo" e versão mínima
 2.2.0. P3 (lembretes): `sigrh/cron/lembretes.php` calcula, para os lembretes ligados no painel,
 férias que começam, certidão que vence, prazo de declaração (campanha aberta,
