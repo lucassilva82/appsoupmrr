@@ -122,7 +122,7 @@ resto deste documento diz sobre a intranet:
                           cron de envio (API do app) ──► FCM HTTP v1 ──► aparelhos
 ```
 
-- **Painel = módulo da intranet** em `~/code/intranet/painelsoupmrr/`, no
+- **Painel = módulo da intranet** em `~/code/intranet/sgc/painelsoupmrr/` (branch `painelsoupmrr`), no
   endereço **`/painelsoupmrr`** (decisão do usuário, 21/10/2026), no molde do
   `sischamados/` (`index.php` com `Router('/painelsoupmrr')`, `routes/web.php`,
   `app/{Controllers,Helpers,Views}`, `database/migrations/NNN_*.sql`). Tela
