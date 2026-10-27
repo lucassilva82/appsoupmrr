@@ -15,10 +15,12 @@
 
 ## 0. Resumo
 
-O painel é um **módulo novo da intranet**, `SOUPMRR`, dentro da casca Nexus
-2.0 (mesmo menu, mesma barra, mesmo login, mesmos componentes do
-SISCHAMADOS). Ele não tem login próprio nem visual próprio. Por ele, quem tem
-papel no painel controla **tudo o que o militar vê no app**:
+O painel é uma **aplicação própria**, publicada em
+`pmrr.online/painelsoupmrr`, com **login próprio** (a mesma matrícula e senha
+do app) e o visual da casca Nexus 2.0, no molde do SISCHAMADOS. Nasceu como
+módulo da intranet e saiu dela em 27/10/2026 (§1.1b), com repositório só
+dele. Por ele, quem tem papel no painel controla **tudo o que o militar vê no
+app**:
 
 | Área do painel | O que faz | Tela no protótipo |
 |---|---|---|
@@ -83,6 +85,13 @@ resto deste documento diz sobre a intranet:
 
 - **Endereço:** `https://pmrr.online/painelsoupmrr/`, no mesmo servidor da
   API do app.
+- **Código (27/10/2026):** repositório **próprio e privado**,
+  `lucassilva82/painelsoupmrr`, branch `main`, em `~/code/painelsoupmrr`.
+  Pedido do usuário: *"quero o repositório do painel direto pra mim, ele não
+  faz parte da intranet por enquanto"*. Saiu do checkout `sgc` da intranet
+  por `git subtree split`, com os 141 commits preservados; a pasta antiga
+  continua lá, na branch `claude/painelsoupmrr-d78bc6`, com um aviso
+  apontando para o lugar novo. Nada foi enviado para `dtipmrr/intranet`.
 - **Login:** matrícula e senha do app (`sessao_app.php` da API), sem 2FA.
 - **Quem entra e o que pode:** `soupm_papel`, `soupm_papel_regra` (quem tem
   o papel, por matrícula ou por nível do SIGRH) e `soupm_papel_recurso` (o que
@@ -122,8 +131,10 @@ resto deste documento diz sobre a intranet:
                           cron de envio (API do app) ──► FCM HTTP v1 ──► aparelhos
 ```
 
-- **Painel = módulo da intranet** em `~/code/intranet/sgc/painelsoupmrr/` (branch `painelsoupmrr`), no
-  endereço **`/painelsoupmrr`** (decisão do usuário, 21/10/2026), no molde do
+- **Painel = aplicação própria** em `~/code/painelsoupmrr`
+  (`lucassilva82/painelsoupmrr`, branch `main`), publicada em
+  **`pmrr.online/painelsoupmrr`**. Nasceu como módulo da intranet e saiu dela
+  em 27/10/2026 (§1.1b); o desenho continua no molde do
   `sischamados/` (`index.php` com `Router('/painelsoupmrr')`, `routes/web.php`,
   `app/{Controllers,Helpers,Views}`, `database/migrations/NNN_*.sql`). Tela
   nova nasce no padrão 2.0 (`$nexusPronto`, `$nexusMenu`, `nxc-*`,
@@ -2110,31 +2121,26 @@ Até a P5, o Mapa da Força segue a regra de hoje (carga inicial igual à 2.1.5)
 e o "nível mínimo" das funções fica fixo em "Militar" ou "Gestor (regra
 antiga)". A tela Níveis de acesso só liga junto com a fase 5 do app.
 
-**Paralelismo** (sessões separadas, como o usuário prefere): o painel é um
-módulo novo em pasta própria da intranet, então anda junto com o app depois
-que o contrato da fase estiver fixado. A sessão "Chat Intranet" precisa saber
-antes, pelas regras de convivência da intranet (módulo novo, migrações, menu
-"Todos os sistemas").
+**Paralelismo** (sessões separadas, como o usuário prefere): o painel tem
+repositório próprio (§1.1b), então anda junto com o app depois que o contrato
+da fase estiver fixado, sem depender de ninguém da intranet.
 
-**Quem implementa o painel (decisão do usuário, 21/10/2026).** O painel é
-feito **pela sessão "Chat Intranet"**, não pelas sessões deste repositório,
-porque ele tem de seguir as regras de design e de desenvolvimento da intranet.
+**Quem implementa o painel (27/10/2026).** A sessão **"Painel SOUPM na web"**,
+no repositório próprio do painel (§1.1b). Substitui a decisão de 21/10/2026,
+que punha o painel na sessão "Chat Intranet" porque ele era módulo da
+intranet — deixou de ser.
 
-1. Esta sessão (do app) manda o módulo para a "Chat Intranet": este documento,
-   o protótipo do painel e o contrato (§2 e §9). O usuário autorizou que esta
-   sessão passe as instruções direto para ela.
-2. A "Chat Intranet" abre uma **subsessão própria** para o painel.
-3. A subsessão **lê primeiro as regras da intranet** (`REGRAS_DESIGN_2.0.md`,
-   as regras de desenvolvimento e de convivência entre módulos) e o módulo
-   SISCHAMADOS, que é o modelo.
-4. Desenvolve o painel como **módulo novo da intranet** (`painelsoupmrr/`, em
-   `/painelsoupmrr`), igual ao SISCHAMADOS: mesma estrutura de pastas, casca
-   Nexus 2.0, ACL, migrações e `verificar_design.php`. **Em conflito, valem
-   as regras da intranet**, e o desenho deste documento se adapta a elas.
-5. O que é da API do app (`app_config.php`, `log.php`, o cron de envio pelo
+1. O painel segue o padrão de tela Nexus 2.0 e o molde do SISCHAMADOS, que já
+   estão no código dele. Fora da intranet, as regras de convivência dela
+   (arquivos comuns, menu "Todos os sistemas") não valem mais, e os
+   documentos próprios do painel mandam: `docs/RESUMO_POR_FASE.md`,
+   `docs/PENDENCIAS_USUARIO.md` e `docs/specs/`.
+2. O que é da API do app (`app_config.php`, `log.php`, o cron de envio pelo
    FCM, a sonda de saúde e os endpoints internos do §1.2) continua com as
    sessões deste repositório. Mudança no contrato (§2 e §9) é combinada entre
    as duas antes de ir para o código.
+3. O caminho de volta para dentro da intranet continua desenhado e pronto
+   (§1.1b, último item), para quando a intranet de produção estiver completa.
 
 A ordem continua a das fases acima: cada fase do painel começa quando a fase
 do app correspondente fixar o contrato dela, e a P0 só vai ao ar depois das
@@ -2143,9 +2149,9 @@ correções de segurança da API (§7).
 **Duas frentes, que conversam entre si (decisão do usuário, 22/10/2026).**
 - **App Flutter e API do app:** a sessão "SouPM 2.2", neste repositório, na
   branch `feature/soupm-2-2`.
-- **Painel web:** a sessão "Chat Intranet" (ou uma subsessão dela), dentro da
-  intranet, porque é lá que está todo o contexto e as regras dela. A sessão que
-  planejou o painel passa tudo o que sabe para ela.
+- **Painel web:** a sessão "Painel SOUPM na web", no repositório próprio do
+  painel (§1.1b). Até 27/10/2026 isto era da sessão "Chat Intranet", quando o
+  painel ainda era módulo da intranet.
 - As sessões podem e devem trocar mensagens direto: tirar dúvidas, avisar
   mudança no contrato (§2 e §9) antes de mexer no código e devolver o que
   aprenderem para os dois planos.
