@@ -1544,6 +1544,20 @@ como o `verificar.php` das certidões.
 - Pasta nova na API: antes de subir, testar o nome com um arquivo inexistente
   (`curl -o /dev/null -w "%{http_code}"`). 404 é o esperado; 403 quer dizer
   que o servidor bloqueia aquele nome.
+- **Arquivo de inclusão se protege medindo, não lendo o `.htaccess`.** Os que
+  só existem para o `require_once` (conexão, bibliotecas) respondem **200
+  vazio** sem regra nenhuma, porque o PHP executa e não imprime — e passariam
+  a ser servidos como texto, com a senha do banco dentro, se a versão do PHP
+  no servidor sair torta. A regra está no `.htaccess` da API (a lista de nomes
+  fica lá, fora deste repositório, que é público). Depois de publicar, medir:
+  cada um tem de dar **403**, e um arquivo inexistente na mesma pasta tem de
+  dar **404** — se tudo der 403, é o nome da pasta bloqueando, não a regra.
+  Conferido assim em 27/10/2026.
+- **500 não é proteção.** 403 é o servidor recusando; **500 quer dizer que o
+  PHP executou e morreu**, em geral num `require` que não resolve naquele
+  contexto. O arquivo continua alcançável por fora do roteador, e basta uma
+  mudança que faça o include resolver para ele rodar sem passar pela checagem
+  de acesso. Achado pela sessão do painel em 27/10/2026, num arquivo dele.
 
 
 ## 45. `pbcopy` sem locale corrompeu 73 textos em produção (Mac Roman)
