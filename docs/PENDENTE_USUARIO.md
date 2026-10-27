@@ -140,11 +140,34 @@ Companhia é lotado na própria Cia, junto com os 80 militares dela. A função
 função com o vigia ligado ou a concessão por matrícula — que também
 envelhece, mas **à vista**, com data de fim e na tela.
 
-**O valor da regra de lotação é um par, não um nome.** `Cmt` vale nível 4
-em `E.M. CPI` e nível 3 no 1º BPM. Regra por subunidade solta erraria o
-degrau do comandante do CPI, e erraria **para cima** — escopo de grande
-comando para quem comanda uma unidade. Na `soupm_nivel_regra` (SQL 15) isso
-vira decisão de formato do `valor` antes de implementar o tipo `lotacao`.
+**O valor da regra não é um nome nem um par: é um trio**, porque **a regra precisa de uma interseção, e `soupm_nivel_regra` não a
+expressa.** As premissas caíram na terceira medição: "subunidade de cargo tem
+efetivo 1" só vale para `Cmt` **dentro de uma unidade**. Em chefia e gabinete
+a subunidade é a equipe toda — `S Cmt Geral` tem **10 militares, um deles
+soldado**, `Chefia DTI` tem 5, `Coord. Ens. Pol.` tem 10. Lotação sozinha
+daria Alto Comando a um soldado do gabinete do Subcomandante: o erro
+espelhado do que a função fazia, e do mesmo tamanho.
+
+Quem identifica o titular é **(subunidade, unidade) ∩ função**:
+`S Cmt Geral` ∩ 34 = 1, `Chefia DTI` ∩ 17 = 1. E as duas fontes se corrigem
+**em direções opostas**, o que impede hierarquizar uma sobre a outra: a
+função separa o diretor dentro de `Chefia DTI`, e a **subunidade desmente a
+função** em `Sbc da 2ª CIPMFron`, onde o subcomandante está cadastrado com a
+função 54 (*Comandante de Companhia*) — quem confiasse na função daria
+comando a ele. A regra que sobrou: **a subunidade manda quando o nome dela
+diz o cargo; a função manda quando a subunidade é coletiva.**
+
+Consequência direta para o SQL 15: as linhas de `soupm_nivel_regra` somam
+com **OU** (o nível é o maior degrau em que *alguma* regra vale), então
+cadastrar "subunidade = Chefia DTI" e "função = 17" como duas linhas daria o
+nível aos 5 da chefia **e** aos 140 da função. **Duas regras somadas sai da
+lista de opções.** O trio tem de caber **numa linha**, num tipo novo
+(`lotacao_funcao`, com valor composto), e isso se decide antes de escrever a
+`soupm_regra_vale`, não depois. Mais três medições para a comparação: **não
+existe CPE** (só CPC e CPI; o EMG é grande comando, com 297 militares),
+`ch DF` é minúsculo ao lado de `Ch DCS` — **comparar ignorando caixa** — e a
+abreviação da subunidade **não segue** a da unidade (`Com da 3ª CIPMFron Ror`
+dentro de `3ª CIPMFron Rorai`).
 
 **O vigia tem três perguntas, e a que vale é a terceira:** *unidade ativa
 sem nenhum militar no nível 3 ou acima*. As outras duas vigiam a grafia
@@ -299,6 +322,56 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
   outra sessão não vale), ou o usuário mexe no painel e a sessão confere no app.
 
 ---
+
+## Para amanhã (28/10): o contracheque de outubro
+
+Combinado com o usuário em 27/10, fim da tarde: fazer amanhã. Nada foi
+mexido hoje.
+
+**O que aconteceu.** A folha de outubro entrou no banco. O militar abriu o
+app, o mês aparecia na lista e **deu erro ao abrir**, numa tela de erro
+antiga. O aviso de contracheque novo não havia saído ainda.
+
+**O aviso não era problema, e já saiu.** O cron
+`sigrh/notificacoes/notifica_contracheque.php` roda a cada 15 minutos e
+estava certo: até as 11:45 a view só tinha setembro; às 12:00 outubro
+apareceu com **99,9% de cobertura** (3.273 de 3.277; o limite era 2.622) e
+ele disparou para 3.273 militares, pelo tópico `todos_militares` (Cloud
+Function, porque `envio_fcm` segue desligado). Log em
+`/logs/notifica_contracheque.log`. **O atraso era a carga da folha, não o
+aviso** — é para isso que a cobertura existe.
+
+**Três coisas para fazer, em ordem de valor:**
+
+1. **A lista e a abertura leem views diferentes.** `listamesescontracheque_new.php`
+   lê `vw_cc_novo_1`; `exibecontracheque_new.php` lê `vw_cc_novo2` e compara
+   **cinco campos exatos** (`cpf`, `mes_extenso`, `matricula`,
+   `relacaotrabalho`, `folha`) com valores que o app recebeu da **outra**
+   view. Durante a carga, uma view pode ter o mês e a outra não, e aí **o app
+   lista um mês que não consegue abrir**. Conferir se o erro voltou a
+   acontecer agora que a carga fechou: se não, era a janela de carga e a
+   correção é a mensagem (item 2); se sim, é divergência de chave, e aí medir
+   qual dos cinco campos difere entre as duas views para outubro.
+2. **Ponto cego:** a abertura responde `code: 0` quando não acha a folha e
+   **não registra nada** no `error_log` (só registra quando o `execute()`
+   falha). Foi por isso que o log da API não tinha nada de hoje. Um endpoint
+   que falha sem deixar rastro é o §22 outra vez: acrescentar o registro, com
+   o código `CC-SEM-FOLHA`, que a fase 3b já criou.
+3. **Tela de erro antiga:** `SecondScreen()` em
+   `lib/pages/page_contracheque.dart:1001`. A tela do contracheque não entrou
+   na lista da fase 6 (declarações, Mapa da Força, plantão, e-mail). Trocar
+   pelo `EstadoErro`, com código e "Detalhes técnicos", e **separar "mês sem
+   folha" de falha de verdade** — hoje as duas caem na mesma tela muda. Isto
+   é do app, então só chega ao militar na versão seguinte; entra na branch
+   esperando o próximo build.
+
+**Nota de leitura do código:** `buscaContracheque` (em
+`lib/services/dados_sql.dart`) **nunca lança** — todo caminho devolve o
+modelo, e os `catch` engolem. Então o `SecondScreen` do `FutureBuilder` só
+aparece se algo em `_buscaDadosSql` lançar, e lá o único candidato é o
+`double.parse` (sem `tryParse`) dos proventos, no caminho da API antiga
+(`tipo == "A"`), onde o valor vem como "8.791,85". Vale conferir isso junto
+com o item 3.
 
 ## Onde paramos em 27/10/2026 (esperando a Apple)
 

@@ -2400,14 +2400,38 @@ a regra tem de ser escrita:
   junto com ela, porque só acha o que o padrão souber parecer; a pergunta de
   cima acusa o 5º BPM sem gestor **sem precisar adivinhar** se a subunidade
   virou `Cmt Btl`, `Cmte` ou outra coisa.
-- **O valor da regra de lotação é um par, não um nome.** `Cmt` vale nível 4
-  em `E.M. CPI` e nível 3 no 1º BPM: regra por subunidade solta erraria o
-  degrau do comandante do CPI, e erraria **para cima**, dando escopo de
-  grande comando a quem comanda uma unidade. Consequência direta para a
-  `soupm_nivel_regra` (SQL 15): quando o tipo `lotacao` for implementado, o
-  `valor` tem de carregar **(subunidade, unidade)**, não só o nome da
-  subunidade. Cabe no `VARCHAR(80)` como par separado, mas é decisão de
-  formato a tomar antes de escrever a `soupm_regra_vale`, não depois.
+- **O valor da regra não é um nome nem um par: é um trio, e a regra precisa de uma interseção, e `soupm_nivel_regra` não a
+expressa.** As premissas caíram na terceira medição: "subunidade de cargo tem
+efetivo 1" só vale para `Cmt` **dentro de uma unidade**. Em chefia e gabinete
+a subunidade é a equipe toda — `S Cmt Geral` tem **10 militares, um deles
+soldado**, `Chefia DTI` tem 5, `Coord. Ens. Pol.` tem 10. Lotação sozinha
+daria Alto Comando a um soldado do gabinete do Subcomandante: o erro
+espelhado do que a função fazia, e do mesmo tamanho.
+
+Quem identifica o titular é **(subunidade, unidade) ∩ função**:
+`S Cmt Geral` ∩ 34 = 1, `Chefia DTI` ∩ 17 = 1. E as duas fontes se corrigem
+**em direções opostas**, o que impede hierarquizar uma sobre a outra: a
+função separa o diretor dentro de `Chefia DTI`, e a **subunidade desmente a
+função** em `Sbc da 2ª CIPMFron`, onde o subcomandante está cadastrado com a
+função 54 (*Comandante de Companhia*) — quem confiasse na função daria
+comando a ele. A regra que sobrou: **a subunidade manda quando o nome dela
+diz o cargo; a função manda quando a subunidade é coletiva.**
+
+Consequência direta para o SQL 15: as linhas de `soupm_nivel_regra` somam
+com **OU** (o nível é o maior degrau em que *alguma* regra vale), então
+cadastrar "subunidade = Chefia DTI" e "função = 17" como duas linhas daria o
+nível aos 5 da chefia **e** aos 140 da função. **Duas regras somadas sai da
+lista de opções.** O trio tem de caber **numa linha**, num tipo novo
+(`lotacao_funcao`, com valor composto), e isso se decide antes de escrever a
+`soupm_regra_vale`, não depois. Mais três medições para a comparação: **não
+existe CPE** (só CPC e CPI; o EMG é grande comando, com 297 militares),
+`ch DF` é minúsculo ao lado de `Ch DCS` — **comparar ignorando caixa** — e a
+abreviação da subunidade **não segue** a da unidade (`Com da 3ª CIPMFron Ror`
+dentro de `3ª CIPMFron Rorai`).
+
+  (`Cmt` ainda vale nível 4 em `E.M. CPI` e nível 3 no 1º BPM, então a
+  unidade continua no valor: regra por subunidade solta erraria **para
+  cima**, dando escopo de grande comando a quem comanda uma unidade.)
 
 Decisão do usuário (27/10/2026): **estudar antes de montar regra.** `soupm_niveis_calculados()` dá
 ao painel a lista de quem fica acima do primeiro nível, para comparar antes e

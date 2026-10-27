@@ -1897,3 +1897,18 @@ num campo, listar quem está nele e cruzar com **outra fonte que diga a mesma
 coisa** — aqui, a lotação dizia "comandante" de quem a função dizia "chefe".
 Duas fontes que discordam é informação; uma fonte sozinha que fecha a conta
 não é.
+
+**Um fecho que o §50 ganhou de volta, no mesmo dia.** A regra escrita acima
+("contagem valida existência; só a lista nominal valida uso") foi aplicada por
+quem a leu, e evitou a repetição exata do erro: ao estudar a lotação como
+fonte, a hipótese era "subunidade de cargo tem efetivo 1", confirmada em três
+amostras (`Cmt` no 1º BPM, `Cmt Geral`, `Cmt CPC`). Em vez de escrever a lista
+a partir das que confirmavam, contaram-se **todas** — e `S Cmt Geral` tem
+**10 militares, um deles soldado**, `Chefia DTI` tem 5, `Coord. Ens. Pol.` tem
+10. Em chefia e gabinete a subunidade é a equipe inteira. A regra ingênua teria
+dado Alto Comando a um soldado do gabinete do Subcomandante.
+
+**A lição que isso acrescenta:** três amostras que confirmam não são medição,
+são a hipótese se olhando no espelho. Medir é contar **o conjunto todo**,
+inclusive onde se espera que a hipótese falhe — e o barato aqui era justamente
+isso, uma contagem por grupo em vez de três consultas pontuais.
