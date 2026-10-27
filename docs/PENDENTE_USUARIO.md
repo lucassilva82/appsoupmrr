@@ -39,6 +39,8 @@ podem rodar mais de uma vez sem estragar nada.
 | 20 | `2026-10-23_soupm_niveis_rapido.sql` | Níveis de acesso mais rápidos: a prévia do painel caiu de cerca de 2 minutos para menos de 1 segundo, com o mesmo resultado; o `app_config` lê a visão do SIGRH uma vez só | Feito (23/10/2026) — rodar depois do SQL 15 |
 | 21 | `2026-10-23_soupm_feedback_retencao.sql` | Deixa o cron noturno apagar os anexos de sugestões 180 dias depois de concluídas ou arquivadas (decisão de 21/10/2026) | Feito (23/10/2026) — sem ele, os anexos ficam guardados e o cron só avisa no log |
 
+| 22 | `2026-10-23_soupm_niveis_rapido.sql` (de novo, só a função `soupm_e_gestor`) | **Pendente.** O `EXCEPTION WHEN OTHERS` da `soupm_e_gestor` chamava **a mesma função que acabara de falhar** (`soupm_e_gestor_legado`). Quando o problema era a legada — como em 23/10, quando ela estava sem `EXECUTE` —, o erro subia duplicado e **derrubava o menu inteiro**, em vez de devolver `false` como a política do §46 manda. Corrigido no arquivo em 27/10/2026, com um bloco próprio para o cálculo dos níveis. **Não rodar agora:** é durante a revisão da Apple, e o privilégio hoje está lá (conferido em 27/10: 24 das 25 funções com `EXECUTE`), então o defeito não dispara. Entra no próximo lote de SQL, **depois de compilar num Postgres local** (§19 e §47) — esta máquina não tem Postgres, então o arquivo não foi compilado |
+
 O item 11 (`2026-10-23_soupm_cards.sql`) ganhou o que o Comando precisa: a matrícula de cada cargo (o painel grava) e o "Conferir no SIGRH agora". Se já tiver rodado, rode de novo: ele não estraga nada.
 
 Os itens novos que forem entrando vão para o fim desta tabela, com o mesmo
