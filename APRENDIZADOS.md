@@ -345,6 +345,23 @@ como `.bak` dentro da pasta pública, onde qualquer um baixaria o código-fonte.
    nem grave nada.
 5. Arquivo novo que outro inclui (`require_once`) sobe **antes** de quem o inclui.
 
+**Comparar o servidor inteiro traz as credenciais junto (27/10/2026).** O
+passo 1 é um arquivo por vez, e assim é seguro. Espelhar a pasta publicada
+para conferir tudo de uma vez é tentador e **baixa os arquivos de
+credencial** — no nosso caso o `conexao.php`, com a senha do banco; no painel,
+o `nucleo/local.php`, com o segredo dos links assinados. O `.gitignore`
+protege o repositório, **não** protege uma pasta temporária, um scratchpad nem
+a área de transferência, e lá eles ficam esquecidos. Aconteceu assim: a sessão
+do painel espelhou a pasta inteira para comparar com o repositório e
+percebeu depois, ao responder uma pergunta sobre onde o segredo morava.
+
+**O que fazer:** comparar por lista de nomes (`cmp` arquivo a arquivo, como o
+passo 1), e não por espelho. Se espelhar for inevitável, apagar o espelho no
+fim e conferir que nenhum arquivo de credencial sobrou. Conferência boa: o
+`git ls-files` do repositório da API não devolve `conexao.php`,
+`conexaoHomologacao.php` nem `error_log` — se devolver, a credencial entrou no
+git e removê-la do HEAD não basta (§3).
+
 ---
 
 ## 19. API PHP se testa localmente antes de subir
