@@ -118,14 +118,27 @@ resto deste documento diz sobre a intranet:
   Hex **minúsculo**, exatamente 64, e só essas três extensões. Fora disso a
   API devolve nulo e **o app simplesmente não recebe a imagem** — sem erro em
   lugar nenhum, com o arquivo no disco e servido normalmente pelo
-  `.htaccess` do painel. Um `.jpeg`, um `.gif` ou um hash em maiúsculas ficam
-  invisíveis no app e ninguém descobre por quê. Se a lista do painel mudar, a
-  da API muda junto, e vice-versa.
+  `.htaccess` do painel. Um `.jpeg`, um `.gif` ou um hash em maiúsculas
+  ficariam invisíveis no app e ninguém descobriria por quê.
+
+  **São três listas brancas, e elas mudam juntas** (correção da sessão do
+  painel, 27/10/2026 — este documento dizia duas):
+
+  | Onde | O quê |
+  |---|---|
+  | `Midia::TIPOS`, no painel | a extensão sai do **mime**, não do nome enviado: `image/jpeg → jpg`, `image/png → png`, `image/webp → webp` |
+  | `midia/.htaccess`, no painel | serve só `^[0-9a-f]{64}\.(jpg|png|webp)$`, com `php_flag engine off`, e nega o resto |
+  | `midiaUrl()`, na API | a expressão acima, antes de entregar o endereço ao app |
+
+  Hoje nada pode nascer fora do padrão: o nome é `hash_file('sha256')` (hex
+  minúsculo de 64) e a extensão vem do mime, então `.jpeg` não chega a existir
+  no disco. A regra das três listas é para **mudança futura** — e o
+  `.htaccess` é o mais fácil de esquecer, porque ninguém o lê ao mexer em
+  código. Extensão nova entra nos três ou a imagem nasce invisível.
 
   E a pasta `midia/` **fica fora** da regra que nega `app/`, `nucleo/`,
-  `database/` e `docs/` no painel: é de lá que o app lê. Ela tem `.htaccess`
-  próprio (só nome de 64 hex com extensão de imagem, `php_flag engine off`,
-  `Deny from all` por padrão). Negar a pasta inteira quebraria as imagens dos
+  `database/` e `docs/` no painel: é de lá que o app lê. Ela tem o
+  `.htaccess` próprio da tabela acima. Negar a pasta inteira quebraria as imagens dos
   cards — e hoje ninguém perceberia, porque `soupm_midia` está vazia:
   apareceria na primeira imagem publicada.
 
