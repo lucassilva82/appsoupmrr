@@ -2360,11 +2360,22 @@ a regra tem de ser escrita:
   comandante de forma confiável**. Uma regra sobre a função 54 não erraria —
   ela apenas **não acharia** esses 7, sem erro nenhum, e sete comandantes
   ficariam sem Gestão. É o §37 na escolha da fonte.
-- **O nível 3 (*Gestor de unidade*) atende dois públicos, mas de uma fonte
-  só.** Este plano o tratava como um público; são dois — quem comanda e quem
-  dirige —, e os dois saem da **lotação**: os dirigentes aparecem do mesmo
-  jeito que os comandantes, em subunidade de efetivo 1 com o cargo no nome
-  (`Diretor`, `Dir DRH`, `Ch Gab`, `Dir Polic`, `Dir do SS`).
+- **O nível 3 (*Gestor de unidade*) fecha com a lotação, e sem os
+  dirigentes.** Um desvio registrado para não se repetir: ao ver que os
+  diretores aparecem na lotação do mesmo jeito que os comandantes
+  (`Diretor`, `Dir DRH`, `Ch Gab`, `Dir Polic`, `Dir do SS`, sempre efetivo
+  1 com o cargo no nome), escrevemos que o degrau 3 teria dois públicos. A
+  §6.2 **deste plano** já dizia o contrário, por decisão do usuário:
+  **diretores são Alto Comando** (nível 5). Com isso o degrau 3 fecha
+  certinho — as 22 unidades operacionais, que são as que têm subunidade de
+  comando; as outras 28 são diretorias e assessorias, e sobem para o 5. O
+  degrau nunca esteve sem fonte: estava com a gente errada dentro.
+- **O nível 2 (*Gestor de subunidade*) continua sem fonte boa.** A lotação
+  não serve (o comandante de Companhia é lotado na própria Cia, junto com os
+  80 militares dela) e a função 54+42 falha por falta, que é o modo que
+  recusamos acima. Fica **vazio na primeira carga**: ou a função com o vigia
+  ligado, ou concessão por matrícula — que também envelhece, mas envelhece
+  à vista, com data de fim e na tela.
 - **Terceira fonte, medida e boa: a lotação.** Cada unidade operacional tem
   uma **subunidade de comando com efetivo 1** onde o comandante é lotado
   (`Cmt` nos BPM e CIPM, `Cmt Geral` no Gab Cmdo Geral, `Cmt CPC` no E.M.
@@ -2383,8 +2394,20 @@ a regra tem de ser escrita:
   pegaria os dois — plausível e errado. Então a regra de lotação é **lista
   explícita de nomes**, nunca padrão; e, como lista explícita envelhece em
   silêncio quando nasce uma unidade com grafia nova, ela vem com um **vigia
-  no painel**: mostrar as subunidades de efetivo 1 cujo nome parece comando e
-  não estão na lista.
+  no painel**. Dos três modos de vigiar, o que vale é o que **pergunta de
+  cima para baixo**: *unidade ativa sem nenhum militar no nível 3 ou acima*.
+  Vigiar a grafia (subunidade com cara de cargo fora da lista) envelhece
+  junto com ela, porque só acha o que o padrão souber parecer; a pergunta de
+  cima acusa o 5º BPM sem gestor **sem precisar adivinhar** se a subunidade
+  virou `Cmt Btl`, `Cmte` ou outra coisa.
+- **O valor da regra de lotação é um par, não um nome.** `Cmt` vale nível 4
+  em `E.M. CPI` e nível 3 no 1º BPM: regra por subunidade solta erraria o
+  degrau do comandante do CPI, e erraria **para cima**, dando escopo de
+  grande comando a quem comanda uma unidade. Consequência direta para a
+  `soupm_nivel_regra` (SQL 15): quando o tipo `lotacao` for implementado, o
+  `valor` tem de carregar **(subunidade, unidade)**, não só o nome da
+  subunidade. Cabe no `VARCHAR(80)` como par separado, mas é decisão de
+  formato a tomar antes de escrever a `soupm_regra_vale`, não depois.
 
 Decisão do usuário (27/10/2026): **estudar antes de montar regra.** `soupm_niveis_calculados()` dá
 ao painel a lista de quem fica acima do primeiro nível, para comparar antes e

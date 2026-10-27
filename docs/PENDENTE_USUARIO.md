@@ -122,13 +122,37 @@ Militar, Colégio Militar, BANDA e as assessorias: **diretorias e seções, que
 têm chefe ou diretor, não comandante**. É coerente que não tenham subunidade
 "Cmt".
 
-**Isso corrige o achado do nível 3.** O *Gestor de unidade* não está sem
-fonte. Ele atende **dois públicos** — quem comanda e quem dirige —, e o
-plano o tratava como um só; mas os dois saem **da mesma fonte**, a lotação.
-Os dirigentes aparecem do mesmo jeito que os comandantes: subunidade de
-efetivo 1 com o cargo no nome — `Diretor` (Gab DEP), `Dir DRH` (GAB DRH),
-`Ch Gab` (Gab Sub Cmt Geral), `Dir Polic`, `Dir do SS`. Muda só a lista de
-nomes: `Cmt*`, `Com da *`, `Dir*`, `Diretor`, `Ch Gab`.
+**Isso fecha o nível 3, e sem os dirigentes.** Os diretores aparecem na
+lotação do mesmo jeito que os comandantes (`Diretor` no Gab DEP, `Dir DRH`
+no GAB DRH, `Ch Gab`, `Dir Polic`, `Dir do SS`, sempre efetivo 1 com o
+cargo no nome), e por isso escrevemos aqui que o degrau 3 teria dois
+públicos. **Estava errado, e a resposta já estava no plano:** o
+`SOUPM_2_2` §6.2 põe **diretores no Alto Comando** (nível 5), por decisão
+sua de 21/10/2026. Com isso o degrau 3 fecha certinho — as 22 unidades
+operacionais, que são justamente as que têm subunidade de comando; as
+outras 28 são diretorias e assessorias, e sobem para o 5. O degrau nunca
+esteve sem fonte: estava com a gente errada dentro.
+
+**O nível 2 (*Gestor de subunidade*) é o que continua sem fonte boa**, e
+fica vazio na primeira carga. A lotação não serve: o comandante de
+Companhia é lotado na própria Cia, junto com os 80 militares dela. A função
+54+42 falha por falta, que é o modo que acabamos de recusar. Sobram a
+função com o vigia ligado ou a concessão por matrícula — que também
+envelhece, mas **à vista**, com data de fim e na tela.
+
+**O valor da regra de lotação é um par, não um nome.** `Cmt` vale nível 4
+em `E.M. CPI` e nível 3 no 1º BPM. Regra por subunidade solta erraria o
+degrau do comandante do CPI, e erraria **para cima** — escopo de grande
+comando para quem comanda uma unidade. Na `soupm_nivel_regra` (SQL 15) isso
+vira decisão de formato do `valor` antes de implementar o tipo `lotacao`.
+
+**O vigia tem três perguntas, e a que vale é a terceira:** *unidade ativa
+sem nenhum militar no nível 3 ou acima*. As outras duas vigiam a grafia
+(subunidade com cara de cargo fora da lista; regra cuja subunidade está com
+efetivo 0) e por isso **envelhecem junto com ela**: só acham o que o padrão
+delas souber parecer. A terceira pergunta de cima para baixo — se o 5º BPM
+não tem gestor, ela acusa sem precisar adivinhar se a subunidade virou
+`Cmt Btl`, `Cmte` ou outra coisa.
 
 **E a função de serviço saiu de vez como fonte de nível.** Medidos os 140 de
 *Chefe / Diretor* (código 17), um por um: eles se espalham por 43 unidades e
