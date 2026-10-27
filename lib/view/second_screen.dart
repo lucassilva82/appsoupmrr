@@ -4,10 +4,8 @@ import 'package:flutter/material.dart';
 import '../components/app_bar.dart';
 import '../components/bottom_button.dart';
 import '../components/my_lottie_widget.dart';
-import '../components/top_two_text_error.dart';
 import '../pages/main_shell.dart';
 import '../utils/my_colors.dart';
-import '../animation/fade_animation.dart';
 import '../utils/my_strings.dart';
 import '../widgets/vidro.dart';
 

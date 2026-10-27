@@ -14,7 +14,7 @@ void main() {
     expect(c.texto('rodape_inicio'), 'Desenvolvido pelo DTI');
     expect(c.texto('botao_erro'), isNull);
     expect(c.texto('outro'), isNull);
-    expect(c.menu![0].arteImagem, 'https://pmrr.online/painelsoupmrr/midia/abc.jpg');
-    expect(c.menu![1].arteImagem, isNull);
+    expect(c.menu[0].arteImagem, 'https://pmrr.online/painelsoupmrr/midia/abc.jpg');
+    expect(c.menu[1].arteImagem, isNull);
   });
 }

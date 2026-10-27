@@ -1,5 +1,3 @@
-import 'package:projetonovo/pages/mapa_da_forca.dart';
-
 class AppRoutes {
   static const AUTH_PAGE = '/auth-page';
   static const BIOMETRIC_AUTH_PAGE = '/biometric-auth-page';

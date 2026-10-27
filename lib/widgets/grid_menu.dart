@@ -178,17 +178,12 @@ class _GridMenuItem extends StatelessWidget {
     final isPrivileged = choice.id == 5; // Mapa da Força
     final isLogout = choice.id == 7;
 
-    Color bgColor;
     Color iconColor;
     if (isLogout) {
-      bgColor = Colors.red.withOpacity(isDark ? 0.18 : 0.10);
       iconColor = Colors.redAccent;
     } else if (isPrivileged) {
-      bgColor = AppColors.gold.withOpacity(isDark ? 0.18 : 0.12);
       iconColor = AppColors.gold;
     } else {
-      bgColor =
-          theme.colorScheme.primaryContainer.withOpacity(isDark ? 0.35 : 0.55);
       iconColor = theme.colorScheme.primary;
     }
 

@@ -342,7 +342,6 @@ class _ContactCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     // Eram dois blocos chapados de verde e azul saturados, os elementos mais
     // berrantes do app. A cor vira tingimento e passa para o ícone e o
