@@ -2331,8 +2331,16 @@ papéis e a função `soupm_nivel_para` (o mais alto em que uma regra vale e
 nenhuma exceção vale, com o porquê). Hoje só valem as regras que têm fonte no
 banco: matrícula (com data de fim), o "nivel" e o posto do SIGRH, a regra
 antiga do app e o perfil da intranet (onde existir). "Função no SIGRH",
-lotação e quadro ficam cadastráveis, mas não valem até o SIGRH ter a tabela
-de função (a intranet deixou isso para o DBA). `soupm_niveis_calculados()` dá
+lotação e quadro ficam cadastráveis e **ainda não foram implementadas**.
+O motivo que este plano dava ("o SIGRH não tem a tabela de função") é
+**falso**: medido no catálogo de produção em 27/10/2026,
+`recursoshumanos.policial_lotacao` traz `fk_tipo_func_cod` e `fk_subu_cod`
+pela lotação ativa, `cad.funcao` traz o nome de cada função e
+`public.vw_relacao_subunidades_tipos` junta as duas. Implementar
+`funcao_sigrh` é o que faz "entrou como comandante no SIGRH, vira gestor no
+app" acontecer sozinho. Antes, medir o **conteúdo** (PENDENTE_USUARIO §1,
+item 23): tabela que existe não é cadastro mantido — o grupo "Comandantes
+BPM / CIPM" do SIGRH tem 3 militares. `soupm_niveis_calculados()` dá
 ao painel a lista de quem fica acima do primeiro nível, para comparar antes e
 depois. Com `niveis.ligado`, o "gestor" do menu e da Início passa a ser
 "nível acima do primeiro", e o `app_config` manda o nível para o selo; até lá,

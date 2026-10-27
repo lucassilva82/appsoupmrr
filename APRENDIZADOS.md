@@ -1778,3 +1778,55 @@ sem `VITRINE`, e desinstalar antes, porque a sessão da vitrine fica guardada.
   (respondidas "Não": o app não tem rede social). A classificação continuou
   4+. Também bloqueia enquanto as capturas ainda estão sendo processadas:
   esperar alguns segundos e tentar de novo.
+
+---
+
+## 50. O comentário que escrevi virou o motivo pelo qual "não dá para fazer"
+
+**O que aconteceu (27/10/2026).** O usuário disse que o SIGRH tem as funções
+de comando (comandante de Cia, de batalhão). Os dois planos diziam o
+contrário, com a mesma frase: *"o SIGRH ainda não tem a tabela de função, a
+intranet deixou com o DBA"*. A sessão do painel foi ao catálogo do banco de
+produção. **Tem.** `recursoshumanos.policial_lotacao` traz
+`fk_tipo_func_cod` e `fk_subu_cod` pela lotação ativa, `cad.funcao` traz o
+nome de cada função e `public.vw_relacao_subunidades_tipos` junta as duas.
+
+**De onde saiu a frase.** Do fim da minha própria `soupm_regra_vale`:
+
+```sql
+RETURN NULL;  -- funcao_sigrh, lotacao, quadro: sem fonte no banco ainda
+```
+
+"Sem fonte" ali queria dizer apenas **"esta função não implementa"**. Virou
+"não existe fonte", subiu para o cabeçalho do arquivo com um motivo inventado
+(o DBA), e de lá para o `SOUPM_2_2.md`, onde passou a justificar **não fazer**
+a sincronia que o usuário queria desde o começo: entrou como comandante no
+SIGRH, vira gestor no app, sem ninguém cadastrar matrícula.
+
+É o §27 e o §37 outra vez, na camada de cima: lá, "não consegui consultar"
+foi impresso como "não existe"; aqui, **"não implementei" foi documentado
+como "não dá para implementar"**. Nos dois casos o custo é o mesmo: alguém
+decide com base numa afirmação que ninguém mediu.
+
+**O que fazer.**
+- Comentário de código diz **o que o código faz**, não o que o mundo é. "Esta
+  função não trata X" é verificável lendo logo abaixo; "o banco não tem X" é
+  uma afirmação sobre o banco, e afirmação sobre o banco se mede no banco.
+- Quando um plano disser "não dá por causa de Y", **procurar quem mediu Y**.
+  Se a origem for um comentário, uma conversa ou outro plano, ainda não foi
+  medido.
+- Corrigir no **arquivo de origem** também, não só no plano (§46: o
+  comentário antigo estava ensinando o erro).
+
+**E o contrário também vale.** Achar a tabela não é achar o dado: a medição
+do conteúdo (quantos militares em cada função) ficou pendente, porque a conta
+do cPanel não lê `recursoshumanos` (§46 de novo). Tabela cheia de colunas
+pode estar vazia de cadastro — o grupo "Comandantes BPM / CIPM" do SIGRH tem
+**3 militares**. Consulta pronta no `docs/PENDENTE_USUARIO.md` §1, item 23.
+
+**Achado do mesmo dia, no mesmo arquivo.** Os cinco níveis nascem **sem
+nenhuma regra**. Ligar `niveis.ligado` hoje poria todo mundo no primeiro
+degrau: ninguém seria gestor e a área Gestão sumiria do menu **para todos**.
+O interruptor já exigia "cadastrar as regras no painel", mas sem dizer o que
+acontece se alguém pular isso. Interruptor que estraga a tela quando ligado
+cedo demais precisa dizer **o estrago**, não só a precondição.

@@ -41,10 +41,42 @@ podem rodar mais de uma vez sem estragar nada.
 
 | 22 | `2026-10-23_soupm_niveis_rapido.sql` (de novo, só a função `soupm_e_gestor`) | **Pendente.** O `EXCEPTION WHEN OTHERS` da `soupm_e_gestor` chamava **a mesma função que acabara de falhar** (`soupm_e_gestor_legado`). Quando o problema era a legada — como em 23/10, quando ela estava sem `EXECUTE` —, o erro subia duplicado e **derrubava o menu inteiro**, em vez de devolver `false` como a política do §46 manda. Corrigido no arquivo em 27/10/2026, com um bloco próprio para o cálculo dos níveis. **Não rodar agora:** é durante a revisão da Apple, e o privilégio hoje está lá (conferido em 27/10: 24 das 25 funções com `EXECUTE`), então o defeito não dispara. Entra no próximo lote de SQL, **depois de compilar num Postgres local** (§19 e §47) — esta máquina não tem Postgres, então o arquivo não foi compilado |
 
+| 23 | Medição (não é migração): as funções de comando no SIGRH | **Pendente, e só você consegue rodar.** A sessão do painel mediu o catálogo de produção em 27/10/2026 e derrubou uma afirmação que estava nos dois planos e num comentário do SQL 15: **o SIGRH tem, sim, a função de cada militar.** `recursoshumanos.policial_lotacao` traz `fk_tipo_func_cod` e `fk_subu_cod` pela lotação ativa, `cad.funcao` traz o nome e `public.vw_relacao_subunidades_tipos` junta as duas. O que **não** foi medido é o conteúdo, porque a conta do cPanel não lê o esquema `recursoshumanos` (o mesmo §46). A consulta está logo abaixo desta tabela: ela só lê. Enquanto o conteúdo não for medido, a regra `funcao_sigrh` continua sem implementação |
+
 O item 11 (`2026-10-23_soupm_cards.sql`) ganhou o que o Comando precisa: a matrícula de cada cargo (o painel grava) e o "Conferir no SIGRH agora". Se já tiver rodado, rode de novo: ele não estraga nada.
 
 Os itens novos que forem entrando vão para o fim desta tabela, com o mesmo
 formato.
+
+### A consulta do item 23 (só leitura)
+
+Rode no phpPgAdmin, com **"Paginar resultados" desmarcada**. Ela não grava
+nada: conta quantos militares ativos estão em cada função. É isso que diz se
+o cadastro é **mantido** ou se só existe — a diferença que já apareceu no
+grupo "Comandantes BPM / CIPM" do SIGRH, que tem 3 militares.
+
+```sql
+SELECT f.func_id, f.func_sigla, f.func_descricao, count(*) AS militares
+  FROM recursoshumanos.policial_lotacao l
+  JOIN cad.funcao f ON f.func_id = l.fk_tipo_func_cod
+ WHERE l.poli_lota_activo
+ GROUP BY f.func_id, f.func_sigla, f.func_descricao
+ ORDER BY militares DESC, f.func_descricao;
+```
+
+Sem acento nenhum na consulta, de propósito: assim ela pode ir pela área de
+transferência sem o risco do §45.
+
+O que olhar no resultado: se as funções de comando (companhia, batalhão,
+diretoria) aparecem com a quantidade que a PMRR tem de verdade, a regra
+`funcao_sigrh` pode ser implementada, e aí **entrar como comandante no SIGRH
+passa a virar gestor no app sozinho**, sem ninguém cadastrar matrícula. Se
+vierem quase vazias, o caminho continua sendo a concessão por matrícula.
+
+**Não mexer nisso agora:** mudar a `soupm_regra_vale` muda quem é gestor no
+menu, e a 2.2.0 está em revisão na Apple. Hoje o risco é zero porque
+`niveis.ligado` é `false`, mas a pressa não compensa.
+
 
 ### Rodados em 23/10/2026
 
@@ -109,7 +141,7 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
 | `contracheque` | `pdf_api: true` | Depois de aprovar a comparação: o app passa a pedir o PDF à API |
 | `comunicados` | `fonte_app: "api"` | Depois do SQL 9 e de publicar o primeiro comunicado pelo painel: a Início troca o anúncio do Firestore pela central |
 | `declaracoes` | `campanhas_ligadas: true` | Depois do SQL 13 e de abrir pelo painel a campanha de cada tipo do ano em curso |
-| `niveis` | `ligado: true` | Depois do SQL 15, de cadastrar as regras de cada nível no painel e conferir a lista de quem ganha e quem perde o Mapa da Força |
+| `niveis` | `ligado: true` | Depois do SQL 15, de cadastrar as regras de cada nível no painel e conferir a lista de quem ganha e quem perde o Mapa da Força. **Cadastrar as regras não é detalhe:** os cinco níveis nascem sem nenhuma, e ligar assim põe todo mundo no primeiro degrau — ou seja, **ninguém seria gestor e a área Gestão sumiria do menu para todos**, que é o defeito do §46 de novo. O painel mostra a comparação antes; ela é que prova que as regras pegam |
 | `notificacoes` | `envio_fcm: true` | Depois da conta de serviço e do cron. A partir daí, o push da certidão emitida também passa pela fila (antes ia pela Cloud Function) |
 | `notificacoes` | `fonte_app: "api"` | Depois de copiar o histórico do Firestore: no terminal do cPanel, `php ~/public_html/flutter/sigrh/cron/exportar_firestore.php` (só conta) e depois com `--gravar`; ele mostra a conferência por contagem no fim (§13, passo 4) |
 
