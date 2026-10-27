@@ -1787,9 +1787,13 @@ sem `VITRINE`, e desinstalar antes, porque a sessão da vitrine fica guardada.
 de comando (comandante de Cia, de batalhão). Os dois planos diziam o
 contrário, com a mesma frase: *"o SIGRH ainda não tem a tabela de função, a
 intranet deixou com o DBA"*. A sessão do painel foi ao catálogo do banco de
-produção. **Tem.** `recursoshumanos.policial_lotacao` traz
-`fk_tipo_func_cod` e `fk_subu_cod` pela lotação ativa, `cad.funcao` traz o
-nome de cada função e `public.vw_relacao_subunidades_tipos` junta as duas.
+produção. **Tem.** `recursoshumanos.policial_lotacao` traz, pela lotação ativa,
+`fk_tipo_func_cod` (a função) e `fk_subu_cod` (a subunidade). **O catálogo
+de nomes ficou medido só depois:** das três chaves estrangeiras declaradas
+na tabela, nenhuma aponta para `cad.funcao` — `fk_func_serv_cod` vai para
+`escalaservico.funcoes_servico`, `fk_subu_cod` para `subunidades` e
+`fk_poli_mili_matricula` para `policial_militar`. O `fk_tipo_func_cod` não
+tem chave declarada, e o nome casa com `escalaservico.tipo_funcao`.
 
 **De onde saiu a frase.** Do fim da minha própria `soupm_regra_vale`:
 
@@ -1818,11 +1822,33 @@ decide com base numa afirmação que ninguém mediu.
 - Corrigir no **arquivo de origem** também, não só no plano (§46: o
   comentário antigo estava ensinando o erro).
 
+**E o mesmo erro aconteceu DENTRO da correção, uma hora depois.** Ao
+corrigir a afirmação falsa, escrevi uma consulta de medição que juntava
+`cad.funcao.func_id` com `policial_lotacao.fk_tipo_func_cod`. Nunca olhei as
+chaves estrangeiras: deduzi o join pelos nomes. A sessão do painel foi ver, e
+**nenhuma das três chaves declaradas aponta para `cad.funcao`**. Aquele join
+não daria erro — junta id com id e devolveria **nomes plausíveis e errados**,
+o pior resultado possível, porque ninguém questiona o que vem bonito. Pior:
+a consulta ia para o usuário rodar no phpPgAdmin, onde falharia antes disso
+com `permission denied` (§46), e o erro pareceria confirmar justamente o
+engano que eu estava desfazendo.
+
+Então a regra tem um segundo tempo: **a correção de uma afirmação não medida
+não pode carregar outra afirmação não medida**. Ao desfazer um engano, o
+impulso é entregar logo o caminho da solução, e é aí que entra o palpite
+seguinte. Join se confere no catálogo (`pg_constraint`, ou o painel do
+banco), não no nome das colunas — nome de coluna é intenção de quem
+escreveu, não vínculo declarado. E consulta entregue a alguém rodar é
+conferida também por **quem pode rodá-la**: num banco com esquema fechado,
+"quem lê o quê" faz parte da consulta.
+
 **E o contrário também vale.** Achar a tabela não é achar o dado: a medição
 do conteúdo (quantos militares em cada função) ficou pendente, porque a conta
 do cPanel não lê `recursoshumanos` (§46 de novo). Tabela cheia de colunas
 pode estar vazia de cadastro — o grupo "Comandantes BPM / CIPM" do SIGRH tem
-**3 militares**. Consulta pronta no `docs/PENDENTE_USUARIO.md` §1, item 23.
+**3 militares**. E a medição tem de sair do painel, não do phpPgAdmin:
+quem lê `recursoshumanos` é o usuário de banco da API. Situação e ressalvas
+no `docs/PENDENTE_USUARIO.md` §1, item 23.
 
 **Achado do mesmo dia, no mesmo arquivo.** Os cinco níveis nascem **sem
 nenhuma regra**. Ligar `niveis.ligado` hoje poria todo mundo no primeiro

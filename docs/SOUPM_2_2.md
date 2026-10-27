@@ -2334,9 +2334,13 @@ antiga do app e o perfil da intranet (onde existir). "Função no SIGRH",
 lotação e quadro ficam cadastráveis e **ainda não foram implementadas**.
 O motivo que este plano dava ("o SIGRH não tem a tabela de função") é
 **falso**: medido no catálogo de produção em 27/10/2026,
-`recursoshumanos.policial_lotacao` traz `fk_tipo_func_cod` e `fk_subu_cod`
-pela lotação ativa, `cad.funcao` traz o nome de cada função e
-`public.vw_relacao_subunidades_tipos` junta as duas. Implementar
+`recursoshumanos.policial_lotacao` traz, pela lotação ativa,
+`fk_tipo_func_cod` (a função) e `fk_subu_cod` (a subunidade). **O catálogo
+de nomes ficou medido só depois:** das três chaves estrangeiras declaradas
+na tabela, nenhuma aponta para `cad.funcao` — `fk_func_serv_cod` vai para
+`escalaservico.funcoes_servico`, `fk_subu_cod` para `subunidades` e
+`fk_poli_mili_matricula` para `policial_militar`. O `fk_tipo_func_cod` não
+tem chave declarada, e o nome casa com `escalaservico.tipo_funcao`. Implementar
 `funcao_sigrh` é o que faz "entrou como comandante no SIGRH, vira gestor no
 app" acontecer sozinho. Antes, medir o **conteúdo** (PENDENTE_USUARIO §1,
 item 23): tabela que existe não é cadastro mantido — o grupo "Comandantes

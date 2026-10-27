@@ -41,37 +41,42 @@ podem rodar mais de uma vez sem estragar nada.
 
 | 22 | `2026-10-23_soupm_niveis_rapido.sql` (de novo, só a função `soupm_e_gestor`) | **Pendente.** O `EXCEPTION WHEN OTHERS` da `soupm_e_gestor` chamava **a mesma função que acabara de falhar** (`soupm_e_gestor_legado`). Quando o problema era a legada — como em 23/10, quando ela estava sem `EXECUTE` —, o erro subia duplicado e **derrubava o menu inteiro**, em vez de devolver `false` como a política do §46 manda. Corrigido no arquivo em 27/10/2026, com um bloco próprio para o cálculo dos níveis. **Não rodar agora:** é durante a revisão da Apple, e o privilégio hoje está lá (conferido em 27/10: 24 das 25 funções com `EXECUTE`), então o defeito não dispara. Entra no próximo lote de SQL, **depois de compilar num Postgres local** (§19 e §47) — esta máquina não tem Postgres, então o arquivo não foi compilado |
 
-| 23 | Medição (não é migração): as funções de comando no SIGRH | **Pendente, e só você consegue rodar.** A sessão do painel mediu o catálogo de produção em 27/10/2026 e derrubou uma afirmação que estava nos dois planos e num comentário do SQL 15: **o SIGRH tem, sim, a função de cada militar.** `recursoshumanos.policial_lotacao` traz `fk_tipo_func_cod` e `fk_subu_cod` pela lotação ativa, `cad.funcao` traz o nome e `public.vw_relacao_subunidades_tipos` junta as duas. O que **não** foi medido é o conteúdo, porque a conta do cPanel não lê o esquema `recursoshumanos` (o mesmo §46). A consulta está logo abaixo desta tabela: ela só lê. Enquanto o conteúdo não for medido, a regra `funcao_sigrh` continua sem implementação |
+| 23 | Medição (não é migração): as funções de comando no SIGRH | **Pendente, e sai do painel — não do phpPgAdmin.** A sessão do painel mediu o catálogo de produção em 27/10/2026 e derrubou uma afirmação que estava nos dois planos e num comentário do SQL 15: **o SIGRH tem, sim, a função de cada militar**, em `recursoshumanos.policial_lotacao`, pela lotação ativa. O que **não** foi medido é o conteúdo: quais funções existem e quantos militares em cada. **Você não consegue rodar isso no phpPgAdmin:** a conta do cPanel não lê o esquema `recursoshumanos` (o mesmo §46), e a consulta falharia com "permission denied" — o que pareceria confirmar o engano que acabamos de desfazer. Quem lê é o usuário de banco da API, então a leitura sai de uma tela do painel. A sessão do painel já a pôs na tela de Níveis (commit `a34d80b`, ainda não publicada). Enquanto o conteúdo não for medido, a regra `funcao_sigrh` continua sem implementação |
 
 O item 11 (`2026-10-23_soupm_cards.sql`) ganhou o que o Comando precisa: a matrícula de cada cargo (o painel grava) e o "Conferir no SIGRH agora". Se já tiver rodado, rode de novo: ele não estraga nada.
 
 Os itens novos que forem entrando vão para o fim desta tabela, com o mesmo
 formato.
 
-### A consulta do item 23 (só leitura)
+### O item 23 em detalhe: o que está medido e o que falta
 
-Rode no phpPgAdmin, com **"Paginar resultados" desmarcada**. Ela não grava
-nada: conta quantos militares ativos estão em cada função. É isso que diz se
-o cadastro é **mantido** ou se só existe — a diferença que já apareceu no
-grupo "Comandantes BPM / CIPM" do SIGRH, que tem 3 militares.
+**Medido** (catálogo de produção, 27/10/2026): a lotação ativa do militar
+guarda a função. Das três chaves estrangeiras declaradas em
+`recursoshumanos.policial_lotacao`, **nenhuma aponta para `cad.funcao`**:
 
-```sql
-SELECT f.func_id, f.func_sigla, f.func_descricao, count(*) AS militares
-  FROM recursoshumanos.policial_lotacao l
-  JOIN cad.funcao f ON f.func_id = l.fk_tipo_func_cod
- WHERE l.poli_lota_activo
- GROUP BY f.func_id, f.func_sigla, f.func_descricao
- ORDER BY militares DESC, f.func_descricao;
-```
+| Coluna | Para onde aponta |
+|---|---|
+| `fk_func_serv_cod` | `escalaservico.funcoes_servico` |
+| `fk_subu_cod` | `subunidades` |
+| `fk_poli_mili_matricula` | `recursoshumanos.policial_militar` |
+| `fk_tipo_func_cod` | **sem chave declarada**; o nome casa com `escalaservico.tipo_funcao` |
 
-Sem acento nenhum na consulta, de propósito: assim ela pode ir pela área de
-transferência sem o risco do §45.
+A primeira versão deste item trazia uma consulta que juntava
+`cad.funcao.func_id` com `fk_tipo_func_cod`. **Era um palpite**, e dos
+perigosos: junta id com id, não dá erro e devolve nomes plausíveis e
+errados. Foi retirada.
 
-O que olhar no resultado: se as funções de comando (companhia, batalhão,
-diretoria) aparecem com a quantidade que a PMRR tem de verdade, a regra
-`funcao_sigrh` pode ser implementada, e aí **entrar como comandante no SIGRH
-passa a virar gestor no app sozinho**, sem ninguém cadastrar matrícula. Se
-vierem quase vazias, o caminho continua sendo a concessão por matrícula.
+**Falta medir o conteúdo**, pelos dois catálogos (`tipo_funcao` e
+`funcoes_servico`), com a origem de cada linha: quais funções existem e
+quantos militares ativos em cada uma. É isso que diz se o cadastro é
+**mantido** ou se só existe — a diferença que já apareceu no grupo
+"Comandantes BPM / CIPM" do SIGRH, que tem **3 militares**.
+
+**A ressalva que decide tudo:** `escalaservico` é o esquema da **escala de
+serviço**. Pode ser que essas funções sejam de escala (comandante de
+guarnição, motorista) e não de comando permanente. Se forem, a sincronia
+"entrou como comandante no SIGRH, vira gestor no app" não sai daí, e o
+caminho continua sendo a concessão por matrícula. Só o conteúdo dirá.
 
 **Não mexer nisso agora:** mudar a `soupm_regra_vale` muda quem é gestor no
 menu, e a 2.2.0 está em revisão na Apple. Hoje o risco é zero porque
