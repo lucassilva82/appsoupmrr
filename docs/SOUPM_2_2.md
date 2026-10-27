@@ -2351,14 +2351,31 @@ a regra tem de ser escrita:
   renomeação no SIGRH, que derruba a regra em silêncio, então a prévia do
   painel (quantos militares cada regra pega agora) passa a ser parte da regra,
   não só conferência.
-- **Não existe "Comandante de Batalhão"**: o nível 3 (*Gestor de unidade*)
-  fica sem fonte direta, e *Chefe / Diretor* tem 140 militares, grosso demais.
-  Para ele, ou a terceira fonte abaixo, ou concessão por matrícula.
-- **Terceira fonte, não medida:** a subunidade do Comandante-Geral **se chama
-  "Cmt Geral"**, então a estrutura organizacional identifica o posto de
-  comando pelo nome do lugar, e o tipo `lotacao` já existe na tabela de
-  regras. Pode ser melhor que a função, pode ser pior se os nomes forem
-  irregulares.
+- **Não existe "Comandante de Batalhão"** em `funcoes_servico`. O nível 3
+  (*Gestor de unidade*) **não está sem fonte: está partido em dois públicos**,
+  e este plano o tratava como um só. Quem **comanda** sai da **lotação** (a
+  terceira fonte, abaixo); quem **dirige** uma diretoria sairia de *Chefe /
+  Diretor*, que tem 140 militares para umas 28 diretorias — inclui gente
+  demais e não serve sem antes olhar quem são.
+- **Terceira fonte, medida e boa: a lotação.** Cada unidade operacional tem
+  uma **subunidade de comando com efetivo 1** onde o comandante é lotado
+  (`Cmt` nos BPM e CIPM, `Cmt Geral` no Gab Cmdo Geral, `Cmt CPC` no E.M.
+  CPC, `Com da …ª CIPMFron` nas de fronteira). Cobre **22 das 50 unidades**,
+  e as 28 que faltam são justamente as diretorias e seções, que têm chefe,
+  não comandante: a lacuna é coerente, não falha de cadastro. O tipo
+  `lotacao` já existe na tabela de regras.
+- **Nenhuma classificação marca comando.** `subunidades_tipo` só tem
+  *Administrativa* e *Operacional*. A informação está **no nome**, em texto
+  livre, nas duas fontes — e **sem chave estrangeira que proteja**. Mudou o
+  nome, a regra para de casar sem erro algum.
+- **A lotação tem cinco grafias** (`Cmt`, `Cmte`, `CMT`, `Cmt Geral`,
+  `Cmt CPC`, `Com da …`) e dois falsos positivos que **não** são comando de
+  unidade: `Cmte Guarn` e `Cmte do Gp de Cons. e Seg.`. Um `ILIKE 'cmt%'`
+  pegaria os dois — plausível e errado. Então a regra de lotação é **lista
+  explícita de nomes**, nunca padrão; e, como lista explícita envelhece em
+  silêncio quando nasce uma unidade com grafia nova, ela vem com um **vigia
+  no painel**: mostrar as subunidades de efetivo 1 cujo nome parece comando e
+  não estão na lista.
 
 Decisão do usuário (27/10/2026): **estudar antes de montar regra.** `soupm_niveis_calculados()` dá
 ao painel a lista de quem fica acima do primeiro nível, para comparar antes e

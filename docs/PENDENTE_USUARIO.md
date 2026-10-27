@@ -41,7 +41,7 @@ podem rodar mais de uma vez sem estragar nada.
 
 | 22 | `2026-10-23_soupm_niveis_rapido.sql` (de novo, só a função `soupm_e_gestor`) | **Pendente.** O `EXCEPTION WHEN OTHERS` da `soupm_e_gestor` chamava **a mesma função que acabara de falhar** (`soupm_e_gestor_legado`). Quando o problema era a legada — como em 23/10, quando ela estava sem `EXECUTE` —, o erro subia duplicado e **derrubava o menu inteiro**, em vez de devolver `false` como a política do §46 manda. Corrigido no arquivo em 27/10/2026, com um bloco próprio para o cálculo dos níveis. **Não rodar agora:** é durante a revisão da Apple, e o privilégio hoje está lá (conferido em 27/10: 24 das 25 funções com `EXECUTE`), então o defeito não dispara. Entra no próximo lote de SQL, **depois de compilar num Postgres local** (§19 e §47) — esta máquina não tem Postgres, então o arquivo não foi compilado |
 
-| 23 | As funções de comando no SIGRH: **medido em 27/10/2026** | **Serve, com ressalvas, e nada a fazer agora:** o usuário pediu para estudar antes de montar regra. O comando está em `escalaservico.funcoes_servico`, pela lotação ativa, e o cadastro é mantido (Comandante Geral = 1). Três armadilhas medidas: função com **dois códigos** (Comandante de Companhia é 54 e 42), **nenhuma** função de Comandante de Batalhão (o nível 3 fica sem fonte) e situações no meio do catálogo (*Agregado*, *Falecido*). Detalhe, a terceira fonte que apareceu (a subunidade chamada "Cmt Geral") e o que continua não confirmado: logo abaixo desta tabela |
+| 23 | As funções e a lotação de comando no SIGRH: **medido em 27/10/2026** | **Serve, e nada a fazer agora:** o usuário pediu para estudar antes de montar regra. O comando sai de duas fontes, as duas pela lotação ativa: a **função** (`escalaservico.funcoes_servico`, cadastro mantido, Comandante Geral = 1) e a **subunidade de comando** (efetivo 1, `Cmt`, `Cmt Geral`, `Com da …`), que cobre 22 das 50 unidades — as 28 que faltam são diretorias, que têm chefe e não comandante. Quatro achados mudam a regra antes de ela existir: função com **dois códigos**, o nível 3 **partido em dois públicos** (quem comanda e quem dirige), **nenhuma** classificação marcando comando (está no nome, em texto livre, sem chave estrangeira) e **cinco grafias** de "Cmt" com dois falsos positivos. Detalhe e o que continua não confirmado: logo abaixo desta tabela |
 
 O item 11 (`2026-10-23_soupm_cards.sql`) ganhou o que o Comando precisa: a matrícula de cada cargo (o painel grava) e o "Conferir no SIGRH agora". Se já tiver rodado, rode de novo: ele não estraga nada.
 
@@ -109,13 +109,47 @@ O risco do nome é a renomeação no SIGRH, que derrubaria a regra em silêncio
 — por isso a prévia do painel (quantos militares cada regra pega **agora**)
 deixa de ser conferência e passa a ser parte da regra.
 
-**Uma terceira fonte apareceu, e ninguém tinha olhado.** O Comandante-Geral
-aprovado no painel (Cel QOCPM VALDEANE, 400831) tem a lotação
-**"Cmt Geral / Gab Cmdo Geral / EMG"**: a **subunidade se chama "Cmt
-Geral"**. A estrutura organizacional já identifica o posto de comando pelo
-nome do lugar, e o tipo `lotacao` existe na tabela de regras. Pode ser
-melhor que a função, pode ser pior se os nomes forem irregulares. **Não está
-medido.**
+**A terceira fonte foi medida, e funciona: a lotação.** Cada unidade
+operacional tem uma **subunidade de comando com efetivo 1**, onde o
+comandante é lotado — `Cmt` nos BPM, nas CIPM, BOPE, CIPA, CIPCOM, CIPG,
+CIPTUR, GIRO e E.M. CPI; `Cmt Geral` no Gab Cmdo Geral; `Cmt CPC` no E.M.
+CPC; `Com da 1ª…6ª CIPMFron` nas de fronteira. Não era amostra de um: o
+padrão se repete.
+
+**Cobertura de 22 das 50 unidades ativas — e as 28 que faltam não são falha
+de cadastro.** São `CORREGE`, `DP`, `DTI`, `DCS`, `DF`, `DII`, `CEP`, Casa
+Militar, Colégio Militar, BANDA e as assessorias: **diretorias e seções, que
+têm chefe ou diretor, não comandante**. É coerente que não tenham subunidade
+"Cmt".
+
+**Isso corrige o achado do nível 3.** O *Gestor de unidade* não está sem
+fonte: está **partido em dois públicos diferentes**, e o plano o tratava
+como um. Quem **comanda** sai da lotação (22 unidades, efetivo 1, nome do
+lugar). Quem **dirige** sairia de *Chefe / Diretor* — mas aquela função tem
+140 militares para umas 28 diretorias, então inclui gente demais e não serve
+sem antes olhar quem são.
+
+**Nenhuma classificação marca comando.** `subunidades_tipo` é só
+*Administrativa* (416) e *Operacional* (126), e a função de lotação é o
+mesmo par. A informação de que aquele lugar é um posto de comando está **só
+no nome**, em texto livre. As duas fontes (`funcao_sigrh` e `lotacao`)
+dependem de texto que alguém digita, e **não há chave estrangeira para
+proteger**: se o nome mudar, a regra para de casar sem dar erro. Então a
+prévia do painel não é só conferência — é o **único** sinal de que uma
+renomeação quebrou a regra.
+
+**E o nome não tem uma grafia só.** Medidas cinco para a mesma coisa:
+`Cmt`, `Cmte`, `CMT`, `Cmt Geral`, `Cmt CPC` e `Com da …`. Pior: existem
+`Cmte Guarn` (guarnição, 4 militares) e `Cmte do Gp de Cons. e Seg.` (10),
+que **não** são comando de unidade. Uma regra `ILIKE 'cmt%'` pegaria os dois
+junto — plausível e errado, como o join do `cad.funcao`. Consequência: a
+regra de lotação tem de ser uma **lista explícita de nomes**, não um padrão.
+
+E aí volta o problema por outro lado: lista explícita **envelhece em
+silêncio** quando uma unidade nova aparece com uma grafia nova. Nem padrão
+nem lista se protegem sozinhos. O que fecha isso é a lista no painel **mais
+um vigia**: mostrar as subunidades de efetivo 1 cujo nome parece comando e
+**não estão na lista**. Sem esse vigia, a regra nasce certa e apodrece.
 
 **O que ainda NÃO está confirmado:** que o militar da função 33 é o 400831.
 É o provável, mas a tela de Níveis mostra só a contagem e a de Militares não
