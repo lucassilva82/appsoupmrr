@@ -143,6 +143,86 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
 
 ---
 
+## Onde paramos em 27/10/2026 (esperando a Apple)
+
+O usuário decidiu **aguardar a resposta da Apple** antes de mexer em produção.
+Esta seção existe para a próxima sessão não ter de refazer a medição.
+
+### Não há fila de mudanças esperando versão nova
+
+Medido, não suposto: desde o build que está em revisão (o commit `64a2e93`),
+**um único commit mexeu em código** — `ee098b3`, a limpeza dos 14 avisos do
+`flutter analyze`. Todo o resto do dia foi documentação.
+
+Dentro dele, nove eram código morto (import e variável sem uso) e três eram
+defeito:
+
+- `dados_sql.dart`: `folha` nulo chegava ao contracheque antigo como a string
+  `"null"`; agora chega vazio. **É o único visível ao militar.**
+- `calendar_widget.dart`: `return null` explícito no `todayBuilder` (o
+  comportamento já era esse).
+- `configura_plantao.dart`: os campos saíram do `StatefulWidget` para o
+  `State`; reconstruir a tela deixava de esquecer a data escolhida.
+
+Conclusão: **o primeiro build depois da 2.2.0 sai quando houver motivo** — a
+chave do SISCHAMADOS, ou algo que apareça no uso real —, não para despejar
+atraso.
+
+### O que muda sem build, e o que exige build
+
+É a arquitetura da 2.2 funcionando: quase tudo é configuração.
+
+| Muda sem build novo | Exige build novo |
+|---|---|
+| Menu, textos, ícones, artes, cards da Início | `SISCHAMADOS_APP_CHAVE` no `env.json` (é `--dart-define`): **Meus chamados só sai com build** |
+| Comunicados, pendências, campanhas de declaração | Migração das telas antigas para `features/` (invisível ao militar) |
+| Versão mínima e recomendada | Notícias e agenda (P7), travada na intranet |
+| Contracheque pela API (`pdf_api`), push pelo FCM | Os itens da 2.3: login pela intranet, Escalas, SVI |
+| Bloquear e liberar função, manutenção | |
+
+### Quando a Apple responder, nesta ordem
+
+1. **Aprovada:** juntar a `feature/soupm-2-2` no `main`.
+2. Subir a mínima e a recomendada no painel — atenção ao **mínimo legado**, que
+   o painel não deixa passar do que cada loja tem publicado (§5.6 do
+   PAINEL_ADMIN).
+3. Rodar o SQL do **item 22** (§1), **compilando antes num Postgres local**
+   (§19 e §47 do APRENDIZADOS).
+4. Só então os interruptores (§4), do mais barato ao mais arriscado:
+   comunicados → piloto do contracheque → um tipo de pendência homologado →
+   níveis (este exige a comparação de quem ganha e quem perde o Mapa da Força).
+
+Nenhum dos quatro pede versão nova do app.
+
+**Se vier rejeitada**, a hipótese mais provável não é o binário: são as **notas
+para a revisão**, que estão velhas e citam "escalas", hoje "Em breve". Isso se
+corrige no texto, sem build (§31 do APRENDIZADOS).
+
+### Fechado em 27/10/2026
+
+- **Testado em aparelho:** iPhone e iPad físicos, build 4, tudo certo. Caiu
+  junto a conferência da barra lateral do iPad.
+- **Conferências do banco (pela sessão do painel, somente leitura):** 64
+  tabelas, todas no esquema `soupm`; 25 funções, **24 com `EXECUTE`** para o
+  usuário da API — inclusive a `soupm_e_gestor_legado`, que roda em toda
+  leitura do `app_config` enquanto `niveis.ligado` for `false`. A única sem é a
+  `soupm_conceder_painel`, e é assim que deve ser. `SECURITY DEFINER` só nas
+  duas em que a elevação é o objetivo: o §46 não se repetiu na virada.
+- **Interruptores hoje:** `comunicados.fonte_app = api`; `pdf_api`,
+  `envio_fcm`, `niveis.ligado` e `campanhas_ligadas` em `false`;
+  `notificacoes.fonte_app = firestore`; `versao_config = 19`; **0** tipos de
+  pendência ligados.
+- **O cartaz de abertura é deliberado.** Comunicado da eleição, id 1, público
+  TODOS, `abertura_ate_ciencia = FALSE` — aparece **uma vez por aparelho**, não
+  volta. O revisor o vê uma vez, como qualquer militar. Configurado pelo
+  usuário de propósito; não é pendência.
+- **Lições novas no git:** §44 (arquivo de inclusão se mede; 500 não é
+  proteção), §18 (espelhar o servidor traz a credencial junto) e, no
+  PAINEL_ADMIN, as três listas brancas da mídia e o painel fora da intranet.
+- **Único SQL pendente:** o item 22, e de propósito não é para rodar agora.
+
+---
+
 ## Onde paramos em 26/10/2026 (2.2.0 enviada às lojas)
 
 - **Android:** 2.2.0 (`versionCode` 58) enviada pelo usuário à Play Store.
