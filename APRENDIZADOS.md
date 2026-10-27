@@ -1846,9 +1846,24 @@ conferida também por **quem pode rodá-la**: num banco com esquema fechado,
 do conteúdo (quantos militares em cada função) ficou pendente, porque a conta
 do cPanel não lê `recursoshumanos` (§46 de novo). Tabela cheia de colunas
 pode estar vazia de cadastro — o grupo "Comandantes BPM / CIPM" do SIGRH tem
-**3 militares**. E a medição tem de sair do painel, não do phpPgAdmin:
-quem lê `recursoshumanos` é o usuário de banco da API. Situação e ressalvas
-no `docs/PENDENTE_USUARIO.md` §1, item 23.
+**3 militares**, e ninguém usa.
+
+**A medição saiu no mesmo dia, pelo painel** (quem lê `recursoshumanos` é o
+usuário de banco da API, não a conta do cPanel), e confirmou a regra nos dois
+sentidos ao mesmo tempo: dos dois catálogos ligados à lotação, um é mantido
+(`funcoes_servico`: *Comandante Geral* com exatamente **1**, que é um número
+que só fecha se alguém mantém) e o outro é inútil (`tipo_funcao`: só
+*Administrativo* e *Operacional*). No meio do catálogo bom há situações
+passando por função (*Agregado*, *Falecido*, *Incapaz*).
+
+**O achado que vale para qualquer regra por id:** *Comandante de Companhia*
+tem **dois códigos**, 54 e 42, e o mesmo acontece em mais três funções. Uma
+regra cadastrada por id pega metade das pessoas e **não dá erro nenhum** —
+seis comandantes perderiam o acesso e ninguém ligaria os pontos. Catálogo de
+sistema antigo acumula sinônimo por id; antes de escrever regra sobre um,
+contar quantos ids respondem ao **mesmo nome**. A medição inteira, com as
+contagens e a terceira fonte que apareceu (a subunidade chamada "Cmt
+Geral"), está no `docs/PENDENTE_USUARIO.md` §1, item 23.
 
 **Achado do mesmo dia, no mesmo arquivo.** Os cinco níveis nascem **sem
 nenhuma regra**. Ligar `niveis.ligado` hoje poria todo mundo no primeiro

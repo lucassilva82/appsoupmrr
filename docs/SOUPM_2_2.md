@@ -2333,18 +2333,34 @@ banco: matrícula (com data de fim), o "nivel" e o posto do SIGRH, a regra
 antiga do app e o perfil da intranet (onde existir). "Função no SIGRH",
 lotação e quadro ficam cadastráveis e **ainda não foram implementadas**.
 O motivo que este plano dava ("o SIGRH não tem a tabela de função") é
-**falso**: medido no catálogo de produção em 27/10/2026,
-`recursoshumanos.policial_lotacao` traz, pela lotação ativa,
-`fk_tipo_func_cod` (a função) e `fk_subu_cod` (a subunidade). **O catálogo
-de nomes ficou medido só depois:** das três chaves estrangeiras declaradas
-na tabela, nenhuma aponta para `cad.funcao` — `fk_func_serv_cod` vai para
-`escalaservico.funcoes_servico`, `fk_subu_cod` para `subunidades` e
-`fk_poli_mili_matricula` para `policial_militar`. O `fk_tipo_func_cod` não
-tem chave declarada, e o nome casa com `escalaservico.tipo_funcao`. Implementar
-`funcao_sigrh` é o que faz "entrou como comandante no SIGRH, vira gestor no
-app" acontecer sozinho. Antes, medir o **conteúdo** (PENDENTE_USUARIO §1,
-item 23): tabela que existe não é cadastro mantido — o grupo "Comandantes
-BPM / CIPM" do SIGRH tem 3 militares. `soupm_niveis_calculados()` dá
+**falso**, e a fonte já está medida (27/10/2026; a medição inteira, com as
+contagens, está no `PENDENTE_USUARIO` §1, item 23): o comando está em
+**`escalaservico.funcoes_servico`**, pela lotação ativa
+(`policial_lotacao.fk_func_serv_cod`), e o cadastro é mantido — Comandante
+Geral tem exatamente 1. O outro catálogo (`tipo_funcao`, por
+`fk_tipo_func_cod`) só tem *Administrativo* e *Operacional*, grosso demais.
+Implementar `funcao_sigrh` é o que faz "entrou como comandante no SIGRH,
+vira gestor no app" acontecer sozinho, e três achados da medição mudam como
+a regra tem de ser escrita:
+
+- **Função com dois códigos** (*Comandante de Companhia* é 54 e 42, e o mesmo
+  em Pelotão, Subcomandante de Companhia e Comandante de Guarnição). Regra
+  cadastrada por id pega metade **sem dar erro**. Como o `valor` da
+  `soupm_nivel_regra` é `VARCHAR(80)`, a regra pode casar por **nome**: uma
+  linha cobre os dois códigos e o porquê fica legível no painel. O risco é a
+  renomeação no SIGRH, que derruba a regra em silêncio, então a prévia do
+  painel (quantos militares cada regra pega agora) passa a ser parte da regra,
+  não só conferência.
+- **Não existe "Comandante de Batalhão"**: o nível 3 (*Gestor de unidade*)
+  fica sem fonte direta, e *Chefe / Diretor* tem 140 militares, grosso demais.
+  Para ele, ou a terceira fonte abaixo, ou concessão por matrícula.
+- **Terceira fonte, não medida:** a subunidade do Comandante-Geral **se chama
+  "Cmt Geral"**, então a estrutura organizacional identifica o posto de
+  comando pelo nome do lugar, e o tipo `lotacao` já existe na tabela de
+  regras. Pode ser melhor que a função, pode ser pior se os nomes forem
+  irregulares.
+
+Decisão do usuário (27/10/2026): **estudar antes de montar regra.** `soupm_niveis_calculados()` dá
 ao painel a lista de quem fica acima do primeiro nível, para comparar antes e
 depois. Com `niveis.ligado`, o "gestor" do menu e da Início passa a ser
 "nível acima do primeiro", e o `app_config` manda o nível para o selo; até lá,

@@ -41,46 +41,91 @@ podem rodar mais de uma vez sem estragar nada.
 
 | 22 | `2026-10-23_soupm_niveis_rapido.sql` (de novo, só a função `soupm_e_gestor`) | **Pendente.** O `EXCEPTION WHEN OTHERS` da `soupm_e_gestor` chamava **a mesma função que acabara de falhar** (`soupm_e_gestor_legado`). Quando o problema era a legada — como em 23/10, quando ela estava sem `EXECUTE` —, o erro subia duplicado e **derrubava o menu inteiro**, em vez de devolver `false` como a política do §46 manda. Corrigido no arquivo em 27/10/2026, com um bloco próprio para o cálculo dos níveis. **Não rodar agora:** é durante a revisão da Apple, e o privilégio hoje está lá (conferido em 27/10: 24 das 25 funções com `EXECUTE`), então o defeito não dispara. Entra no próximo lote de SQL, **depois de compilar num Postgres local** (§19 e §47) — esta máquina não tem Postgres, então o arquivo não foi compilado |
 
-| 23 | Medição (não é migração): as funções de comando no SIGRH | **Pendente, e sai do painel — não do phpPgAdmin.** A sessão do painel mediu o catálogo de produção em 27/10/2026 e derrubou uma afirmação que estava nos dois planos e num comentário do SQL 15: **o SIGRH tem, sim, a função de cada militar**, em `recursoshumanos.policial_lotacao`, pela lotação ativa. O que **não** foi medido é o conteúdo: quais funções existem e quantos militares em cada. **Você não consegue rodar isso no phpPgAdmin:** a conta do cPanel não lê o esquema `recursoshumanos` (o mesmo §46), e a consulta falharia com "permission denied" — o que pareceria confirmar o engano que acabamos de desfazer. Quem lê é o usuário de banco da API, então a leitura sai de uma tela do painel. A sessão do painel já a pôs na tela de Níveis (commit `a34d80b`, ainda não publicada). Enquanto o conteúdo não for medido, a regra `funcao_sigrh` continua sem implementação |
+| 23 | As funções de comando no SIGRH: **medido em 27/10/2026** | **Serve, com ressalvas, e nada a fazer agora:** o usuário pediu para estudar antes de montar regra. O comando está em `escalaservico.funcoes_servico`, pela lotação ativa, e o cadastro é mantido (Comandante Geral = 1). Três armadilhas medidas: função com **dois códigos** (Comandante de Companhia é 54 e 42), **nenhuma** função de Comandante de Batalhão (o nível 3 fica sem fonte) e situações no meio do catálogo (*Agregado*, *Falecido*). Detalhe, a terceira fonte que apareceu (a subunidade chamada "Cmt Geral") e o que continua não confirmado: logo abaixo desta tabela |
 
 O item 11 (`2026-10-23_soupm_cards.sql`) ganhou o que o Comando precisa: a matrícula de cada cargo (o painel grava) e o "Conferir no SIGRH agora". Se já tiver rodado, rode de novo: ele não estraga nada.
 
 Os itens novos que forem entrando vão para o fim desta tabela, com o mesmo
 formato.
 
-### O item 23 em detalhe: o que está medido e o que falta
+### O item 23: medido em 27/10/2026, e o que ele decide
 
-**Medido** (catálogo de produção, 27/10/2026): a lotação ativa do militar
-guarda a função. Das três chaves estrangeiras declaradas em
-`recursoshumanos.policial_lotacao`, **nenhuma aponta para `cad.funcao`**:
+**O conteúdo foi medido pelo painel** (a tela de Níveis; a conta do cPanel
+não lê `recursoshumanos`, §46). A resposta é **serve, com ressalvas** — e
+não era o catálogo que eu tinha chutado.
 
-| Coluna | Para onde aponta |
-|---|---|
-| `fk_func_serv_cod` | `escalaservico.funcoes_servico` |
-| `fk_subu_cod` | `subunidades` |
-| `fk_poli_mili_matricula` | `recursoshumanos.policial_militar` |
-| `fk_tipo_func_cod` | **sem chave declarada**; o nome casa com `escalaservico.tipo_funcao` |
+| Coluna de `recursoshumanos.policial_lotacao` | Catálogo | O que tem |
+|---|---|---|
+| `fk_tipo_func_cod` | `escalaservico.tipo_funcao` (sem chave declarada; o nome casa) | só *Administrativo* (1.794) e *Operacional* (1.404) — **grosso demais, não serve** |
+| `fk_func_serv_cod` | `escalaservico.funcoes_servico` | 53 entradas, e **é onde está o comando** |
+| `fk_subu_cod` | `subunidades` | a lotação (ver a terceira fonte, abaixo) |
 
-A primeira versão deste item trazia uma consulta que juntava
-`cad.funcao.func_id` com `fk_tipo_func_cod`. **Era um palpite**, e dos
-perigosos: junta id com id, não dá erro e devolve nomes plausíveis e
-errados. Foi retirada.
+**O comando está em `funcoes_servico`, e o cadastro é mantido:**
 
-**Falta medir o conteúdo**, pelos dois catálogos (`tipo_funcao` e
-`funcoes_servico`), com a origem de cada linha: quais funções existem e
-quantos militares ativos em cada uma. É isso que diz se o cadastro é
-**mantido** ou se só existe — a diferença que já apareceu no grupo
-"Comandantes BPM / CIPM" do SIGRH, que tem **3 militares**.
+| Função | Código | Militares |
+|---|---|---|
+| Comandante Geral | 33 | **1** |
+| Subcomandante Geral | 34 | **1** |
+| Subcomandante de Grande Comando | 16 | 1 |
+| Comandante de Companhia | **54 e 42** | 10 + 6 |
+| Subcomandante de Companhia | **43 e 55** | 3 + 3 |
+| Comandante de Pelotão | **41 e 52** | 9 + 7 |
+| Comandante de Grupamento | 53 | 2 |
+| Chefe / Diretor | 17 | 140 |
 
-**A ressalva que decide tudo:** `escalaservico` é o esquema da **escala de
-serviço**. Pode ser que essas funções sejam de escala (comandante de
-guarnição, motorista) e não de comando permanente. Se forem, a sincronia
-"entrou como comandante no SIGRH, vira gestor no app" não sai daí, e o
-caminho continua sendo a concessão por matrícula. Só o conteúdo dirá.
+Comandante Geral com exatamente **1** é o que prova o cadastro: é um número
+que só fecha se alguém mantém. Compare com o grupo "Comandantes BPM / CIPM"
+dos níveis de acesso, que tem 3 e claramente não é usado.
 
-**Não mexer nisso agora:** mudar a `soupm_regra_vale` muda quem é gestor no
-menu, e a 2.2.0 está em revisão na Apple. Hoje o risco é zero porque
-`niveis.ligado` é `false`, mas a pressa não compensa.
+A ressalva do esquema **era procedente e não fatal**: `escalaservico` é da
+escala de serviço, e há funções de escala ali (Sentinela, Motorista, Rádio
+Operador), mas as de comando convivem com elas.
+
+**Três armadilhas medidas, e a primeira muda a regra que vamos escrever:**
+
+1. **Função duplicada, com dois códigos.** *Comandante de Companhia* é 54
+   (10 militares) **e** 42 (6). O mesmo em Pelotão (41 e 52), Subcomandante
+   de Companhia (43 e 55) e Comandante de Guarnição (2 e 56). Uma regra
+   cadastrada por id pega metade e **não dá erro nenhum**: seis comandantes
+   perdem Gestão no menu e ninguém liga os pontos — o §46 e o §37 outra vez.
+2. **Não existe "Comandante de Batalhão" nem "de OPM".** O degrau **Gestor
+   de unidade** (nível 3) fica **sem fonte direta**. O mais próximo é
+   *Chefe / Diretor*, com 140 militares, grosso demais para virar nível 3.
+3. **Lixo no catálogo:** *Selecione*, *Incapaz* (129), *Agregado* (415),
+   *Falecido*, *Licenciado*, *Reserva*. Não são funções; são situações.
+
+**Consequência para a nossa tabela de regras** (`soupm_nivel_regra`, SQL 15).
+A estrutura aguenta: cada nível aceita várias linhas, e o
+`soupm_nivel_para` vale pela primeira que casa, então duas linhas cobrem os
+dois códigos. Mas isso depende de **quem cadastra saber da duplicata**, e é
+justamente o que ninguém sabe. Como o `valor` é `VARCHAR(80)`, a regra
+`funcao_sigrh` pode casar por **nome** em vez de id, e aí:
+- uma linha cobre os dois códigos;
+- o porquê que o painel mostra vira legível (`funcao_sigrh:Comandante de
+  Companhia`, não `funcao_sigrh:54`);
+- código novo com o mesmo nome entra sozinho.
+
+O risco do nome é a renomeação no SIGRH, que derrubaria a regra em silêncio
+— por isso a prévia do painel (quantos militares cada regra pega **agora**)
+deixa de ser conferência e passa a ser parte da regra.
+
+**Uma terceira fonte apareceu, e ninguém tinha olhado.** O Comandante-Geral
+aprovado no painel (Cel QOCPM VALDEANE, 400831) tem a lotação
+**"Cmt Geral / Gab Cmdo Geral / EMG"**: a **subunidade se chama "Cmt
+Geral"**. A estrutura organizacional já identifica o posto de comando pelo
+nome do lugar, e o tipo `lotacao` existe na tabela de regras. Pode ser
+melhor que a função, pode ser pior se os nomes forem irregulares. **Não está
+medido.**
+
+**O que ainda NÃO está confirmado:** que o militar da função 33 é o 400831.
+É o provável, mas a tela de Níveis mostra só a contagem e a de Militares não
+mostra função. Cruzar exige listar quem tem cada função, com auditoria, como
+as outras listas nominais.
+
+**Decisão do usuário (27/10/2026):** estudar melhor antes de montar
+qualquer regra. Nada de implementar `funcao_sigrh` agora — e mudar a
+`soupm_regra_vale` muda quem é gestor no menu, com a 2.2.0 em revisão na
+Apple. Hoje o risco é zero porque `niveis.ligado` é `false`.
 
 
 ### Rodados em 23/10/2026
