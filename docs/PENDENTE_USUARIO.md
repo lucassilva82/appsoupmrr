@@ -141,6 +141,32 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
 
 ---
 
+## Onde paramos em 26/10/2026 (2.2.0 enviada às lojas)
+
+- **Android:** 2.2.0 (`versionCode` 58) enviada pelo usuário à Play Store.
+- **iOS:** 2.2.0, **build 4**, enviada para revisão da Apple às 20:13. Foi do
+  mesmo arquivo do iOS de 26/10 à tarde, já com a entrada suave na Início. O
+  "O que há de novo" é o resumido e não cita Android. As capturas novas (modo
+  vitrine, 6 no iPhone e 5 no iPad) estão em todos os tamanhos. Os arquivos
+  ficam em `appstore-capturas/jpg22/`, fora do git, com cópia no Drive em
+  "Arquivos SouPMRR/capturas-2.2.0".
+- Os dois builds saíram da branch `feature/soupm-2-2`, que **ainda não foi
+  juntada no `main`**. Juntar depois de aprovada nas duas lojas.
+
+**Falta (depende do usuário)**
+1. Instalar o build 4 pela TestFlight num iPhone e num iPad e abrir o app
+   (APRENDIZADOS §1). Ele não foi testado em aparelho antes do envio.
+2. Acompanhar a revisão da Apple, que leva até 48 h. As notas para a revisão
+   são antigas: citam "escalas", que estão "Em breve", e as rejeições da
+   2.1.x. Se a Apple questionar as funções "Em breve", responder que Escalas,
+   SVI e Meus chamados estão assim de propósito, até a versão 2.3.
+3. Depois de aprovada nas duas lojas: juntar a `feature/soupm-2-2` no `main`
+   e subir a versão mínima e a recomendada no painel, quando for a hora.
+4. Continuam valendo os itens abaixo: homologar um tipo de pendência, a conta
+   de serviço do FCM em `~/private` e o cron `versao_legada.php`.
+
+---
+
 ## Onde paramos em 25/10/2026 (para continuar no iMac)
 
 Tudo no git: app na `feature/soupm-2-2` (não juntar no `main`: o usuário testa

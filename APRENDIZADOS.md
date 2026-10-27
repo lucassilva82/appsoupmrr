@@ -1720,3 +1720,30 @@ degradê), mudando só a cor ou a opacidade.
 simulador: nela, qualquer login entra como o militar fictício. Para testar com
 conta real: `flutter build ios --simulator --debug --dart-define-from-file=env.json`
 sem `VITRINE`, e desinstalar antes, porque a sessão da vitrine fica guardada.
+
+## 49. Envio da 2.2.0 à App Store (26/10/2026): quatro armadilhas
+
+- **Número de build repetido.** O envio pelo Xcode com
+  `manageAppVersionAndBuildNumber` desligado foi recusado: "the bundle
+  version must be higher than the previously uploaded version: '3'". Um
+  envio anterior pelo Organizer tinha renumerado o mesmo 2.2.0 para 3. O
+  certo é deixar o Xcode numerar (ligado) e conferir na TestFlight
+  ("Uploads de compilações") qual build é o novo, pela hora. Para enviar sem
+  abrir o Organizer: `xcodebuild -exportArchive -archivePath
+  build/ios/archive/Runner.xcarchive -exportOptionsPlist <plist com
+  destination=upload> -allowProvisioningUpdates`. Ele usa a conta já logada
+  no Xcode.
+- **Versão "2.2" × "2.2.0".** A versão criada na App Store Connect se chamava
+  "2.2". Ela foi trocada para "2.2.0", igual ao `CFBundleShortVersionString`
+  do build, antes de escolher a compilação.
+- **Espaço de capturas recolhido muda de lugar.** Depois de "Remover tudo", o
+  espaço opcional se recolhe e os campos de arquivo da página mudam de ordem.
+  As capturas de 6,9" acabaram no espaço obrigatório de 6,3", e a Apple
+  respondeu "dimensões inválidas". Depois de esvaziar, abrir o espaço de novo
+  e procurar o campo de arquivo outra vez. No fim, conferir que cada espaço
+  diz "6 de 10" e nenhum diz "Usando ativos existentes".
+- **Classificação etária com perguntas novas.** "Adicionar para revisão"
+  ficou bloqueado até responder duas perguntas novas sobre redes sociais
+  (respondidas "Não": o app não tem rede social). A classificação continuou
+  4+. Também bloqueia enquanto as capturas ainda estão sendo processadas:
+  esperar alguns segundos e tentar de novo.
