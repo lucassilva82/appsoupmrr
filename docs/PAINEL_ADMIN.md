@@ -108,6 +108,32 @@ resto deste documento diz sobre a intranet:
 - **Mídia:** as imagens aprovadas ficam em
   `~/public_html/painelsoupmrr/midia/<sha256>.<ext>`, e o app monta o endereço
   com a base `https://pmrr.online/` (`soupm_config`, chave `midia`).
+  **O nome tem de casar com uma expressão exata**, que a API confere antes de
+  entregar o endereço ao app (`midiaUrl()`, em `sigrh/sessao_app.php`):
+
+  ```
+  ^painelsoupmrr/midia/[a-f0-9]{64}\.(jpg|png|webp)$
+  ```
+
+  Hex **minúsculo**, exatamente 64, e só essas três extensões. Fora disso a
+  API devolve nulo e **o app simplesmente não recebe a imagem** — sem erro em
+  lugar nenhum, com o arquivo no disco e servido normalmente pelo
+  `.htaccess` do painel. Um `.jpeg`, um `.gif` ou um hash em maiúsculas ficam
+  invisíveis no app e ninguém descobre por quê. Se a lista do painel mudar, a
+  da API muda junto, e vice-versa.
+
+  E a pasta `midia/` **fica fora** da regra que nega `app/`, `nucleo/`,
+  `database/` e `docs/` no painel: é de lá que o app lê. Ela tem `.htaccess`
+  próprio (só nome de 64 hex com extensão de imagem, `php_flag engine off`,
+  `Deny from all` por padrão). Negar a pasta inteira quebraria as imagens dos
+  cards — e hoje ninguém perceberia, porque `soupm_midia` está vazia:
+  apareceria na primeira imagem publicada.
+
+  Depois de publicar a primeira imagem, **medir** com
+  `curl -o /dev/null -w "%{http_code}"`: o endereço tem de dar 200. Se der 403
+  ou 404, o app esconde a imagem em silêncio
+  (`lib/core/design/arte_cartao.dart:197`, `errorBuilder` para `SizedBox.shrink`),
+  e o card aparece sem ela como se fosse o desenho previsto.
 - **Banco:** o mesmo usuário da API (§7, item 6), e **todo SQL de produção
   roda com a conta do cPanel**, na ordem do `docs/PENDENTE_USUARIO.md` §1.
 - **Caminho de volta (pronto, não feito):** o administrador do banco roda o
