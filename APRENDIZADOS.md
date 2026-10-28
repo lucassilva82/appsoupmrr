@@ -1989,6 +1989,23 @@ meses, e ninguém tinha aberto o relatório.
   meses, à espera de alguém abrir a tela. Ler o Organizer entra na checagem
   antes de cada envio, junto com as capturas (§31).
 
+**E a nossa captura global nunca veria este crash.** O `AP-FATAL` nasce do
+`FlutterError.onError` e do `PlatformDispatcher.onError`: é o lado Dart. Um
+`unrecognized selector` em Objective-C mata o processo antes, e o
+`soupm_erro` fica sem uma linha. Então **"0 fechamentos" no painel quer dizer
+"nenhum crash do lado Dart"**, não "nenhum crash" — e lido como "nenhum
+crash" vira o §27 e o §37 dentro da própria tela que existe para avisar. São
+dois casos em dois dias: um erro que o app vê e não reporta (o `code: 0` do
+contracheque, sem `error_log`) e um que ele nem vê. A fonte de crash nativo é
+o Organizer do Xcode, e ela é externa ao nosso log.
+
+**Uma negativa era mais frágil que as outras, e eu não separei.** Das quatro,
+a do simulador parecia a mais forte por ser empírica — mas é a única que
+depende de o ambiente de teste rodar o plugin como o aparelho roda, e ele não
+roda. Lição de método: ao somar evidências negativas, separar as que falham
+por ausência (não achei) das que falham por impossibilidade (não poderia
+achar). A do simulador era da segunda espécie e eu a contei como da primeira.
+
 **Detalhe de operação.** O App Store Connect **não mostra a pilha** no
 navegador: só "Abrir em Xcode". O Xcode abre o Organizer com o relatório, e é
 lá que está o `Exception Reason` e a `Last Exception Backtrace`. Sem isso, o

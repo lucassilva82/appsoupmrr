@@ -1182,7 +1182,16 @@ e um código. Na 2.2 isso sai do login e vira peça comum
   "Abrir chamado técnico", que abre o chamado já com o código, e o código).
 - **Captura global:** `FlutterError.onError` e
   `PlatformDispatcher.instance.onError` gravam em `soupm_erro` com o código
-  `AP-FATAL-<tipo>`. É o nosso "Crashlytics", sem sair do Postgres.
+  `AP-FATAL-<tipo>`. É o nosso "Crashlytics", sem sair do Postgres —
+  **do lado Dart, e só dele**. `FlutterError.onError` e o
+  `PlatformDispatcher.onError` não enxergam crash nativo: em 28/10/2026 um
+  `unrecognized selector` dentro do plugin do Firestore derrubou o app em
+  **156 aparelhos** durante meses, e o `soupm_erro` não tem uma linha disso
+  (APRENDIZADOS §51). Consequência para quem lê os números: **"0 fechamentos"
+  não quer dizer "nenhum crash"**, quer dizer "nenhum crash do lado Dart". O
+  indicador do painel precisa dizer isso onde o número aparece, e a fonte de
+  crash nativo é externa — o Organizer do Xcode, que entra na checagem antes
+  de cada envio, junto com as capturas (§31).
 
 Prefixos por módulo (o sufixo segue o padrão `LG-`: `REDE`, `FORA`,
 `LENTO`, `SSL`, `SRV-nnn`, `RESP`, `API`, `DADOS`, `X-<tipo>`):
