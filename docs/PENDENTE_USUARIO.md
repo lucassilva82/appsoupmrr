@@ -323,6 +323,49 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
 
 ---
 
+## "SouPMRR falhou" ao fechar o app no iPhone (28/10)
+
+O usuário fecha o app arrastando para cima e o iOS mostra "SouPMRR falhou",
+depois de qualquer tela. Ele acha que e falso positivo, e **provavelmente
+é** — mas a 2.2.0 está em revisão na Apple, e este projeto já perdeu duas
+semanas de fila por tratar aviso de crash como ruído (§16). Então fica
+medido, não suposto.
+
+**O que já foi conferido no código (28/10):** nada nosso roda ao encerrar. O
+observador de ciclo de vida trata só `paused` e `resumed`; o `detached` cai
+no `default`. O `AppDelegate.swift` não tem `applicationWillTerminate`. Ou
+seja, não há um candidato óbvio do nosso lado.
+
+**Duas conferências baratas, e a primeira decide:**
+
+1. **O arquivo do próprio iOS.** No iPhone: Ajustes → Privacidade e
+   Segurança → Análises e Melhorias → **Dados de Análise**, arquivos
+   começando com `SouPMRR`. Abrir o mais recente e procurar o bloco
+   `termination`. Se disser `namespace FRONTBOARD` com
+   `explicit-terminate` (ou `SIGKILL` sem `EXC_BAD_ACCESS`), **é o próprio
+   fechamento do usuário sendo registrado**: falso positivo, assunto
+   encerrado. Se aparecer `EXC_BAD_ACCESS`, `EXC_BREAKPOINT` ou uma pilha com
+   nome de plugin, é crash de verdade e a pilha diz onde.
+
+2. **A nossa própria captura.** O app grava `AP-FATAL` em `soupm_erro` e a
+   fila sobrevive ao fechamento (fica no `SharedPreferences` e sai no
+   próximo envio), então um crash do lado Dart apareceria. No phpPgAdmin,
+   com "Paginar resultados" desmarcada:
+
+```sql
+SELECT codigo, app_versao, count(*) AS vezes, max(recebido_em) AS ultimo
+  FROM soupm.soupm_erro
+ WHERE plataforma = 'ios' AND recebido_em > now() - interval '7 days'
+ GROUP BY codigo, app_versao
+ ORDER BY vezes DESC;
+```
+
+   **Limite desta segunda conferência, para não ler demais no resultado:**
+   vazio prova que **não houve crash do lado Dart**, não que não houve crash.
+   Um crash nativo (plugin, Firebase, o detector de captura do §48, que no
+   iOS continua ligado) morre antes de o Dart registrar qualquer coisa. Por
+   isso é o arquivo do item 1 que decide.
+
 ## O contracheque de outubro (27 e 28/10): feito
 
 **Os três itens saíram em 28/10.** O que falta é só o senhor abrir o
