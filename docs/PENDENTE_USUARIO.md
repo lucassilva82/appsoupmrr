@@ -10,7 +10,53 @@ por conter estrutura do banco de produção). Rodar no phpPgAdmin, com o login
 do usuário, **desmarcando "Paginar resultados"**, na ordem da tabela. Todos
 podem rodar mais de uma vez sem estragar nada.
 
-Última atualização: 25/10/2026 (onde paramos, para continuar no iMac: seção logo abaixo do §6).
+Última atualização: 28/10/2026 (a 2.2.1 fica para amanhã: seção logo abaixo).
+
+## Para amanhã (29/10/2026): a 2.2.1
+
+Decisão do usuário em 28/10: a versão sai amanhã. **O motivo dela é o crash ao
+fechar o app no iPhone** (APRENDIZADOS §51), que está corrigido no `main` e não
+existe em build nenhum: o `pubspec` ainda diz 2.2.0+58, que é o que está nas
+lojas.
+
+**O que a 2.2.1 leva** — seis commits que mexem no app depois do envio da 2.2.0:
+
+| Commit | O quê |
+|---|---|
+| `146557c` (28/10) | O crash: piso do `cloud_firestore` em 5.6.12. **É o motivo da versão** |
+| `68b9a72` (28/10) | Início: bloco que pode não existir não reserva espaço antes de saber |
+| `2b27450` (28/10) | Contracheque: a tela de erro antiga vira `EstadoErro`, e o valor ganha um leitor só |
+| `ee098b3` (27/10) | `flutter analyze` sem nenhum aviso (eram 14) |
+| `64a2e93` (26/10) | Entrada suave na Início depois do login e do Face ID |
+| `1520a19` (26/10) | Perfil no iPad: Face ID e notificações dizem iPad, não iPhone |
+
+**Os dois de 26/10 podem já estar no binário publicado**, porque o envio foi no
+mesmo dia. O archive local não decide (é de 15/10, da 2.1.x); quem diz é o
+horário do build na TestFlight. Não muda o que fazer: os seis entram na 2.2.1
+de qualquer forma.
+
+**A ordem, amanhã:**
+
+1. Versão nos **três** arquivos: `pubspec.yaml` (`2.2.1+59`),
+   `android/app/build.gradle.kts` (`versionCode = 59`, `versionName = "2.2.1"`)
+   e `ios/Runner/Info.plist` (os dois campos). Editar o XML do Info.plist à
+   mão, nunca pelo PlistBuddy (§15).
+2. `flutter analyze` e `flutter test` limpos antes de compilar.
+3. `flutter build appbundle --release --dart-define-from-file=env.json` e
+   `flutter build ipa --release --dart-define-from-file=env.json`. **Conferir
+   que o `env.json` existe antes**, senão Legislações e POPs saem quebradas de
+   novo (§41).
+4. **TestFlight em iPhone físico, e fechar o app arrastando para cima** — é
+   exatamente o defeito que esta versão corrige, e o simulador não o reproduz
+   (§1 e §51).
+5. **Abrir o Organizer antes de enviar** e olhar os fechamentos (§51: eram 156
+   aparelhos esperando alguém abrir aquela tela).
+6. "O que há de novo" escrito **separado para cada loja** (§31).
+7. Ao publicar, **avisar a sessão do painel** (seção própria neste arquivo).
+
+Não há SQL nem interruptor ligado a esta versão: ela é só o app.
+
+---
 
 ## 1. SQL de produção (phpPgAdmin)
 
