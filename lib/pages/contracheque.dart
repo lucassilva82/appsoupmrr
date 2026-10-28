@@ -4,11 +4,13 @@ import 'package:projetonovo/utils/app_theme.dart';
 import 'package:projetonovo/widgets/custom_appbar.dart';
 
 import '../core/design/arte_cartao.dart';
+import '../core/erros/estado_erro.dart';
+import '../core/erros/falha_app.dart';
+import '../core/erros/falha_de.dart';
 import '../models/auth_model.dart';
 import '../models/meses_contracheque_model.dart';
 import '../services/dados_sql.dart';
 import '../utils/app_routes.dart';
-import '../view/second_screen.dart';
 import '../widgets/vidro.dart';
 
 class Contracheque extends StatefulWidget {
@@ -31,6 +33,10 @@ class _ContrachequeState extends State<Contracheque> {
   // carregamento. Agora ela só é refeita quando o ano muda, que é a única
   // coisa capaz de mudar o resultado.
   late Future<List<MesesContracheque>> _dados = _buscaDadosSql(_anoSelecionado);
+
+  /// Refaz a consulta do ano atual no "Tentar de novo" da tela de erro.
+  void _recarregar() =>
+      setState(() => _dados = _buscaDadosSql(_anoSelecionado));
 
   void _selecionaAno(String ano) {
     if (ano == _anoSelecionado) return;
@@ -130,7 +136,17 @@ class _ContrachequeState extends State<Contracheque> {
                     child: CircularProgressIndicator.adaptive(),
                   );
                 }
-                if (snapshot.hasError) return SecondScreen();
+                if (snapshot.hasError) {
+                  final erro = snapshot.error;
+                  return EstadoErro(
+                    falha: erro is FalhaApp
+                        ? erro
+                        : falhaDe('CC', erro, tela: 'contracheques'),
+                    tela: 'contracheques',
+                    chave: 'rh.contracheques',
+                    aoTentar: _recarregar,
+                  );
+                }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return _buildEmptyState(isDark);
                 }

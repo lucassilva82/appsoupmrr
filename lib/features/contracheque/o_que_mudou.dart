@@ -6,6 +6,7 @@ import '../../core/design/folha_arte.dart';
 import '../../core/erros/falha_app.dart';
 import '../../core/log/registro_log.dart';
 import '../../models/contracheque_model.dart';
+import 'valor_rubrica.dart';
 import '../../models/meses_contracheque_model.dart';
 import '../../services/dados_sql.dart';
 import '../../utils/app_theme.dart';
@@ -32,15 +33,14 @@ class MudancaRubrica {
   double get diferenca => (depois ?? 0) - (antes ?? 0);
 }
 
-/// Lê "1234.56" (da API) e "1.234,56" (já formatado pela tela).
-double valorRubrica(String v) {
-  final t = v.trim();
-  if (t.isEmpty) return 0;
-  final normal = t.contains(',') ? t.replaceAll('.', '').replaceAll(',', '.') : t;
-  return double.tryParse(normal) ?? 0;
-}
-
-double _valor(TipoProvento r) => valorRubrica(r.tipoRubrica == 'P' ? r.provento : r.desconto);
+// O leitor mora em valor_rubrica.dart: a tela do contracheque tinha o seu
+// próprio, sem o cuidado da vírgula, e os dois liam o mesmo valor.
+//
+// Aqui um valor ilegível vale zero de propósito: a comparação com o mês
+// anterior é informativa, e uma rubrica ilegível não pode derrubar a tela
+// inteira. Na soma do contracheque é o contrário (valorRubricaOuFalha).
+double _valor(TipoProvento r) =>
+    valorRubrica(r.tipoRubrica == 'P' ? r.provento : r.desconto) ?? 0;
 
 /// Compara rubrica a rubrica (pela natureza e pela descrição; rubricas com o
 /// mesmo nome no mesmo mês são somadas). Diferenças de menos de 1 centavo

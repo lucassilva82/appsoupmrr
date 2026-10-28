@@ -17,7 +17,9 @@ import 'package:share_plus/share_plus.dart';
 
 import '../core/design/arte_cartao.dart';
 import '../core/design/folha_arte.dart';
+import '../core/erros/estado_erro.dart';
 import '../core/erros/falha_app.dart';
+import '../core/erros/falha_de.dart';
 import '../core/log/registro_log.dart';
 import '../core/rede/api_client.dart';
 import '../features/contracheque/contracheque_pdf_repositorio.dart';
@@ -25,10 +27,10 @@ import '../models/auth_model.dart';
 import '../models/contracheque_model.dart';
 import '../models/meses_contracheque_model.dart';
 import '../features/contracheque/o_que_mudou.dart';
+import '../features/contracheque/valor_rubrica.dart';
 import '../features/documentos/documentos_locais.dart';
 import '../services/dados_sql.dart';
 import '../utils/app_theme.dart';
-import '../view/second_screen.dart';
 import '../widgets/vidro.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/alerta.dart';
@@ -71,7 +73,12 @@ class _PageContrachequeState extends State<PageContracheque> {
   // tela inteira era substituída pelo indicador de carregamento. Era essa a
   // piscada ao tocar em compartilhar — e a segunda piscada ao cancelar a
   // folha do sistema, quando o setState de encerramento rodava.
-  late final Future<ContrachequeModel> _dados = _buscaDadosSql();
+  late Future<ContrachequeModel> _dados = _buscaDadosSql();
+
+  /// Refaz a consulta no "Tentar de novo" da tela de erro. O Future continua
+  /// num campo do State, nunca dentro do `build` (APRENDIZADOS §10).
+  void _recarregar() => setState(() => _dados = _buscaDadosSql());
+
 
   final CurrencyFormatterSettings _realSettings = CurrencyFormatterSettings(
     symbol: '',
@@ -82,6 +89,16 @@ class _PageContrachequeState extends State<PageContracheque> {
   );
 
   Future<ContrachequeModel> _buscaDadosSql() async {
+    try {
+      return await _carregar();
+    } catch (e) {
+      // Converter e registrar aqui, e não no `build`: o build pode rodar de
+      // novo com o mesmo erro e duplicaria a linha no log.
+      throw falhaDe('CC', e, tela: 'contracheque');
+    }
+  }
+
+  Future<ContrachequeModel> _carregar() async {
     contracheque = await dadosSql.buscaContracheque(
       widget.mesSelecionado.cpf,
       widget.mesSelecionado.ano,
@@ -94,28 +111,44 @@ class _PageContrachequeState extends State<PageContracheque> {
       widget.mesSelecionado.folha,
     );
 
+    // A folha pode estar na lista e ainda não estar na view que a abertura
+    // lê: a lista vem da `vw_cc_novo_1` e a abertura da `vw_cc_novo2`. No dia
+    // em que a folha é carregada as duas divergem por algumas horas, e o
+    // militar via a tela de erro muda. Isto não é falha do app nem do
+    // aparelho: é um mês ainda sem folha, e a mensagem diz isso.
+    if (contracheque.proventos.isEmpty) {
+      throw const FalhaApp(
+        codigo: 'CC-SEM-FOLHA',
+        origem: OrigemFalha.servidor,
+        titulo: 'Este contracheque ainda não está disponível',
+        texto: 'O mês já aparece na lista, mas a folha ainda não terminou de '
+            'ser carregada. No dia em que a folha sai isso costuma levar '
+            'algumas horas. Tente de novo mais tarde.',
+      );
+    }
+
     proventos = 0.0;
     descontos = 0.0;
     totalLiquido = 0.0;
 
     for (final e in contracheque.proventos) {
       if (e.tipoRubrica == 'P') {
-        proventos += double.parse(e.provento);
+        proventos += valorRubricaOuFalha(e.provento, e.descricaoRubrica);
       } else {
-        descontos += double.parse(e.desconto);
+        descontos += valorRubricaOuFalha(e.desconto, e.descricaoRubrica);
       }
     }
     totalLiquido = proventos - descontos;
 
+    // O mesmo `_valor` do total: com dois leitores diferentes, uma rubrica
+    // podia entrar certa na soma e aparecer como 0,00 na linha.
     final formatter =
         NumberFormat.currency(locale: 'pt_BR', symbol: '', decimalDigits: 2);
     for (final e in contracheque.proventos) {
       if (e.tipoRubrica == 'P') {
-        final val = double.tryParse(e.provento) ?? 0.0;
-        e.provento = formatter.format(val);
+        e.provento = formatter.format(valorRubricaOuFalha(e.provento, e.descricaoRubrica));
       } else {
-        final val = double.tryParse(e.desconto) ?? 0.0;
-        e.desconto = formatter.format(val);
+        e.desconto = formatter.format(valorRubricaOuFalha(e.desconto, e.descricaoRubrica));
       }
     }
 
@@ -998,8 +1031,37 @@ class _PageContrachequeState extends State<PageContracheque> {
             ),
           );
         }
-        if (snapshot.hasError) return SecondScreen();
-        if (!snapshot.hasData) return SecondScreen();
+        final erro = snapshot.error;
+        if (erro != null || !snapshot.hasData) {
+          // `_buscaDadosSql` já converte e registra a falha uma vez só; o
+          // `falhaDe` aqui é só a rede de segurança, porque o `build` pode
+          // rodar de novo com o mesmo erro (troca de tema, rotação).
+          final falha = erro is FalhaApp
+              ? erro
+              : falhaDe('CC', erro, tela: 'contracheque');
+          return FundoSuave(
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              appBar: AppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                centerTitle: true,
+                iconTheme: IconThemeData(
+                    color: Theme.of(context).colorScheme.onSurface),
+                flexibleSpace: const FundoBarraVidro(),
+                title: Text('Contracheque',
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface)),
+              ),
+              body: EstadoErro(
+                falha: falha,
+                tela: 'contracheque',
+                chave: 'rh.contracheques',
+                aoTentar: _recarregar,
+              ),
+            ),
+          );
+        }
 
         final proventosLista = contracheque.proventos
             .where((r) => r.tipoRubrica == 'P')

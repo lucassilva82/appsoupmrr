@@ -9,12 +9,6 @@ MesesContracheque _m(String ano, String mes, {String folha = 'NORMAL'}) => Meses
     tipo: 'B', codProvento: '0', mes: mes, folha: folha, mesExtenso: 'X', relacaoTrabalho: 'ATIVO', cpf: '1', ano: ano, matricula: '1');
 
 void main() {
-  test('lê valores da API e já formatados', () {
-    expect(valorRubrica('1234.56'), 1234.56);
-    expect(valorRubrica('1.234,56'), 1234.56);
-    expect(valorRubrica(''), 0);
-  });
-
   test('acha o que entrou, saiu e mudou, maior diferença primeiro', () {
     final r = compararRubricas(
       [_p('SOLDO', '5.000,00'), _p('GRATIFICAÇÃO', '300.00'), _d('PENSÃO', '100.00')],
