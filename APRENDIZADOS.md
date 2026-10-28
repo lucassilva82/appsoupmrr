@@ -1912,3 +1912,81 @@ dado Alto Comando a um soldado do gabinete do Subcomandante.
 são a hipótese se olhando no espelho. Medir é contar **o conjunto todo**,
 inclusive onde se espera que a hipótese falhe — e o barato aqui era justamente
 isso, uma contagem por grupo em vez de três consultas pontuais.
+
+---
+
+## 51. "Acho que é falso positivo": era um crash real, em 156 aparelhos
+
+**O que aconteceu (28/10/2026).** O usuário relatou que, ao fechar o app no
+iPhone, o iOS mostrava "SouPMRR falhou", e disse achar que era falso
+positivo. Eu também achei, e tinha argumentos: fechar arrastando para cima é
+`SIGKILL`; nada nosso roda ao encerrar (o ciclo de vida só trata `paused` e
+`resumed`, e o `AppDelegate` não tem `applicationWillTerminate`); o
+`screenshot_recording_detector`, que já nos derrubou no Android (§48), remove
+os observadores corretamente; e **três fechamentos diferentes no simulador
+não geraram relatório nenhum**.
+
+Quatro negativas. E a conclusão estava errada.
+
+**O relatório tinha o culpado com nome.** O usuário compartilhou pelo
+TestFlight; o App Store Connect só oferece "Abrir em Xcode", e lá estava:
+
+```
+-[__NSCFString setStreamHandler:]: unrecognized selector sent to instance
+
+main → UIApplicationMain → -[UIWindow dealloc]
+     → -[FlutterViewController dealloc] → -[FlutterEngine dealloc]
+     → -[FLTFirebaseFirestorePlugin cleanupEventListeners]
+```
+
+**O defeito cabe em duas linhas do `cloud_firestore` 5.6.1:**
+
+```objc
+NSMutableDictionary<NSString *, FlutterEventChannel *> *_eventChannels;
+...
+for (FlutterEventChannel *channel in self->_eventChannels) {
+    [channel setStreamHandler:nil];
+}
+```
+
+Percorrer um `NSDictionary` com `for...in` entrega as **chaves**. A variável
+está *declarada* como `FlutterEventChannel *` mas carrega uma `NSString`, e o
+compilador não reclama porque a enumeração rápida é tipada como `id`. O laço
+seguinte, o dos `_streamHandlers`, tinha o mesmo defeito e seria o próximo
+crash. A 5.6.12 corrigiu os dois com `.allValues`, **dentro da nossa própria
+restrição `^5.6.0`** — bastou subir o piso.
+
+**A escala, que é o que dói:** o Xcode mostra **156 aparelhos** no mesmo
+crash, **54% deles na 2.1.6**. Não era da 2.2, nem de hoje. Estava lá havia
+meses, e ninguém tinha aberto o relatório.
+
+**As lições, em ordem de valor.**
+
+- **Quatro negativas não somam uma prova.** Cada uma era verdadeira e nenhuma
+  cobria o caso: eu procurei o crash onde eu escrevo código e onde eu consigo
+  rodar, e ele estava num plugin, no aparelho. "Não achei" é um resultado
+  sobre onde procurei, não sobre o que existe (§27 e §37, agora virados
+  contra a minha própria investigação).
+- **O §16 vale também quando quem desconfia do crash somos nós.** Lá a regra
+  nasceu de confiar numa hipótese contra o log da Apple; aqui o usuário
+  sugeriu a hipótese tranquilizadora e eu concordei. Hipótese que alivia
+  merece mais medição, não menos.
+- **O simulador não substitui o aparelho para o que acontece no encerramento.**
+  Três caminhos de fechamento, nenhum relatório — e o crash existia. É o §1
+  outra vez ("o simulador não roda release"), por outra porta: ele também não
+  reproduz a destruição da engine como o iOS real.
+- **Relatório de crash não lido é defeito guardado.** 156 aparelhos durante
+  meses, à espera de alguém abrir a tela. Ler o Organizer entra na checagem
+  antes de cada envio, junto com as capturas (§31).
+
+**Detalhe de operação.** O App Store Connect **não mostra a pilha** no
+navegador: só "Abrir em Xcode". O Xcode abre o Organizer com o relatório, e é
+lá que está o `Exception Reason` e a `Last Exception Backtrace`. Sem isso, o
+que se vê é só data, aparelho e o comentário do tester.
+
+**Detalhe do CocoaPods.** Depois de subir o plugin, o `pod install` falhava
+repetindo `CDN: trunk URL couldn't be downloaded ... Error in the HTTP2
+framing layer`. Os mesmos arquivos baixavam normalmente com `curl` — é a rede
+interna do CocoaPods, não a conexão. A saída foi um laço que lê a URL da
+mensagem de erro, baixa com `curl --http1.1` para o lugar certo em
+`~/.cocoapods/repos/trunk/Specs/...` e repete. Foram três arquivos.
