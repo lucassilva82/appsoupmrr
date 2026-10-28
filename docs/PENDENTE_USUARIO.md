@@ -336,6 +336,36 @@ observador de ciclo de vida trata só `paused` e `resumed`; o `detached` cai
 no `default`. O `AppDelegate.swift` não tem `applicationWillTerminate`. Ou
 seja, não há um candidato óbvio do nosso lado.
 
+**Teste feito em 28/10, no simulador: não reproduz.** Três caminhos de
+encerramento, nenhum relatório de falha:
+
+| Caminho | Resultado |
+|---|---|
+| Fechar arrastando o cartão no seletor de apps | nenhum relatório |
+| Mandar para segundo plano e depois encerrar | nenhum relatório |
+| `simctl terminate` com o app em segundo plano | nenhum relatório |
+
+Procurado em `~/Library/Logs/DiagnosticReports`, no `CrashReporter` do
+simulador e no `system.log` dele. Nada, em nenhum dos três.
+
+**E o suspeito que este projeto já tinha foi descartado.** O
+`screenshot_recording_detector`, que no Android fechava o app a cada captura
+(§48) e no iOS continua ligado, **remove o observador** que registra
+(`removeObserver(self)` no `stopMonitoring`) e não tem risco de `dealloc`.
+De passagem, ele mantém um `Timer` de 1 segundo com `target: self`, que
+segura o plugin vivo e acorda o app todo segundo — gasto de bateria, não
+causa de falha.
+
+Com isso são **quatro negativas**: nada nosso roda ao encerrar, o plugin
+está correto, e os três encerramentos não geram relatório. A balança pende
+forte para **falso positivo** — o iOS registrando o fechamento do próprio
+usuário como término anormal, que tecnicamente é.
+
+**Não vou mexer em código por palpite.** Mudar algo sem reproduzir seria
+trocar um incômodo conhecido por um risco desconhecido, logo depois de a
+versão ser aprovada. O que falta é uma das duas conferências abaixo, e a
+primeira leva dez segundos no seu iPhone:
+
 **Duas conferências baratas, e a primeira decide:**
 
 1. **O arquivo do próprio iOS.** No iPhone: Ajustes → Privacidade e
