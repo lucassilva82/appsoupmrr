@@ -323,10 +323,10 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
 
 ---
 
-## Para amanhã (28/10): o contracheque de outubro
+## O contracheque de outubro (27 e 28/10): feito
 
-Combinado com o usuário em 27/10, fim da tarde: fazer amanhã. Nada foi
-mexido hoje.
+**Os três itens saíram em 28/10.** O que falta é só o senhor abrir o
+contracheque de outubro e dizer se abre (ver o fim desta seção).
 
 **O que aconteceu.** A folha de outubro entrou no banco. O militar abriu o
 app, o mês aparecia na lista e **deu erro ao abrir**, numa tela de erro
@@ -357,7 +357,7 @@ aviso** — é para isso que a cobertura existe.
    falha). Foi por isso que o log da API não tinha nada de hoje. Um endpoint
    que falha sem deixar rastro é o §22 outra vez: acrescentar o registro, com
    o código `CC-SEM-FOLHA`, que a fase 3b já criou.
-3. **Tela de erro antiga:** `SecondScreen()` em
+3. **FEITO (28/10).** Tela de erro antiga: era o `SecondScreen()` em
    `lib/pages/page_contracheque.dart:1001`. A tela do contracheque não entrou
    na lista da fase 6 (declarações, Mapa da Força, plantão, e-mail). Trocar
    pelo `EstadoErro`, com código e "Detalhes técnicos", e **separar "mês sem
@@ -372,6 +372,37 @@ aparece se algo em `_buscaDadosSql` lançar, e lá o único candidato é o
 `double.parse` (sem `tryParse`) dos proventos, no caminho da API antiga
 (`tipo == "A"`), onde o valor vem como "8.791,85". Vale conferir isso junto
 com o item 3.
+
+### O que foi feito em 28/10
+
+| Item | Onde | Situação |
+|---|---|---|
+| Mensagem de "mês sem folha" | app, `CC-SEM-FOLHA` | feito (commit `2b27450`) |
+| Registro no log da API | `exibecontracheque_new.php` | **no ar** (commit `a276c0a`), conferido com um mês impossível |
+| Tela de erro antiga | `SecondScreen` → `EstadoErro`, nas duas telas | feito |
+
+Dois defeitos a mais apareceram no caminho:
+
+- **o valor da rubrica era lido com `double.parse` sem limpar o formato.** Na
+  API antiga ("1.234,56") isso lançava, e era a **única** coisa capaz de levar
+  ao `SecondScreen`, porque o `buscaContracheque` nunca lança;
+- **havia dois leitores do mesmo valor, e só um estava certo.** O do "O que
+  mudou" (P1) já olhava a vírgula antes de limpar os pontos; o da tela, não — e
+  limpar os pontos de `1234.56` daria `123456`. Agora é um só
+  (`features/contracheque/valor_rubrica.dart`), com teste dos dois formatos.
+  Valor ilegível no total vira `CC-VALOR`, nunca zero (§37).
+
+**Falta o senhor conferir:** abrir o contracheque de outubro. Se abrir, era a
+janela de carga das duas views e o assunto fecha. Se não abrir, a mensagem
+agora diz qual é o caso, e o `error_log` da API passa a ter a linha
+`CC-SEM-FOLHA` com a chave da consulta — foi para isso que o registro entrou.
+
+**Um achado de segurança saiu deste trabalho** e está na lista privada
+(`~/code/api-soupmrr-private/PENDENTE_SEGURANCA.md`), fora deste repositório,
+que é público. Resumo sem detalhe: um endpoint do contracheque não confere
+quem pede. A correção tem ordem obrigatória e começa por uma versão nova do
+app, então não dava para fazer hoje.
+
 
 ## Onde paramos em 27/10/2026 (esperando a Apple)
 
