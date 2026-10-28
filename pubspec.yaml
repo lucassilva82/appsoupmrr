@@ -25,7 +25,12 @@ dependencies:
   url_launcher: ^6.2.6
   crypto: ^3.0.3
   carousel_slider: ^5.0.0
-  cloud_firestore: ^5.6.0
+  # Piso em 5.6.12 por causa de um crash ao fechar o app no iOS: até a
+  # 5.6.11 o FLTFirebaseFirestorePlugin percorria o dicionário _eventChannels
+  # com for...in, que entrega as CHAVES (strings), e mandava setStreamHandler:
+  # para uma string — "unrecognized selector", no dealloc da FlutterEngine.
+  # A 5.6.12 corrigiu para .allValues. Não baixar deste piso.
+  cloud_firestore: ^5.6.12
   firebase_core: ^3.9.0
   firebase_messaging: ^15.1.6
   percent_indicator: ^4.2.3
