@@ -477,6 +477,26 @@ quem pede. A correção tem ordem obrigatória e começa por uma versão nova do
 app, então não dava para fazer hoje.
 
 
+## Ao publicar qualquer versão: avisar a sessão do painel
+
+Combinado em 28/10. **O painel não lê as lojas** — ele só sabe o que foi
+publicado se alguém disser. Três coisas dependem disso, e a terceira é uma
+armadilha:
+
+1. **Histórico** (`soupm_versao_app`): a versão entra com a ficha técnica do
+   build (Flutter, Dart, SDKs, pacotes).
+2. **Recomendada** de cada loja. A **mínima não precisa subir**: 2.2.0 e
+   2.2.1 convivem, e subir a mínima obriga todo mundo a atualizar sem
+   necessidade.
+3. **Mínimo legado do Firestore** (o que as versões 2.1.x leem): ele **não
+   pode ficar acima da última versão publicada em cada loja**. Se ficar, o
+   iPhone na 2.1.x passa a pedir uma versão que a App Store não tem — o app
+   fica inutilizável e o militar não tem o que fazer. A tela do painel
+   **bloqueia** salvar isso, **mas a trava só funciona se o número publicado
+   estiver registrado**. Ou seja: a proteção depende do passo 1.
+
+Por isso o aviso não é cortesia, é parte da publicação: **publicou, avisa**.
+
 ## A Apple aprovou a 2.2.0 (28/10/2026)
 
 A espera acabou. Os quatro passos que estavam anotados na seção de 27/10

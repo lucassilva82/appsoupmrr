@@ -2006,6 +2006,15 @@ roda. Lição de método: ao somar evidências negativas, separar as que falham
 por ausência (não achei) das que falham por impossibilidade (não poderia
 achar). A do simulador era da segunda espécie e eu a contei como da primeira.
 
+**A forma que engana é sempre a mesma: parecer uma resposta.** O silêncio do
+simulador parecia resultado ("rodei e não deu crash"). No mesmo dia, a sessão
+do painel quase usou uma prévia de público como se fosse a lista inteira —
+20 nomes de verdade, formatados igual, sem nada na tela dizendo que eram 20
+de 129. O que a salvou foi um resto que não fechava: 184 onde o cadastro
+dizia 186. Ausência que parece resposta e amostra que parece total são o
+mesmo defeito de leitura, e os dois só se desfazem perguntando **de onde o
+número veio**, não olhando para ele.
+
 **Detalhe de operação.** O App Store Connect **não mostra a pilha** no
 navegador: só "Abrir em Xcode". O Xcode abre o Organizer com o relatório, e é
 lá que está o `Exception Reason` e a `Last Exception Backtrace`. Sem isso, o
