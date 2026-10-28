@@ -103,10 +103,12 @@ class FaixaComando extends StatelessWidget {
         if (snap.hasData) _ultimoComando = snap.data;
         final lista = snap.data ?? const [];
         if (lista.isEmpty) {
-          // Carregando: reserva o espaço para a tela não pular.
-          return snap.connectionState == ConnectionState.waiting
-              ? const SizedBox(height: 84 + 16)
-              : const SizedBox.shrink();
+          // Nada de reservar espaço enquanto carrega. O espaço reservado some
+          // quando o Comando não vem, e um bloco que aparece e desaparece na
+          // abertura tem cara de erro (pedido do usuário, 28/10/2026). Bloco
+          // que **pode** não existir só ocupa lugar quando tem o que mostrar;
+          // reservar espaço é para o que se sabe que vem.
+          return const SizedBox.shrink();
         }
         return _faixa([
           for (var i = 0; i < lista.length; i++) {...lista[i], 'cargo': i < _cargos.length ? _cargos[i] : ''},

@@ -112,7 +112,11 @@ class _BlocoPendenciasState extends State<BlocoPendencias> {
     return ValueListenableBuilder<SituacaoPendencias?>(
       valueListenable: PendenciasRepositorio.emUso,
       builder: (context, s, _) {
-        if (s == null || s.ligados == 0) return const SizedBox.shrink();
+        // O bloco fica sempre (pedido do usuário, 28/10/2026): o militar vê
+        // que foi conferido, em vez de um bloco que some. Só não aparece
+        // antes da primeira resposta — aí ainda não há o que afirmar, e
+        // desenhar "Sem pendências" para depois trocar seria pior.
+        if (s == null) return const SizedBox.shrink();
         final obrigatorias = s.itens.where((p) => p.obrigatoria).length;
         final corPilula = obrigatorias > 0
             ? (theme.brightness == Brightness.dark ? const Color(0xFFFF9E9E) : const Color(0xFFB3261E))

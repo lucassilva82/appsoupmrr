@@ -58,11 +58,17 @@ void main() {
     );
   });
 
-  testWidgets('sem tipo ligado no painel o bloco não aparece', (t) async {
+  // Até 27/10/2026 o bloco sumia sem nenhum tipo ligado, para não afirmar
+  // "Sem pendências" sem ninguém ter conferido. O usuário mudou a decisão em
+  // 28/10: bloco que aparece e some na abertura tem cara de erro, e ele
+  // prefere a afirmação constante.
+  testWidgets('sem tipo ligado no painel o bloco continua lá, dizendo que não há nada', (t) async {
     await t.pumpWidget(_app(BlocoPendencias(repositorio: _repo((_) => {'code': 1, 'ligados': 0, 'itens': []}))));
     await t.pumpAndSettle();
-    expect(find.text('Suas pendências'), findsNothing);
+    expect(find.text('Suas pendências'), findsOneWidget);
+    expect(find.text('Sem pendências'), findsOneWidget);
   });
+
 
   testWidgets('com tipo ligado e nada pendente mostra "Sem pendências"', (t) async {
     await t.pumpWidget(_app(BlocoPendencias(repositorio: _repo((_) => {'code': 1, 'ligados': 3, 'itens': []}))));
