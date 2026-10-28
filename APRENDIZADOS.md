@@ -1856,6 +1856,16 @@ que só fecha se alguém mantém) e o outro é inútil (`tipo_funcao`: só
 *Administrativo* e *Operacional*). No meio do catálogo bom há situações
 passando por função (*Agregado*, *Falecido*, *Incapaz*).
 
+**E a terceira vez, que fecha o padrão (28/10).** Ao montar a escada de
+níveis, o nível 1 do SIGRH, chamado **"Administrador"**, foi para o degrau de
+Comando pelo nome. Listados os 16: é a equipe do DTI — coronel, capitão, dois
+soldados, três subtenentes. Não é comando nenhum. Três cadastros em dois dias
+com o mesmo vício: a função 17 ("Chefe / Diretor") cobrindo comandantes e
+militares na reserva, a função 54 ("Comandante de Companhia") num
+subcomandante, e agora o "Administrador" que é a equipe de TI. A formulação
+que a sessão do painel deu, e que é a melhor das três: **o nome de um
+cadastro é a intenção de quem o criou, não o conteúdo que ele acumulou.**
+
 **O achado que vale para qualquer regra por id:** *Comandante de Companhia*
 tem **dois códigos**, 54 e 42, e o mesmo acontece em mais três funções. Uma
 regra cadastrada por id pega metade das pessoas e **não dá erro nenhum** —

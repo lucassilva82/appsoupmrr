@@ -223,7 +223,7 @@ as outras listas nominais.
 **Decisão do usuário (27/10/2026):** estudar melhor antes de montar
 qualquer regra. Nada de implementar `funcao_sigrh` agora — e mudar a
 `soupm_regra_vale` muda quem é gestor no menu, com a 2.2.0 em revisão na
-Apple. Hoje o risco é zero porque `niveis.ligado` é `false`.
+Apple. (Escrito quando `niveis.ligado` era `false`; ele foi ligado em 28/10, depois da comparação no painel.)
 
 
 ### Rodados em 23/10/2026
@@ -289,7 +289,7 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
 | `contracheque` | `pdf_api: true` | Depois de aprovar a comparação: o app passa a pedir o PDF à API |
 | `comunicados` | `fonte_app: "api"` | Depois do SQL 9 e de publicar o primeiro comunicado pelo painel: a Início troca o anúncio do Firestore pela central |
 | `declaracoes` | `campanhas_ligadas: true` | Depois do SQL 13 e de abrir pelo painel a campanha de cada tipo do ano em curso |
-| `niveis` | `ligado: true` | Depois do SQL 15, de cadastrar as regras de cada nível no painel e conferir a lista de quem ganha e quem perde o Mapa da Força. **Cadastrar as regras não é detalhe:** os cinco níveis nascem sem nenhuma, e ligar assim põe todo mundo no primeiro degrau — ou seja, **ninguém seria gestor e a área Gestão sumiria do menu para todos**, que é o defeito do §46 de novo. O painel mostra a comparação antes; ela é que prova que as regras pegam |
+| `niveis` | `ligado: true` | **LIGADO em 28/10/2026.** A escada foi replanejada por você e ficou com **quatro degraus** (Adm 16, Comando 48, Gestor 378, Militar 2.653), toda montada sobre o `sigrh_nivel`, que já funciona. Medido antes de ligar: **219 gestores passavam a 442, com zero perdendo acesso** — foi o que resolveu o risco de 185 perderem o Mapa da Força. Conferido depois no "Ver o app como": a área Gestão aparece com o Mapa da Força. O app passa a usar "nível acima do primeiro" no lugar da regra antiga, na próxima leitura do `app_config` |
 | `notificacoes` | `envio_fcm: true` | Depois da conta de serviço e do cron. A partir daí, o push da certidão emitida também passa pela fila (antes ia pela Cloud Function) |
 | `notificacoes` | `fonte_app: "api"` | Depois de copiar o histórico do Firestore: no terminal do cPanel, `php ~/public_html/flutter/sigrh/cron/exportar_firestore.php` (só conta) e depois com `--gravar`; ele mostra a conferência por contagem no fim (§13, passo 4) |
 
