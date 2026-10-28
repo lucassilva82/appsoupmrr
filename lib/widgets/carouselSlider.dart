@@ -105,7 +105,6 @@ class _ComandanteCardState extends State<_ComandanteCard>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _scale;
-  late final Animation<double> _elevation;
 
   @override
   void initState() {
@@ -116,9 +115,6 @@ class _ComandanteCardState extends State<_ComandanteCard>
     );
     _scale = Tween<double>(begin: 1.0, end: 1.07).animate(
       CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack),
-    );
-    _elevation = Tween<double>(begin: 3.0, end: 14.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
     );
   }
 

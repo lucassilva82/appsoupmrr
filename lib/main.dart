@@ -1,12 +1,23 @@
+import 'package:projetonovo/core/ambiente_app.dart';
+import 'package:projetonovo/core/log/registro_log.dart';
+import 'package:projetonovo/features/carreira/carreira_page.dart';
+import 'package:projetonovo/features/chamados/chamados_page.dart';
+import 'package:projetonovo/features/comunicados/comunicados_page.dart';
+import 'package:projetonovo/features/documentos/documentos_page.dart';
+import 'package:projetonovo/features/documentos/validar_page.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 //teste de commit
 
+import 'package:crypto/crypto.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:projetonovo/features/avisos/avisos_api.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:projetonovo/core/navegacao/titulos_rota.dart';
 import 'widgets/vidro.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -16,6 +27,8 @@ import 'package:projetonovo/pages/certidoes_page.dart';
 import 'package:projetonovo/pages/legislacoes_page.dart';
 import 'package:projetonovo/pages/militar_detalhe_full_page.dart';
 import 'package:projetonovo/pages/planodeferias.dart';
+import 'package:projetonovo/core/navegacao/guarda_funcao.dart';
+import 'package:projetonovo/app/registro_modulos.dart';
 import 'package:projetonovo/pages/pop_page.dart';
 import 'package:projetonovo/utils/notification_provider.dart';
 import 'package:projetonovo/utils/theme_provider.dart';
@@ -31,12 +44,15 @@ import 'package:flutter/services.dart'; // Adicione esta linha
 import 'package:projetonovo/models/map_busca_detalhes_model.dart';
 import 'package:projetonovo/models/meses_contracheque_model.dart';
 import 'package:projetonovo/models/militar.dart';
-import 'package:projetonovo/pages/ajuda_page.dart';
+import 'package:projetonovo/features/ajuda/preciso_de_ajuda_page.dart';
+import 'package:projetonovo/features/feedback/sugestoes_page.dart';
 import 'package:projetonovo/pages/auth_or_home.dart';
 import 'package:projetonovo/pages/auth_page.dart';
 import 'package:projetonovo/pages/biometric_auth_page.dart';
 import 'package:projetonovo/pages/configura_plantao.dart';
+import 'package:projetonovo/pages/alterar_senha_page.dart';
 import 'package:projetonovo/pages/configuracoes.dart';
+import 'package:projetonovo/pages/confirm_email.dart';
 import 'package:projetonovo/pages/contracheque_grafico_page.dart';
 import 'package:projetonovo/pages/contracheque.dart';
 import 'package:projetonovo/pages/declaracao_acumulo_cargos_page.dart';
@@ -68,7 +84,15 @@ import 'models/auth_model.dart';
 import 'widgets/aviso_rapido.dart';
 import 'package:http/http.dart' as http;
 import 'widgets/dialogo_confirmacao.dart';
+import 'widgets/convite_biometria.dart' show entradaEmAndamento;
+import 'core/design/entrada_inicio.dart' show EntradaInicio;
+import 'features/comunicados/comunicados_page.dart' show aberturaEmAndamento;
 import 'vitrine/vitrine.dart';
+import 'core/erros/captura_global.dart';
+import 'core/log/iniciar_log.dart';
+import 'core/config/app_config.dart';
+import 'core/rede/api_client.dart';
+import 'core/sessao/sessao.dart';
 import 'package:projetonovo/data/store.dart'; // Certifique-se de que Store está acessível
 
 // Instância global de notificações locais
@@ -137,7 +161,12 @@ Future<void> main() => modoVitrine
     : _iniciar();
 
 Future<void> _iniciar() async {
+  AmbienteApp.inicio; // marca o começo, para o tempo de abertura do log
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Antes de tudo: o que escapar de um `try` daqui em diante vai para o log
+  // com código AP-FATAL (SouPMRR 2.2, fase 0).
+  instalarCapturaGlobal();
 
   // ── Por que o runApp vem cedo ───────────────────────────────────────────
   //
@@ -176,6 +205,9 @@ Future<void> _iniciar() async {
     debugPrint('[INIT] initializeDateFormatting falhou: $e');
   }
 
+  // A cascata da Início espera o convite do Face ID/digital fechar.
+  EntradaInicio.aguardar = entradaEmAndamento;
+
   runApp(
     MultiProvider(
       providers: [
@@ -204,9 +236,20 @@ Future<void> _prepararServicos() async {
     }
   }
 
-  await passo('detector de captura', () async {
-    await ScreenshotRecordingDetector.initialize();
+  // Primeiro, para registrar a abertura e o que vier depois.
+  await passo('log do app', () async {
+    await iniciarLog(api: ApiClient(), matricula: () => Sessao.matriculaAtual);
   });
+
+  // Só no iOS: no Android a captura já é barrada pelo FLAG_SECURE nas telas
+  // protegidas, e o detector do pacote derrubava o app no Android 16 a cada
+  // captura de tela (consulta a content://media/external, que o sistema
+  // passou a recusar; o app fechava sozinho).
+  if (Platform.isIOS) {
+    await passo('detector de captura', () async {
+      await ScreenshotRecordingDetector.initialize();
+    });
+  }
 
   await passo('canal de notificação', () async {
     const canal = AndroidNotificationChannel(
@@ -273,6 +316,10 @@ Future<void> _prepararServicos() async {
               .doc(matricula.toString())
               .set({'fcmToken': token}, SetOptions(merge: true));
           debugPrint('[FCM] ✅ Token renovado salvo → militares/$matricula');
+          await DispositivoApi().registrar(
+              token: token,
+              matricula: matricula.toString(),
+              senhaMd5: md5.convert(utf8.encode(await Sessao.instancia.senha() ?? '')).toString());
         }
       } catch (e) {
         debugPrint('[FCM] ❌ ERRO ao salvar token renovado: $e');
@@ -421,6 +468,12 @@ void tratarToqueNotificacao(RemoteMessage message) {
   if (id != null && id == _ultimoPushTratado) return;
   _ultimoPushTratado = id;
   final data = message.data;
+  // "Aberto" no histórico de envios do painel (§9.2); a API marca pelo id.
+  registrar('push.abrir', dados: {
+    if (data['notificacao_soupm'] != null) 'notificacao_soupm': '${data['notificacao_soupm']}',
+    if (data['route'] != null) 'rota': '${data['route']}',
+    if (data['tipo_evento'] != null) 'tipo_evento': '${data['tipo_evento']}',
+  });
   if (AvisoAberto.ehDoSige(data)) {
     abrirAviso(AvisoAberto.doPush(
       data,
@@ -489,13 +542,33 @@ const Set<String> kRotasNotificacaoPermitidas = {
   '/page-militar',
 };
 
+/// A rota que uma notificação pode abrir, ou nula. Aceita (2.2):
+/// - as rotas antigas da lista acima (pushes das 2.1.x);
+/// - a rota de qualquer módulo do registro (`/com/central`, `/rh/carreira`);
+/// - a chave da função ou o nome antigo dela (`rh.contracheques`,
+///   `contracheques`, `/contracheques`), que é o que o painel manda.
+/// Antes só valia a lista fixa: as rotas novas eram ignoradas e o "Abrir"
+/// do aviso não fazia nada (teste de 25/10/2026). A rota passa pela guarda
+/// de função (`protegerRotas`): função bloqueada mostra o motivo, não a tela.
+String? rotaDaNotificacao(String? rota) {
+  if (rota == null || rota.trim().isEmpty) return null;
+  final r = rota.trim();
+  if (kRotasNotificacaoPermitidas.contains(r)) return r;
+  final chave = r.startsWith('/') ? r.substring(1) : r;
+  final m = registroModulos.porRota(r) ?? registroModulos.porChave(chave);
+  // Rota que precisa de argumentos (análise salarial) não abre por push.
+  if (m == null || m.rota == null || m.chave == 'rh.contracheques.grafico') return null;
+  return m.rota;
+}
+
 /// Navega para a rota indicada por uma notificação, de forma segura.
 /// Ignora rotas vazias, desconhecidas ou que exijam argumentos.
 void navegarPorNotificacao(String? rota) {
-  if (rota == null || rota.trim().isEmpty) return;
-  final r = rota.trim();
-  if (!kRotasNotificacaoPermitidas.contains(r)) {
-    print('[NOTIF] Rota "$r" não permitida/desconhecida — navegação ignorada.');
+  final r = rotaDaNotificacao(rota);
+  if (r == null) {
+    if (rota != null && rota.trim().isNotEmpty) {
+      print('[NOTIF] Rota "${rota.trim()}" desconhecida — navegação ignorada.');
+    }
     return;
   }
   final nav = navigatorKey.currentState;
@@ -524,7 +597,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     _setupFirebaseListeners();
     // _setupMethodChannel();
-    ScreenshotRecordingDetector.detectionStream.listen((DetectionEvent event) {
+    if (Platform.isIOS) ScreenshotRecordingDetector.detectionStream.listen((DetectionEvent event) {
       if (!mounted) return;
       // Fora de uma tela protegida não há o que esconder nem o que avisar.
       if (!ProtecaoTela.ativa.value) return;
@@ -611,6 +684,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           print('[DEBUG] Erro ao conectar provider no onMessage: $e');
         }
       }
+      // Push silencioso de configuração (§4.6): o painel publicou algo;
+      // relê o app_config sem mostrar nada.
+      if (message.data['tipo'] == 'config') {
+        if (mounted) {
+          final auth = Provider.of<Auth>(context, listen: false);
+          await carregarAppConfig(api: ApiClient(), matricula: auth.matricula, senha: auth.password);
+        }
+        return;
+      }
+      registrar('push.receber', dados: {
+        if (message.data['notificacao_soupm'] != null) 'notificacao_soupm': '${message.data['notificacao_soupm']}',
+        if (message.data['tipo_evento'] != null) 'tipo_evento': '${message.data['tipo_evento']}',
+      });
       // Toast colorido em foreground conforme o tipo_evento do payload.
       tratarTipoEvento(message.data);
       print('[DEBUG] ===== FOREGROUND MESSAGE PROCESSADO =====');
@@ -701,9 +787,27 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       return;
     }
 
+    // O militar já respondeu à pergunta do sistema (recusou): perguntar de
+    // novo com a janela do app logo depois era repetido. Dá para ligar em
+    // Perfil › Notificações.
+    // No Android, "denied" é também o estado antes de perguntar: lá vale só
+    // a resposta guardada logo abaixo.
+    if (Platform.isIOS && settings.authorizationStatus == AuthorizationStatus.denied) return;
+
+    // Quem já respondeu "Cancelar" não é perguntado de novo a cada volta ao
+    // app (antes o pedido voltava sempre que o app saía do fundo); dá para
+    // ligar em Perfil › Notificações.
+    // A resposta fica numa chave própria: o login regrava o userData inteiro
+    // e apagava a escolha (o pedido voltava logo depois de entrar).
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_chaveNotificacaoRecusada) == true) return;
+
     // Se não estiver autorizado, exibe o diálogo
     _showPermissionDialog();
   }
+
+  bool _pedindoPermissao = false;
+  static const _chaveNotificacaoRecusada = 'notificacao_pedido_recusado';
 
   void _showPermissionDialog() {
     // Usa a chave do Navigator para obter um contexto apropriado
@@ -712,7 +816,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     // iOS e Android caíam em dois blocos idênticos de alerta; o que muda é
     // só o que acontece ao confirmar.
+    if (_pedindoPermissao) return;
+    _pedindoPermissao = true;
     Future.delayed(Duration.zero, () async {
+      // Não abre por cima do login em andamento, do convite do Face ID nem do
+      // comunicado de abertura: espera até 1 min a tela ficar livre.
+      for (var i = 0; i < 200 && (entradaEmAndamento.value || aberturaEmAndamento.value); i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      }
+      if (!dialogContext.mounted) {
+        _pedindoPermissao = false;
+        return;
+      }
       final querAtivar = await dialogoConfirmacao(
         dialogContext,
         titulo: 'Permissão para Notificações',
@@ -722,10 +837,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         icone: Icons.notifications_active_rounded,
       );
 
+      _pedindoPermissao = false;
       if (querAtivar) {
-        if (Platform.isIOS) {
-          await FirebaseMessaging.instance.requestPermission();
-        } else {
+        // Agora sim o pedido do sistema (no Android 13+ também). Se o sistema
+        // não perguntar mais (recusado antes), leva aos ajustes do app.
+        final r = await FirebaseMessaging.instance.requestPermission();
+        if (r.authorizationStatus == AuthorizationStatus.denied) {
           AppSettings.openAppSettings();
         }
         return;
@@ -734,6 +851,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       var userData = await Store.getMap('userData');
       userData['notificationsChoice'] = 'denied';
       await Store.saveMap('userData', userData);
+      try {
+        (await SharedPreferences.getInstance()).setBool(_chaveNotificacaoRecusada, true);
+      } catch (_) {/* sem preferências, pergunta de novo na próxima vez */}
       if (!dialogContext.mounted) return;
       avisoInfo(dialogContext, 'Notificações desativadas',
           texto: 'Você pode ativar nas configurações.');
@@ -748,6 +868,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         final isSuperUser = auth.isSuperUser;
         final theme = AppTheme.build(isDark: isDark, isSuperUser: isSuperUser);
         return MaterialApp(
+          navigatorObservers: [TitulosRota.novo()],
           navigatorKey: navigatorKey,
           scaffoldMessengerKey: scaffoldMessengerKey,
           debugShowCheckedModeBanner: false,
@@ -779,11 +900,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             ],
           ),
           home: const AuthOrHome(),
-          routes: {
+          routes: protegerRotas({
             AppRoutes.AUTH_PAGE: (_) => const AuthPage(),
             AppRoutes.BIOMETRIC_AUTH_PAGE: (_) => const BiometricAuthPage(),
             AppRoutes.PAGE_MILITAR: (_) => const PageMilitar(),
             AppRoutes.CONFIGURACOES: (_) => const Configuracoes(),
+            AppRoutes.CONTA_EMAIL: (_) => const ConfirmEmailScreen(),
+            AppRoutes.CONTA_SENHA: (_) => const AlterarSenhaPage(),
+            AppRoutes.BIOMETRIA: (_) => const BiometriaPage(),
+            AppRoutes.NOTIF_PREFERENCIAS: (_) => const NotificacoesPreferenciasPage(),
+            AppRoutes.APARENCIA: (_) => const AparenciaPage(),
             AppRoutes.PLANODEFERIAS: (_) => const PlanoDeFerias(),
             AppRoutes.HOME_PAGE: (_) => MainShell(),
             AppRoutes.PLANTAO: (_) => PlantaoPage(),
@@ -796,7 +922,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             AppRoutes.SVI_MEUS_VOLUNTARIOS: (_) =>
                 const SviMeusVoluntariosPage(),
             AppRoutes.NOTIFICATIONS_PAGE: (_) => NotificationsPage(),
-            AppRoutes.AJUDA_PAGE: (_) => AjudaPage(),
+            // 2.2: o "Preciso de ajuda" guiado substitui a página antiga
+            // (WhatsApp e e-mail saíram: suporte é por chamado, §8).
+            AppRoutes.AJUDA_PAGE: (_) => const PrecisoDeAjudaPage(),
+            AppRoutes.FEEDBACK: (_) => const SugestoesPage(),
+            AppRoutes.CHAMADOS: (_) => const MeusChamadosPage(),
+            AppRoutes.CARREIRA: (_) => const CarreiraPage(),
+            AppRoutes.DOCUMENTOS: (_) => const DocumentosPage(),
+            AppRoutes.VALIDAR: (_) => const ValidarDocumentoPage(),
+            AppRoutes.COMUNICADOS: (_) => const CentralComunicadosPage(),
             AppRoutes.CONTRACHEQUE_PAGE: (_) => Contracheque(),
             AppRoutes.CONTRACHEQUE_GRAFICO_PAGE: (ctx) {
               final args =
@@ -852,7 +986,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             AppRoutes.POP_PAGE: (_) => PopPage(),
             AppRoutes.CALCULO_INATIVIDADE_PAGE: (_) =>
                 const CalculoInatividadePage(),
-          },
+          }),
         );
       },
     );

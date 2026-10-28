@@ -345,6 +345,23 @@ como `.bak` dentro da pasta pública, onde qualquer um baixaria o código-fonte.
    nem grave nada.
 5. Arquivo novo que outro inclui (`require_once`) sobe **antes** de quem o inclui.
 
+**Comparar o servidor inteiro traz as credenciais junto (27/10/2026).** O
+passo 1 é um arquivo por vez, e assim é seguro. Espelhar a pasta publicada
+para conferir tudo de uma vez é tentador e **baixa os arquivos de
+credencial** — no nosso caso o `conexao.php`, com a senha do banco; no painel,
+o `nucleo/local.php`, com o segredo dos links assinados. O `.gitignore`
+protege o repositório, **não** protege uma pasta temporária, um scratchpad nem
+a área de transferência, e lá eles ficam esquecidos. Aconteceu assim: a sessão
+do painel espelhou a pasta inteira para comparar com o repositório e
+percebeu depois, ao responder uma pergunta sobre onde o segredo morava.
+
+**O que fazer:** comparar por lista de nomes (`cmp` arquivo a arquivo, como o
+passo 1), e não por espelho. Se espelhar for inevitável, apagar o espelho no
+fim e conferir que nenhum arquivo de credencial sobrou. Conferência boa: o
+`git ls-files` do repositório da API não devolve `conexao.php`,
+`conexaoHomologacao.php` nem `error_log` — se devolver, a credencial entrou no
+git e removê-la do HEAD não basta (§3).
+
 ---
 
 ## 19. API PHP se testa localmente antes de subir
@@ -1157,8 +1174,8 @@ administração vai editar (regra no CLAUDE.md).
   (gravado no índice). A certidão guardada antes disso usa o nome curto do
   painel e, sem ele, o nome oficial.
 - **Teste:** Postgres local com as tabelas de `2026-10-16_soupm_config.sql`
-  (criar antes os usuários `pmrronline_usr_erp_prod` e `pmrronline_erp_prod`,
-  senão o GRANT aborta o script). Conferido sem a tabela, sem a coluna, com a
+  (criar antes, no Postgres local, os mesmos usuários de banco que os GRANT
+  do script citam, senão o GRANT aborta o script). Conferido sem a tabela, sem a coluna, com a
   coluna nula e com valor no banco. O app foi conferido no simulador, em modo
   vitrine.
 - Backup do deploy: `/backups_api/certidoes/*.bak-20261019-v2`.
@@ -1332,8 +1349,8 @@ um print do card; o defeito de esconder a falha foi corrigido de qualquer forma.
 
 **Regra.** Valor numérico que vem da rede nunca cai para zero em silêncio:
 "zero" e "não sei" são coisas diferentes para quem lê. O `test/widget_test.dart`
-(contador de exemplo do Flutter, de 2023) falha desde sempre e não tem relação
-com isso: apagar ou trocar por um teste real.
+(contador de exemplo do Flutter, de 2023) falhava desde sempre e não tinha
+relação com isso; foi apagado em 22/10/2026, e a suíte passou a ficar toda verde.
 
 ---
 
@@ -1495,3 +1512,403 @@ aviso não entrava sozinha.
 **Regra.** Tela que depende de outro sistema não pode assumir que a sessão
 dele existe: confere, tenta entrar sozinha e só então pergunta ao militar. E
 antes de culpar o servidor, ver se o pedido chegou a sair do aparelho.
+
+---
+
+## 43. O `conexao.php` do servidor define `$senha`: variável do pedido precisa de outro nome
+
+**O que aconteceu (22/10/2026).** O `app_config.php` novo lia a senha do
+pedido em `$senha` e só depois fazia `require_once('../conexao.php')`. O
+`conexao.php` de produção define `$host`, `$usuario`, `$senha` e `$banco`, e
+sobrescreveu a senha do pedido pela do banco. Resultado: todo pedido, até o
+público, saía com `"sessao":"invalida"`. Nada vazou (a senha do banco só era
+comparada, nunca devolvida), mas a função não funcionava. No teste local não
+apareceu porque o `conexao.php` falso só criava o `$conexaoPdo`.
+
+**O que fazer.** Em endpoint novo, as variáveis do pedido têm nome próprio
+(`$pedMatricula`, `$pedSenha`) ou são lidas depois do `require`. E o
+`conexao.php` falso dos testes locais define as mesmas variáveis do de
+produção (`$host`, `$usuario`, `$senha`, `$banco`), só com valores de teste.
+
+---
+
+## 44. Contracheque não é da DRH, e a pasta "documentos" dá 403 no servidor
+
+**O contracheque (22/10/2026).** A primeira versão do PDF montado na API
+(fase 3b) usava o papel timbrado das certidões, com "DIRETORIA DE RECURSOS
+HUMANOS - PMRR" no cabeçalho e no rodapé, e as mensagens de erro diziam
+"Procure a Diretoria de Recursos Humanos". O usuário recusou: **o contracheque
+não tem relação com a DRH**. Ficou o papel próprio (`ContrachequePapel`, em
+`sigrh/doc/contracheque_pdf_classe.php`): brasão, "GOVERNO DO ESTADO DE
+RORAIMA", "POLÍCIA MILITAR DO ESTADO DE RORAIMA", filete duplo e rodapé
+"Polícia Militar do Estado de Roraima · Documento emitido eletronicamente pelo
+SouPMRR". As mensagens dizem "Procure a seção responsável pela folha de
+pagamento". O usuário pediu também o **QR Code**, que leva à conferência
+pública (`sigrh/doc/conferir.php`: situação, mês, folha, nome com o meio
+abreviado, matrícula parcial e os totais; nunca rubricas, CPF nem conta).
+
+**A pasta.** A conferência foi criada em `sigrh/documentos/` e respondia 403
+a qualquer pedido, até a arquivo que não existe. As permissões estavam certas
+e nenhum `.htaccess` nosso bloqueava: é uma regra do servidor pelo nome
+`documentos`. `doc/`, `conferencia/` e `contracheque/` passam (404 para arquivo
+inexistente). A pasta virou `sigrh/doc/`, e o endereço do QR
+(`https://pmrr.online/flutter/sigrh/doc/conferir.php`) **nunca pode mudar**,
+como o `verificar.php` das certidões.
+
+**Regras.**
+- Documento novo: conferir com o usuário de que unidade ele é antes de copiar
+  o papel timbrado de outro documento.
+- Pasta nova na API: antes de subir, testar o nome com um arquivo inexistente
+  (`curl -o /dev/null -w "%{http_code}"`). 404 é o esperado; 403 quer dizer
+  que o servidor bloqueia aquele nome.
+- **Arquivo de inclusão se protege medindo, não lendo o `.htaccess`.** Os que
+  só existem para o `require_once` (conexão, bibliotecas) respondem **200
+  vazio** sem regra nenhuma, porque o PHP executa e não imprime — e passariam
+  a ser servidos como texto, com a senha do banco dentro, se a versão do PHP
+  no servidor sair torta. A regra está no `.htaccess` da API (a lista de nomes
+  fica lá, fora deste repositório, que é público). Depois de publicar, medir:
+  cada um tem de dar **403**, e um arquivo inexistente na mesma pasta tem de
+  dar **404** — se tudo der 403, é o nome da pasta bloqueando, não a regra.
+  Conferido assim em 27/10/2026.
+- **500 não é proteção.** 403 é o servidor recusando; **500 quer dizer que o
+  PHP executou e morreu**, em geral num `require` que não resolve naquele
+  contexto. O arquivo continua alcançável por fora do roteador, e basta uma
+  mudança que faça o include resolver para ele rodar sem passar pela checagem
+  de acesso. Achado pela sessão do painel em 27/10/2026, num arquivo dele.
+
+
+## 45. `pbcopy` sem locale corrompeu 73 textos em produção (Mac Roman)
+
+**O sintoma.** O menu do app mostrava `Certidões` e `Plano de férias`. O mesmo
+em descrições, perguntas do FAQ, assuntos da ajuda e dentro do JSON de
+`soupm_config` (`Esta função não está disponível` virou
+`Esta fun√ß√£o n√£o est√° dispon√≠vel`).
+
+**O que eu checei primeiro e estava errado.** Suspeitei do `conexao.php` sem
+`client_encoding`. Uma consulta desfez isso em um passo:
+
+```sql
+SELECT current_setting('client_encoding'), pg_encoding_to_char(encoding)
+  FROM pg_database WHERE datname = current_database();
+```
+
+Os dois voltaram `UTF8`. Conexão e banco estavam certos; o estrago era no
+**dado gravado**.
+
+**A causa.** O SQL foi para o phpPgAdmin pela área de transferência, e o
+`pbcopy` do macOS, **sem `LANG`/`LC_CTYPE` de UTF-8, lê a entrada como Mac
+Roman**. O byte `C3` vira `√`, o `B5` vira `µ`, e `õ` (`C3 B5`) chega ao banco
+como `√µ`. O shell das ferramentas não tem locale (`LANG` vazio), então é o
+padrão aqui.
+
+A armadilha: `pbcopy | pbpaste` **parece correto**, porque os dois erram do
+mesmo jeito e o round-trip volta os bytes originais. O que está errado é o
+conteúdo Unicode da área de transferência, que é o que o navegador cola.
+Conferir assim não serve; conferir é olhar o texto já colado na caixa.
+
+**A regra.** Toda cópia para colar em formulário leva locale:
+
+```bash
+LC_CTYPE=UTF-8 pbcopy < arquivo.sql
+```
+
+E, antes de clicar em Executar, **ampliar a caixa de texto e ler uma linha com
+acento**. Foi isso que pegou o erro antes de ele virar UPDATE.
+
+**O conserto.** Postgres 13 não tem `MACROMAN` em `convert_from`, então não dá
+para desfazer com encoding. O caminho foi gerar as 19 trocas a partir dos
+próprios arquivos-fonte (`ch.encode('utf-8').decode('mac_roman')` em Python) e
+aplicar `replace()` encadeado. Em coluna `jsonb`, o mesmo encadeado sobre
+`valor::text`, voltando para `::jsonb`: as trocas só mexem em caractere
+não-ASCII, nunca em aspas ou chaves, então o JSON continua válido.
+
+**Duas lições de método.**
+- A varredura de corrupção precisa incluir `jsonb`. A primeira passou só em
+  `character varying` e `text` e deu "zero" com 2 registros ainda quebrados.
+- Antes de qualquer UPDATE assim, rodar o mesmo encadeado como `SELECT` com
+  `length()` antes e depois (`Certid√µes` 10 → `Certidões` 9). Custa uma ida e
+  prova a correção inteira.
+
+## 46. `SECURITY DEFINER` criado pelo phpPgAdmin aponta para quem lê menos
+
+**O sintoma.** Na 2.2, a área **Gestão sumiu do menu para todo mundo** —
+ninguém veria o Mapa da Força. O app dizia `isSuperUser: true` no log, e o
+servidor dizia que não. Nenhum erro em lugar nenhum.
+
+**A causa.** Onze funções `soupm_*` nasceram `SECURITY DEFINER`. Isso faz a
+função rodar com os privilégios do **dono**. Como todo SQL deste projeto é
+rodado pelo phpPgAdmin, o dono ficou sendo a conta do cPanel — que **não lê** `public.vw_users_unidade_comando_groups`, nem `qra`, nem
+`intranet`.
+
+Ou seja: a elevação de privilégio apontava para um usuário com **menos**
+acesso que o chamador. O `SECURITY DEFINER` foi escrito pensando que o dono
+seria um usuário privilegiado; na prática, quem cria é quem roda o script.
+
+**Por que ninguém viu.** A função terminava em
+
+```sql
+EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'soupm_e_gestor(%): %', p_matricula, SQLERRM;
+    RETURN false;
+```
+
+`RAISE WARNING` vai para o log do Postgres, que ninguém lê. Para quem usava o
+app, "não consegui consultar" virou "não é gestor" — exatamente o erro do §27
+e do §37, agora numa pergunta de permissão. Fechar por segurança está certo;
+o silêncio não.
+
+**A correção.** As nove funções que leem dados de fora do nosso domínio
+passaram a `SECURITY INVOKER`: rodam com os privilégios de quem chama. Medido
+antes de trocar: o usuário de banco da API e o do painel têm SELECT nas
+quatro fontes; só a conta do cPanel não tem. Continuam `DEFINER` as duas em que a elevação é o objetivo —
+`soupm_cron_log`, que deixa a API chamar a limpeza sem ter DELETE, e
+`soupm_mais_usados_para`.
+
+**Regras.**
+- `SECURITY DEFINER` só quando a elevação é o objetivo, e aí o comentário diz
+  **quem precisa ser o dono**. Se o dono for quem rodou o script, não use.
+- Depois de rodar SQL em produção pelo phpPgAdmin, conferir o dono:
+  `SELECT proname, pg_get_userbyid(proowner), prosecdef FROM pg_proc ...`.
+- Corrigir no banco não basta: o `.sql` é a fonte de verdade, e re-rodar o
+  arquivo devolve o defeito. Corrigir nos dois, e no comentário também — o
+  comentário antigo estava ensinando o erro.
+
+**Um irmão do mesmo dia.** No mesmo lugar, `WHERE matricula::text = $1`
+comparava a matrícula como texto. A coluna da view é **integer**, e o militar
+digita a matrícula como quiser no login: quem usa zero à esquerda nunca casa.
+O `buscapormatricula.php` escapa porque deixa o Postgres converter o texto
+para número. Agora a comparação normaliza os dois lados
+(`ltrim(..., chr(48))`). `chr(48)` e não `'0'`: essas comparações moram dentro
+de strings do `EXECUTE`, e a aspa simples fecharia a string antes da hora.
+
+A sessão do painel mediu o banco antes de corrigir o lado dela e achou a
+frase que fecha o assunto: **nenhuma matrícula é guardada com zero à
+esquerda** — 0 de 581 vínculos em `intranet.usuarios_perfis` e 0 de 3.878
+contas em `qra.sec_users`. O banco está limpo; o problema é só o que a pessoa
+digita. Por isso a normalização tem de estar em **quem recebe o que foi
+digitado** (login do app, login do painel), não só em quem consulta — senão
+alguém é aceito pela senha e recusado pelo perfil, sem nada que possa fazer.
+
+## 47. Mudar tabelas de esquema sem tirar o app do ar
+
+**O pedido (24/10/2026).** Tudo do SouPM sai de `public` e vai para um
+esquema próprio, `soupm`, com o app da loja e o painel em uso.
+
+**Como foi feito sem janela.** Primeiro o código deixou de citar o esquema:
+o `conexao.php` ganhou `SET search_path TO soupm, public`, e o PHP passou a
+escrever `soupm_x` em vez de `public.soupm_x`. Com isso, o mesmo arquivo acha
+a tabela em `public` antes da mudança e em `soupm` depois. Só então o banco
+mudou, numa transação só.
+
+**O que o teste local pegou antes de produção** (Postgres local com tabela,
+função `SECURITY DEFINER`, função SQL chamando outra e gatilho):
+- `ALTER TABLE ... SET SCHEMA` leva junto índices, sequências de coluna e
+  permissões, mas **não reescreve o corpo das funções**. Uma função com
+  `search_path = public` ou que cita `public.soupm_x` quebra na hora. Por isso
+  as funções foram recriadas a partir de `pg_get_functiondef`, na mesma
+  transação que move as tabelas. Rodar os dois scripts separados deixaria o
+  app quebrado entre um e outro.
+- `pg_get_triggerdef` escreve o nome da função **sem o esquema** quando ela
+  está no `search_path`. Trocar texto por `public.` não acha nada; o gatilho
+  continua preso à função velha e o `DROP FUNCTION` falha (o que, sem
+  `CASCADE`, desfez tudo, como devia).
+- A função nova nasce com os privilégios padrão do esquema, que davam
+  `EXECUTE` a mais um usuário numa função `SECURITY DEFINER`. A permissão foi
+  copiada da função velha (`aclexplode(proacl)`), depois de tirar as padrão.
+- `to_regprocedure` não aceita nome de argumento; para achar a função nova,
+  comparar `proargtypes`.
+
+**Regras.**
+- Script de banco que mexe em várias peças roda numa transação e é testado
+  antes num Postgres local com as mesmas peças.
+- Conferência de "rodou ou não" se faz consultando o banco por nome, não
+  pela memória de uma sessão nem por página aberta: uma leitura antiga dizia
+  que três SQL não tinham rodado, e tinham.
+- Daqui em diante, SQL novo cria em `soupm.`.
+
+
+## 48. Duas quebras que só apareciam usando o app
+
+**Android 16 fechava o app a cada captura de tela (24/10/2026).** O pacote
+`screenshot_recording_detector` (1.9.0) observa a galeria e, a cada imagem
+nova, consulta `content://media/external`, que o Android 16 passou a recusar
+("is hidden API"). A exceção sobe na thread principal e o app fecha. Foi
+achado por acaso: a captura do emulador disparou o detector. No Android o app
+já ignorava os eventos (a proteção lá é o `FLAG_SECURE`), então o detector
+passou a ligar só no iOS. **Regra:** plugin que roda em segundo plano se testa
+na versão mais nova do Android antes de cada envio, e o que não serve à
+plataforma não é ligado nela.
+
+**A barra de abas quebrava a cada troca (faixa amarela).** A largura da aba
+anima com uma curva que passa do fim e volta (o "quique"). O
+`AnimatedContainer` aplicava a mesma curva à sombra, que ia de "nada" a
+"sombra": passando do fim, o raio de desfoque ficava negativo e o build da
+aba falhava. **Regra:** com curva que passa do fim (`easeOutBack`, `Cubic`
+com y > 1), os dois estados animados precisam ter as mesmas peças (sombra,
+degradê), mudando só a cor ou a opacidade.
+
+**"Entrei e apareceu SD STIVES".** Era a compilação do modo vitrine no
+simulador: nela, qualquer login entra como o militar fictício. Para testar com
+conta real: `flutter build ios --simulator --debug --dart-define-from-file=env.json`
+sem `VITRINE`, e desinstalar antes, porque a sessão da vitrine fica guardada.
+
+## 49. Envio da 2.2.0 à App Store (26/10/2026): quatro armadilhas
+
+- **Número de build repetido.** O envio pelo Xcode com
+  `manageAppVersionAndBuildNumber` desligado foi recusado: "the bundle
+  version must be higher than the previously uploaded version: '3'". Um
+  envio anterior pelo Organizer tinha renumerado o mesmo 2.2.0 para 3. O
+  certo é deixar o Xcode numerar (ligado) e conferir na TestFlight
+  ("Uploads de compilações") qual build é o novo, pela hora. Para enviar sem
+  abrir o Organizer: `xcodebuild -exportArchive -archivePath
+  build/ios/archive/Runner.xcarchive -exportOptionsPlist <plist com
+  destination=upload> -allowProvisioningUpdates`. Ele usa a conta já logada
+  no Xcode.
+- **Versão "2.2" × "2.2.0".** A versão criada na App Store Connect se chamava
+  "2.2". Ela foi trocada para "2.2.0", igual ao `CFBundleShortVersionString`
+  do build, antes de escolher a compilação.
+- **Espaço de capturas recolhido muda de lugar.** Depois de "Remover tudo", o
+  espaço opcional se recolhe e os campos de arquivo da página mudam de ordem.
+  As capturas de 6,9" acabaram no espaço obrigatório de 6,3", e a Apple
+  respondeu "dimensões inválidas". Depois de esvaziar, abrir o espaço de novo
+  e procurar o campo de arquivo outra vez. No fim, conferir que cada espaço
+  diz "6 de 10" e nenhum diz "Usando ativos existentes".
+- **Classificação etária com perguntas novas.** "Adicionar para revisão"
+  ficou bloqueado até responder duas perguntas novas sobre redes sociais
+  (respondidas "Não": o app não tem rede social). A classificação continuou
+  4+. Também bloqueia enquanto as capturas ainda estão sendo processadas:
+  esperar alguns segundos e tentar de novo.
+
+---
+
+## 50. O comentário que escrevi virou o motivo pelo qual "não dá para fazer"
+
+**O que aconteceu (27/10/2026).** O usuário disse que o SIGRH tem as funções
+de comando (comandante de Cia, de batalhão). Os dois planos diziam o
+contrário, com a mesma frase: *"o SIGRH ainda não tem a tabela de função, a
+intranet deixou com o DBA"*. A sessão do painel foi ao catálogo do banco de
+produção. **Tem.** `recursoshumanos.policial_lotacao` traz, pela lotação ativa,
+`fk_tipo_func_cod` (a função) e `fk_subu_cod` (a subunidade). **O catálogo
+de nomes ficou medido só depois:** das três chaves estrangeiras declaradas
+na tabela, nenhuma aponta para `cad.funcao` — `fk_func_serv_cod` vai para
+`escalaservico.funcoes_servico`, `fk_subu_cod` para `subunidades` e
+`fk_poli_mili_matricula` para `policial_militar`. O `fk_tipo_func_cod` não
+tem chave declarada, e o nome casa com `escalaservico.tipo_funcao`.
+
+**De onde saiu a frase.** Do fim da minha própria `soupm_regra_vale`:
+
+```sql
+RETURN NULL;  -- funcao_sigrh, lotacao, quadro: sem fonte no banco ainda
+```
+
+"Sem fonte" ali queria dizer apenas **"esta função não implementa"**. Virou
+"não existe fonte", subiu para o cabeçalho do arquivo com um motivo inventado
+(o DBA), e de lá para o `SOUPM_2_2.md`, onde passou a justificar **não fazer**
+a sincronia que o usuário queria desde o começo: entrou como comandante no
+SIGRH, vira gestor no app, sem ninguém cadastrar matrícula.
+
+É o §27 e o §37 outra vez, na camada de cima: lá, "não consegui consultar"
+foi impresso como "não existe"; aqui, **"não implementei" foi documentado
+como "não dá para implementar"**. Nos dois casos o custo é o mesmo: alguém
+decide com base numa afirmação que ninguém mediu.
+
+**O que fazer.**
+- Comentário de código diz **o que o código faz**, não o que o mundo é. "Esta
+  função não trata X" é verificável lendo logo abaixo; "o banco não tem X" é
+  uma afirmação sobre o banco, e afirmação sobre o banco se mede no banco.
+- Quando um plano disser "não dá por causa de Y", **procurar quem mediu Y**.
+  Se a origem for um comentário, uma conversa ou outro plano, ainda não foi
+  medido.
+- Corrigir no **arquivo de origem** também, não só no plano (§46: o
+  comentário antigo estava ensinando o erro).
+
+**E o mesmo erro aconteceu DENTRO da correção, uma hora depois.** Ao
+corrigir a afirmação falsa, escrevi uma consulta de medição que juntava
+`cad.funcao.func_id` com `policial_lotacao.fk_tipo_func_cod`. Nunca olhei as
+chaves estrangeiras: deduzi o join pelos nomes. A sessão do painel foi ver, e
+**nenhuma das três chaves declaradas aponta para `cad.funcao`**. Aquele join
+não daria erro — junta id com id e devolveria **nomes plausíveis e errados**,
+o pior resultado possível, porque ninguém questiona o que vem bonito. Pior:
+a consulta ia para o usuário rodar no phpPgAdmin, onde falharia antes disso
+com `permission denied` (§46), e o erro pareceria confirmar justamente o
+engano que eu estava desfazendo.
+
+Então a regra tem um segundo tempo: **a correção de uma afirmação não medida
+não pode carregar outra afirmação não medida**. Ao desfazer um engano, o
+impulso é entregar logo o caminho da solução, e é aí que entra o palpite
+seguinte. Join se confere no catálogo (`pg_constraint`, ou o painel do
+banco), não no nome das colunas — nome de coluna é intenção de quem
+escreveu, não vínculo declarado. E consulta entregue a alguém rodar é
+conferida também por **quem pode rodá-la**: num banco com esquema fechado,
+"quem lê o quê" faz parte da consulta.
+
+**E o contrário também vale.** Achar a tabela não é achar o dado: a medição
+do conteúdo (quantos militares em cada função) ficou pendente, porque a conta
+do cPanel não lê `recursoshumanos` (§46 de novo). Tabela cheia de colunas
+pode estar vazia de cadastro — o grupo "Comandantes BPM / CIPM" do SIGRH tem
+**3 militares**, e ninguém usa.
+
+**A medição saiu no mesmo dia, pelo painel** (quem lê `recursoshumanos` é o
+usuário de banco da API, não a conta do cPanel), e confirmou a regra nos dois
+sentidos ao mesmo tempo: dos dois catálogos ligados à lotação, um é mantido
+(`funcoes_servico`: *Comandante Geral* com exatamente **1**, que é um número
+que só fecha se alguém mantém) e o outro é inútil (`tipo_funcao`: só
+*Administrativo* e *Operacional*). No meio do catálogo bom há situações
+passando por função (*Agregado*, *Falecido*, *Incapaz*).
+
+**O achado que vale para qualquer regra por id:** *Comandante de Companhia*
+tem **dois códigos**, 54 e 42, e o mesmo acontece em mais três funções. Uma
+regra cadastrada por id pega metade das pessoas e **não dá erro nenhum** —
+seis comandantes perderiam o acesso e ninguém ligaria os pontos. Catálogo de
+sistema antigo acumula sinônimo por id; antes de escrever regra sobre um,
+contar quantos ids respondem ao **mesmo nome**. A medição inteira, com as
+contagens e a terceira fonte que apareceu (a subunidade chamada "Cmt
+Geral"), está no `docs/PENDENTE_USUARIO.md` §1, item 23.
+
+**Achado do mesmo dia, no mesmo arquivo.** Os cinco níveis nascem **sem
+nenhuma regra**. Ligar `niveis.ligado` hoje poria todo mundo no primeiro
+degrau: ninguém seria gestor e a área Gestão sumiria do menu **para todos**.
+O interruptor já exigia "cadastrar as regras no painel", mas sem dizer o que
+acontece se alguém pular isso. Interruptor que estraga a tela quando ligado
+cedo demais precisa dizer **o estrago**, não só a precondição.
+
+**Como o episódio terminou, e é a parte mais útil.** Desbloqueada a
+pergunta, a medição percorreu três fontes no mesmo dia e a resposta não foi
+nenhuma das duas primeiras:
+
+| Fonte | O que pareceu | O que a medição disse |
+|---|---|---|
+| `tipo_funcao` (função de lotação) | o nome promete | só *Administrativo* e *Operacional*: grosso demais |
+| `funcoes_servico` (função de serviço) | **parecia certa**: *Comandante Geral* com exatamente 1 | **não serve**: ver abaixo |
+| **subunidade de lotação** | ninguém tinha olhado | **é a fonte**: efetivo 1, com o cargo no nome do lugar |
+
+A função de serviço reprovou por um detalhe que só apareceu ao listar
+**quem** está em cada código, em vez de contar quantos: entre os 140 de
+*Chefe / Diretor* há **7 militares lotados na subunidade `Cmt`** —
+comandantes cadastrados como "Chefe / Diretor". Uma regra sobre a função
+"Comandante de Companhia" não erraria: ela **não acharia** esses sete, sem
+erro nenhum, e sete comandantes ficariam sem acesso. É o §37 deslocado para
+a escolha da fonte — a contagem fecha, o campo responde, e o que falta não
+aparece em lugar nenhum.
+
+**A regra que fica.** Contagem valida a existência de um cadastro; só a
+lista nominal valida que ele serve para decidir. Antes de pendurar permissão
+num campo, listar quem está nele e cruzar com **outra fonte que diga a mesma
+coisa** — aqui, a lotação dizia "comandante" de quem a função dizia "chefe".
+Duas fontes que discordam é informação; uma fonte sozinha que fecha a conta
+não é.
+
+**Um fecho que o §50 ganhou de volta, no mesmo dia.** A regra escrita acima
+("contagem valida existência; só a lista nominal valida uso") foi aplicada por
+quem a leu, e evitou a repetição exata do erro: ao estudar a lotação como
+fonte, a hipótese era "subunidade de cargo tem efetivo 1", confirmada em três
+amostras (`Cmt` no 1º BPM, `Cmt Geral`, `Cmt CPC`). Em vez de escrever a lista
+a partir das que confirmavam, contaram-se **todas** — e `S Cmt Geral` tem
+**10 militares, um deles soldado**, `Chefia DTI` tem 5, `Coord. Ens. Pol.` tem
+10. Em chefia e gabinete a subunidade é a equipe inteira. A regra ingênua teria
+dado Alto Comando a um soldado do gabinete do Subcomandante.
+
+**A lição que isso acrescenta:** três amostras que confirmam não são medição,
+são a hipótese se olhando no espelho. Medir é contar **o conjunto todo**,
+inclusive onde se espera que a hipótese falhe — e o barato aqui era justamente
+isso, uma contagem por grupo em vez de três consultas pontuais.

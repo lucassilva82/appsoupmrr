@@ -1,8 +1,9 @@
 // ignore_for_file: must_be_immutable
+import 'dart:convert';
 import 'dart:io';
-import 'dart:ui' show ImageFilter;
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:currency_formatter/currency_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -14,12 +15,22 @@ import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../core/design/arte_cartao.dart';
+import '../core/design/folha_arte.dart';
+import '../core/erros/estado_erro.dart';
+import '../core/erros/falha_app.dart';
+import '../core/erros/falha_de.dart';
+import '../core/log/registro_log.dart';
+import '../core/rede/api_client.dart';
+import '../features/contracheque/contracheque_pdf_repositorio.dart';
 import '../models/auth_model.dart';
 import '../models/contracheque_model.dart';
 import '../models/meses_contracheque_model.dart';
+import '../features/contracheque/o_que_mudou.dart';
+import '../features/contracheque/valor_rubrica.dart';
+import '../features/documentos/documentos_locais.dart';
 import '../services/dados_sql.dart';
 import '../utils/app_theme.dart';
-import '../view/second_screen.dart';
 import '../widgets/vidro.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/alerta.dart';
@@ -62,7 +73,12 @@ class _PageContrachequeState extends State<PageContracheque> {
   // tela inteira era substituída pelo indicador de carregamento. Era essa a
   // piscada ao tocar em compartilhar — e a segunda piscada ao cancelar a
   // folha do sistema, quando o setState de encerramento rodava.
-  late final Future<ContrachequeModel> _dados = _buscaDadosSql();
+  late Future<ContrachequeModel> _dados = _buscaDadosSql();
+
+  /// Refaz a consulta no "Tentar de novo" da tela de erro. O Future continua
+  /// num campo do State, nunca dentro do `build` (APRENDIZADOS §10).
+  void _recarregar() => setState(() => _dados = _buscaDadosSql());
+
 
   final CurrencyFormatterSettings _realSettings = CurrencyFormatterSettings(
     symbol: '',
@@ -73,6 +89,16 @@ class _PageContrachequeState extends State<PageContracheque> {
   );
 
   Future<ContrachequeModel> _buscaDadosSql() async {
+    try {
+      return await _carregar();
+    } catch (e) {
+      // Converter e registrar aqui, e não no `build`: o build pode rodar de
+      // novo com o mesmo erro e duplicaria a linha no log.
+      throw falhaDe('CC', e, tela: 'contracheque');
+    }
+  }
+
+  Future<ContrachequeModel> _carregar() async {
     contracheque = await dadosSql.buscaContracheque(
       widget.mesSelecionado.cpf,
       widget.mesSelecionado.ano,
@@ -85,28 +111,44 @@ class _PageContrachequeState extends State<PageContracheque> {
       widget.mesSelecionado.folha,
     );
 
+    // A folha pode estar na lista e ainda não estar na view que a abertura
+    // lê: a lista vem da `vw_cc_novo_1` e a abertura da `vw_cc_novo2`. No dia
+    // em que a folha é carregada as duas divergem por algumas horas, e o
+    // militar via a tela de erro muda. Isto não é falha do app nem do
+    // aparelho: é um mês ainda sem folha, e a mensagem diz isso.
+    if (contracheque.proventos.isEmpty) {
+      throw const FalhaApp(
+        codigo: 'CC-SEM-FOLHA',
+        origem: OrigemFalha.servidor,
+        titulo: 'Este contracheque ainda não está disponível',
+        texto: 'O mês já aparece na lista, mas a folha ainda não terminou de '
+            'ser carregada. No dia em que a folha sai isso costuma levar '
+            'algumas horas. Tente de novo mais tarde.',
+      );
+    }
+
     proventos = 0.0;
     descontos = 0.0;
     totalLiquido = 0.0;
 
     for (final e in contracheque.proventos) {
       if (e.tipoRubrica == 'P') {
-        proventos += double.parse(e.provento);
+        proventos += valorRubricaOuFalha(e.provento, e.descricaoRubrica);
       } else {
-        descontos += double.parse(e.desconto);
+        descontos += valorRubricaOuFalha(e.desconto, e.descricaoRubrica);
       }
     }
     totalLiquido = proventos - descontos;
 
+    // O mesmo `_valor` do total: com dois leitores diferentes, uma rubrica
+    // podia entrar certa na soma e aparecer como 0,00 na linha.
     final formatter =
         NumberFormat.currency(locale: 'pt_BR', symbol: '', decimalDigits: 2);
     for (final e in contracheque.proventos) {
       if (e.tipoRubrica == 'P') {
-        final val = double.tryParse(e.provento) ?? 0.0;
-        e.provento = formatter.format(val);
+        e.provento = formatter.format(valorRubricaOuFalha(e.provento, e.descricaoRubrica));
       } else {
-        final val = double.tryParse(e.desconto) ?? 0.0;
-        e.desconto = formatter.format(val);
+        e.desconto = formatter.format(valorRubricaOuFalha(e.desconto, e.descricaoRubrica));
       }
     }
 
@@ -693,12 +735,27 @@ class _PageContrachequeState extends State<PageContracheque> {
   // guardado e a próxima tentativa abre na hora. O usuário também não fica
   // olhando para uma folha vazia enquanto o PDF ainda está sendo montado.
 
-  /// Gera o PDF, ou devolve o que já foi gerado para este mês.
+  /// O PDF do mês: pronto da API (2.2, §12.3) ou, enquanto ela não emite
+  /// (`contracheque.pdf_api` desligado no painel), o montado no aparelho.
   Future<File> _arquivoPdf(Auth auth) async {
     final pronto = _pdfPronto;
     if (pronto != null && await pronto.exists()) return pronto;
-    final file = await _generatePdf(auth);
+    final daApi = await ContrachequePdfRepositorio(
+      api: ApiClient(),
+      matricula: auth.matricula ?? '',
+      senhaMd5: md5.convert(utf8.encode(auth.password ?? '')).toString(),
+    ).pedir(widget.mesSelecionado, pasta: await getTemporaryDirectory());
+    final file = daApi ?? await _generatePdf(auth);
     _pdfPronto = file;
+    // Fica também na Central de documentos (P4), sem esperar.
+    final m = widget.mesSelecionado;
+    final folha = '${m.tipo}${m.folha}'.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
+    DocumentosLocais().guardarContracheque(auth.matricula ?? '', file,
+        id: '${_nomeArquivo}_${folha.length > 20 ? folha.substring(0, 20) : folha}',
+        titulo: 'Contracheque ${m.mesExtenso}/${m.ano}'
+            '${m.tipo == 'A' ? '' : (m.folha.isNotEmpty ? ' · ${m.folha}' : '')}',
+        ano: int.tryParse(m.ano) ?? 0,
+        mes: int.tryParse(m.mes) ?? 0);
     return file;
   }
 
@@ -809,128 +866,93 @@ class _PageContrachequeState extends State<PageContracheque> {
       required VoidCallback aoTocar,
     }) =>
         Expanded(
-          child: Material(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
+          child: Semantics(
+            button: true,
+            label: 'Enviar como $titulo, $detalhe',
+            excludeSemantics: true,
+            child: CartaoVidro(
+              raio: 14,
               onTap: aoTocar,
-              borderRadius: BorderRadius.circular(12),
-              child: Ink(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color:
-                          theme.colorScheme.onSurface.withValues(alpha: 0.10)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 13, 12, 12),
-                  child: Row(
-                    children: [
-                      icone,
-                      const SizedBox(width: 11),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(titulo,
-                                style: TextStyle(
-                                    fontSize: 13.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: theme.colorScheme.onSurface)),
-                            const SizedBox(height: 1),
-                            Text(detalhe,
-                                style:
-                                    TextStyle(fontSize: 11, color: apagado)),
-                          ],
-                        ),
-                      ),
-                    ],
+              padding: const EdgeInsets.fromLTRB(12, 13, 12, 12),
+              child: Row(
+                children: [
+                  icone,
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(titulo,
+                            style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.onSurface)),
+                        const SizedBox(height: 1),
+                        Text(detalhe,
+                            style: TextStyle(fontSize: 12, color: apagado)),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
         );
 
-    return showModalBottomSheet<_FormatoEnvio>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: theme.colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
+    // Folha no padrão 2.2 (faixa com a arte do contracheque no topo).
+    return mostrarFolhaArte<_FormatoEnvio>(
+      context,
+      arte: Arte.de('cc'),
+      icone: Icons.ios_share_rounded,
+      titulo: 'Confira antes de enviar',
+      subtitulo:
+          'Contracheque de ${widget.mesSelecionado.mesExtenso}/${widget.mesSelecionado.ano}',
+      corpo: (ctx) {
         final altura = MediaQuery.of(ctx).size.height;
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // A página inteira, com zoom. Rubrica pequena num celular
+            // pequeno fica ilegível sem isso, e conferir é o objetivo.
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: altura * 0.46),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: ColoredBox(
+                  // A prévia é o papel do documento: branco nos dois temas.
+                  color: Colors.white,
+                  child: InteractiveViewer(
+                    maxScale: 4,
+                    child: Image.memory(pagina, fit: BoxFit.contain),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
               children: [
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                opcao(
+                  icone: const _IconePdf(altura: 30),
+                  titulo: 'PDF',
+                  detalhe: _tamanhoLegivel(bytesPdf),
+                  aoTocar: () => Navigator.of(ctx).pop(_FormatoEnvio.pdf),
                 ),
-                const SizedBox(height: 14),
-                Text('Confira antes de enviar',
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 4),
-                Text(
-                  'Contracheque de ${widget.mesSelecionado.mesExtenso}/${widget.mesSelecionado.ano}',
-                  style: theme.textTheme.bodySmall?.copyWith(color: apagado),
-                ),
-                const SizedBox(height: 14),
-
-                // A página inteira, com zoom. Rubrica pequena num celular
-                // pequeno fica ilegível sem isso, e conferir é o objetivo.
-                Flexible(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: altura * 0.52),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        color: Colors.white,
-                        child: InteractiveViewer(
-                          maxScale: 4,
-                          child: Image.memory(pagina, fit: BoxFit.contain),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    opcao(
-                      icone: const _IconePdf(altura: 30),
-                      titulo: 'PDF',
-                      detalhe: _tamanhoLegivel(bytesPdf),
-                      aoTocar: () => Navigator.of(ctx).pop(_FormatoEnvio.pdf),
-                    ),
-                    const SizedBox(width: 10),
-                    opcao(
-                      icone: const _IconeImagem(altura: 30),
-                      titulo: 'Imagem',
-                      detalhe: _tamanhoLegivel(bytesImagem),
-                      aoTocar: () =>
-                          Navigator.of(ctx).pop(_FormatoEnvio.imagem),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('Cancelar'),
+                const SizedBox(width: 10),
+                opcao(
+                  icone: const _IconeImagem(altura: 30),
+                  titulo: 'Imagem',
+                  detalhe: _tamanhoLegivel(bytesImagem),
+                  aoTocar: () => Navigator.of(ctx).pop(_FormatoEnvio.imagem),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              style: TextButton.styleFrom(minimumSize: const Size(88, 44)),
+              child: const Text('Cancelar'),
+            ),
+          ],
         );
       },
     );
@@ -975,11 +997,13 @@ class _PageContrachequeState extends State<PageContracheque> {
       // mentiria para metade dos usuários.
     } catch (e) {
       debugPrint('[CONTRACHEQUE] erro ao compartilhar: $e');
+      final falha = e is FalhaApp ? e : FalhaApp.inesperada('CC', e);
+      registrarErro(falha, tela: 'rh.contracheques');
       if (!mounted) return;
       alertaErro(
         context,
-        titulo: 'Erro',
-        texto: 'Não foi possível gerar o contracheque para compartilhar.',
+        titulo: falha.titulo,
+        texto: '${falha.texto}\n\n${falha.deQuem} · Código ${falha.codigo}',
         confirmar: 'OK',
       );
     } finally {
@@ -1001,13 +1025,43 @@ class _PageContrachequeState extends State<PageContracheque> {
       future: _dados,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body:
-                Center(child: CircularProgressIndicator(color: AppColors.blue)),
+          return const FundoSuave(
+            child: Scaffold(
+              body: Center(child: CircularProgressIndicator.adaptive()),
+            ),
           );
         }
-        if (snapshot.hasError) return SecondScreen();
-        if (!snapshot.hasData) return SecondScreen();
+        final erro = snapshot.error;
+        if (erro != null || !snapshot.hasData) {
+          // `_buscaDadosSql` já converte e registra a falha uma vez só; o
+          // `falhaDe` aqui é só a rede de segurança, porque o `build` pode
+          // rodar de novo com o mesmo erro (troca de tema, rotação).
+          final falha = erro is FalhaApp
+              ? erro
+              : falhaDe('CC', erro, tela: 'contracheque');
+          return FundoSuave(
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              appBar: AppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                centerTitle: true,
+                iconTheme: IconThemeData(
+                    color: Theme.of(context).colorScheme.onSurface),
+                flexibleSpace: const FundoBarraVidro(),
+                title: Text('Contracheque',
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface)),
+              ),
+              body: EstadoErro(
+                falha: falha,
+                tela: 'contracheque',
+                chave: 'rh.contracheques',
+                aoTentar: _recarregar,
+              ),
+            ),
+          );
+        }
 
         final proventosLista = contracheque.proventos
             .where((r) => r.tipoRubrica == 'P')
@@ -1015,6 +1069,8 @@ class _PageContrachequeState extends State<PageContracheque> {
         final descontosLista = contracheque.proventos
             .where((r) => r.tipoRubrica != 'P')
             .toList();
+        final verde = _verde(theme);
+        final vermelho = _vermelho(theme);
 
         return FundoSuave(
           child: Scaffold(
@@ -1023,12 +1079,12 @@ class _PageContrachequeState extends State<PageContracheque> {
               backgroundColor: Colors.transparent,
               elevation: 0,
               centerTitle: true,
-              iconTheme: const IconThemeData(color: Colors.white),
+              iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
               flexibleSpace: const FundoBarraVidro(),
-              title: const Text(
+              title: Text(
                 'Contracheque',
                 style: TextStyle(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.4),
@@ -1055,7 +1111,7 @@ class _PageContrachequeState extends State<PageContracheque> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 132),
               children: [
                 _tituloCompetencia(theme),
-                const SizedBox(height: 18),
+                const SizedBox(height: 14),
                 _cartaoServidor(auth, theme),
                 const SizedBox(height: 14),
                 _cartaoLiquido(theme),
@@ -1063,20 +1119,25 @@ class _PageContrachequeState extends State<PageContracheque> {
                 if (proventosLista.isNotEmpty) ...[
                   _tituloSecao(theme,
                       rotulo: 'Proventos',
-                      cor: _verde,
+                      cor: verde,
                       quantidade: proventosLista.length),
                   const SizedBox(height: 10),
-                  _blocoRubricas(theme, proventosLista, _verde),
+                  _blocoRubricas(theme, proventosLista, verde),
                   const SizedBox(height: 22),
                 ],
                 if (descontosLista.isNotEmpty) ...[
                   _tituloSecao(theme,
                       rotulo: 'Descontos',
-                      cor: _vermelho,
+                      cor: vermelho,
                       quantidade: descontosLista.length),
                   const SizedBox(height: 10),
-                  _blocoRubricas(theme, descontosLista, _vermelho),
+                  _blocoRubricas(theme, descontosLista, vermelho),
                 ],
+                const SizedBox(height: 18),
+                BotaoOQueMudou(
+                    mes: widget.mesSelecionado,
+                    contracheque: contracheque,
+                    valoresVisiveis: _valoresVisiveis),
                 const SizedBox(height: 18),
                 _rodapeAviso(theme),
               ],
@@ -1092,16 +1153,17 @@ class _PageContrachequeState extends State<PageContracheque> {
   // oficial, não um painel. O verde e o vermelho marcam a natureza da
   // rubrica, mas quem informa de fato são o rótulo da seção e o sinal do
   // valor — cor sozinha não carrega significado.
-  static const _verde = Color(0xFF34D399);
-  static const _vermelho = Color(0xFFF87171);
+  // Os pares do DESIGN §3: a versão clara no fundo escuro e a escura no
+  // claro, para passar de 4,5:1 nos dois temas.
+  Color _verde(ThemeData theme) => theme.brightness == Brightness.dark
+      ? AppColors.sucessoEscuro
+      : AppColors.sucesso;
+  Color _vermelho(ThemeData theme) => theme.brightness == Brightness.dark
+      ? AppColors.falhaEscuro
+      : AppColors.falha;
 
-  Color _superficie(ThemeData theme) => theme.brightness == Brightness.dark
-      ? Colors.white.withValues(alpha: 0.04)
-      : AppColors.navy.withValues(alpha: 0.04);
-
-  Color _contorno(ThemeData theme) => theme.brightness == Brightness.dark
-      ? Colors.white.withValues(alpha: 0.08)
-      : AppColors.navy.withValues(alpha: 0.10);
+  Color _contorno(ThemeData theme) =>
+      theme.colorScheme.onSurface.withValues(alpha: 0.08);
 
   Color _apagado(ThemeData theme) =>
       theme.colorScheme.onSurface.withValues(alpha: 0.55);
@@ -1109,34 +1171,40 @@ class _PageContrachequeState extends State<PageContracheque> {
   String get _oculto => '••••••';
 
   // ── Competência ───────────────────────────────────────────────────────
+  // O mês como título simples, sem cartão: a arte cheia fica só no cartão do
+  // valor líquido, que é o destaque da tela. Com dois cartões iguais em
+  // sequência, nenhum se destacava.
   Widget _tituloCompetencia(ThemeData theme) {
     final mes = widget.mesSelecionado.mesExtenso;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        RichText(
-          text: TextSpan(
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontSize: 23,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-              letterSpacing: -0.3,
+    final destaque = theme.brightness == Brightness.dark ? Arte.de('cc').destaque : Arte.de('cc').meio;
+    return Semantics(
+      header: true,
+      label: 'Contracheque de $mes de ${widget.mesSelecionado.ano}',
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(2, 2, 2, 0),
+        child: Row(children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: destaque.withValues(alpha: .14),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: destaque.withValues(alpha: .35)),
             ),
-            children: [
-              TextSpan(text: '$mes '),
-              TextSpan(
-                text: widget.mesSelecionado.ano,
-                style: TextStyle(
-                    fontWeight: FontWeight.w400, color: _apagado(theme)),
-              ),
-            ],
+            child: Icon(Icons.receipt_long_outlined, size: AppIconSize.md, color: destaque),
           ),
-        ),
-        const SizedBox(height: 3),
-        Text('Demonstrativo de pagamento',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: _apagado(theme), fontSize: 11.5)),
-      ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('$mes ${widget.mesSelecionado.ano}',
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+              Text('Demonstrativo de pagamento',
+                  style: theme.textTheme.bodySmall?.copyWith(color: _apagado(theme))),
+            ]),
+          ),
+        ]),
+      ),
     );
   }
 
@@ -1162,27 +1230,17 @@ class _PageContrachequeState extends State<PageContracheque> {
           ],
         );
 
-    return Container(
-      decoration: BoxDecoration(
-        color: _superficie(theme),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _contorno(theme)),
-      ),
+    return CartaoVidro(
+      arte: Arte.de('cc'),
       padding: const EdgeInsets.fromLTRB(16, 15, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.blue.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(11),
-                ),
+              ExcludeSemantics(
                 child: Icon(Icons.person_outline_rounded,
-                    size: 21, color: AppColors.lightBlue),
+                    size: AppIconSize.md, color: theme.colorScheme.primary),
               ),
               const SizedBox(width: 13),
               Expanded(
@@ -1242,59 +1300,49 @@ class _PageContrachequeState extends State<PageContracheque> {
   }
 
   // ── Cartão do valor líquido ───────────────────────────────────────────
-  Widget _cartaoLiquido(ThemeData theme) {
-    final escuro = theme.brightness == Brightness.dark;
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: escuro
-              ? [
-                  AppColors.blue.withValues(alpha: 0.26),
-                  AppColors.navy.withValues(alpha: 0.22),
-                ]
-              : [
-                  AppColors.blue.withValues(alpha: 0.12),
-                  AppColors.navy.withValues(alpha: 0.07),
-                ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.blue.withValues(alpha: 0.22)),
-      ),
+  // Arte cheia do contracheque (padrão 2.2). O fundo é sempre escuro, então
+  // o conteúdo lê o tema de cima da arte (texto branco) e proventos e
+  // descontos usam o verde e o vermelho claros (DESIGN §3).
+  Widget _cartaoLiquido(ThemeData temaFora) {
+    return CartaoArte(
+      arte: Arte.de('cc'),
+      raio: 16,
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Valor líquido',
-              style: TextStyle(
-                  fontSize: 12,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.75))),
-          const SizedBox(height: 8),
-          _valorGrande(theme),
-          const SizedBox(height: 14),
-          Divider(
-              height: 1,
-              thickness: 1,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
-          const SizedBox(height: 13),
-          Row(
-            children: [
-              Expanded(
-                  child: _resumoColuna(
-                      theme, 'Proventos', proventos, _verde)),
-              Container(
-                  width: 1,
-                  height: 32,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
-              const SizedBox(width: 16),
-              Expanded(
-                  child: _resumoColuna(
-                      theme, 'Descontos', descontos, _vermelho)),
-            ],
-          ),
-        ],
-      ),
+      child: Builder(builder: (context) {
+        final theme = Theme.of(context);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Valor líquido',
+                style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.75))),
+            const SizedBox(height: 8),
+            _valorGrande(theme),
+            const SizedBox(height: 14),
+            Divider(
+                height: 1,
+                thickness: 1,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
+            const SizedBox(height: 13),
+            Row(
+              children: [
+                Expanded(
+                    child: _resumoColuna(theme, 'Proventos', proventos,
+                        AppColors.sucessoEscuro)),
+                Container(
+                    width: 1,
+                    height: 32,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
+                const SizedBox(width: 16),
+                Expanded(
+                    child: _resumoColuna(
+                        theme, 'Descontos', descontos, AppColors.falhaEscuro)),
+              ],
+            ),
+          ],
+        );
+      }),
     );
   }
 
@@ -1379,14 +1427,10 @@ class _PageContrachequeState extends State<PageContracheque> {
   // ── Bloco de rubricas ─────────────────────────────────────────────────
   Widget _blocoRubricas(
       ThemeData theme, List<TipoProvento> itens, Color cor) {
-    return Container(
-      decoration: BoxDecoration(
-        color: cor.withValues(alpha: theme.brightness == Brightness.dark
-            ? 0.055
-            : 0.045),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cor.withValues(alpha: 0.18)),
-      ),
+    // Superfície de vidro como o resto do app; a cor da natureza da rubrica
+    // fica no título da seção e no valor (cor não é o único indicador).
+    return CartaoVidro(
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           for (var i = 0; i < itens.length; i++) ...[
@@ -1394,9 +1438,7 @@ class _PageContrachequeState extends State<PageContracheque> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: cor.withValues(alpha: 0.14)),
+                    height: 1, thickness: 1, color: _contorno(theme)),
               ),
             _linhaRubrica(theme, itens[i], cor),
           ],
@@ -1474,73 +1516,29 @@ class _PageContrachequeState extends State<PageContracheque> {
   // não rouba uma faixa fixa da tela, que numa lista longa de rubricas faz
   // falta. O formato — PDF ou imagem — é escolhido na prévia, depois de o
   // militar ver o documento.
+  // Ação principal da tela: botão cheio do tema (AppColors.acao), como os
+  // outros botões principais do app (DESIGN §5).
   Widget _botaoCompartilhar(Auth auth) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final primaria = theme.colorScheme.primary;
     final ocupado = _sharingPdf || _sharingImage;
-
-    // Mesma receita da pílula do item ativo no menu inferior
-    // (barra_navegacao.dart): primária a 22% com borda a 35%, raio 18 e o
-    // mesmo desfoque de fundo. Assim o botão pertence ao app em vez de
-    // parecer um elemento colado por cima.
-    final conteudo = Container(
-      decoration: BoxDecoration(
-        color: primaria.withValues(alpha: isDark ? 0.22 : 0.12),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: primaria.withValues(alpha: isDark ? 0.35 : 0.22),
-          width: 0.8,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: ocupado ? null : () => _compartilhar(auth),
-          borderRadius: BorderRadius.circular(18),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 13, 20, 13),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ocupado
-                    ? SizedBox(
-                        width: 17,
-                        height: 17,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: primaria),
-                      )
-                    : Icon(Icons.ios_share_rounded, size: 18, color: primaria),
-                const SizedBox(width: 9),
-                Text(
-                  ocupado ? 'Gerando…' : 'Compartilhar',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.1,
-                    color: primaria,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
     return Semantics(
       button: true,
-      label: 'Compartilhar contracheque',
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        // Vidro só no iOS, como na barra de navegação: no Android o desfoque
-        // de fundo custa caro e a superfície do Material já resolve.
-        child: Platform.isAndroid
-            ? conteudo
-            : BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-                child: conteudo,
-              ),
+      label: ocupado ? 'Gerando o arquivo' : 'Compartilhar contracheque',
+      excludeSemantics: true,
+      child: FilledButton.icon(
+        style: FilledButton.styleFrom(
+          elevation: 4,
+          minimumSize: const Size(48, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+        ),
+        onPressed: ocupado ? null : () => _compartilhar(auth),
+        icon: ocupado
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.ios_share_rounded, size: AppIconSize.sm),
+        label: Text(ocupado ? 'Gerando…' : 'Compartilhar'),
       ),
     );
   }
@@ -1571,21 +1569,27 @@ class _BotaoOlho extends StatelessWidget {
       child: InkWell(
         onTap: aoTocar,
         borderRadius: BorderRadius.circular(20),
-        child: Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.blue.withValues(alpha: 0.16),
-            border:
-                Border.all(color: AppColors.lightBlue.withValues(alpha: 0.45)),
-          ),
-          child: Icon(
-            visivel
-                ? Icons.visibility_outlined
-                : Icons.visibility_off_outlined,
-            size: 19,
-            color: AppColors.lightBlue,
+        // Alvo de 44 pt; o vidro segue o tema (a barra é clara no tema claro).
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Center(
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.22)),
+              ),
+              child: Icon(
+                visivel
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                size: AppIconSize.sm,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
           ),
         ),
       ),

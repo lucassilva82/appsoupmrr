@@ -5,8 +5,8 @@ import 'package:projetonovo/utils/app_theme.dart';
 import '../models/endereco.dart';
 import '../models/militar.dart';
 import '../services/dados_sql.dart';
-import '../utils/app_routes.dart';
-import '../widgets/barra_vidro.dart';
+import '../core/design/arte_cartao.dart';
+import '../widgets/custom_appbar.dart';
 import '../widgets/alerta.dart';
 import '../widgets/vidro.dart';
 import '../widgets/aviso_rapido.dart';
@@ -41,8 +41,8 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    const primaryBlue = AppColors.blue;
+    final primaria = theme.colorScheme.primary;
+    final apagado = theme.colorScheme.onSurface.withValues(alpha: 0.6);
 
     if (widget.inicio) {
       widget.enderecoCompleto = widget.militar.endereco;
@@ -55,343 +55,193 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
       widget.inicio = false;
     }
 
-    return FundoSuave(child: Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Atualizar Endereço',
-          style: TextStyle(
-              fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
+    // Campo de Número e CEP: com o endereço novo escolhido, vira campo do
+    // tema (rótulo visível, contorno); antes disso, é só leitura.
+    Widget campoEditavel(String rotulo, String exemplo,
+        TextEditingController controller, IconData icone) {
+      if (!widget.alterouDados) {
+        return _endRow(theme, rotulo,
+            controller.text.isEmpty ? '—' : controller.text, icone);
+      }
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: rotulo,
+            hintText: exemplo,
+            prefixIcon: Icon(icone, size: AppIconSize.sm),
+          ),
         ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        flexibleSpace: const FundoBarraVidro(),
-      ),
+      );
+    }
+
+    return FundoSuave(child: Scaffold(
+      appBar: const CustomAppBar(title: 'Atualizar endereço'),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // ── Topo com a arte da ficha (padrão 2.2) ─────────────────────
+            TopoArte(
+              arte: Arte.de('rh'),
+              icone: Icons.home_outlined,
+              titulo: 'Atualizar endereço',
+              subtitulo: 'Busque a rua ou o bairro, escolha o endereço '
+                  'e informe o número e o CEP.',
+              margem: const EdgeInsets.only(bottom: 16),
+            ),
+
             // ── Campo de busca ────────────────────────────────────────────
-            Text(
-              'Buscar novo endereço',
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: isDark
-                    ? theme.colorScheme.surface
-                    : const Color(0xFFF2F6FF),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color:
-                      isDark ? AppColors.darkBorder : const Color(0xFFDDE6F5),
+            // O campo do tema (contorno, raio e rótulo), sem caixa própria.
+            TypeAheadField<Endereco?>(
+              controller: widget.controllerEnderecoNovo,
+              errorBuilder: (context, error) => ListTile(
+                leading: Icon(Icons.search_rounded,
+                    size: AppIconSize.sm, color: primaria),
+                title: Text(
+                  _query.length < 3
+                      ? 'Mín. 3 caracteres para buscar'
+                      : 'Erro ao buscar. Tente novamente.',
+                  style: const TextStyle(fontSize: 13),
                 ),
               ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 14),
-                  Icon(Icons.search_rounded,
-                      color: primaryBlue.withValues(alpha: 0.7), size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TypeAheadField<Endereco?>(
-                      controller: widget.controllerEnderecoNovo,
-                      errorBuilder: (context, error) => ListTile(
-                        leading: const Icon(Icons.search_rounded,
-                            size: 18, color: AppColors.blue),
-                        title: Text(
-                          _query.length < 3
-                              ? 'Mín. 3 caracteres para buscar'
-                              : 'Erro ao buscar. Tente novamente.',
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                      ),
-                      loadingBuilder: (context) => const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: LinearProgressIndicator(),
-                      ),
-                      emptyBuilder: (context) => ListTile(
-                        leading: Icon(
-                          _query.length < 3
-                              ? Icons.keyboard_outlined
-                              : Icons.search_off_rounded,
-                          size: 18,
-                          color: AppColors.blue.withValues(alpha: 0.6),
-                        ),
-                        title: Text(
-                          _query.length < 3
-                              ? 'Mín. 3 caracteres para buscar'
-                              : 'Nenhum resultado encontrado',
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                      ),
-                      builder: (context, controller, focusNode) {
-                        return TextField(
-                          controller: widget.controllerEnderecoNovo,
-                          focusNode: focusNode,
-                          obscureText: false,
-                          style: const TextStyle(fontSize: 14),
-                          decoration: InputDecoration(
-                            hintText: 'Digite a rua ou bairro...',
-                            hintStyle: TextStyle(
-                              fontSize: 13,
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.4),
-                            ),
-                            border: InputBorder.none,
-                            contentPadding:
-                                const EdgeInsets.symmetric(vertical: 14),
-                          ),
-                        );
-                      },
-                      suggestionsCallback: (query) async {
-                        setState(() => _query = query);
-                        if (query.trim().length < 3) return [];
-                        return widget.dadosSql.listaEnderecoCompleto(query);
-                      },
-                      itemBuilder: (context, Endereco? suggestion) {
-                        if (suggestion == null) return const SizedBox.shrink();
-                        return ListTile(
-                          leading: const Icon(Icons.location_on_outlined,
-                              size: 18, color: AppColors.blue),
-                          title: Text(
-                            suggestion.logradouro ?? '',
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                        );
-                      },
-                      onSelected: (end) {
-                        atualizaDados();
-                        if (end != null) alteraEndereco(end);
-                      },
+              loadingBuilder: (context) => const Padding(
+                padding: EdgeInsets.all(12),
+                child: LinearProgressIndicator(),
+              ),
+              emptyBuilder: (context) => ListTile(
+                leading: Icon(
+                  _query.length < 3
+                      ? Icons.keyboard_outlined
+                      : Icons.search_off_rounded,
+                  size: AppIconSize.sm,
+                  color: apagado,
+                ),
+                title: Text(
+                  _query.length < 3
+                      ? 'Mín. 3 caracteres para buscar'
+                      : 'Nenhum resultado encontrado',
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ),
+              builder: (context, controller, focusNode) {
+                return TextField(
+                  controller: widget.controllerEnderecoNovo,
+                  focusNode: focusNode,
+                  obscureText: false,
+                  decoration: InputDecoration(
+                    labelText: 'Buscar novo endereço',
+                    hintText: 'Digite a rua ou bairro...',
+                    prefixIcon:
+                        const Icon(Icons.search_rounded, size: AppIconSize.sm),
+                    suffixIcon: IconButton(
+                      tooltip: 'Limpar',
+                      onPressed: limpaDados,
+                      icon: const Icon(Icons.close_rounded,
+                          size: AppIconSize.sm),
                     ),
                   ),
-                  IconButton(
-                    onPressed: limpaDados,
-                    icon: Icon(Icons.close_rounded,
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                        size: 20),
+                );
+              },
+              suggestionsCallback: (query) async {
+                setState(() => _query = query);
+                if (query.trim().length < 3) return [];
+                return widget.dadosSql.listaEnderecoCompleto(query);
+              },
+              itemBuilder: (context, Endereco? suggestion) {
+                if (suggestion == null) return const SizedBox.shrink();
+                return ListTile(
+                  leading: Icon(Icons.location_on_outlined,
+                      size: AppIconSize.sm, color: primaria),
+                  title: Text(
+                    suggestion.logradouro ?? '',
+                    style: const TextStyle(fontSize: 13),
                   ),
-                ],
-              ),
+                );
+              },
+              onSelected: (end) {
+                atualizaDados();
+                if (end != null) alteraEndereco(end);
+              },
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            // ── Card de endereço atual ────────────────────────────────────
-            Container(
-              decoration: BoxDecoration(
-                color: isDark
-                    ? theme.colorScheme.surface.withOpacity(0.72)
-                    : Colors.white.withOpacity(0.78),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: widget.alterouDados
-                      ? primaryBlue.withValues(alpha: 0.4)
-                      : (isDark
-                          ? AppColors.darkBorder
-                          : const Color(0xFFE8EFFA)),
-                  width: widget.alterouDados ? 1.5 : 1,
-                ),
-                boxShadow: isDark
-                    ? []
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-              ),
+            // ── Endereço atual / novo ─────────────────────────────────────
+            CartaoVidro(
+              arte: Arte.de('rh'),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Cabeçalho
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                    decoration: BoxDecoration(
-                      color:
-                          primaryBlue.withValues(alpha: isDark ? 0.18 : 0.08),
-                      borderRadius:
-                          const BorderRadius.vertical(top: Radius.circular(16)),
-                    ),
+                  // Cabeçalho (sem quadradinho tingido atrás do ícone, §2b)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
                     child: Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: primaryBlue.withValues(
-                                alpha: isDark ? 0.25 : 0.12),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.home_outlined,
-                              size: 16, color: primaryBlue),
+                        ExcludeSemantics(
+                          child: Icon(Icons.home_outlined,
+                              size: AppIconSize.xs, color: primaria),
                         ),
                         const SizedBox(width: 10),
-                        Text(
-                          widget.alterouDados
-                              ? 'Novo Endereço'
-                              : 'Endereço Atual',
-                          style: theme.textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                        Expanded(
+                          child: Text(
+                            widget.alterouDados
+                                ? 'Novo endereço'
+                                : 'Endereço atual',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
                         ),
-                        if (widget.alterouDados) ...[
-                          const Spacer(),
+                        if (widget.alterouDados)
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: primaryBlue.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(20),
+                              color: primaria.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Alterado',
                               style: TextStyle(
-                                  color: primaryBlue,
+                                  color: primaria,
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold),
                             ),
                           ),
-                        ],
                       ],
                     ),
                   ),
+                  const Divider(height: 1, indent: 14, endIndent: 14),
 
-                  // Campos de exibição
+                  // Campos
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 4),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         _endRow(
                             theme,
-                            isDark,
                             'Município',
                             widget.enderecoCompleto.municipio?.nome ?? '—',
                             Icons.location_city_outlined),
                         _endRow(
                             theme,
-                            isDark,
                             'Rua',
                             widget.enderecoCompleto.rua?.nome ?? '—',
                             Icons.map_outlined),
                         _endRow(
                             theme,
-                            isDark,
                             'Bairro',
                             widget.enderecoCompleto.bairro?.nome ?? '—',
                             Icons.holiday_village_outlined),
-
-                        // Número — editável
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Icon(Icons.pin_outlined,
-                                  size: 16,
-                                  color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.4)),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Número',
-                                        style: theme.textTheme.labelSmall
-                                            ?.copyWith(
-                                          color: theme.colorScheme.onSurface
-                                              .withValues(alpha: 0.5),
-                                        )),
-                                    const SizedBox(height: 2),
-                                    SizedBox(
-                                      height: 28,
-                                      child: TextField(
-                                        controller: widget.controllerNumero,
-                                        readOnly: !widget.alterouDados,
-                                        keyboardType: TextInputType.number,
-                                        style: theme.textTheme.bodyMedium
-                                            ?.copyWith(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 13),
-                                        decoration: InputDecoration(
-                                          isDense: true,
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                  vertical: 4),
-                                          border: widget.alterouDados
-                                              ? const UnderlineInputBorder()
-                                              : InputBorder.none,
-                                          hintText: 'Ex: 123',
-                                          hintStyle: TextStyle(
-                                              fontSize: 13,
-                                              color: Colors.grey.shade400),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // CEP — editável
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 0),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Icon(Icons.local_post_office_outlined,
-                                  size: 16,
-                                  color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.4)),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('CEP',
-                                        style: theme.textTheme.labelSmall
-                                            ?.copyWith(
-                                          color: theme.colorScheme.onSurface
-                                              .withValues(alpha: 0.5),
-                                        )),
-                                    const SizedBox(height: 2),
-                                    SizedBox(
-                                      height: 28,
-                                      child: TextField(
-                                        controller: widget.controllerCep,
-                                        readOnly: !widget.alterouDados,
-                                        keyboardType: TextInputType.number,
-                                        style: theme.textTheme.bodyMedium
-                                            ?.copyWith(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 13),
-                                        decoration: InputDecoration(
-                                          isDense: true,
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                  vertical: 4),
-                                          border: widget.alterouDados
-                                              ? const UnderlineInputBorder()
-                                              : InputBorder.none,
-                                          hintText: 'Ex: 69314623',
-                                          hintStyle: TextStyle(
-                                              fontSize: 13,
-                                              color: Colors.grey.shade400),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        campoEditavel('Número', 'Ex: 123',
+                            widget.controllerNumero, Icons.pin_outlined),
+                        campoEditavel('CEP', 'Ex: 69314623',
+                            widget.controllerCep,
+                            Icons.local_post_office_outlined),
                       ],
                     ),
                   ),
@@ -406,13 +256,11 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  icon: const Icon(Icons.save_rounded, size: 18),
-                  label: const Text('Salvar Alterações',
-                      style: TextStyle(fontSize: 15)),
+                  icon: const Icon(Icons.save_rounded, size: AppIconSize.sm),
+                  label: const Text('Salvar alterações'),
+                  // Cor e forma do filledButtonTheme (DESIGN §5).
                   style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                    minimumSize: const Size.fromHeight(50),
                   ),
                   onPressed: _saving
                       ? null
@@ -484,16 +332,17 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
     ));
   }
 
-  Widget _endRow(
-      ThemeData theme, bool isDark, String label, String value, IconData icon) {
+  Widget _endRow(ThemeData theme, String label, String value, IconData icon) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon,
-              size: 16,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+          ExcludeSemantics(
+            child: Icon(icon,
+                size: AppIconSize.xs,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -542,61 +391,52 @@ class _EdicaoEnderecoPageState extends State<EdicaoEnderecoPage> {
   }
 }
 
-// ── Loading dialog (reutilizável) ─────────────────────────────────────────────
+// ── Aviso de "salvando" ───────────────────────────────────────────────────────
+// Caixa de vidro do app (CartaoVidro), com o indicador da plataforma.
 class _EnderecoLoadingDialog extends StatelessWidget {
   const _EnderecoLoadingDialog();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
       child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 32),
-          decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.055)
-                : Colors.white.withValues(alpha: 0.72),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.12),
-                blurRadius: 32,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(
-                width: 48,
-                height: 48,
-                child: CircularProgressIndicator(
-                  color: AppColors.blue,
-                  strokeWidth: 3.5,
+        child: Semantics(
+          liveRegion: true,
+          label: 'Salvando. Aguarde um momento.',
+          excludeSemantics: true,
+          child: CartaoVidro(
+            raio: 22,
+            arte: Arte.de('rh'),
+            padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: CircularProgressIndicator.adaptive(),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Salvando...',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                const SizedBox(height: 18),
+                Text(
+                  'Salvando…',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Aguarde um momento',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                const SizedBox(height: 4),
+                Text(
+                  'Aguarde um momento',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

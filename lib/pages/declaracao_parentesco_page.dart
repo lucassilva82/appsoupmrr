@@ -1,3 +1,5 @@
+import 'package:projetonovo/widgets/alerta.dart';
+import 'package:projetonovo/widgets/dialogo_confirmacao.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -7,6 +9,8 @@ import 'package:projetonovo/utils/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/vidro.dart';
+import '../core/erros/falha_de.dart';
+import '../core/design/arte_cartao.dart';
 
 class DeclaracaoParentescoPage extends StatefulWidget {
   final String ano;
@@ -104,7 +108,7 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
     } catch (e) {
       await _showNotice(
         title: 'Erro',
-        message: 'Erro inesperado: $e',
+        message: textoFalha('DC', e, tela: 'rh.declaracoes.parentesco'),
         isError: true,
       );
     } finally {
@@ -184,7 +188,7 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
     } catch (e) {
       await _showNotice(
         title: 'Erro',
-        message: 'Erro inesperado: $e',
+        message: textoFalha('DC', e, tela: 'rh.declaracoes.parentesco'),
         isError: true,
       );
     } finally {
@@ -204,7 +208,8 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
     _showBusyDialog('Excluindo...');
 
     try {
-      final url = 'https://pmrr.online/flutter/sigrh/excluiparentesco.php?id=$id';
+      final url =
+          'https://pmrr.online/flutter/sigrh/excluiparentesco.php?id=$id';
       final response = await http.get(Uri.parse(url));
       _dismissDialogIfOpen();
 
@@ -239,7 +244,7 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
       _dismissDialogIfOpen();
       await _showNotice(
         title: 'Erro',
-        message: 'Erro inesperado: $e',
+        message: textoFalha('DC', e, tela: 'rh.declaracoes.parentesco'),
         isError: true,
       );
     }
@@ -248,20 +253,20 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
-    return FundoSuave(child: Scaffold(
+    return FundoSuave(
+        child: Scaffold(
       appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
+        title: Text(
           'Declaração de Parentesco',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w700),
         ),
         flexibleSpace: const FundoBarraVidro(),
       ),
       body: isLoading
-            ? const Center(child: CircularProgressIndicator.adaptive())
-            : _buildContent(theme),
+          ? const Center(child: CircularProgressIndicator.adaptive())
+          : _buildContent(theme),
     ));
   }
 
@@ -277,7 +282,7 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
 
   Widget _buildQuestionStep(ThemeData theme) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         _introBanner(
           theme,
@@ -328,7 +333,7 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
 
   Widget _buildNoRelationStep(ThemeData theme) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         _introBanner(
           theme,
@@ -364,7 +369,7 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
               _introBanner(
                 theme,
@@ -394,7 +399,6 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
                 value: parentescoId,
                 decoration: const InputDecoration(
                   labelText: 'Grau de parentesco',
-                  border: OutlineInputBorder(),
                   isDense: true,
                   contentPadding:
                       EdgeInsets.symmetric(horizontal: 12, vertical: 11),
@@ -452,29 +456,29 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
           ),
         );
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
-        ),
-        child: ListTile(
-          dense: true,
-          visualDensity: const VisualDensity(vertical: -2),
-          leading: CircleAvatar(
-            radius: 15,
-            backgroundColor: AppColors.blue.withValues(alpha: 0.12),
-            child: const Icon(Icons.person_rounded, size: 15),
-          ),
-          title: Text(parente['nome_parente'] ?? 'Sem nome'),
-          subtitle: Text(
-            'Grau: ${grausParentesco[parente['parentesco_id']?.toString()] ?? "Desconhecido"}\n'
-            'Cargo: ${parente['cargo'] ?? "Desconhecido"}',
-          ),
-          trailing: IconButton(
-            icon: const Icon(Icons.delete_outline_rounded, size: 18),
-            onPressed: () => _excluirParentesco(parente['id']),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: CartaoVidro(
+          raio: 14,
+          child: ListTile(
+            dense: true,
+            visualDensity: const VisualDensity(vertical: -2),
+            leading: CircleAvatar(
+              radius: 15,
+              backgroundColor:
+                  theme.colorScheme.primary.withValues(alpha: 0.12),
+              child: const Icon(Icons.person_rounded, size: 15),
+            ),
+            title: Text(parente['nome_parente'] ?? 'Sem nome'),
+            subtitle: Text(
+              'Grau: ${grausParentesco[parente['parentesco_id']?.toString()] ?? "Desconhecido"}\n'
+              'Cargo: ${parente['cargo'] ?? "Desconhecido"}',
+            ),
+            trailing: IconButton(
+              icon: Icon(Icons.delete_outline_rounded,
+                  size: AppIconSize.sm, color: theme.colorScheme.error),
+              onPressed: () => _excluirParentesco(parente['id']),
+            ),
           ),
         ),
       ),
@@ -485,16 +489,10 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
     required TextEditingController controller,
     required String label,
   }) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     return TextField(
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        filled: true,
-        fillColor: isDark
-            ? theme.colorScheme.surface.withValues(alpha: 0.7)
-            : Colors.white,
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
@@ -508,13 +506,9 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
     required String title,
     required String text,
   }) {
-    return Container(
+    return CartaoVidro(
+      arte: Arte.de('rh'),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
-      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -522,10 +516,11 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: AppColors.blue.withValues(alpha: 0.12),
+              color: theme.colorScheme.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, size: 16, color: theme.colorScheme.primary),
+            child: Icon(icon,
+                size: AppIconSize.xs, color: theme.colorScheme.primary),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -586,38 +581,18 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
     );
   }
 
+  // Topo da etapa com a arte da área (padrão 2.2).
   Widget _introBanner(
     ThemeData theme, {
     required String title,
     required String subtitle,
   }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.30)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontSize: 12,
-              height: 1.35,
-            ),
-          ),
-        ],
-      ),
+    return TopoArte(
+      arte: Arte.de('rh'),
+      icone: Icons.family_restroom_outlined,
+      titulo: title,
+      subtitulo: subtitle,
+      margem: const EdgeInsets.only(bottom: 6),
     );
   }
 
@@ -635,93 +610,31 @@ class _DeclaracaoParentescoPageState extends State<DeclaracaoParentescoPage> {
   Future<bool> _showConfirmDialog({
     required String title,
     required String message,
-  }) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(title),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Confirmar'),
-            ),
-          ],
-        );
-      },
-    );
-    return result == true;
-  }
+  }) =>
+      dialogoConfirmacao(
+        context,
+        titulo: title,
+        mensagem: message,
+        // Todas as confirmações desta tela são de exclusão.
+        textoConfirmar: 'Excluir',
+        icone: Icons.delete_outline_rounded,
+        cor: Theme.of(context).colorScheme.error,
+        arte: Arte.de('rh'),
+      );
 
   Future<void> _showNotice({
     required String title,
     required String message,
     required bool isError,
-  }) async {
-    final color = isError ? Colors.red.shade700 : Colors.green.shade700;
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: [
-              Icon(
-                isError ? Icons.error_outline_rounded : Icons.check_circle,
-                color: color,
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Text(title),
-            ],
-          ),
-          content: Text(message),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  }) =>
+      isError
+          ? alertaErro(context,
+              titulo: title, texto: message, arte: Arte.de('rh'))
+          : alertaSucesso(context,
+              titulo: title, texto: message, arte: Arte.de('rh'));
 
-  void _showBusyDialog(String message) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2.2),
-                ),
-                const SizedBox(width: 10),
-                Text(message),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  void _showBusyDialog(String message) =>
+      mostrarCarregandoDialogo(context, message, arte: Arte.de('rh'));
 
   void _dismissDialogIfOpen() {
     if (!mounted) return;

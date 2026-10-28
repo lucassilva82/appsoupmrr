@@ -1,10 +1,11 @@
+import '../core/sessao/sessao.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/design/arte_cartao.dart';
 import '../models/auth_model.dart';
 import '../utils/api_services.dart';
 import '../utils/app_theme.dart';
@@ -15,7 +16,7 @@ import 'confirm_email.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // AlterarSenhaPage
 //
-// Troca da senha de acesso, aberta em Configurações → Conta.
+// Troca da senha de acesso, aberta em Perfil → Conta.
 // A senha é a mesma do SIGRH e do SouPMRR, por isso o aviso em tela.
 //
 // Fluxo: senha atual + nova (duas vezes) → alterar_senha.php → e-mail de
@@ -156,9 +157,8 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
       auth.password = senhaNova;
       await auth.saveUserData();
 
-      final prefs = await SharedPreferences.getInstance();
-      if (prefs.getString('password') != null) {
-        await prefs.setString('password', senhaNova);
+      if (await Sessao.instancia.senhaLembrada() != null) {
+        await Sessao.instancia.gravarSenhaLembrada(senhaNova);
       }
 
       _timerReenvio?.cancel();
@@ -322,36 +322,15 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: theme.colorScheme.primary.withOpacity(0.12),
-                ),
-                child: Icon(Icons.lock_reset_rounded,
-                    size: 36, color: theme.colorScheme.primary),
-              ),
+            // Topo com a arte cheia da área (padrão 2.2).
+            TopoArte(
+              arte: Arte.de('rh'),
+              icone: Icons.lock_reset_outlined,
+              titulo: _porCodigo ? 'Crie sua nova senha' : 'Alterar senha de acesso',
+              subtitulo: 'A mesma senha vale para o SIGRH e para o SouPMRR. '
+                  'Ao alterar aqui, ela muda nos dois.',
+              margem: const EdgeInsets.only(bottom: 20),
             ),
-            const SizedBox(height: 16),
-            Text(
-              _porCodigo ? 'Crie sua nova senha' : 'Alterar senha de acesso',
-              textAlign: TextAlign.center,
-              style:
-                  theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'A mesma senha vale para o SIGRH e para o SouPMRR. '
-              'Ao alterar aqui, ela muda nos dois.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.70),
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 24),
 
             if (_erro != null) ...[
               _Caixa(
@@ -366,7 +345,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
                     MaterialPageRoute(
                         builder: (_) => const ConfirmEmailScreen()),
                   ),
-                  icon: const Icon(Icons.mark_email_unread_outlined, size: 18),
+                  icon: const Icon(Icons.mark_email_unread_outlined, size: AppIconSize.sm),
                   label: const Text('Confirmar meu e-mail'),
                 ),
               ],
@@ -468,19 +447,8 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : const Icon(Icons.save_rounded, size: 18),
+                    : const Icon(Icons.save_rounded, size: AppIconSize.sm),
                 label: Text(_carregando ? 'Alterando...' : 'Alterar senha'),
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
               ),
             ),
             if (_porCodigo) ...[
@@ -513,44 +481,19 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
       key: const ValueKey('codigo'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Center(
-          child: Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: theme.colorScheme.primary.withOpacity(0.12),
-            ),
-            child: Icon(Icons.mark_email_read_rounded,
-                size: 36, color: theme.colorScheme.primary),
+        // Topo com a arte cheia da área (padrão 2.2); o e-mail vai dentro.
+        TopoArte(
+          arte: Arte.de('rh'),
+          icone: Icons.mark_email_read_outlined,
+          titulo: 'Digite o código',
+          subtitulo: 'Enviamos um código de 6 dígitos para o seu e-mail confirmado:',
+          margem: const EdgeInsets.only(bottom: 20),
+          child: Text(
+            _emailMascarado,
+            style: const TextStyle(
+                fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
           ),
         ),
-        const SizedBox(height: 16),
-        Text(
-          'Digite o código',
-          textAlign: TextAlign.center,
-          style:
-              theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Enviamos um código de 6 dígitos para o seu e-mail confirmado:',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.70),
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          _emailMascarado,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.primary,
-          ),
-        ),
-        const SizedBox(height: 24),
 
         if (_erro != null) ...[
           _Caixa(
@@ -581,7 +524,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
             hintText: '000000',
             hintStyle: TextStyle(
               letterSpacing: 14,
-              color: theme.colorScheme.onSurface.withOpacity(0.18),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.18),
             ),
             contentPadding: const EdgeInsets.symmetric(vertical: 18),
           ),
@@ -601,19 +544,8 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : const Icon(Icons.check_rounded, size: 18),
+                : const Icon(Icons.check_rounded, size: AppIconSize.sm),
             label: Text(_carregando ? 'Conferindo...' : 'Confirmar código'),
-            style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              textStyle: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
-              ),
-            ),
           ),
         ),
         const SizedBox(height: 10),
@@ -666,9 +598,9 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
               height: 88,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: verde.withOpacity(0.12),
+                color: verde.withValues(alpha: 0.12),
               ),
-              child: Icon(Icons.verified_user_rounded, size: 44, color: verde),
+              child: Icon(Icons.verified_user_rounded, size: AppIconSize.xl, color: verde),
             ),
           ),
         ),
@@ -685,7 +617,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
           'Sua nova senha já está valendo no SouPMRR e no SIGRH.',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.70),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
             height: 1.4,
           ),
         ),
@@ -703,17 +635,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
           height: 50,
           child: ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: verde,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            child: const Text(
-              'Voltar ao app',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-            ),
+            child: const Text('Voltar ao app'),
           ),
         ),
       ],
@@ -732,7 +654,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
     final theme = Theme.of(context);
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon, size: 20, color: theme.colorScheme.primary),
+      prefixIcon: Icon(icon, size: AppIconSize.sm, color: theme.colorScheme.primary),
       suffixIcon: onToggle == null
           ? null
           : IconButton(
@@ -741,7 +663,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage>
                 visivel
                     ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined,
-                size: 20,
+                size: AppIconSize.sm,
               ),
             ),
       // borda, preenchimento, foco e erro vêm do inputDecorationTheme
@@ -768,15 +690,10 @@ class _ListaRequisitos extends StatelessWidget {
     final verde = isDark ? AppColors.sucessoEscuro : AppColors.sucesso;
     final vermelho = isDark ? AppColors.falhaEscuro : AppColors.falha;
 
-    return Container(
+    return CartaoVidro(
+      raio: 14,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.80),
-        ),
-      ),
+      arte: Arte.de('rh'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -784,7 +701,7 @@ class _ListaRequisitos extends StatelessWidget {
             'A senha deve conter:',
             style: theme.textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface.withOpacity(0.70),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
             ),
           ),
           const SizedBox(height: 8),
@@ -792,7 +709,7 @@ class _ListaRequisitos extends StatelessWidget {
             Builder(builder: (_) {
               final ok = situacao[regra.chave] ?? false;
               final cor = vazio
-                  ? theme.colorScheme.onSurface.withOpacity(0.70)
+                  ? theme.colorScheme.onSurface.withValues(alpha: 0.70)
                   : (ok ? verde : vermelho);
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 3),
@@ -807,7 +724,7 @@ class _ListaRequisitos extends StatelessWidget {
                             ? Icons.check_circle_rounded
                             : Icons.radio_button_unchecked_rounded,
                         key: ValueKey(ok),
-                        size: 16,
+                        size: AppIconSize.xs,
                         color: cor,
                       ),
                     ),
@@ -846,24 +763,24 @@ class _Caixa extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
+    return CartaoVidro(
+      raio: 14,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: cor.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: cor.withOpacity(0.35)),
-      ),
+      tingimento: cor,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icone, color: cor, size: 20),
+          // No claro, o mesmo tom mais escuro: o azul claro dava 2,6:1.
+          Icon(icone,
+              color: theme.brightness == Brightness.dark ? cor : Color.lerp(cor, Colors.black, .4),
+              size: AppIconSize.sm),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               texto,
               style: theme.textTheme.bodySmall?.copyWith(
                 height: 1.4,
-                color: theme.colorScheme.onSurface.withOpacity(0.85),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
               ),
             ),
           ),

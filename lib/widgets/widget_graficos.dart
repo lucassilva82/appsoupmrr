@@ -4,6 +4,10 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:projetonovo/utils/app_theme.dart';
+import '../core/design/arte_cartao.dart';
+import '../core/erros/falha_de.dart';
+import 'cartao_painel.dart';
+import 'vidro.dart';
 
 class WidgetGraficos extends StatefulWidget {
   const WidgetGraficos({super.key});
@@ -71,13 +75,11 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
       'comando': 'Comando',
       'unidade': 'Unidade',
     };
-    final tipos = {
-      'barra': Icons.bar_chart_rounded,
-      'pizza': Icons.pie_chart_rounded,
-    };
 
+    // Mesmos chips das outras abas do Mapa da Força: marcado é texto e borda
+    // na primária, sem o azul cheio fixo (AppColors.blue) de antes.
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -95,29 +97,24 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
             children: campos.entries.map((e) {
               final active = _campo == e.key;
               return FilterChip(
-                label: Text(
-                  e.value,
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    color: active
-                        ? Colors.white
-                        : theme.colorScheme.onSurface.withValues(alpha: 0.72),
-                  ),
+                label: Text(e.value),
+                labelStyle: TextStyle(
+                  fontSize: 11,
+                  fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                  color: active
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.72),
                 ),
                 selected: active,
                 onSelected: (_) => setState(() => _campo = e.key),
-                selectedColor:
-                    isDark ? const Color(0xFF2C5B7A) : AppColors.blue,
-                checkmarkColor: Colors.white,
-                backgroundColor: isDark
-                    ? theme.colorScheme.surface
-                    : const Color(0xFFF2F6FF),
+                selectedColor: theme.colorScheme.primary
+                    .withValues(alpha: isDark ? 0.10 : 0.07),
+                backgroundColor: theme.colorScheme.onSurface
+                    .withValues(alpha: isDark ? 0.06 : 0.04),
                 side: BorderSide(
                   color: active
-                      ? (isDark ? const Color(0xFF2C5B7A) : AppColors.blue)
-                      : isDark
-                          ? AppColors.darkBorder
-                          : const Color(0xFFDDE6F5),
+                      ? theme.colorScheme.primary.withValues(alpha: 0.30)
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.15),
                 ),
                 showCheckmark: false,
                 visualDensity:
@@ -129,46 +126,26 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
           const SizedBox(height: 8),
           Row(
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? theme.colorScheme.surface
-                      : const Color(0xFFF2F6FF),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: isDark
-                        ? AppColors.darkBorder
-                        : const Color(0xFFDDE6F5),
+              // Tipo de gráfico com o controle segmentado do tema.
+              SegmentedButton<String>(
+                showSelectedIcon: false,
+                style: const ButtonStyle(
+                  visualDensity: VisualDensity(horizontal: -2, vertical: -1),
+                ),
+                segments: const [
+                  ButtonSegment(
+                    value: 'barra',
+                    tooltip: 'Gráfico de barras',
+                    icon: Icon(Icons.bar_chart_rounded, size: AppIconSize.sm),
                   ),
-                ),
-                child: Row(
-                  children: tipos.entries.map((e) {
-                    final active = _chart == e.key;
-                    return GestureDetector(
-                      onTap: () => setState(() => _chart = e.key),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: active
-                              ? (isDark
-                                  ? const Color(0xFF2C5B7A)
-                                  : AppColors.blue)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          e.value,
-                          size: 18,
-                          color: active
-                              ? Colors.white
-                              : theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.5),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
+                  ButtonSegment(
+                    value: 'pizza',
+                    tooltip: 'Gráfico de pizza',
+                    icon: Icon(Icons.pie_chart_rounded, size: AppIconSize.sm),
+                  ),
+                ],
+                selected: {_chart},
+                onSelectionChanged: (v) => setState(() => _chart = v.first),
               ),
               const Spacer(),
               IconButton(
@@ -178,11 +155,9 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
                 }),
                 icon: Icon(
                   Icons.refresh_rounded,
-                  size: 20,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  size: AppIconSize.sm,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
-                padding: const EdgeInsets.all(8),
-                constraints: const BoxConstraints(),
               ),
             ],
           ),
@@ -191,9 +166,9 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
     );
   }
 
+  // Resumo com a arte cheia da área de Gestão (padrão 2.2): o total é o
+  // número herói do card.
   Widget _summaryCard(Map<String, int> mapa, BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final total = mapa.values.fold<int>(0, (s, v) => s + v);
     final top = mapa.entries.isEmpty
         ? null
@@ -205,71 +180,38 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
       'unidade': 'Unidade',
     }[_campo]!;
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF203C52), const Color(0xFF1A3246)]
-              : [AppColors.blue, AppColors.lightBlue],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.16),
-              shape: BoxShape.circle,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+      child: CartaoArte(
+        arte: Arte.de('gestao'),
+        padding: kPaddingCartao,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CabecalhoCartao(
+              icone: Icons.insights_rounded,
+              titulo: 'Visão por $label',
+              mostrarSeta: false,
             ),
-            child: const Icon(Icons.insights_rounded,
-                color: Colors.white, size: 18),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Visão por $label',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  top == null
-                      ? 'Total: $total'
-                      : 'Maior grupo: ${top.key} (${top.value})',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              ],
+            const SizedBox(height: 12),
+            DestaqueCartao(
+              rotulo: 'Efetivo',
+              valor: '$total',
+              complemento: 'militares',
+              tamanhoComplemento: 14,
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Text(
-              '$total',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
+            if (top != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Maior grupo: ${top.key} (${top.value})',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    fontSize: 13, color: Colors.white.withValues(alpha: 0.84)),
               ),
-            ),
-          ),
-        ],
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -310,19 +252,19 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
             }
           },
           touchTooltipData: BarTouchTooltipData(
-            tooltipBgColor: AppColors.navy.withValues(alpha: 0.9),
+            tooltipBgColor: theme.colorScheme.inverseSurface,
             getTooltipItem: (group, _, rod, __) => BarTooltipItem(
               '${keys[group.x]}\n',
-              const TextStyle(
-                color: Colors.white,
+              TextStyle(
+                color: theme.colorScheme.onInverseSurface,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
               children: [
                 TextSpan(
                   text: rod.toY.toInt().toString(),
-                  style: const TextStyle(
-                    color: AppColors.lightBlue,
+                  style: TextStyle(
+                    color: theme.colorScheme.inversePrimary,
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
                   ),
@@ -339,7 +281,7 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
               getTitlesWidget: (v, _) => Text(
                 v.toInt().toString(),
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
                 ),
               ),
             ),
@@ -394,26 +336,21 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
 
     final barWidth = (keys.length * 42.0).clamp(200.0, 2000.0);
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
-      decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark
-            ? AppColors.darkCard
-            : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: SizedBox(width: barWidth, height: 280, child: chart),
-      ),
-    );
+    return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: CartaoVidro(
+          arte: Arte.de('gestao'),
+          padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: SizedBox(width: barWidth, height: 280, child: chart),
+          ),
+        ));
   }
 
   Widget _pieChart(Map<String, int> mapa, BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final total = mapa.values.fold<int>(0, (s, v) => s + v);
     final keys = mapa.keys.toList();
 
@@ -424,187 +361,187 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
     final touchedVal = touchedKey != null ? (mapa[touchedKey] ?? 0) : 0;
     final touchedPct = total == 0 ? 0.0 : touchedVal / total * 100;
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 220,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                PieChart(
-                  PieChartData(
-                    sectionsSpace: 3,
-                    centerSpaceRadius: 50,
-                    pieTouchData: PieTouchData(
-                      touchCallback: (event, response) {
-                        if (event is FlTapUpEvent) {
-                          setState(() {
-                            final idx =
-                                response?.touchedSection?.touchedSectionIndex;
-                            // fl_chart usa -1 quando o toque cai fora de
-                            // qualquer fatia; tratar como "deselecionar".
-                            if (idx == null || idx < 0) {
-                              _touched = null;
-                            } else {
-                              _touched = idx == _touched ? null : idx;
+    return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: CartaoVidro(
+          arte: Arte.de('gestao'),
+          padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
+          child: Column(
+            children: [
+              SizedBox(
+                height: 220,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    PieChart(
+                      PieChartData(
+                        sectionsSpace: 3,
+                        centerSpaceRadius: 50,
+                        pieTouchData: PieTouchData(
+                          touchCallback: (event, response) {
+                            if (event is FlTapUpEvent) {
+                              setState(() {
+                                final idx = response
+                                    ?.touchedSection?.touchedSectionIndex;
+                                // fl_chart usa -1 quando o toque cai fora de
+                                // qualquer fatia; tratar como "deselecionar".
+                                if (idx == null || idx < 0) {
+                                  _touched = null;
+                                } else {
+                                  _touched = idx == _touched ? null : idx;
+                                }
+                              });
                             }
-                          });
-                        }
-                      },
-                    ),
-                    sections: List.generate(keys.length, (i) {
-                      final val = mapa[keys[i]]!.toDouble();
-                      final pct = total == 0 ? 0.0 : (val / total * 100);
-                      final isTouched = i == _touched;
-                      return PieChartSectionData(
-                        value: val,
-                        // Mostrar % dentro apenas se fatia >= 6%
-                        title: pct < 6 ? '' : '${pct.toStringAsFixed(0)}%',
-                        radius: isTouched ? 84 : 68,
-                        titleStyle: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          },
                         ),
-                        color: _colorFor(i),
-                      );
-                    }),
-                  ),
-                  swapAnimationDuration: const Duration(milliseconds: 300),
-                ),
-                // Centro interativo: ao tocar em qualquer fatia (inclusive
-                // pequenas) exibe nome + % + contagem no buraco central.
-                if (touchedKey != null)
-                  IgnorePointer(
-                    child: Container(
-                      width: 90,
-                      padding: const EdgeInsets.all(4),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            touchedKey,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.85),
-                              fontSize: 8.5,
-                              height: 1.2,
+                        sections: List.generate(keys.length, (i) {
+                          final val = mapa[keys[i]]!.toDouble();
+                          final pct = total == 0 ? 0.0 : (val / total * 100);
+                          final isTouched = i == _touched;
+                          return PieChartSectionData(
+                            value: val,
+                            // Mostrar % dentro apenas se fatia >= 6%
+                            title: pct < 6 ? '' : '${pct.toStringAsFixed(0)}%',
+                            radius: isTouched ? 84 : 68,
+                            titleStyle: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
-                            textAlign: TextAlign.center,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            '${touchedPct.toStringAsFixed(1)}%',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                              color: _colorFor(_touched!),
-                            ),
-                          ),
-                          Text(
-                            '$touchedVal',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.55),
-                              fontSize: 9,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else
-                  // Hint quando nada tocado
-                  IgnorePointer(
-                    child: Text(
-                      'Toque\numa fatia',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.28),
-                        fontSize: 9,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: List.generate(keys.length, (i) {
-                final pct = total == 0
-                    ? '0%'
-                    : '${(mapa[keys[i]]! / total * 100).toStringAsFixed(0)}%';
-                final isSelected = i == _touched;
-                return GestureDetector(
-                  onTap: () => setState(() => _touched = isSelected ? null : i),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? _colorFor(i).withValues(alpha: 0.22)
-                          : _colorFor(i).withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected
-                            ? _colorFor(i).withValues(alpha: 0.7)
-                            : _colorFor(i).withValues(alpha: 0.3),
-                        width: isSelected ? 1.5 : 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
                             color: _colorFor(i),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          '${keys[i]} · $pct',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontWeight:
-                                isSelected ? FontWeight.w700 : FontWeight.w600,
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.75),
-                          ),
-                        ),
-                      ],
+                          );
+                        }),
+                      ),
+                      swapAnimationDuration: const Duration(milliseconds: 300),
                     ),
-                  ),
-                );
-              }),
-            ),
+                    // Centro interativo: ao tocar em qualquer fatia (inclusive
+                    // pequenas) exibe nome + % + contagem no buraco central.
+                    if (touchedKey != null)
+                      IgnorePointer(
+                        child: Container(
+                          width: 90,
+                          padding: const EdgeInsets.all(4),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                touchedKey,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.85),
+                                  fontSize: 8.5,
+                                  height: 1.2,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                '${touchedPct.toStringAsFixed(1)}%',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w900,
+                                  color: _colorFor(_touched!),
+                                ),
+                              ),
+                              Text(
+                                '$touchedVal',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.55),
+                                  fontSize: 9,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      // Hint quando nada tocado
+                      IgnorePointer(
+                        child: Text(
+                          'Toque\numa fatia',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.28),
+                            fontSize: 9,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: List.generate(keys.length, (i) {
+                    final pct = total == 0
+                        ? '0%'
+                        : '${(mapa[keys[i]]! / total * 100).toStringAsFixed(0)}%';
+                    final isSelected = i == _touched;
+                    return GestureDetector(
+                      onTap: () =>
+                          setState(() => _touched = isSelected ? null : i),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? _colorFor(i).withValues(alpha: 0.22)
+                              : _colorFor(i).withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected
+                                ? _colorFor(i).withValues(alpha: 0.7)
+                                : _colorFor(i).withValues(alpha: 0.3),
+                            width: isSelected ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: _colorFor(i),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              '${keys[i]} · $pct',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.75),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        ));
   }
 
   Widget _buildBody(List<Map<String, dynamic>> dados, BuildContext context) {
     final mapa = _contarPor(dados, _campo);
     if (mapa.isEmpty) {
-      return const Center(child: Text('Sem valores para esse campo.'));
+      return _caixaEstado(context, const Text('Sem valores para esse campo.'));
     }
 
     return SingleChildScrollView(
@@ -620,12 +557,26 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
     );
   }
 
+  // Estado parado (vazio, erro): caixa de vidro com a arte da área.
+  Widget _caixaEstado(BuildContext context, Widget filho,
+          {Color? tingimento}) =>
+      Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: CartaoVidro(
+            arte: tingimento == null ? Arte.de('gestao') : null,
+            tingimento: tingimento,
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+            child: filho,
+          ),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         _filterBar(context),
-        const Divider(height: 1),
         Expanded(
           child: FutureBuilder<List<Map<String, dynamic>>>(
             future: _future,
@@ -635,16 +586,35 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
                     child: CircularProgressIndicator.adaptive());
               }
               if (snap.hasError) {
-                return Center(
-                  child: Text(
-                    'Erro ao carregar dados.',
-                    style: Theme.of(context).textTheme.bodyMedium,
+                // Mesma mensagem, com código, das outras abas (antes era
+                // "Erro ao carregar dados.", sem código nem o que fazer).
+                final tema = Theme.of(context);
+                return _caixaEstado(
+                  context,
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.error_outline_rounded,
+                          size: AppIconSize.xl, color: tema.colorScheme.error),
+                      const SizedBox(height: 8),
+                      Text('Não foi possível carregar o Mapa da Força.',
+                          textAlign: TextAlign.center,
+                          style: tema.textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text(
+                          'Tente de novo em instantes. Código ${falhaDe('MF', snap.error, tela: 'gestao.mapa_forca').codigo}.',
+                          textAlign: TextAlign.center,
+                          style: tema.textTheme.bodySmall),
+                    ],
                   ),
+                  tingimento: tema.colorScheme.error,
                 );
               }
               final dados = snap.data ?? [];
               if (dados.isEmpty) {
-                return const Center(child: Text('Nenhum dado encontrado.'));
+                return _caixaEstado(
+                    context, const Text('Nenhum dado encontrado.'));
               }
               return _buildBody(dados, context);
             },

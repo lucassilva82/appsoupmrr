@@ -285,7 +285,7 @@ class DadosSql {
             mes: element['mes'].toString(),
             mesExtenso: element['mes_extenso'],
             relacaoTrabalho: element['relacaotrabalho'],
-            folha: element['folha'].toString() ?? "",
+            folha: (element['folha'] ?? '').toString(),
             cpf: element['cpf'],
             ano: ano.toString(),
             matricula: element['matricula'].toString(),

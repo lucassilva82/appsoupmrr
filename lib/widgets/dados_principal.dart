@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/app_theme.dart';
 import '../models/militar.dart';
 
 /// Formata datas do banco (YYYY-MM-DD) para o padrão BR DD/MM/AAAA.
@@ -22,7 +23,6 @@ class DadosPrincipal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,7 +51,7 @@ class DadosPrincipal extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon,
-              size: 16,
+              size: AppIconSize.xs,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
           const SizedBox(width: 10),
           Expanded(

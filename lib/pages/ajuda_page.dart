@@ -286,7 +286,7 @@ class _AppInfoCard extends StatelessWidget {
                   'Versão $version  •  Módulo 2.0',
                   style: TextStyle(
                     fontSize: 12,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withOpacity(0.62),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -342,7 +342,6 @@ class _ContactCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     // Eram dois blocos chapados de verde e azul saturados, os elementos mais
     // berrantes do app. A cor vira tingimento e passa para o ícone e o
@@ -436,7 +435,7 @@ class _SystemInfoCard extends StatelessWidget {
                   items[i].value,
                   style: TextStyle(
                     fontSize: 12,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withOpacity(0.62),
                   ),
                 ),
               ),

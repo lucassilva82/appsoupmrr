@@ -15,10 +15,12 @@
 
 ## 0. Resumo
 
-O painel é um **módulo novo da intranet**, `SOUPMRR`, dentro da casca Nexus
-2.0 (mesmo menu, mesma barra, mesmo login, mesmos componentes do
-SISCHAMADOS). Ele não tem login próprio nem visual próprio. Por ele, quem tem
-papel no painel controla **tudo o que o militar vê no app**:
+O painel é uma **aplicação própria**, publicada em
+`pmrr.online/painelsoupmrr`, com **login próprio** (a mesma matrícula e senha
+do app) e o visual da casca Nexus 2.0, no molde do SISCHAMADOS. Nasceu como
+módulo da intranet e saiu dela em 27/10/2026 (§1.1b), com repositório só
+dele. Por ele, quem tem papel no painel controla **tudo o que o militar vê no
+app**:
 
 | Área do painel | O que faz | Tela no protótipo |
 |---|---|---|
@@ -73,6 +75,85 @@ qualquer skill.
 | Pendências: todos os tipos **começam desligados** | `soupm_pendencia_tipo.ativo DEFAULT FALSE` (muda o rascunho do SOUPM_2_2 §12.2) |
 | Publicar comunicados: no início, só o administrador | Papel "Publicar comunicados" existe, sem ninguém |
 
+### 1.1b Fase sem intranet (diretriz do usuário, 24/10/2026)
+
+> "Nesse momento vai ser só painel e app tudo no mesmo banco, sem precisar da
+> intranet (...) Eu quero fazer tudo com esse usuário que tenho do cpanel."
+
+Até o painel voltar para dentro da intranet, vale isto, por cima do que o
+resto deste documento diz sobre a intranet:
+
+- **Endereço:** `https://pmrr.online/painelsoupmrr/`, no mesmo servidor da
+  API do app.
+- **Código (27/10/2026):** repositório **próprio e privado**,
+  `lucassilva82/painelsoupmrr`, branch `main`, em `~/code/painelsoupmrr`.
+  Pedido do usuário: *"quero o repositório do painel direto pra mim, ele não
+  faz parte da intranet por enquanto"*. Saiu do checkout `sgc` da intranet
+  por `git subtree split`, com os 141 commits preservados; a pasta antiga
+  continua lá, na branch `claude/painelsoupmrr-d78bc6`, com um aviso
+  apontando para o lugar novo. Nada foi enviado para `dtipmrr/intranet`.
+- **Login:** matrícula e senha do app (`sessao_app.php` da API), sem 2FA.
+- **Quem entra e o que pode:** `soupm_papel`, `soupm_papel_regra` (quem tem
+  o papel, por matrícula ou por nível do SIGRH) e `soupm_papel_recurso` (o que
+  cada papel pode). O Administrador pode tudo.
+- **Administradores:** o nível 1 do SIGRH, copiado à mão na carga inicial,
+  mais a matrícula que o usuário indicou. Daí em diante, são dados e tirados
+  na tela Papéis, com auditoria.
+- **Auditoria:** `soupm_painel_auditoria`, no lugar de `intranet.auditoria`.
+- **Nomes de militar:** `recursoshumanos.vw_buscar_policial`, no lugar de
+  `intranet.vw_policial`.
+- **SISCHAMADOS:** não é lido. A tela Suporte avisa com o código
+  `PSP-FONTE-01`, e os tipos de chamado liberados no app ficam em
+  `soupm_config`, chave `chamados`.
+- **Mídia:** as imagens aprovadas ficam em
+  `~/public_html/painelsoupmrr/midia/<sha256>.<ext>`, e o app monta o endereço
+  com a base `https://pmrr.online/` (`soupm_config`, chave `midia`).
+  **O nome tem de casar com uma expressão exata**, que a API confere antes de
+  entregar o endereço ao app (`midiaUrl()`, em `sigrh/sessao_app.php`):
+
+  ```
+  ^painelsoupmrr/midia/[a-f0-9]{64}\.(jpg|png|webp)$
+  ```
+
+  Hex **minúsculo**, exatamente 64, e só essas três extensões. Fora disso a
+  API devolve nulo e **o app simplesmente não recebe a imagem** — sem erro em
+  lugar nenhum, com o arquivo no disco e servido normalmente pelo
+  `.htaccess` do painel. Um `.jpeg`, um `.gif` ou um hash em maiúsculas
+  ficariam invisíveis no app e ninguém descobriria por quê.
+
+  **São três listas brancas, e elas mudam juntas** (correção da sessão do
+  painel, 27/10/2026 — este documento dizia duas):
+
+  | Onde | O quê |
+  |---|---|
+  | `Midia::TIPOS`, no painel | a extensão sai do **mime**, não do nome enviado: `image/jpeg → jpg`, `image/png → png`, `image/webp → webp` |
+  | `midia/.htaccess`, no painel | serve só `^[0-9a-f]{64}\.(jpg|png|webp)$`, com `php_flag engine off`, e nega o resto |
+  | `midiaUrl()`, na API | a expressão acima, antes de entregar o endereço ao app |
+
+  Hoje nada pode nascer fora do padrão: o nome é `hash_file('sha256')` (hex
+  minúsculo de 64) e a extensão vem do mime, então `.jpeg` não chega a existir
+  no disco. A regra das três listas é para **mudança futura** — e o
+  `.htaccess` é o mais fácil de esquecer, porque ninguém o lê ao mexer em
+  código. Extensão nova entra nos três ou a imagem nasce invisível.
+
+  E a pasta `midia/` **fica fora** da regra que nega `app/`, `nucleo/`,
+  `database/` e `docs/` no painel: é de lá que o app lê. Ela tem o
+  `.htaccess` próprio da tabela acima. Negar a pasta inteira quebraria as imagens dos
+  cards — e hoje ninguém perceberia, porque `soupm_midia` está vazia:
+  apareceria na primeira imagem publicada.
+
+  Depois de publicar a primeira imagem, **medir** com
+  `curl -o /dev/null -w "%{http_code}"`: o endereço tem de dar 200. Se der 403
+  ou 404, o app esconde a imagem em silêncio
+  (`lib/core/design/arte_cartao.dart:197`, `errorBuilder` para `SizedBox.shrink`),
+  e o card aparece sem ela como se fosse o desenho previsto.
+- **Banco:** o mesmo usuário da API (§7, item 6), e **todo SQL de produção
+  roda com a conta do cPanel**, na ordem do `docs/PENDENTE_USUARIO.md` §1.
+- **Caminho de volta (pronto, não feito):** o administrador do banco roda o
+  `intranet_depois/B_intranet_acl_producao.sql` do painel e define
+  `SOUPM_ACL_FONTE = 'intranet'`. As telas não mudam. Detalhe na spec P9 do
+  painel, §6.
+
 ### 1.2 Onde cada peça roda
 
 ```
@@ -89,8 +170,10 @@ qualquer skill.
                           cron de envio (API do app) ──► FCM HTTP v1 ──► aparelhos
 ```
 
-- **Painel = módulo da intranet** em `~/code/intranet/painelsoupmrr/`, no
-  endereço **`/painelsoupmrr`** (decisão do usuário, 21/10/2026), no molde do
+- **Painel = aplicação própria** em `~/code/painelsoupmrr`
+  (`lucassilva82/painelsoupmrr`, branch `main`), publicada em
+  **`pmrr.online/painelsoupmrr`**. Nasceu como módulo da intranet e saiu dela
+  em 27/10/2026 (§1.1b); o desenho continua no molde do
   `sischamados/` (`index.php` com `Router('/painelsoupmrr')`, `routes/web.php`,
   `app/{Controllers,Helpers,Views}`, `database/migrations/NNN_*.sql`). Tela
   nova nasce no padrão 2.0 (`$nexusPronto`, `$nexusMenu`, `nxc-*`,
@@ -995,10 +1078,16 @@ o servidor resolve pela matrícula na consulta.
 - **Indicadores** ficam no Painel (§5.1), que é onde moram os gráficos de
   uso; a tela de Logs é para investigar.
 
-**Retenção:** eventos 180 dias, erros 1 ano. Tabela por mês com view de
-união (PostgreSQL 9.6 não tem partição declarativa), índices por
-(matricula, ocorrido_em), (sessao_id) e (evento, ocorrido_em). A limpeza
-apaga a tabela do mês vencido inteira.
+**Retenção (log leve, aprovado e aplicado em produção em 22/10/2026):** eventos
+detalhados **30 dias**, erros **1 ano** (cada erro leva os últimos 20 passos da
+sessão em `soupm_erro.passos`, que contam o caminho até a falha depois que o
+detalhe some) e resumo diário `soupm_uso_dia` **2 anos** (dia, evento, função,
+plataforma, versão: vezes, militares, falhas), montado por um cron noturno da
+API que refaz os últimos 3 dias. Não viram linha: `app.fundo`, `app.voltar`,
+`tela.sair`, `rede.trocou` e `config.recebida` (só aparecem como passos).
+Índices do detalhe: (recebido_em), (matricula, ocorrido_em) e (sessao_id); o
+(evento, ocorrido_em) saiu, porque os gráficos leem o resumo. Uma tabela por
+tipo, com o mesmo nome lido pelo painel se um dia virar tabela por mês.
 
 **Nada sensível no log** (CLAUDE.md, "Tudo tem log"): o painel não tem como
 mostrar senha, MD5, token, CPF completo, valor de contracheque, conteúdo de
@@ -1355,7 +1444,7 @@ Papéis da carga inicial:
 
 | Papel | Pode | Quem, no início |
 |---|---|---|
-| Administrador do app | Tudo, com escopo de toda a PMRR (no app e no painel), com as travas do §7 (bloqueio por tentativas, sessão que expira, aviso de aparelho novo) e todo acesso a dado de militar auditado | **Só os que o SIGRH já indica como administradores hoje**, em lista manual. Quando o login for para a intranet, valem os administradores de lá |
+| Administrador do app | Tudo, com escopo de toda a PMRR (no app e no painel), com as travas do §7 (bloqueio por tentativas, sessão que expira, aviso de aparelho novo) e todo acesso a dado de militar auditado | **Quem é administrador da intranet acessa e gerencia o painel do SouPMRR automaticamente** (decisão do usuário, 22/10/2026; detalhes a definir por ele) |
 | Publicar comunicados | Criar e publicar comunicados (com limite de público, se configurado) | **Ninguém**: desenhado para depois do login pela intranet |
 | Enviar notificações | Um militar e grupos; "todos" fica com o Administrador | **Ninguém**: para depois |
 | Atender feedback | Ler, classificar e responder feedback (sem abrir anexos); ler os logs das sessões dos feedbacks dele | **Ninguém**: para depois |
@@ -1489,9 +1578,17 @@ levantamento de 21/10/2026:
    e nos endpoints JSON do painel.
 5. Auditoria de toda alteração e todo envio em `intranet.auditoria`, com antes
    e depois.
-6. **Usuário de banco próprio do painel**, com `INSERT/UPDATE/DELETE` só nas
-   `soupm_*` que ele edita e `SELECT` no que lê do SIGRH. O usuário da API do
-   app continua com `SELECT` na configuração e `INSERT` nos logs.
+6. **O painel usa o mesmo usuário de banco da API** (fase sem intranet,
+   §1.1b; decisão do usuário,
+   24/10/2026: opção (a), "O mesmo do app"), com a escrita só nas `soupm_*` que
+   ele edita (`sql/2026-10-24_soupm_painel_permissoes.sql` da API) e `SELECT`
+   no que lê do SIGRH. O plano era um usuário próprio, e ele foi cancelado.
+   **Dívida: leitura e escrita no mesmo usuário.** Uma falha numa rota da API
+   (injeção de SQL, endpoint sem autenticação) passa a alcançar tudo o que o
+   painel grava: menu, comunicados, envios de push, níveis. Para pagar, criar
+   o usuário próprio do painel e tirar do usuário da API a escrita que só o
+   painel usa. Fica para quando a API tiver passado pela revisão de segurança
+   (§7, segunda lista).
 7. Upload conferido pelo conteúdo, fora da pasta pública quando for anexo.
 8. Ações de perigo (resetar senha, revogar, enviar para todos, mudar nível de
    muita gente) com confirmação que diz o que acontece e se dá para desfazer.
@@ -1523,15 +1620,19 @@ As tabelas do app estão no SOUPM_2_2 §12.2 e **não se repetem aqui**
 §6.5: `soupm_nivel`, `soupm_nivel_regra`, `soupm_papel`, `soupm_papel_regra`).
 Abaixo, só o que o painel acrescenta e o que ele pede para mudar.
 
-**Regras para todo DDL novo** (`postgresql-code-review`, limitado ao
-PostgreSQL 9.6):
+**Regras para todo DDL novo** (`postgresql-code-review`). Versões medidas em
+22/10/2026: **produção 13.23** (o banco onde a API grava) e
+**desenvolvimento 9.6.6** (o banco onde a intranet nova e o painel
+rodam). Escreve-se para a **menor** das duas (9.6), porque toda migração passa
+primeiro por dev; a regra é revista quando o dev subir de versão:
 
 - `TIMESTAMPTZ` em vez de `TIMESTAMP` (o servidor e o app estão em fusos
   diferentes do UTC; APRENDIZADOS §17 já mostrou o custo disso).
 - Valores fechados com `CHECK (col IN (…))`, não `ENUM` (ENUM no 9.6 não
   aceita remover valor).
 - `JSONB` de público com índice GIN e consulta por `@>`.
-- Sem `GENERATED`, sem partição declarativa, `EXECUTE PROCEDURE` nos gatilhos.
+- Sem `GENERATED`, sem partição declarativa, `EXECUTE PROCEDURE` nos gatilhos
+  (existem no 13 de produção, mas não no 9.6 de dev).
 - Script idempotente em `sql/` da API (`CREATE TABLE IF NOT EXISTS`) e coluna
   nova conferida em `pg_attribute` antes de ser lida, como no `titulo_curto`.
 
@@ -2059,31 +2160,26 @@ Até a P5, o Mapa da Força segue a regra de hoje (carga inicial igual à 2.1.5)
 e o "nível mínimo" das funções fica fixo em "Militar" ou "Gestor (regra
 antiga)". A tela Níveis de acesso só liga junto com a fase 5 do app.
 
-**Paralelismo** (sessões separadas, como o usuário prefere): o painel é um
-módulo novo em pasta própria da intranet, então anda junto com o app depois
-que o contrato da fase estiver fixado. A sessão "Chat Intranet" precisa saber
-antes, pelas regras de convivência da intranet (módulo novo, migrações, menu
-"Todos os sistemas").
+**Paralelismo** (sessões separadas, como o usuário prefere): o painel tem
+repositório próprio (§1.1b), então anda junto com o app depois que o contrato
+da fase estiver fixado, sem depender de ninguém da intranet.
 
-**Quem implementa o painel (decisão do usuário, 21/10/2026).** O painel é
-feito **pela sessão "Chat Intranet"**, não pelas sessões deste repositório,
-porque ele tem de seguir as regras de design e de desenvolvimento da intranet.
+**Quem implementa o painel (27/10/2026).** A sessão **"Painel SOUPM na web"**,
+no repositório próprio do painel (§1.1b). Substitui a decisão de 21/10/2026,
+que punha o painel na sessão "Chat Intranet" porque ele era módulo da
+intranet — deixou de ser.
 
-1. Esta sessão (do app) manda o módulo para a "Chat Intranet": este documento,
-   o protótipo do painel e o contrato (§2 e §9). O usuário autorizou que esta
-   sessão passe as instruções direto para ela.
-2. A "Chat Intranet" abre uma **subsessão própria** para o painel.
-3. A subsessão **lê primeiro as regras da intranet** (`REGRAS_DESIGN_2.0.md`,
-   as regras de desenvolvimento e de convivência entre módulos) e o módulo
-   SISCHAMADOS, que é o modelo.
-4. Desenvolve o painel como **módulo novo da intranet** (`painelsoupmrr/`, em
-   `/painelsoupmrr`), igual ao SISCHAMADOS: mesma estrutura de pastas, casca
-   Nexus 2.0, ACL, migrações e `verificar_design.php`. **Em conflito, valem
-   as regras da intranet**, e o desenho deste documento se adapta a elas.
-5. O que é da API do app (`app_config.php`, `log.php`, o cron de envio pelo
+1. O painel segue o padrão de tela Nexus 2.0 e o molde do SISCHAMADOS, que já
+   estão no código dele. Fora da intranet, as regras de convivência dela
+   (arquivos comuns, menu "Todos os sistemas") não valem mais, e os
+   documentos próprios do painel mandam: `docs/RESUMO_POR_FASE.md`,
+   `docs/PENDENCIAS_USUARIO.md` e `docs/specs/`.
+2. O que é da API do app (`app_config.php`, `log.php`, o cron de envio pelo
    FCM, a sonda de saúde e os endpoints internos do §1.2) continua com as
    sessões deste repositório. Mudança no contrato (§2 e §9) é combinada entre
    as duas antes de ir para o código.
+3. O caminho de volta para dentro da intranet continua desenhado e pronto
+   (§1.1b, último item), para quando a intranet de produção estiver completa.
 
 A ordem continua a das fases acima: cada fase do painel começa quando a fase
 do app correspondente fixar o contrato dela, e a P0 só vai ao ar depois das
@@ -2092,9 +2188,9 @@ correções de segurança da API (§7).
 **Duas frentes, que conversam entre si (decisão do usuário, 22/10/2026).**
 - **App Flutter e API do app:** a sessão "SouPM 2.2", neste repositório, na
   branch `feature/soupm-2-2`.
-- **Painel web:** a sessão "Chat Intranet" (ou uma subsessão dela), dentro da
-  intranet, porque é lá que está todo o contexto e as regras dela. A sessão que
-  planejou o painel passa tudo o que sabe para ela.
+- **Painel web:** a sessão "Painel SOUPM na web", no repositório próprio do
+  painel (§1.1b). Até 27/10/2026 isto era da sessão "Chat Intranet", quando o
+  painel ainda era módulo da intranet.
 - As sessões podem e devem trocar mensagens direto: tirar dúvidas, avisar
   mudança no contrato (§2 e §9) antes de mexer no código e devolver o que
   aprenderem para os dois planos.
@@ -2108,9 +2204,10 @@ no painel.
 
 ## 11. Decisões do usuário (todas fechadas em 21/10/2026)
 
-1. ~~Quem é Administrador?~~ **Na carga inicial, só os que o SIGRH já indica
-   como administradores hoje**, em lista manual. Quando o login for para a
-   intranet, valem os administradores de lá (§6.3).
+1. ~~Quem é Administrador?~~ **Quem é administrador da intranet** acessa e
+   gerencia o painel do SouPMRR automaticamente, com o login da intranet
+   (decisão do usuário, 22/10/2026, que substitui a lista do SIGRH; ele vai
+   detalhar depois). §6.3.
 2. ~~Push dos módulos da intranet?~~ **Modelo do SIGE para todos**: a
    intranet manda para a API do SouPMRR, que filtra, gerencia e encaminha ao
    app; o filtro sempre existe (§4.1b).

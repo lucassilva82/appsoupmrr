@@ -1,10 +1,6 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
-import '../models/auth_model.dart';
-import '../utils/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FundoBarraVidro
@@ -26,20 +22,10 @@ class FundoBarraVidro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Barra das telas internas do protótipo (`.cab-int`): vidro escuro (ou
+    // claro, no tema claro) com desfoque e um fio embaixo. Não pinta mais o
+    // degradê institucional, que deixava as telas internas com outra cara.
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // O modo GESTOR muda o degradê. Nem toda tela está sob o Provider, então
-    // a leitura é tolerante: sem Auth, cai no degradê padrão.
-    var isSuperUser = false;
-    try {
-      isSuperUser = Provider.of<Auth>(context, listen: false).isSuperUser;
-    } catch (_) {}
-
-    final cores = AppTheme.appBarGradient(
-      isDark: isDark,
-      isSuperUser: isSuperUser,
-    );
-
     final raio = arredondado
         ? const BorderRadius.vertical(bottom: Radius.circular(20))
         : BorderRadius.zero;
@@ -48,17 +34,17 @@ class FundoBarraVidro extends StatelessWidget {
       borderRadius: raio,
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
+        child: DecoratedBox(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: cores
-                  .map((c) => c.withOpacity(isDark ? 0.82 : 0.90))
-                  .toList(),
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: isDark
+                ? const Color(0xB8080C12) // rgba(8, 12, 18, .72)
+                : const Color(0xC7F8FAFD), // rgba(248, 250, 253, .78)
             border: Border(
-              bottom: BorderSide(color: Colors.white.withOpacity(0.12)),
+              bottom: BorderSide(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.10)
+                    : const Color(0xFF002154).withValues(alpha: 0.10),
+              ),
             ),
           ),
         ),

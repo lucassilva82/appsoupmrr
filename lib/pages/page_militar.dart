@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:projetonovo/widgets/custom_appbar.dart';
 import 'package:provider/provider.dart';
 
+import '../core/design/arte_cartao.dart';
 import '../models/auth_model.dart';
+import '../utils/app_theme.dart';
 import '../models/militar.dart';
 import '../services/dados_sql.dart';
 import '../widgets/dados_militar.dart';
@@ -72,33 +74,39 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Estado de erro numa caixa de vidro com a arte da área (padrão 2.2).
+    final theme = Theme.of(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.cloud_off_rounded,
-                size: 72,
-                color:
-                    Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
-            const SizedBox(height: 16),
-            Text(
-              'Não foi possível carregar os dados',
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              error,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.70)),
-              textAlign: TextAlign.center,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+        padding: const EdgeInsets.all(16),
+        child: CartaoVidro(
+          arte: Arte.de('rh'),
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ExcludeSemantics(
+                child: Icon(Icons.cloud_off_rounded,
+                    size: AppIconSize.xl, color: theme.colorScheme.error),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Não foi possível carregar os dados',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error,
+                style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.70)),
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );

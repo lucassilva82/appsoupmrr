@@ -4,6 +4,10 @@ import 'package:http/http.dart' as http;
 import 'package:projetonovo/models/map_busca_detalhes_model.dart';
 import 'package:projetonovo/pages/detalhes_mapa_forca_comando_page.dart';
 import 'package:projetonovo/utils/app_theme.dart';
+import '../core/erros/falha_de.dart';
+import '../core/design/arte_cartao.dart';
+import 'cartao_painel.dart';
+import 'vidro.dart';
 
 class WidgetGrandesComandos extends StatefulWidget {
   const WidgetGrandesComandos({super.key});
@@ -94,12 +98,12 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
         onSelected: (v) => _toggleChip(sig, v),
         // Mesmo tratamento do Mapa Geral: selecionado é tingimento + borda.
         selectedColor: theme.colorScheme.primary
-            .withValues(alpha: isDark ? 0.26 : 0.16),
+            .withValues(alpha: isDark ? 0.10 : 0.07),
         backgroundColor: theme.colorScheme.onSurface
             .withValues(alpha: isDark ? 0.06 : 0.04),
         side: BorderSide(
           color: selected
-              ? theme.colorScheme.primary.withValues(alpha: 0.55)
+              ? theme.colorScheme.primary.withValues(alpha: 0.30)
               : theme.colorScheme.onSurface.withValues(alpha: 0.15),
         ),
         showCheckmark: false,
@@ -132,13 +136,13 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
                   decoration: BoxDecoration(
                     color: allSel
                         ? theme.colorScheme.primary
-                            .withValues(alpha: isDark ? 0.26 : 0.16)
+                            .withValues(alpha: isDark ? 0.10 : 0.07)
                         : theme.colorScheme.onSurface
                             .withValues(alpha: isDark ? 0.06 : 0.04),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: allSel
-                          ? theme.colorScheme.primary.withValues(alpha: 0.55)
+                          ? theme.colorScheme.primary.withValues(alpha: 0.30)
                           : theme.colorScheme.onSurface
                               .withValues(alpha: 0.15),
                     ),
@@ -150,7 +154,7 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
                         allSel
                             ? Icons.clear_all_rounded
                             : Icons.select_all_rounded,
-                        size: 14,
+                        size: AppIconSize.xxs,
                         color: allSel
                             ? theme.colorScheme.primary
                             : theme.colorScheme.onSurface
@@ -177,7 +181,7 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
                 'Filtros',
                 style: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
                 ),
               ),
             ],
@@ -215,8 +219,11 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
     final visualPct = d.quantidade > 0 && pct < 0.05 ? 0.05 : pct;
     final pctText = '${(pct * 100).toStringAsFixed(pct < 0.1 ? 1 : 0)}%';
 
+    // Linha da lista, sem superfície própria (a caixa é a tabela inteira).
+    // Sem o quadradinho azul atrás do ícone (DESIGN §2b) e sem o
+    // AppColors.blue fixo, que não tinha contraste no escuro.
     return Material(
-      color: Colors.transparent,
+      type: MaterialType.transparency,
       child: InkWell(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
@@ -234,17 +241,11 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: AppColors.blue.withValues(alpha: isDark ? 0.20 : 0.10),
-                  borderRadius: BorderRadius.circular(10),
-                ),
+              ExcludeSemantics(
                 child: Icon(
-                  Icons.account_balance_rounded,
-                  size: 18,
-                  color: isDark ? AppColors.lightBlue : AppColors.blue,
+                  Icons.account_balance_outlined,
+                  size: AppIconSize.md,
+                  color: theme.colorScheme.primary,
                 ),
               ),
               const SizedBox(width: 12),
@@ -255,82 +256,47 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
                     Text(
                       d.nomeComando,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        fontSize: 12.5,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
                         Text(
                           pctText,
                           style: theme.textTheme.labelSmall?.copyWith(
-                            fontSize: 10.5,
+                            fontSize: 11,
                             fontWeight: FontWeight.w700,
                             color: theme.colorScheme.onSurface
                                 .withValues(alpha: 0.6),
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Expanded(
-                          child: SizedBox(
-                            height: 6,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(99),
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  Container(
-                                    color: AppColors.blue.withValues(
-                                        alpha: isDark ? 0.14 : 0.10),
-                                  ),
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: FractionallySizedBox(
-                                      widthFactor: visualPct,
-                                      child: Container(
-                                        decoration: const BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              AppColors.lightBlue,
-                                              AppColors.blue,
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
+                        Expanded(child: BarraProgressoCartao(valor: visualPct)),
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.blue.withValues(alpha: isDark ? 0.20 : 0.10),
-                  borderRadius: BorderRadius.circular(20),
-                ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 40,
                 child: Text(
                   d.quantidade.toString(),
+                  textAlign: TextAlign.right,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? AppColors.lightBlue : AppColors.blue,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ),
               const SizedBox(width: 6),
               Icon(
                 Icons.chevron_right_rounded,
-                size: 16,
+                size: AppIconSize.xs,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
               ),
             ],
@@ -344,32 +310,39 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final arte = Arte.de('gestao');
+    final apoio = theme.colorScheme.onSurface.withValues(alpha: 0.6);
+
+    // Estado parado (vazio, erro): caixa de vidro com a arte da área.
+    Widget caixaEstado(Widget filho, {Color? tingimento}) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: CartaoVidro(
+              arte: tingimento == null ? arte : null,
+              tingimento: tingimento,
+              padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+              child: filho,
+            ),
+          ),
+        );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _filterSection(theme, isDark),
-        Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.3)),
         if (_sel.isEmpty)
           Expanded(
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.filter_list_off_rounded,
-                      size: 36,
-                      color:
-                          theme.colorScheme.onSurface.withValues(alpha: 0.3)),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Selecione um posto ou graduação.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            child: caixaEstado(Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.filter_list_off_rounded,
+                    size: AppIconSize.xl, color: apoio),
+                const SizedBox(height: 10),
+                Text('Selecione um posto ou graduação.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(color: apoio)),
+              ],
+            )),
           )
         else
           Expanded(
@@ -381,128 +354,106 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
                       child: CircularProgressIndicator.adaptive());
                 }
                 if (s.hasError) {
-                  return Center(
-                    child: Column(
+                  return caixaEstado(
+                    Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.error_outline,
-                            size: 32,
-                            color: Colors.redAccent.withValues(alpha: 0.7)),
+                        Icon(Icons.error_outline_rounded,
+                            size: AppIconSize.xl,
+                            color: theme.colorScheme.error),
                         const SizedBox(height: 8),
-                        Text('Erro ao carregar dados.',
-                            style: theme.textTheme.bodyMedium),
+                        Text('Não foi possível carregar o Mapa da Força.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 4),
+                        Text('Tente de novo em instantes. Código ${falhaDe('MF', s.error, tela: 'gestao.mapa_forca').codigo}.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodySmall),
                       ],
                     ),
+                    tingimento: theme.colorScheme.error,
                   );
                 }
 
                 final list = s.data ?? [];
                 if (list.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'Nenhum resultado.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
-                    ),
-                  );
+                  return caixaEstado(Text('Nenhum resultado.',
+                      style: theme.textTheme.bodyMedium?.copyWith(color: apoio)));
                 }
 
                 final total = list.fold<int>(0, (t, e) => t + e.quantidade);
 
                 return Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      color: theme.colorScheme.primary
-                          .withValues(alpha: isDark ? 0.16 : 0.10),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Grandes Comandos',
-                              style: TextStyle(
-                                color: theme.colorScheme.primary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            'Efetivo',
-                            style: TextStyle(
-                              color: theme.colorScheme.primary
-                                  .withValues(alpha: 0.80),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    // A lista numa caixa de vidro só, com a arte discreta da
+                    // área (nível 1, DESIGN §3b).
                     Expanded(
-                      child: ListView.separated(
-                        itemCount: list.length,
-                        separatorBuilder: (_, __) => Divider(
-                          height: 1,
-                          indent: 16,
-                          endIndent: 16,
-                          color: theme.dividerColor.withValues(alpha: 0.2),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                        child: CartaoVidro(
+                          arte: arte,
+                          padding: EdgeInsets.zero,
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                    16, 12, 16, 8),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text('GRANDES COMANDOS',
+                                          style: estiloRotulo(context)),
+                                    ),
+                                    Text('EFETIVO',
+                                        style: estiloRotulo(context)),
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                child: ListView.separated(
+                                  padding: const EdgeInsets.only(bottom: 6),
+                                  itemCount: list.length,
+                                  separatorBuilder: (_, __) => Divider(
+                                    height: 1,
+                                    indent: 16,
+                                    endIndent: 16,
+                                    color: theme.dividerColor
+                                        .withValues(alpha: 0.2),
+                                  ),
+                                  itemBuilder: (_, i) => _comandoCard(
+                                      list[i], total, theme, isDark),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        itemBuilder: (_, i) =>
-                            _comandoCard(list[i], total, theme, isDark),
                       ),
                     ),
+                    // Rodapé total: o número é o destaque (DESIGN §2b).
                     SafeArea(
                       top: false,
                       minimum: const EdgeInsets.only(bottom: 10),
-                      child: Container(
-                        margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 11),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary
-                              .withValues(alpha: isDark ? 0.20 : 0.12),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: theme.colorScheme.primary
-                                .withValues(alpha: 0.35),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                        child: CartaoVidro(
+                          raio: 14,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Expanded(
+                                child: Text('TOTAL',
+                                    style: estiloRotulo(context)),
+                              ),
+                              DestaqueCartao(
+                                valor: total.toString(),
+                                tamanho: AppDisplaySize.heroiMenor,
+                                corValor: theme.colorScheme.primary,
+                              ),
+                            ],
                           ),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'TOTAL',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onSurface,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary
-                                    .withValues(alpha: 0.22),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                total.toString(),
-                                style: TextStyle(
-                                  color: theme.colorScheme.onSurface,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                          ],
                         ),
                       ),
                     ),

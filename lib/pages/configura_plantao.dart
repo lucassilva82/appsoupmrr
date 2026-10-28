@@ -8,12 +8,12 @@ import '../widgets/vidro.dart';
 
 class ConfiguraPlantao extends StatefulWidget {
   ConfiguraPlantao({Key? key}) : super(key: key);
-  bool dataFoiSelecionada = false;
-  DateTime? dateSelected;
   _ConfiguraPlantaoState createState() => _ConfiguraPlantaoState();
 }
 
 class _ConfiguraPlantaoState extends State<ConfiguraPlantao> {
+  bool dataFoiSelecionada = false;
+  DateTime? dateSelected;
   PlantaoModel plantao = PlantaoModel();
   String nomeCidade = "";
   final _cidades = [
@@ -96,9 +96,9 @@ class _ConfiguraPlantaoState extends State<ConfiguraPlantao> {
                             SizedBox(
                               height: hieght * 0.04,
                               width: width * 0.18,
-                              child: widget.dataFoiSelecionada == true
+                              child: dataFoiSelecionada == true
                                   ? Text(
-                                      '${widget.dateSelected!.day.toString().padLeft(2, '0')}/${widget.dateSelected!.month.toString().padLeft(2, '0')}/${widget.dateSelected!.year}')
+                                      '${dateSelected!.day.toString().padLeft(2, '0')}/${dateSelected!.month.toString().padLeft(2, '0')}/${dateSelected!.year}')
                                   : ElevatedButton(
                                       onPressed: () async {
                                         _selecionaData();
@@ -167,16 +167,16 @@ class _ConfiguraPlantaoState extends State<ConfiguraPlantao> {
   }
 
   _selecionaData() async {
-    widget.dateSelected = await showDatePicker(
+    dateSelected = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2018),
       lastDate: DateTime.now(),
     );
 
-    if (widget.dateSelected != null) {
-      widget.dataFoiSelecionada = true;
-      widget.dateSelected = widget.dateSelected!.toUtc();
+    if (dateSelected != null) {
+      dataFoiSelecionada = true;
+      dateSelected = dateSelected!.toUtc();
     }
 
     setState(() {});
@@ -196,7 +196,7 @@ class _ConfiguraPlantaoState extends State<ConfiguraPlantao> {
       t = Turno.giro;
     }
 
-    await plantao.salvaEscalaMemoria(widget.dateSelected!, tipoEscala!, t);
+    await plantao.salvaEscalaMemoria(dateSelected!, tipoEscala!, t);
     Navigator.of(context).pushReplacementNamed(AppRoutes.PLANTAO);
   }
 

@@ -280,6 +280,14 @@ Trabalhe numa cópia local separada (no MacBook: `~/code/api-soupmrr`), nunca
 dentro desta pasta, e siga o roteiro de deploy do item 18 do `APRENDIZADOS.md`.
 As credenciais de FTP ficam só na máquina (`~/.netrc`, permissão 600).
 
+Desde 23/10/2026 a cópia local tem git num repositório **privado**
+(`lucassilva82/api-soupmrr`), sem nenhuma credencial: `conexao.php`,
+`conexaoHomologacao.php`, `.vscode/sftp.json` e o `.netrc` ficam no Google
+Drive, pasta "Arquivos SouPMRR/servidor-api", junto com o `env.json` e a pasta
+`api-soupmrr-private`. Máquina nova: clonar o repositório e copiar esses
+arquivos do Drive (roteiro em "LEIA-ME iMac.txt", na mesma pasta). Depois de
+cada deploy, commit e push nesse repositório.
+
 O TCPDF usado pelas certidões fica no servidor em `~/private/vendor/tcpdf`
 (6.7.5, só fontes core), fora da pasta pública. Uma cópia local fica em
 `~/code/api-soupmrr-private/vendor/tcpdf`.

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../core/design/fundo_circuito.dart';
+import 'package:flutter/services.dart';
+
 import '../utils/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -22,8 +25,13 @@ import '../utils/app_theme.dart';
 
 enum TipoAviso { sucesso, erro, atencao, info }
 
-/// Âmbar do "Em desenvolvimento" e dos avisos de atenção.
+/// Âmbar do "Em desenvolvimento" e dos avisos de atenção, no tema escuro.
+/// Para texto e ícone use [corAtencao], que escurece no tema claro.
 const Color kCorAtencao = Color(0xFFC77800);
+
+/// O âmbar de atenção legível no tema da tela (DESIGN §6: 4,5:1).
+Color corAtencao(ThemeData theme) =>
+    theme.brightness == Brightness.dark ? kCorAtencao : AppColors.atencaoEscura;
 
 /// Cor de cada tipo, lida do tema para servir aos modos claro e escuro.
 Color corDoAviso(ThemeData theme, TipoAviso tipo) {
@@ -34,7 +42,7 @@ Color corDoAviso(ThemeData theme, TipoAviso tipo) {
     case TipoAviso.erro:
       return theme.colorScheme.error;
     case TipoAviso.atencao:
-      return kCorAtencao;
+      return corAtencao(theme);
     case TipoAviso.info:
       return theme.colorScheme.primary;
   }
@@ -67,12 +75,21 @@ void avisoInfo(BuildContext context, String titulo, {String? texto}) =>
 
 void _porTipo(
     BuildContext context, TipoAviso tipo, String titulo, String? texto) {
+  // Háptico (§15.2): leve no sucesso, médio no erro e na atenção.
+  switch (tipo) {
+    case TipoAviso.sucesso:
+      HapticFeedback.lightImpact();
+    case TipoAviso.erro || TipoAviso.atencao:
+      HapticFeedback.mediumImpact();
+    case TipoAviso.info:
+      break;
+  }
   avisoRapido(
     context,
     titulo: titulo,
     texto: texto,
     icone: _iconeDoAviso(tipo),
-    cor: corDoAviso(Theme.of(context), tipo),
+    cor: corDoAviso(FundoCircuito.ativo ? FundoCircuito.temaEscuro : Theme.of(context), tipo),
     // Erro fica um pouco mais na tela: costuma ter algo para ler.
     duracao: Duration(seconds: tipo == TipoAviso.erro ? 4 : 3),
   );
@@ -88,7 +105,8 @@ void avisoRapido(
 }) {
   _mostrar(
     ScaffoldMessenger.of(context),
-    Theme.of(context),
+    // Sobre as telas de entrada, o aviso segue o fundo escuro delas.
+    FundoCircuito.ativo ? FundoCircuito.temaEscuro : Theme.of(context),
     titulo: titulo,
     texto: texto,
     icone: icone,

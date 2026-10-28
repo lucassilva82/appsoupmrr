@@ -75,6 +75,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                     if (day.month != dataFoco.month) {
                       return Container(color: Colors.transparent);
                     }
+                    return null;
                   },
                   outsideBuilder: (context, day, focusedDay) {
                     return null;

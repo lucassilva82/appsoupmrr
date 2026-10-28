@@ -6,6 +6,10 @@ import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/vidro.dart';
+import '../widgets/alerta.dart';
+import '../widgets/dialogo_confirmacao.dart';
+import '../core/design/arte_cartao.dart';
+import '../core/design/folha_arte.dart';
 import '../widgets/aviso_rapido.dart';
 
 // ── Vagas SVI ─────────────────────────────────────────────────────────────────
@@ -92,27 +96,27 @@ class _SviEscalasPageState extends State<SviEscalasPage> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return FundoSuave(child: Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+    return FundoSuave(
+        child: Scaffold(
       appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         flexibleSpace: const FundoBarraVidro(),
-        title: const Text(
+        title: Text(
           'Vagas SVI',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             letterSpacing: 1.2,
           ),
         ),
         actions: [
           IconButton(
             tooltip: 'Meus Voluntários',
-            icon: const Icon(Icons.history_rounded, color: Colors.white),
+            icon: Icon(Icons.history_rounded, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () =>
                 Navigator.of(context).pushNamed(AppRoutes.SVI_MEUS_VOLUNTARIOS),
           ),
@@ -148,7 +152,6 @@ class _SviEscalasPageState extends State<SviEscalasPage> {
     if (result.escalas.isEmpty) {
       return RefreshIndicator(
         onRefresh: _load,
-        color: AppColors.blue,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics()),
@@ -159,7 +162,6 @@ class _SviEscalasPageState extends State<SviEscalasPage> {
 
     return RefreshIndicator(
       onRefresh: _load,
-      color: AppColors.blue,
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics()),
@@ -209,27 +211,12 @@ class _SviEscalaCard extends StatelessWidget {
         child:
             Transform.translate(offset: Offset(0, (1 - t) * 12), child: child),
       ),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: CartaoVidro(
+          onTap: onTap,
+          arte: Arte.de('operacional'),
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? AppColors.darkBorder : const Color(0xFFE8EFFA),
-            ),
-            boxShadow: isDark
-                ? []
-                : [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -241,7 +228,8 @@ class _SviEscalaCard extends StatelessWidget {
                     width: 50,
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppColors.blue.withOpacity(isDark ? 0.2 : 0.1),
+                      color: theme.colorScheme.primary
+                          .withValues(alpha: isDark ? 0.2 : 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -249,10 +237,10 @@ class _SviEscalaCard extends StatelessWidget {
                       children: [
                         Text(
                           dia,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.blue,
+                            color: theme.colorScheme.primary,
                           ),
                         ),
                         Text(
@@ -260,7 +248,8 @@ class _SviEscalaCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.blue.withOpacity(0.7),
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.75),
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -286,7 +275,8 @@ class _SviEscalaCard extends StatelessWidget {
                               ),
                             ),
                             if (escala.comandoSigla.isNotEmpty)
-                              _chip(escala.comandoSigla, AppColors.blue),
+                              _chip(escala.comandoSigla,
+                                  theme.colorScheme.primary),
                           ],
                         ),
                         const SizedBox(height: 6),
@@ -419,7 +409,7 @@ class _SviEscalaCard extends StatelessWidget {
           child: Text(
             text,
             style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                ?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.62)),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -519,31 +509,16 @@ class _SviEscalaDetalheSheetState extends State<_SviEscalaDetalheSheet> {
       if (slot.guarnicaoNome.isNotEmpty) slot.guarnicaoNome,
     ].join(' · ');
 
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Confirmar candidatura'),
-        content: Text(
-          'Confirma candidatura para '
+    final confirmar = await dialogoConfirmacao(
+      context,
+      titulo: 'Confirmar candidatura',
+      mensagem: 'Confirma candidatura para '
           '${descricao.isNotEmpty ? '$descricao ' : ''}'
           'em ${escala.dataEscala}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF059669),
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Confirmar'),
-          ),
-        ],
-      ),
+      textoConfirmar: 'Confirmar',
+      icone: Icons.volunteer_activism_rounded,
+      cor: AppColors.acao,
+      arte: Arte.de('operacional'),
     );
 
     if (confirmar != true || !mounted) return;
@@ -565,48 +540,13 @@ class _SviEscalaDetalheSheetState extends State<_SviEscalaDetalheSheet> {
     }
   }
 
-  Future<void> _mostrarSucesso(String mensagem) async {
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: Color(0x1A059669),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.check_rounded,
-                  color: Color(0xFF059669), size: 40),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Escalado com sucesso!',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              mensagem,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13),
-            ),
-          ],
-        ),
-        actions: [
-          Center(
-            child: TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Fechar'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Future<void> _mostrarSucesso(String mensagem) => alertaSucesso(
+        context,
+        titulo: 'Escalado com sucesso!',
+        texto: mensagem,
+        confirmar: 'Fechar',
+        arte: Arte.de('operacional'),
+      );
 
   void _mostrarErro(String mensagem) {
     avisoErro(context, 'Não foi possível concluir', texto: mensagem);
@@ -615,69 +555,34 @@ class _SviEscalaDetalheSheetState extends State<_SviEscalaDetalheSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final escala = widget.escala;
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.6,
-      minChildSize: 0.4,
-      maxChildSize: 0.92,
-      expand: false,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurface.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-                  children: [
-                    Text(
-                      escala.titulo.isNotEmpty
-                          ? escala.titulo
-                          : escala.tipoServico,
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 12),
-                    _linha(
-                        theme, Icons.event_rounded, 'Data', escala.dataEscala),
-                    _linha(theme, Icons.schedule_rounded, 'Horário',
-                        '${escala.horarioInicioFmt} – ${escala.horarioFimFmt}'),
-                    if (escala.localAssuncao.isNotEmpty)
-                      _linha(theme, Icons.place_rounded, 'Local',
-                          escala.localAssuncao),
-                    if (escala.comandoSigla.isNotEmpty)
-                      _linha(theme, Icons.shield_rounded, 'Comando',
-                          escala.comandoSigla),
-                    if (escala.prazoVoluntarios != null)
-                      _linha(
-                          theme,
-                          Icons.hourglass_bottom_rounded,
-                          'Prazo p/ candidatura',
-                          _fmtPrazo(escala.prazoVoluntarios!)),
-                    const SizedBox(height: 20),
-                    _buildAcao(theme),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    // Folha do padrão 2.2 (FolhaArte, arte operacional): o corpo rola
+    // sozinho quando passa da altura.
+    return FolhaArte(
+      arte: Arte.de('operacional'),
+      icone: Icons.more_time_rounded,
+      titulo: escala.titulo.isNotEmpty ? escala.titulo : escala.tipoServico,
+      subtitulo: 'Serviço voluntário (SVI)',
+      paddingCorpo: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _linha(theme, Icons.event_rounded, 'Data', escala.dataEscala),
+          _linha(theme, Icons.schedule_rounded, 'Horário',
+              '${escala.horarioInicioFmt} – ${escala.horarioFimFmt}'),
+          if (escala.localAssuncao.isNotEmpty)
+            _linha(theme, Icons.place_rounded, 'Local', escala.localAssuncao),
+          if (escala.comandoSigla.isNotEmpty)
+            _linha(theme, Icons.shield_rounded, 'Comando', escala.comandoSigla),
+          if (escala.prazoVoluntarios != null)
+            _linha(theme, Icons.hourglass_bottom_rounded,
+                'Prazo p/ candidatura', _fmtPrazo(escala.prazoVoluntarios!)),
+          const SizedBox(height: 8),
+          _buildAcao(theme),
+        ],
+      ),
     );
   }
 
@@ -703,7 +608,7 @@ class _SviEscalaDetalheSheetState extends State<_SviEscalaDetalheSheet> {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
         child: Center(
-          child: CircularProgressIndicator(color: AppColors.blue),
+          child: CircularProgressIndicator(),
         ),
       );
     }
@@ -799,64 +704,64 @@ class _SviEscalaDetalheSheetState extends State<_SviEscalaDetalheSheet> {
 
     return Opacity(
       opacity: indisponivel ? 0.6 : 1,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: baseColor.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: baseColor.withOpacity(0.2)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (slot.funcaoNome.isNotEmpty)
-              Text(
-                slot.funcaoNome,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
-              ),
-            if (slot.guarnicaoNome.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  slot.guarnicaoNome,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6)),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: CartaoVidro(
+          raio: 14,
+          tingimento: indisponivel ? null : baseColor,
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (slot.funcaoNome.isNotEmpty)
+                Text(
+                  slot.funcaoNome,
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
-              ),
-            if (slot.postoPermitido != null && slot.postoPermitido!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  'Posto/graduação: ${slot.postoPermitido}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.70)),
+              if (slot.guarnicaoNome.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    slot.guarnicaoNome,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.62)),
+                  ),
                 ),
-              ),
-            if (slot.quadroPermitido != null &&
-                slot.quadroPermitido!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  'Quadro: ${slot.quadroPermitido}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.70)),
+              if (slot.postoPermitido != null &&
+                  slot.postoPermitido!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    'Posto/graduação: ${slot.postoPermitido}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.70)),
+                  ),
                 ),
-              ),
-            const SizedBox(height: 12),
-            if (indisponivel)
-              _avisoBox(
-                Icons.block_rounded,
-                slot.motivoIndisponivel ?? 'Vaga indisponível.',
-                Colors.orange,
-              )
-            else
-              _botaoQuero(
-                enviando: enviando,
-                onPressed: () => _confirmarCandidatura(slot, index),
-              ),
-          ],
+              if (slot.quadroPermitido != null &&
+                  slot.quadroPermitido!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    'Quadro: ${slot.quadroPermitido}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.70)),
+                  ),
+                ),
+              const SizedBox(height: 12),
+              if (indisponivel)
+                _avisoBox(
+                  Icons.block_rounded,
+                  slot.motivoIndisponivel ?? 'Vaga indisponível.',
+                  Colors.orange,
+                )
+              else
+                _botaoQuero(
+                  enviando: enviando,
+                  onPressed: () => _confirmarCandidatura(slot, index),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -868,52 +773,32 @@ class _SviEscalaDetalheSheetState extends State<_SviEscalaDetalheSheet> {
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: (_enviandoSlotIndex != null) ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF059669),
-          foregroundColor: Colors.white,
-          disabledBackgroundColor: const Color(0xFF059669).withOpacity(0.5),
-          disabledForegroundColor: Colors.white70,
-          padding: const EdgeInsets.symmetric(vertical: 13),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
         icon: enviando
             ? const SizedBox(
                 width: 16,
                 height: 16,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.white),
+                child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : const Icon(Icons.volunteer_activism_rounded, size: 18),
-        label: Text(
-          enviando ? 'Enviando...' : 'Quero este serviço',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-        ),
+            : const Icon(Icons.volunteer_activism_rounded,
+                size: AppIconSize.sm),
+        label: Text(enviando ? 'Enviando...' : 'Quero este serviço'),
       ),
     );
   }
 
   Widget _avisoBox(IconData icon, String texto, Color color) {
-    return Container(
-      width: double.infinity,
+    return CartaoVidro(
+      raio: 12,
+      tingimento: color,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: color),
+          Icon(icon, size: AppIconSize.sm, color: color),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               texto,
-              style: TextStyle(
-                fontSize: 13,
-                color: color,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -927,7 +812,7 @@ class _SviEscalaDetalheSheetState extends State<_SviEscalaDetalheSheet> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppColors.blue),
+          Icon(icon, size: AppIconSize.sm, color: theme.colorScheme.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -964,8 +849,52 @@ class _SviLoadingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: CircularProgressIndicator(color: AppColors.blue),
+    return const Center(child: CircularProgressIndicator());
+  }
+}
+
+/// Estado vazio, de erro ou de adesão no padrão 2.2: caixa de vidro com a
+/// arte operacional.
+class _SviCaixaEstado extends StatelessWidget {
+  final IconData icone;
+  final Color? corIcone;
+  final String? titulo;
+  final String texto;
+  final Widget? acao;
+  const _SviCaixaEstado(
+      {required this.icone,
+      this.corIcone,
+      this.titulo,
+      required this.texto,
+      this.acao});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final mudo = theme.colorScheme.onSurface.withValues(alpha: 0.65);
+    return CartaoVidro(
+      arte: Arte.de('operacional'),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icone, size: AppIconSize.xl, color: corIcone ?? mudo),
+          const SizedBox(height: 12),
+          if (titulo != null) ...[
+            Text(titulo!,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+          ],
+          Text(texto,
+              textAlign: TextAlign.center,
+              style: titulo == null
+                  ? theme.textTheme.bodyMedium
+                  : theme.textTheme.bodyMedium?.copyWith(color: mudo)),
+          if (acao != null) ...[const SizedBox(height: 20), acao!],
+        ],
+      ),
     );
   }
 }
@@ -979,29 +908,17 @@ class _SviErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.cloud_off_rounded,
-                size: 56, color: Colors.redAccent),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: onRetry,
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-              ),
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Tentar novamente'),
-            ),
-          ],
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: _SviCaixaEstado(
+          icone: Icons.cloud_off_rounded,
+          corIcone: Theme.of(context).colorScheme.error,
+          texto: message,
+          acao: ElevatedButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded, size: AppIconSize.sm),
+            label: const Text('Tentar novamente'),
+          ),
         ),
       ),
     );
@@ -1013,28 +930,13 @@ class _SviEmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(top: 120, left: 32, right: 32),
-      child: Column(
-        children: [
-          Icon(Icons.event_available_rounded,
-              size: 64, color: theme.colorScheme.onSurface.withOpacity(0.25)),
-          const SizedBox(height: 16),
-          Text(
-            'Nenhuma vaga SVI disponível',
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Quando o gestor publicar escalas com vagas compatíveis com sua '
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 32),
+      child: _SviCaixaEstado(
+        icone: Icons.event_available_rounded,
+        titulo: 'Nenhuma vaga SVI disponível',
+        texto: 'Quando o gestor publicar escalas com vagas compatíveis com sua '
             'graduação, elas aparecerão aqui.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.70)),
-          ),
-        ],
       ),
     );
   }
@@ -1053,43 +955,23 @@ class _SviSemAdesaoView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return RefreshIndicator(
       onRefresh: onRefresh,
-      color: AppColors.blue,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics()),
-        padding: const EdgeInsets.only(top: 100, left: 32, right: 32),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
-          Icon(Icons.assignment_late_rounded,
-              size: 64, color: theme.colorScheme.onSurface.withOpacity(0.3)),
-          const SizedBox(height: 16),
-          Text(
-            'Adesão SVI necessária',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            mensagem ??
+          _SviCaixaEstado(
+            icone: Icons.assignment_late_rounded,
+            titulo: 'Adesão SVI necessária',
+            texto: mensagem ??
                 'Você não possui adesão SVI ativa. Assine o termo de adesão '
                     'para poder se candidatar às vagas.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6)),
-          ),
-          const SizedBox(height: 24),
-          Center(
-            child: ElevatedButton.icon(
+            acao: ElevatedButton.icon(
               onPressed: onAderir,
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-              icon: const Icon(Icons.assignment_turned_in_rounded),
+              icon: const Icon(Icons.assignment_turned_in_rounded,
+                  size: AppIconSize.sm),
               label: const Text('Aderir ao SVI'),
             ),
           ),

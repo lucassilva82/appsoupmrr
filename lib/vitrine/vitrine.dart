@@ -1,3 +1,4 @@
+import 'dart:io' show SocketException;
 // Modo vitrine: o app inteiro com um militar fictício, para as capturas de
 // tela das lojas. Liga só na compilação:
 //
@@ -29,11 +30,22 @@ const vitrineMatricula = '1234567';
 /// dados públicos (comandantes da corporação).
 const _liberados = ['/mapadaforca/listacomandos.php'];
 
+/// Para fotografar a tela de erro: o endereço do SIGRH que contém este texto
+/// falha como "sem internet" (`--dart-define=VITRINE_FALHA=carreira.php`).
+const _falhaVitrine = String.fromEnvironment('VITRINE_FALHA');
+
+/// Para fotografar a tela de atualização obrigatória: a versão mínima que o
+/// "servidor" exige (`--dart-define=VITRINE_MINIMA=2.2.0`).
+const _minimaVitrine = String.fromEnvironment('VITRINE_MINIMA', defaultValue: '2.1.5');
+
 /// Cliente HTTP do modo vitrine (ver `http.runWithClient` no main).
 http.Client clienteVitrine() {
   final real = IOClient();
   return MockClient((req) async {
     final url = req.url;
+    if (_falhaVitrine.isNotEmpty && url.path.contains(_falhaVitrine)) {
+      throw const SocketException('vitrine: falha simulada');
+    }
     if (url.host.startsWith('intranet.') && url.path.contains('/api/v1/')) {
       return _responderIntranet(url, req);
     }
@@ -55,6 +67,175 @@ http.Client clienteVitrine() {
   });
 }
 
+/// Campos de texto de um corpo multipart (os anexos são ignorados: no modo
+/// vitrine nada sai do aparelho).
+Map<String, String> _camposMultipart(http.Request req) {
+  final corpo = utf8.decode(req.bodyBytes, allowMalformed: true);
+  return {
+    // Campo com acento ganha cabeçalhos próprios (content-type) antes do valor.
+    for (final m in RegExp(r'name="([a-z_]+)"\r\n(?:[^\r\n]+\r\n)*\r\n([\s\S]*?)\r\n--')
+        .allMatches(corpo))
+      m.group(1)!: m.group(2)!,
+  };
+}
+
+// Sugestões e elogios do militar fictício, guardados só na memória.
+final _feedbacks = <Map<String, Object>>[
+  {
+    'id': 1,
+    'protocolo': 'FB-2026-00001',
+    'tipo': 'funcao_nova',
+    'texto': 'Seria bom ver as escalas do mês num calendário.',
+    'situacao': 'em_analise',
+    'aguarda_militar': true,
+    'criado_em': '2026-10-20T09:12:00-04:00',
+    'mensagens': <Map<String, Object>>[
+      {'autor': 'equipe', 'texto': 'Boa ideia! O calendário seria do mês inteiro ou só da semana?',
+       'criado_em': '2026-10-21T14:30:00-04:00', 'anexos': 0, 'lida': false},
+    ],
+  },
+];
+
+// Comunicados fictícios do modo vitrine (§4.2), com leitura em memória.
+final _comLidos = <int>{};
+final _comCientes = <int>{};
+
+Object _comunicados(Map<String, String> c) {
+  final id = int.tryParse(c['id'] ?? '');
+  switch (c['acao']) {
+    case 'lido':
+      if (id != null) _comLidos.add(id);
+      return {'code': 1};
+    case 'ciente':
+      if (id != null) {
+        _comLidos.add(id);
+        _comCientes.add(id);
+      }
+      return {'code': 1, 'ciente_em': DateTime.now().toIso8601String()};
+  }
+  final hoje = DateTime.now();
+  Map<String, Object?> item(int id, String titulo, String resumo, String categoria, String origem, String icone,
+          {bool urgente = false, bool ciencia = false, Map<String, String>? pilula, int dias = 0, bool lido = false}) =>
+      {
+        'id': id, 'titulo': titulo, 'resumo': resumo, 'categoria': categoria, 'origem': origem, 'icone': icone,
+        'texto': '$resumo\n\nTexto fictício do modo vitrine, para conferir o desenho da central de '
+            'comunicados. Nenhum dado aqui é real.',
+        'inicio': hoje.subtract(Duration(days: dias)).toIso8601String(), 'urgente': urgente, 'ciencia': ciencia,
+        'versao': 1, 'lido': lido || _comLidos.contains(id), 'ciente': _comCientes.contains(id),
+        if (pilula != null) 'pilula': pilula,
+      };
+  // Os mesmos seis do protótipo (prototipos/soupm-2-2.html).
+  return {
+    'code': 1,
+    'categorias': [
+      {'chave': 'operacao', 'nome': 'Operação', 'cor': '#3B82F6', 'icone': 'how_to_vote'},
+      {'chave': 'administrativo', 'nome': 'Administrativo', 'cor': '#E5484D', 'icone': 'schedule'},
+      {'chave': 'saude', 'nome': 'Saúde', 'cor': '#14B8A6', 'icone': 'vaccines'},
+      {'chave': 'rh', 'nome': 'Recursos Humanos', 'cor': '#7C6CF2', 'icone': 'groups'},
+      {'chave': 'instrucao', 'nome': 'Instrução', 'cor': '#0EA5A4', 'icone': 'menu_book'},
+      {'chave': 'institucional', 'nome': 'Institucional', 'cor': '#E0A100', 'icone': 'military_tech'},
+    ],
+    'itens': [
+      // Comunicado de abertura no modo cartaz, com o botão de link (o
+      // cartaz é o brasão, imagem pública do servidor da API).
+      {
+        ...item(1, 'Eleições 2026: 2º turno', 'Escala reforçada. Apresentação nas OPMs às 5h do dia 25.', 'operacao',
+            'Comando-Geral', 'local_police', ciencia: true, pilula: {'icone': 'event', 'texto': '24 a 26/10'}),
+        'destaque_abertura': true,
+        'imagem_modo': 'cartaz',
+        'imagem': 'https://pmrr.online/flutter/sigrh/img/brasao-pmrr.png',
+        'acao': {'tipo': 'link', 'destino': 'https://pmrr.online/', 'rotulo': 'Acessar a operação'},
+      },
+      item(6, 'Expediente reduzido na sexta', 'Das 7h30 às 12h em todas as OPMs.', 'administrativo',
+          'Comando-Geral', 'event_busy', urgente: true, dias: 1, pilula: {'icone': 'schedule', 'texto': 'Sexta, 30/10'}),
+      item(2, 'Vacinação no QCG', 'Gripe e hepatite B, das 8h às 16h. Leve o cartão de vacina.', 'saude',
+          'Diretoria de Saúde', 'vaccines', dias: 2, pilula: {'icone': 'event', 'texto': '3 a 7/11'}),
+      item(3, 'Declaração anual de bens', 'Envie sua declaração até 31 de outubro.', 'rh',
+          'Diretoria de Recursos Humanos - PMRR', 'contact_page', dias: 5, lido: true,
+          pilula: {'icone': 'calendar_today', 'texto': 'Prazo: 31/10'}),
+      item(4, 'Inscrições para o CFS', 'Processo seletivo interno do CFS QPC PM.', 'instrucao',
+          'Diretoria de Ensino', 'school', dias: 10, lido: true, pilula: {'icone': 'calendar_today', 'texto': 'Até 14/11'}),
+      item(5, 'Chegou o SouPMRR 2.2', 'Menu por áreas, busca e canal direto com o DTI.', 'institucional',
+          'DTI/PMRR', 'phone_iphone', pilula: {'icone': 'new_releases', 'texto': 'Versão 2.2'}),
+    ],
+  };
+}
+
+// Pendências fictícias (§4.3): a ciência some quando o militar dá ciência
+// no comunicado 1; o lembrete some quando é dispensado.
+final _pendDispensadas = <String>{};
+
+Object _pendencias(Map<String, String> c) {
+  if (c['acao'] == 'dispensar') {
+    _pendDispensadas.add('${c['tipo']}|${c['referencia']}');
+    return {'code': 1};
+  }
+  final ano = DateTime.now().year;
+  return {
+    'code': 1,
+    'ligados': 3,
+    'itens': [
+      {'tipo': 'sigrh.declaracao_bens', 'sistema': 'SIGRH', 'titulo': 'Declaração anual de bens',
+       'obrigatoria': true, 'dispensavel': false, 'destino': 'rh.declaracoes', 'referencia': 'ano:$ano',
+       'prazo': DateTime(ano, 10, 31).isAfter(DateTime.now())
+           ? DateTime(ano, 10, 31).toIso8601String()
+           : DateTime.now().add(const Duration(days: 11)).toIso8601String(),
+       'icone': 'request_quote'},
+      if (!_comCientes.contains(1))
+        {'tipo': 'soupm.ciencia_comunicado', 'sistema': 'Comando', 'titulo': 'Ciência: Eleições 2026, 2º turno',
+         'texto': 'O Comando pede confirmação de leitura', 'obrigatoria': true, 'dispensavel': false,
+         'destino': 'com.central', 'referencia': 'comunicado:1', 'icone': 'campaign'},
+      if (!_pendDispensadas.contains('soupm.certidao_vencendo|certidao:1'))
+        {'tipo': 'soupm.certidao_vencendo', 'sistema': 'SouPMRR', 'titulo': 'Certidão de Vínculo vence em 23 dias',
+         'texto': 'Emita outra se ainda precisar dela', 'obrigatoria': false, 'dispensavel': true,
+         'destino': 'rh.certidoes', 'referencia': 'certidao:1', 'icone': 'verified'},
+    ],
+  };
+}
+
+Object _feedback(Map<String, String> c) {
+  Map<String, Object> resumo(Map<String, Object> f) => {
+        'id': f['id']!, 'protocolo': f['protocolo']!, 'tipo': f['tipo']!,
+        'trecho': f['texto']!, 'situacao': f['situacao']!, 'criado_em': f['criado_em']!,
+        'respostas_novas': (f['mensagens']! as List)
+            .where((m) => (m as Map)['autor'] == 'equipe' && m['lida'] == false).length,
+      };
+  switch (c['acao']) {
+    case 'enviar':
+      final id = _feedbacks.length + 1;
+      final protocolo = 'FB-2026-${id.toString().padLeft(5, '0')}';
+      _feedbacks.insert(0, {
+        'id': id, 'protocolo': protocolo, 'tipo': c['tipo'] ?? 'melhoria', 'texto': c['texto'] ?? '',
+        'situacao': 'recebido', 'aguarda_militar': false,
+        'criado_em': DateTime.now().toIso8601String(), 'mensagens': <Map<String, Object>>[],
+      });
+      return {'code': 1, 'id': id, 'protocolo': protocolo};
+    case 'listar':
+      return {'code': 1, 'itens': [for (final f in _feedbacks) resumo(f)]};
+    case 'ver' || 'responder':
+      final f = _feedbacks.where((f) => '${f['id']}' == c['id']).firstOrNull;
+      if (f == null) {
+        return {'code': 0, 'erro': 'NAO_ENCONTRADO', 'message': 'Não achamos essa mensagem na sua conta.'};
+      }
+      final msgs = f['mensagens']! as List<Map<String, Object>>;
+      if (c['acao'] == 'responder') {
+        msgs.add({'autor': 'militar', 'texto': c['texto'] ?? '', 'criado_em': DateTime.now().toIso8601String(),
+                  'anexos': 0, 'lida': true});
+        f['aguarda_militar'] = false;
+        return {'code': 1};
+      }
+      for (final m in msgs) {
+        m['lida'] = true;
+      }
+      return {
+        'code': 1,
+        'feedback': {...resumo(f), 'texto': f['texto']!, 'aguarda_militar': f['aguarda_militar']!, 'anexos': 0},
+        'mensagens': [for (final m in msgs) {...m}..remove('lida')],
+      };
+  }
+  return {'code': 0, 'erro': 'DADOS_INVALIDOS', 'message': 'Ação inválida.'};
+}
+
 http.Response _json(Object corpo) => http.Response.bytes(
       utf8.encode(jsonEncode(corpo)),
       200,
@@ -64,6 +245,103 @@ http.Response _json(Object corpo) => http.Response.bytes(
 Object? _responder(Uri url, http.Request req) {
   final arquivo = url.pathSegments.last;
   switch (arquivo) {
+    // O log do modo vitrine não vai a lugar nenhum: o militar é fictício.
+    case 'log.php':
+      return {'code': 1, 'aceitos': 0, 'recusados': 0};
+    case 'feedback.php':
+      return _feedback(_camposMultipart(req));
+    case 'comunicados.php':
+      return _comunicados(req.bodyFields);
+    case 'pendencias.php':
+      return _pendencias(req.bodyFields);
+    // Carreira fictícia do SD STIVES DA SILVA.
+    case 'carreira.php':
+      return {
+        'code': 1,
+        'eventos': [
+          {'data': '2019-03-11', 'tipo': 'incorporacao', 'titulo': 'Incorporação na PMRR'},
+          {'data': '2019-03-11', 'tipo': 'promocao', 'titulo': 'Primeiro posto: Soldado (QPPM)', 'detalhe': 'BG 045/2019'},
+          {'data': '2022-07-01', 'tipo': 'escolaridade', 'titulo': 'Escolaridade: superior completo'},
+          {'data': '2023-03-11', 'tipo': 'comportamento', 'titulo': 'Comportamento ótimo'},
+          {'data': '2019-07-30', 'tipo': 'curso', 'titulo': 'Curso: Curso de Formação de Soldados (CFSD)',
+           'detalhe': 'Academia de Polícia Militar · 960 h · conceito ótimo'},
+          {'data': '2021-05-14', 'tipo': 'curso', 'titulo': 'Curso: Atendimento Pré-Hospitalar (APH)',
+           'detalhe': 'Corpo de Bombeiros Militar de Roraima · 40 h'},
+          {'data': '2022-11-20', 'tipo': 'elogio', 'titulo': 'Elogio individual', 'detalhe': 'BG 210/2022'},
+          {'data': '2024-04-21', 'tipo': 'medalha', 'titulo': 'Medalha Tiradentes', 'detalhe': 'BG 075/2024'},
+          {'data': '2025-09-07', 'tipo': 'mencao', 'titulo': 'Menção honrosa', 'detalhe': 'BG 170/2025'},
+        ],
+        'falhas': <String>[],
+      };
+    // A escolha fica no aparelho; o "servidor" do modo vitrine só confirma.
+    case 'inicio_preferencias.php':
+      return {'code': 1};
+    // Como em produção até a comparação ser aprovada: o PDF sai do aparelho.
+    case 'contracheque_pdf.php':
+      return {'code': 0, 'erro': 'DESLIGADO', 'message': 'PDF pela API ainda desligado.'};
+    // Sem menu: o app usa o menu do código, como na loja (fase 1 da 2.2).
+    case 'app_config.php':
+      return {
+        'code': 1,
+        'versao_config': 1,
+        'sessao': 'ok',
+        'versao': {
+          'android': {'minima': _minimaVitrine, 'recomendada': _minimaVitrine},
+          'ios': {'minima': _minimaVitrine, 'recomendada': _minimaVitrine},
+        },
+        'rede': {'timeout_s': 15},
+        'comunicados': {'fonte': 'api'},
+        'lotacao': {'subunidade': '2ª Cia', 'unidade': '1º BPM', 'comando': 'CPC'},
+        'lotacao_extenso': {
+          'subunidade': '2ª Companhia',
+          'unidade': '1º Batalhão de Polícia Militar',
+          'comando': 'Comando de Policiamento da Capital',
+        },
+        // Início com Comando fictício (sem foto) e um card do painel: as
+        // capturas e os vídeos não mostram os comandantes reais.
+        'home': [
+          {
+            'chave': 'home.comandantes',
+            'ordem': 10,
+            'escondivel': false,
+            'arte': 'estrelas',
+            'dados': [
+              {'cargo': 'Comandante-Geral', 'posto': 'CEL QOC PM', 'nome': 'FULANO DE TAL EXEMPLO',
+               'nome_guerra': 'EXEMPLO', 'quadro': 'Quadro de Oficiais Combatentes', 'desde': '2025-01-02',
+               'inclusao': '1998-02-01', 'lotacao': 'Quartel do Comando-Geral', 'cursos': ['CSP', 'CAO', 'CFO'], 'estrelas': 3,
+               'mensagem': 'Mensagem fictícia do modo vitrine.'},
+              {'cargo': 'Subcomandante-Geral', 'posto': 'CEL QOC PM', 'nome': 'BELTRANO DA SILVA EXEMPLO',
+               'nome_guerra': 'BELTRANO', 'quadro': 'Quadro de Oficiais Combatentes', 'desde': '2025-01-02',
+               'inclusao': '1999-02-01', 'lotacao': 'Quartel do Comando-Geral', 'cursos': ['CSP', 'CAO', 'CFO'], 'estrelas': 3},
+            ],
+          },
+          {'chave': 'home.anuncio', 'ordem': 20, 'escondivel': false},
+          {'chave': 'home.dicas', 'ordem': 30, 'dados': [
+            // As mesmas da carga inicial do painel (sql/2026-10-25_soupm_dicas_iniciais.sql).
+            {'texto': 'Use a lupa para achar qualquer serviço pelo nome, como "holerite" ou "reserva".', 'icone': 'search', 'tipo': 'dica'},
+            {'texto': 'Emita certidões na hora, com QR Code de conferência. Elas também chegam no seu e-mail.', 'icone': 'verified', 'tipo': 'dica', 'destino': 'rh.certidoes'},
+            {'texto': 'Veja na Linha do tempo seus cursos, elogios, medalhas e promoções registrados no SIGRH.', 'icone': 'military_tech', 'tipo': 'novidade', 'destino': 'rh.carreira'},
+            {'texto': 'Ligue o Face ID ou a biometria em Perfil para entrar sem digitar a senha.', 'icone': 'fingerprint', 'tipo': 'dica'},
+            {'texto': 'Confira em Validar documento se uma certidão ou contracheque é autêntico.', 'icone': 'task_alt', 'tipo': 'dica', 'destino': 'rh.validar'},
+          ]},
+          {'chave': 'home.pendencias', 'ordem': 40, 'escondivel': false},
+          {'chave': 'home.atalhos', 'ordem': 50},
+          {'chave': 'home.livre.outubro_rosa', 'ordem': 55, 'modelo': 'campanha', 'arte': 'rosa',
+           'dados': {'selo': 'Saúde', 'titulo': 'Outubro Rosa na PMRR', 'texto': 'Exames preventivos no HPM até 31/10. Agende pelo ramal da Diretoria de Saúde.'},
+           'acao': {'tipo': 'comunicado', 'rotulo': 'Saiba mais'}},
+          {'chave': 'home.contracheque', 'ordem': 60},
+          {'chave': 'home.tempo_servico', 'ordem': 70},
+          {'chave': 'home.carreira', 'ordem': 75},
+          {'chave': 'home.ferias', 'ordem': 80},
+        ],
+        // Sem `menu`: vale o de reserva do app, igual à carga do banco.
+        'servicos': {
+          'mais_usados': ['rh.contracheques', 'rh.certidoes', 'rh.ferias', 'rh.ficha', 'normas.legislacoes', 'rh.documentos', 'rh.declaracoes'],
+        },
+        'busca': {
+          'mais_procurados': ['rh.contracheques', 'rh.certidoes', 'rh.ferias', 'atend.feedback'],
+        },
+      };
     case 'login.php':
       return {
         'code': 1,
@@ -71,7 +349,9 @@ Object? _responder(Uri url, http.Request req) {
         'email_confirmado': true,
       };
     case 'buscapormatricula.php':
-      return {'result': [_militar]};
+      return {
+        'result': [_militar]
+      };
     case 'buscasituacaofuncional.php':
       return [];
     case 'listamesescontracheque_new.php':
@@ -144,7 +424,12 @@ const _perguntas = [
   {
     'id': 'nome',
     'pergunta': 'Qual é o seu nome?',
-    'opcoes': ['MARCOS OLIVEIRA', 'STIVES SILVA', 'RAFAEL COSTA', 'JOÃO PEREIRA'],
+    'opcoes': [
+      'MARCOS OLIVEIRA',
+      'STIVES SILVA',
+      'RAFAEL COSTA',
+      'JOÃO PEREIRA'
+    ],
   },
   {
     'id': 'matricula',
@@ -196,8 +481,18 @@ const _militar = {
 // ── Contracheque ────────────────────────────────────────────────────────────
 
 const _mesesNome = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho',
-  'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
 ];
 
 /// Folhas até o mês passado do ano pedido.
@@ -337,11 +632,14 @@ List<Map<String, String>> certidoesVitrine() {
   }
 
   return [
-    c('tempo_servico',
+    c(
+        'tempo_servico',
         'Certidão Administrativa de Tempo de Serviço Militar Estadual',
-        'Tempo de Serviço', 'CTS-7K2M9Q', 0),
-    c('vinculo_funcional', 'Certidão de Vínculo Funcional',
-        'Vínculo Funcional', 'CVF-3H8T4P', 6),
+        'Tempo de Serviço',
+        'CTS-7K2M9Q',
+        0),
+    c('vinculo_funcional', 'Certidão de Vínculo Funcional', 'Vínculo Funcional',
+        'CVF-3H8T4P', 6),
   ];
 }
 
@@ -357,7 +655,8 @@ http.Response _intranetJson(Object corpo, [int status = 200]) =>
     http.Response.bytes(utf8.encode(jsonEncode(corpo)), status,
         headers: {'content-type': 'application/json; charset=utf-8'});
 
-http.Response _ok(Object data) => _intranetJson({'success': true, 'data': data});
+http.Response _ok(Object data) =>
+    _intranetJson({'success': true, 'data': data});
 
 http.Response _naoAchado() => _intranetJson({
       'success': false,
@@ -422,39 +721,130 @@ const _escala347 = {
 
 /// id → (tipo_evento, título, corpo, destino)
 final Map<int, List<Object?>> _avisosSige = {
-  9001: ['publicada', 'Escalado em 22/10 — Evento',
-      'Você foi escalado para 22/10/2026, das 07:00 às 19:00, na guarnição RP 002 (Motorista). Dê ciência no app.',
-      {'tela': 'escala', 'id': 346, 'acoes': ['ciencia', 'impossibilidade'], 'somente_leitura': false, 'escala_id': 346, 'situacao_militar': 'ESCALADO'}],
-  9002: ['aprovada', 'Escalado em 22/10 e escala aprovada',
-      'Você foi escalado para 22/10/2026 e a escala foi aprovada pelo comandante.',
-      {'tela': 'escala', 'id': 346, 'acoes': ['ciencia'], 'somente_leitura': false, 'escala_id': 346, 'situacao_militar': 'ESCALADO'}],
-  9003: ['ciencia_lembrete', 'Ciência pendente — escala de amanhã',
-      'Você ainda não deu ciência da escala de 22/10/2026. O serviço começa às 07:00.',
-      {'tela': 'escala', 'id': 346, 'acoes': ['ciencia'], 'somente_leitura': false, 'escala_id': 346, 'situacao_militar': 'ESCALADO'}],
-  9004: ['permuta_solicitada', 'Permuta solicitada — 22/10',
-      'SD QPCPM FICTÍCIO pediu que você o substitua no dia 22/10. Procure o escalante para confirmar.',
-      {'tela': 'permuta', 'id': 10, 'acoes': [], 'somente_leitura': true, 'escala_id': 346}],
-  9005: ['cancelada', 'Escala CANCELADA — 28/12',
-      'A escala de 28/12/2026 foi cancelada. Você não precisa comparecer.',
-      {'tela': 'escala', 'id': 338, 'acoes': [], 'somente_leitura': true, 'escala_id': 338, 'situacao_militar': 'ESCALA_CANCELADA'}],
-  9006: ['removido', 'Você foi removido — 25/10',
-      'Você foi retirado da escala de 25/10/2026. Em caso de dúvida, fale com o escalante.',
-      {'tela': 'escala', 'id': 347, 'acoes': [], 'somente_leitura': true, 'escala_id': 347, 'situacao_militar': 'REMOVIDO'}],
-  9007: ['svi_voluntarios_80', 'Últimas 2 vagas — SVI 30/10',
-      'A escala SVI de 30/10/2026 está quase completa: restam 2 vagas para voluntários.',
-      {'tela': 'svi_vagas', 'id': 501, 'acoes': ['ver_vagas'], 'somente_leitura': true, 'escala_id': 501}],
-  9008: ['svi_suspensao', 'SVI suspenso',
-      'Seu SVI está suspenso até 21/11/2026 (falta em 20/10).',
-      {'tela': 'svi_adesao', 'id': null, 'acoes': ['ver_adesao'], 'somente_leitura': true}],
-  9009: ['teste', 'Push de teste',
-      'Este é um aviso de teste enviado pelo painel do SIGE.',
-      {'tela': 'aviso', 'id': null, 'acoes': [], 'somente_leitura': true}],
-  9010: ['tipo_inventado', 'Aviso de um tipo novo',
-      'O SIGE criou um tipo de aviso que esta versão do app não conhece. O texto aparece inteiro, sem erro.',
-      {'tela': 'tela_nova', 'id': 5, 'acoes': [], 'somente_leitura': true, 'assunto': {'modulo': 'escala_periodo', 'id': 5}}],
-  9011: ['publicada', 'Escalado em 22/10 (endereço sem API)',
-      'Este aviso simula o app apontando para um endereço onde a API da intranet não existe.',
-      null],
+  9001: [
+    'publicada',
+    'Escalado em 22/10 — Evento',
+    'Você foi escalado para 22/10/2026, das 07:00 às 19:00, na guarnição RP 002 (Motorista). Dê ciência no app.',
+    {
+      'tela': 'escala',
+      'id': 346,
+      'acoes': ['ciencia', 'impossibilidade'],
+      'somente_leitura': false,
+      'escala_id': 346,
+      'situacao_militar': 'ESCALADO'
+    }
+  ],
+  9002: [
+    'aprovada',
+    'Escalado em 22/10 e escala aprovada',
+    'Você foi escalado para 22/10/2026 e a escala foi aprovada pelo comandante.',
+    {
+      'tela': 'escala',
+      'id': 346,
+      'acoes': ['ciencia'],
+      'somente_leitura': false,
+      'escala_id': 346,
+      'situacao_militar': 'ESCALADO'
+    }
+  ],
+  9003: [
+    'ciencia_lembrete',
+    'Ciência pendente — escala de amanhã',
+    'Você ainda não deu ciência da escala de 22/10/2026. O serviço começa às 07:00.',
+    {
+      'tela': 'escala',
+      'id': 346,
+      'acoes': ['ciencia'],
+      'somente_leitura': false,
+      'escala_id': 346,
+      'situacao_militar': 'ESCALADO'
+    }
+  ],
+  9004: [
+    'permuta_solicitada',
+    'Permuta solicitada — 22/10',
+    'SD QPCPM FICTÍCIO pediu que você o substitua no dia 22/10. Procure o escalante para confirmar.',
+    {
+      'tela': 'permuta',
+      'id': 10,
+      'acoes': [],
+      'somente_leitura': true,
+      'escala_id': 346
+    }
+  ],
+  9005: [
+    'cancelada',
+    'Escala CANCELADA — 28/12',
+    'A escala de 28/12/2026 foi cancelada. Você não precisa comparecer.',
+    {
+      'tela': 'escala',
+      'id': 338,
+      'acoes': [],
+      'somente_leitura': true,
+      'escala_id': 338,
+      'situacao_militar': 'ESCALA_CANCELADA'
+    }
+  ],
+  9006: [
+    'removido',
+    'Você foi removido — 25/10',
+    'Você foi retirado da escala de 25/10/2026. Em caso de dúvida, fale com o escalante.',
+    {
+      'tela': 'escala',
+      'id': 347,
+      'acoes': [],
+      'somente_leitura': true,
+      'escala_id': 347,
+      'situacao_militar': 'REMOVIDO'
+    }
+  ],
+  9007: [
+    'svi_voluntarios_80',
+    'Últimas 2 vagas — SVI 30/10',
+    'A escala SVI de 30/10/2026 está quase completa: restam 2 vagas para voluntários.',
+    {
+      'tela': 'svi_vagas',
+      'id': 501,
+      'acoes': ['ver_vagas'],
+      'somente_leitura': true,
+      'escala_id': 501
+    }
+  ],
+  9008: [
+    'svi_suspensao',
+    'SVI suspenso',
+    'Seu SVI está suspenso até 21/11/2026 (falta em 20/10).',
+    {
+      'tela': 'svi_adesao',
+      'id': null,
+      'acoes': ['ver_adesao'],
+      'somente_leitura': true
+    }
+  ],
+  9009: [
+    'teste',
+    'Push de teste',
+    'Este é um aviso de teste enviado pelo painel do SIGE.',
+    {'tela': 'aviso', 'id': null, 'acoes': [], 'somente_leitura': true}
+  ],
+  9010: [
+    'tipo_inventado',
+    'Aviso de um tipo novo',
+    'O SIGE criou um tipo de aviso que esta versão do app não conhece. O texto aparece inteiro, sem erro.',
+    {
+      'tela': 'tela_nova',
+      'id': 5,
+      'acoes': [],
+      'somente_leitura': true,
+      'assunto': {'modulo': 'escala_periodo', 'id': 5}
+    }
+  ],
+  9011: [
+    'publicada',
+    'Escalado em 22/10 (endereço sem API)',
+    'Este aviso simula o app apontando para um endereço onde a API da intranet não existe.',
+    null
+  ],
 };
 
 http.Response _responderIntranet(Uri url, http.Request req) {
@@ -467,15 +857,17 @@ http.Response _responderIntranet(Uri url, http.Request req) {
   if (caminho == 'auth/login' || caminho == 'auth/refresh') {
     return _ok({'token': 'vitrine', 'expires_at': expira});
   }
-  final aviso = RegExp(r'^dispositivo/notificacoes/(\d+)(/lida)?$')
-      .firstMatch(caminho);
+  final aviso =
+      RegExp(r'^dispositivo/notificacoes/(\d+)(/lida)?$').firstMatch(caminho);
   if (aviso != null) {
     final id = int.parse(aviso.group(1)!);
     final a = _avisosSige[id];
     if (a == null) return _naoAchado();
     if (id == 9011) {
-      return http.Response('<!DOCTYPE html><html><head><title>404 Not Found'
-          '</title></head><body>Not Found</body></html>', 404,
+      return http.Response(
+          '<!DOCTYPE html><html><head><title>404 Not Found'
+          '</title></head><body>Not Found</body></html>',
+          404,
           headers: {'content-type': 'text/html'});
     }
     if (post) return _ok({'ok': true, 'ja_lida': false});
@@ -521,7 +913,9 @@ http.Response _responderIntranet(Uri url, http.Request req) {
     case 'escala/347':
       return _ok(_escala347);
     case 'escala/minhas-escalas':
-      return _ok({'escalas': [_escala346()]});
+      return _ok({
+        'escalas': [_escala346()]
+      });
     case 'escala/proxima':
       return _ok({'proxima': _escala346()});
     case 'svi/adesao':
@@ -532,48 +926,27 @@ http.Response _responderIntranet(Uri url, http.Request req) {
   return _intranetJson({'erro': 'Endpoint nao encontrado'}, 404);
 }
 
-/// Avisos do SIGE na lista, como a Cloud Function grava no Firestore.
-List<NotificationModel> _avisosSigeNaLista(DateTime agora) => [
-      for (final e in _avisosSige.entries)
-        NotificationModel(
-          id: 'sige${e.key}',
-          title: e.value[1]! as String,
-          body: e.value[2]! as String,
-          timestamp: agora.subtract(Duration(minutes: 9020 - e.key)),
-          clicked: false,
-          route: '/escalas',
-          tipoEvento: e.value[0]! as String,
-          referenciaId: '346',
-          notificacaoId: '${e.key}',
-        ),
-    ];
-
 // ── Notificações ────────────────────────────────────────────────────────────
 
 List<NotificationModel> notificacoesVitrine() {
   final agora = DateTime.now();
-  NotificationModel n(String id, String titulo, String corpo, Duration ha,
-          {bool lida = true}) =>
-      NotificationModel(
-        id: id,
-        title: titulo,
-        body: corpo,
-        timestamp: agora.subtract(ha),
-        clicked: lida,
-      );
+  NotificationModel n(String id, String titulo, String corpo, DateTime quando, {bool lida = true, String? rota}) =>
+      NotificationModel(id: id, title: titulo, body: corpo, timestamp: quando, clicked: lida, route: rota);
+  final hoje730 = DateTime(agora.year, agora.month, agora.day, 7, 30);
 
-  // Mais antigas primeiro, como vem do Firestore.
+  // Os quatro do protótipo, só do SouPMRR (os do SIGE dependem da intranet e
+  // ficam para a fase com a intranet). Mais antigas primeiro, como vem do
+  // Firestore.
   return [
-    n('v4', 'Plano de férias publicado',
-        'Seu plano de férias de 2026 já está no app. A 2ª parcela começa em 21/12.',
-        const Duration(days: 9)),
-    n('v3', 'Contracheque disponível',
-        'O contracheque de ${_mesesNome[(agora.month + 10) % 12].toLowerCase()} já pode ser consultado.',
-        const Duration(days: 3)),
-    n('v2', 'Certidão emitida',
-        'Sua Certidão de Tempo de Serviço foi emitida e vale por 30 dias. Uma cópia em PDF foi enviada para o seu e-mail.',
-        const Duration(hours: 2),
-        lida: false),
-    ..._avisosSigeNaLista(agora),
+    n('v4', 'Comunicado do Comando', 'Operação Eleições 2026, 2º turno: orientações para o efetivo.',
+        agora.subtract(const Duration(days: 6)), rota: '/com/central'),
+    n('v2', 'Sua sugestão foi respondida', 'A equipe do SouPMRR respondeu a FB-2026-00031.',
+        agora.subtract(const Duration(days: 5)), lida: false, rota: '/atend/feedback'),
+    n('v3', 'Certidão emitida',
+        'Certidão Administrativa de Tempo de Serviço. Cópia enviada para st*****a@exemplo.com.br.',
+        agora.subtract(const Duration(days: 3)), rota: '/certidoes'),
+    n('v1', 'Contracheque de setembro disponível', 'Toque para ver os valores do mês.',
+        hoje730.isAfter(agora) ? agora.subtract(const Duration(minutes: 30)) : hoje730,
+        lida: false, rota: '/contracheques'),
   ];
 }

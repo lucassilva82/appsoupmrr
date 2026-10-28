@@ -1,9 +1,15 @@
+import 'package:projetonovo/widgets/alerta.dart';
+import 'package:projetonovo/widgets/dialogo_confirmacao.dart';
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:projetonovo/utils/app_routes.dart';
+import '../core/design/arte_cartao.dart';
+import '../core/erros/falha_de.dart';
+import '../utils/app_theme.dart';
+import 'vidro.dart';
 
 class DeclaracaoWidget extends StatefulWidget {
   final String cpf;
@@ -87,7 +93,7 @@ class _DeclaracaoWidgetState extends State<DeclaracaoWidget> {
     } catch (e) {
       setState(() {
         _itens = const [];
-        _errorMessage = 'Erro inesperado: $e';
+        _errorMessage = textoFalha('DC', e, tela: 'rh.declaracoes');
       });
     } finally {
       if (firstLoad && mounted) setState(() => _isLoading = false);
@@ -150,7 +156,7 @@ class _DeclaracaoWidgetState extends State<DeclaracaoWidget> {
       _dismissIfOpen();
       await _showInfoDialog(
         title: 'Erro',
-        message: 'Erro inesperado: $e',
+        message: textoFalha('DC', e, tela: 'rh.declaracoes'),
         isError: true,
       );
     }
@@ -168,15 +174,14 @@ class _DeclaracaoWidgetState extends State<DeclaracaoWidget> {
   }
 
   Widget _buildLoadingState(ThemeData theme) {
-    return Container(
-      width: double.infinity,
+    return CartaoVidro(
+      arte: Arte.de('rh'),
+      raio: 14,
       padding: const EdgeInsets.symmetric(vertical: 20),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(14),
-      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          const SizedBox(width: double.infinity),
           const SizedBox(
             width: 22,
             height: 22,
@@ -191,17 +196,15 @@ class _DeclaracaoWidgetState extends State<DeclaracaoWidget> {
   }
 
   Widget _buildErrorState(ThemeData theme) {
-    return Container(
-      width: double.infinity,
+    return CartaoVidro(
+      raio: 14,
+      tingimento: theme.colorScheme.error,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.red.withValues(alpha: 0.22)),
-      ),
       child: Column(
         children: [
-          Icon(Icons.error_outline_rounded, color: Colors.red.shade600, size: 20),
+          const SizedBox(width: double.infinity),
+          Icon(Icons.error_outline_rounded,
+              color: theme.colorScheme.error, size: AppIconSize.sm),
           const SizedBox(height: 8),
           Text(_errorMessage!,
               style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13),
@@ -222,17 +225,15 @@ class _DeclaracaoWidgetState extends State<DeclaracaoWidget> {
   }
 
   Widget _buildEmptyState(ThemeData theme) {
-    return Container(
-      width: double.infinity,
+    return CartaoVidro(
+      arte: Arte.de('rh'),
+      raio: 14,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(14),
-      ),
       child: Column(
         children: [
-          Icon(Icons.inbox_rounded,
-              size: 20,
+          const SizedBox(width: double.infinity),
+          Icon(Icons.inbox_outlined,
+              size: AppIconSize.sm,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
           const SizedBox(height: 8),
           Text('Nenhuma declaração encontrada para o ciclo selecionado.',
@@ -250,20 +251,17 @@ class _DeclaracaoWidgetState extends State<DeclaracaoWidget> {
 
     return Column(
       children: [
-        Container(
-          width: double.infinity,
+        CartaoVidro(
+          arte: Arte.de('rh'),
+          raio: 14,
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
-          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Icon(Icons.analytics_rounded, size: 16),
+                  Icon(Icons.analytics_outlined,
+                      size: AppIconSize.xs, color: theme.colorScheme.primary),
                   const SizedBox(width: 6),
                   Text(
                     'Visão geral do ciclo',
@@ -297,7 +295,7 @@ class _DeclaracaoWidgetState extends State<DeclaracaoWidget> {
                 Text(
                   'Última sincronização: ${_formatTime(_lastSync!)}',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.60),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
                     fontSize: 11,
                   ),
                 ),
@@ -341,76 +339,67 @@ class _DeclaracaoWidgetState extends State<DeclaracaoWidget> {
           ),
         );
       },
+      // Item da lista: vidro simples (a arte fica nos cartões de seção).
       child: Container(
         width: double.infinity,
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: statusView.color.withValues(alpha: 0.16),
-            width: 1,
+        child: CartaoVidro(
+          raio: 14,
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: statusView.color.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(statusView.icon,
+                        color: statusView.color, size: AppIconSize.xs),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      item.title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusView.color.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: statusView.color.withValues(alpha: 0.28),
+                      ),
+                    ),
+                    child: Text(
+                      statusView.label,
+                      style: TextStyle(
+                        color: statusView.color,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: _buildActions(item),
+              ),
+            ],
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: statusView.color.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(statusView.icon, color: statusView.color, size: 16),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    item.title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusView.color.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: statusView.color.withValues(alpha: 0.28),
-                    ),
-                  ),
-                  child: Text(
-                    statusView.label,
-                    style: TextStyle(
-                      color: statusView.color,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: _buildActions(item),
-            ),
-          ],
         ),
       ),
     );
@@ -547,66 +536,20 @@ class _DeclaracaoWidgetState extends State<DeclaracaoWidget> {
   Future<bool> _showConfirmDialog({
     required String title,
     required String message,
-  }) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(title,
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700)),
-          content: Text(message,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(height: 1.35, fontSize: 13)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Confirmar'),
-            ),
-          ],
-        );
-      },
-    );
-    return result == true;
-  }
+  }) =>
+      dialogoConfirmacao(
+        context,
+        titulo: title,
+        mensagem: message,
+        // Todas as confirmações desta tela são de exclusão.
+        textoConfirmar: 'Excluir',
+        icone: Icons.delete_outline_rounded,
+        cor: Theme.of(context).colorScheme.error,
+        arte: Arte.de('rh'),
+      );
 
-  void _showBusyDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        return Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2.3),
-                ),
-                const SizedBox(width: 12),
-                Text('Processando...',
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600)),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  void _showBusyDialog() =>
+      mostrarCarregandoDialogo(context, 'Processando...', arte: Arte.de('rh'));
 
   void _dismissIfOpen() {
     if (!mounted) return;
@@ -619,38 +562,12 @@ class _DeclaracaoWidgetState extends State<DeclaracaoWidget> {
     required String title,
     required String message,
     required bool isError,
-  }) async {
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        final color = isError ? Colors.red.shade700 : Colors.green.shade700;
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: [
-              Icon(isError ? Icons.error_outline : Icons.check_circle_outline,
-                  color: color, size: 18),
-              const SizedBox(width: 8),
-              Text(title,
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700)),
-            ],
-          ),
-          content: Text(message,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(height: 1.35, fontSize: 13)),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  }) =>
+      isError
+          ? alertaErro(context,
+              titulo: title, texto: message, arte: Arte.de('rh'))
+          : alertaSucesso(context,
+              titulo: title, texto: message, arte: Arte.de('rh'));
 
   List<_DeclaracaoItem> _mapItens(Map<String, dynamic> payload) {
     return [

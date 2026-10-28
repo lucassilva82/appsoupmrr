@@ -3,6 +3,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../core/design/arte_cartao.dart';
+
 import '../utils/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -39,7 +41,17 @@ class CartaoVidro extends StatelessWidget {
     this.onTap,
     this.tingimento,
     this.desfoque = 18,
+    this.arte,
   }) : super(key: key);
+
+  /// Arte discreta da área (padrão 2.2): brilho no canto, trilhas finas e
+  /// dois ícones quase apagados, por baixo do conteúdo.
+  final Arte? arte;
+
+  /// O conteúdo com a arte discreta por baixo, quando houver.
+  Widget _comArte(Widget filho) => arte == null
+      ? filho
+      : Stack(children: [ArteDiscreta(arte: arte!, raio: raio), filho]);
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +75,6 @@ class CartaoVidro extends StatelessWidget {
         .withOpacity(cor != null ? 0.35 : (isDark ? 0.14 : 0.70));
 
     final conteudo = Container(
-      padding: padding,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -76,7 +87,7 @@ class CartaoVidro extends StatelessWidget {
         borderRadius: BorderRadius.circular(raio),
         border: Border.all(color: borda, width: 0.8),
       ),
-      child: child,
+      child: _comArte(Padding(padding: padding ?? EdgeInsets.zero, child: child)),
     );
 
     return ClipRRect(
@@ -305,7 +316,6 @@ extension _VersaoMaterial on CartaoVidro {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          padding: padding,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(raio),
             border: Border.all(
@@ -314,7 +324,7 @@ extension _VersaoMaterial on CartaoVidro {
               width: 0.8,
             ),
           ),
-          child: child,
+          child: _comArte(Padding(padding: padding ?? EdgeInsets.zero, child: child)),
         ),
       ),
     );

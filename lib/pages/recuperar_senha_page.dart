@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:projetonovo/core/design/fundo_circuito.dart';
 import 'package:flutter/services.dart';
 
 import '../utils/api_services.dart';
@@ -23,14 +24,24 @@ import '../widgets/vidro.dart';
 
 enum _Passo { email, codigo, senha, concluido }
 
-class RecuperarSenhaPage extends StatefulWidget {
+/// Tela de antes do login (padrão 2.2): o fundo de circuito e o tema escuro
+/// ficam por fora do conteúdo, para que o `context` do estado já leia o tema
+/// escuro (com ele por dentro, os textos pegavam o tema claro do aparelho).
+class RecuperarSenhaPage extends StatelessWidget {
   const RecuperarSenhaPage({Key? key}) : super(key: key);
 
   @override
-  State<RecuperarSenhaPage> createState() => _RecuperarSenhaPageState();
+  Widget build(BuildContext context) => const TelaEntrada(child: _RecuperarSenha());
 }
 
-class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
+class _RecuperarSenha extends StatefulWidget {
+  const _RecuperarSenha();
+
+  @override
+  State<_RecuperarSenha> createState() => _RecuperarSenhaPageState();
+}
+
+class _RecuperarSenhaPageState extends State<_RecuperarSenha> {
   final _emailCtrl = TextEditingController();
   final _codigoCtrl = TextEditingController();
   final _senhaCtrl = TextEditingController();
@@ -150,7 +161,10 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
 
   @override
   Widget build(BuildContext context) {
-    return FundoSuave(child: Scaffold(
+    // Tela de entrada (antes de entrar no app): o fundo de circuito do
+    // login, tema escuro e o conteúdo de cada passo num cartão de vidro.
+    return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: const CustomAppBar(title: 'Recuperar senha'),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
@@ -160,7 +174,10 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
           children: [
             if (_passo != _Passo.concluido) _indicador(),
             const SizedBox(height: 20),
-            AnimatedSwitcher(
+            CartaoVidro(
+              raio: 24,
+              padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
+              child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 320),
               transitionBuilder: (child, anim) => FadeTransition(
                 opacity: anim,
@@ -179,10 +196,11 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
                 _Passo.concluido => _telaConcluido(),
               },
             ),
+            ),
           ],
         ),
       ),
-    ));
+    );
   }
 
   /// Trilha de progresso dos três passos.
@@ -259,7 +277,6 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
   }
 
   Widget _botao(String texto, VoidCallback? aoTocar, {IconData? icone}) {
-    final theme = Theme.of(context);
     return SizedBox(
       height: 50,
       child: ElevatedButton.icon(
@@ -494,12 +511,7 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
           height: 50,
           child: ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: verde,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
-            ),
+            style: estiloBotaoCor(verde),
             child: const Text('Ir para o login',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           ),

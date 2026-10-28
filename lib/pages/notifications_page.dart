@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:projetonovo/core/design/arte_cartao.dart';
+import 'package:projetonovo/core/design/folha_arte.dart';
+import 'package:projetonovo/widgets/dialogo_confirmacao.dart';
 import 'package:projetonovo/main.dart' show abrirAviso, navegarPorNotificacao;
 import 'package:projetonovo/models/aviso_model.dart';
 import 'package:projetonovo/models/notification_model.dart';
@@ -31,7 +34,7 @@ _NotifCategoria _categoriaDe(NotificationModel n, ThemeData theme) {
   }
   if (r.contains('contracheque')) {
     return const _NotifCategoria(
-        Icons.request_quote_rounded, Color(0xFF7C3AED), 'Contracheque');
+        Icons.receipt_long_rounded, Color(0xFF7C3AED), 'Contracheque');
   }
   if (r.contains('feria')) {
     return const _NotifCategoria(
@@ -43,7 +46,10 @@ _NotifCategoria _categoriaDe(NotificationModel n, ThemeData theme) {
   }
   if (r.contains('certid')) {
     return const _NotifCategoria(
-        Icons.edit_document, Color(0xFF6366F1), 'Certidões');
+        Icons.verified_outlined, Color(0xFF6366F1), 'Certidões');
+  }
+  if (r.contains('feedback') || r.contains('sugest')) {
+    return _NotifCategoria(Icons.rate_review_outlined, theme.colorScheme.primary, 'Sugestões');
   }
   if (r.contains('legisla')) {
     return const _NotifCategoria(
@@ -53,22 +59,11 @@ _NotifCategoria _categoriaDe(NotificationModel n, ThemeData theme) {
     return const _NotifCategoria(Icons.gavel_rounded, Color(0xFF64748B), 'POP');
   }
   if (r.contains('mapa')) {
-    return const _NotifCategoria(
-        Icons.groups_2_rounded, AppColors.gold, 'Mapa da Força');
+    return _NotifCategoria(
+        Icons.groups_2_rounded, AppColors.douradoTexto(theme.brightness), 'Mapa da Força');
   }
   return _NotifCategoria(
       Icons.campaign_rounded, theme.colorScheme.primary, 'Aviso');
-}
-
-String _formatTimestamp(DateTime ts) {
-  final now = DateTime.now();
-  final diff = now.difference(ts);
-  if (diff.inMinutes < 1) return 'Agora';
-  if (diff.inHours < 1) return '${diff.inMinutes}min';
-  if (diff.inDays < 1) return '${diff.inHours}h';
-  if (diff.inDays == 1) return 'Ontem';
-  if (diff.inDays < 7) return '${diff.inDays}d';
-  return '${ts.day.toString().padLeft(2, '0')}/${ts.month.toString().padLeft(2, '0')}/${ts.year}';
 }
 
 String _formatFull(DateTime ts) {
@@ -80,26 +75,6 @@ String _formatFull(DateTime ts) {
   return '${two(ts.day)} ${meses[ts.month - 1]} ${ts.year} · ${two(ts.hour)}:${two(ts.minute)}';
 }
 
-String _groupLabel(DateTime ts) {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final tsDay = DateTime(ts.year, ts.month, ts.day);
-  final diff = today.difference(tsDay).inDays;
-  if (diff <= 0) return 'Hoje';
-  if (diff == 1) return 'Ontem';
-  if (diff < 7) return 'Esta semana';
-  if (diff < 30) return 'Este mês';
-  return 'Anteriores';
-}
-
-const List<String> _groupOrder = [
-  'Hoje',
-  'Ontem',
-  'Esta semana',
-  'Este mês',
-  'Anteriores',
-];
-
 // ── NotificationsBody ─────────────────────────────────────────────────────────
 // Conteúdo da aba "Notificações" dentro do MainShell.
 class NotificationsBody extends StatelessWidget {
@@ -108,34 +83,32 @@ class NotificationsBody extends StatelessWidget {
   // ── Ações do topo ───────────────────────────────────────────────────────────
   Future<void> _confirmarLimpar(
       BuildContext context, NotificationProvider provider) async {
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Limpar notificações'),
-        content: const Text(
-            'Deseja remover todas as notificações? Esta ação não pode ser desfeita.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Limpar tudo'),
-          ),
-        ],
-      ),
+    final confirmar = await dialogoConfirmacao(
+      context,
+      titulo: 'Limpar os avisos?',
+      mensagem: 'Todos os avisos saem deste aparelho. Isto não pode ser desfeito.',
+      textoConfirmar: 'Limpar tudo',
+      icone: Icons.delete_sweep_outlined,
+      cor: Theme.of(context).colorScheme.error,
+      arte: Arte.de('institucional'),
     );
-    if (confirmar != true) return;
+    if (!confirmar) return;
     await provider.clearAll();
     if (context.mounted) {
-      avisoSucesso(context, 'Notificações removidas');
+      avisoSucesso(context, 'Avisos removidos');
     }
+  }
+
+  /// Seção de cada aviso, pela data (os mais novos primeiro).
+  static String _secao(DateTime ts) {
+    final hoje = DateTime.now();
+    final dia = DateTime(ts.year, ts.month, ts.day);
+    final d0 = DateTime(hoje.year, hoje.month, hoje.day);
+    final dias = d0.difference(dia).inDays;
+    if (dias <= 0) return 'Hoje';
+    if (dias == 1) return 'Ontem';
+    if (dias < 7) return 'Esta semana';
+    return 'Anteriores';
   }
 
   // ── Leitura (aviso) em bottom sheet moderno ─────────────────────────────────
@@ -144,8 +117,10 @@ class NotificationsBody extends StatelessWidget {
     if (!notif.clicked) provider.markAsClicked(notif);
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: .55),
       builder: (_) => _NotifDetailSheet(notif: notif),
     );
   }
@@ -156,389 +131,177 @@ class NotificationsBody extends StatelessWidget {
     return Consumer<NotificationProvider>(
       builder: (context, provider, _) {
         final notifications = provider.notifications.reversed.toList();
-        final unread = provider.unreadCount;
 
         if (notifications.isEmpty) {
           return _EmptyState(onRefresh: provider.loadNotifications);
         }
 
-        // Agrupa por período
-        final grouped = <String, List<NotificationModel>>{};
-        for (final n in notifications) {
-          grouped.putIfAbsent(_groupLabel(n.timestamp), () => []).add(n);
+        // Um cartão por aviso, separados por dia (pedido do usuário,
+        // 24/10/2026: na lista única tudo parecia um bloco só). A não lida
+        // tem o fio azul e o ponto; "Limpar" fica no topo, porque a lista
+        // cresce; tirar um aviso só é arrastar para a esquerda.
+        final mudo = theme.colorScheme.onSurface.withValues(alpha: .62);
+        final itens = <Widget>[];
+        String? secaoAtual;
+        for (final notif in notifications) {
+          final secao = _secao(notif.timestamp);
+          if (secao != secaoAtual) {
+            secaoAtual = secao;
+            itens.add(Padding(
+              padding: EdgeInsets.fromLTRB(4, itens.isEmpty ? 4 : 14, 4, 8),
+              child: Text(secao.toUpperCase(),
+                  style: TextStyle(
+                      fontSize: 12, letterSpacing: 1.1, fontWeight: FontWeight.w700, color: theme.colorScheme.primary)),
+            ));
+          }
+          itens.add(Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _LinhaAviso(
+              notif: notif,
+              onTap: () => _abrirNotificacao(context, notif, provider),
+              onDelete: () => provider.removeNotification(notif),
+            ),
+          ));
         }
-        final entries = _groupOrder
-            .where((k) => grouped.containsKey(k))
-            .map((k) => MapEntry(k, grouped[k]!))
-            .toList();
-
-        return Column(
-          children: [
-            _ActionHeader(
-              total: notifications.length,
-              unread: unread,
-              onMarkAll: unread > 0 ? provider.markAllAsRead : null,
-              onClear: () => _confirmarLimpar(context, provider),
-            ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: provider.loadNotifications,
-                color: theme.colorScheme.primary,
-                child: ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(
-                      parent: BouncingScrollPhysics()),
-                  padding: const EdgeInsets.only(bottom: 24, top: 4),
-                  itemCount: entries.fold<int>(
-                      0, (sum, e) => sum + 1 + e.value.length),
-                  itemBuilder: (context, index) {
-                    int cursor = 0;
-                    for (final entry in entries) {
-                      if (index == cursor) {
-                        return _GroupHeader(label: entry.key);
-                      }
-                      cursor++;
-                      final localIndex = index - cursor;
-                      if (localIndex >= 0 && localIndex < entry.value.length) {
-                        final notif = entry.value[localIndex];
-                        return _NotifTile(
-                          notif: notif,
-                          index: localIndex,
-                          onTap: () =>
-                              _abrirNotificacao(context, notif, provider),
-                          onDelete: () => provider.removeNotification(notif),
-                        );
-                      }
-                      cursor += entry.value.length;
-                    }
-                    return const SizedBox.shrink();
-                  },
+        return RefreshIndicator(
+          onRefresh: provider.loadNotifications,
+          color: theme.colorScheme.primary,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            // O fim passa da barra de abas de vidro (a altura dela vem no MediaQuery).
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 24 + MediaQuery.paddingOf(context).bottom),
+            children: [
+              // Topo da lista: quantos são e o "Limpar".
+              Row(children: [
+                Expanded(
+                  child: Text(
+                    '${notifications.length} ${notifications.length == 1 ? 'aviso' : 'avisos'}',
+                    style: TextStyle(fontSize: 13, color: mudo),
+                  ),
                 ),
-              ),
-            ),
-          ],
+                TextButton.icon(
+                  onPressed: () => _confirmarLimpar(context, provider),
+                  style: TextButton.styleFrom(
+                    foregroundColor: theme.colorScheme.error,
+                    minimumSize: const Size(48, 44),
+                  ),
+                  icon: const Icon(Icons.delete_sweep_outlined, size: AppIconSize.sm),
+                  label: const Text('Limpar', style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
+              ]),
+              ...itens,
+            ],
+          ),
         );
       },
     );
   }
 }
 
-// ── Cabeçalho de ações ────────────────────────────────────────────────────────
-class _ActionHeader extends StatelessWidget {
-  final int total;
-  final int unread;
-  final VoidCallback? onMarkAll;
-  final VoidCallback onClear;
-
-  const _ActionHeader({
-    required this.total,
-    required this.unread,
-    required this.onMarkAll,
-    required this.onClear,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final resumo =
-        unread > 0 ? '$unread não lida${unread > 1 ? 's' : ''}' : 'Tudo em dia';
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
-        border: Border(
-          bottom: BorderSide(
-            color: isDark
-                ? AppColors.darkBorder
-                : theme.colorScheme.outlineVariant.withOpacity(0.4),
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: unread > 0
-                  ? theme.colorScheme.primary.withOpacity(0.12)
-                  : theme.colorScheme.onSurface.withOpacity(0.06),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              unread > 0
-                  ? Icons.notifications_active_rounded
-                  : Icons.notifications_none_rounded,
-              size: 18,
-              color: unread > 0
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurface.withOpacity(0.70),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  resumo,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  '$total no total',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.70)),
-                ),
-              ],
-            ),
-          ),
-          if (onMarkAll != null)
-            TextButton.icon(
-              onPressed: onMarkAll,
-              style: TextButton.styleFrom(
-                foregroundColor: theme.colorScheme.primary,
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-              ),
-              icon: const Icon(Icons.done_all_rounded, size: 18),
-              label: const Text('Marcar lidas',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-            ),
-          PopupMenuButton<String>(
-            tooltip: 'Mais opções',
-            icon: Icon(Icons.more_vert_rounded,
-                color: theme.colorScheme.onSurface.withOpacity(0.7)),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            onSelected: (v) {
-              if (v == 'clear') onClear();
-              if (v == 'read' && onMarkAll != null) onMarkAll!();
-            },
-            itemBuilder: (_) => [
-              if (onMarkAll != null)
-                const PopupMenuItem(
-                  value: 'read',
-                  child: Row(
-                    children: [
-                      Icon(Icons.done_all_rounded, size: 18),
-                      SizedBox(width: 10),
-                      Text('Marcar todas como lidas'),
-                    ],
-                  ),
-                ),
-              const PopupMenuItem(
-                value: 'clear',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete_sweep_rounded,
-                        size: 18, color: Colors.redAccent),
-                    SizedBox(width: 10),
-                    Text('Limpar tudo',
-                        style: TextStyle(color: Colors.redAccent)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Cabeçalho de grupo (Hoje / Ontem / ...) ───────────────────────────────────
-class _GroupHeader extends StatelessWidget {
-  final String label;
-  const _GroupHeader({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 16, 8),
-      child: Text(
-        label.toUpperCase(),
-        style: theme.textTheme.labelSmall?.copyWith(
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.8,
-          color: theme.colorScheme.onSurface.withOpacity(0.70),
-        ),
-      ),
-    );
-  }
-}
-
-// ── _NotifTile ────────────────────────────────────────────────────────────────
-class _NotifTile extends StatelessWidget {
+/// Linha de um aviso (protótipo `.grupo .linha`): ícone num quadrado de 36,
+/// título, texto e "quando · SouPMRR".
+class _LinhaAviso extends StatelessWidget {
+  const _LinhaAviso({required this.notif, required this.onTap, required this.onDelete});
   final NotificationModel notif;
-  final int index;
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
-  const _NotifTile({
-    Key? key,
-    required this.notif,
-    required this.index,
-    required this.onTap,
-    required this.onDelete,
-  }) : super(key: key);
+  static String _quando(DateTime ts) {
+    final agora = DateTime.now();
+    String two(int n) => n.toString().padLeft(2, '0');
+    if (ts.year == agora.year && ts.month == agora.month && ts.day == agora.day) {
+      return 'Hoje · ${two(ts.hour)}:${two(ts.minute)}';
+    }
+    final ontem = agora.subtract(const Duration(days: 1));
+    if (ts.year == ontem.year && ts.month == ontem.month && ts.day == ontem.day) {
+      return 'Ontem · ${two(ts.hour)}:${two(ts.minute)}';
+    }
+    return ts.year == agora.year ? '${two(ts.day)}/${two(ts.month)}' : '${two(ts.day)}/${two(ts.month)}/${ts.year}';
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final isUnread = !notif.clicked;
+    final naoLida = !notif.clicked;
+    final pri = theme.colorScheme.primary;
+    final mudo = theme.colorScheme.onSurface.withValues(alpha: .62);
     final cat = _categoriaDe(notif, theme);
-    // Não lida: mesmo cartão das lidas, um tom mais claro, com uma barra fina
-    // na cor de destaque do app à esquerda. A cor da categoria fica só no
-    // ícone: pintar o cartão inteiro deixava a lista colorida demais.
-    final destaque = theme.colorScheme.primary;
-
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: Duration(milliseconds: 220 + (index * 30).clamp(0, 240)),
-      curve: Curves.easeOut,
-      builder: (context, t, child) => Opacity(
-        opacity: t,
-        child:
-            Transform.translate(offset: Offset(0, (1 - t) * 8), child: child),
+    return Dismissible(
+      key: Key(NotificationProvider.keyDe(notif)),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) {
+        onDelete();
+        avisoSucesso(context, 'Aviso removido');
+      },
+      background: Container(
+        decoration: BoxDecoration(color: theme.colorScheme.error, borderRadius: BorderRadius.circular(16)),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 22),
+        child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
       ),
-      child: Dismissible(
-        key: Key(NotificationProvider.keyDe(notif)),
-        direction: DismissDirection.endToStart,
-        onDismissed: (_) {
-          onDelete();
-          avisoSucesso(context, 'Notificação removida');
-        },
-        background: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.symmetric(horizontal: 22),
-          decoration: BoxDecoration(
-            color: Colors.redAccent,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Icon(Icons.delete_outline_rounded,
-              color: Colors.white, size: 26),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap,
+      child: Semantics(
+        button: true,
+        label: '${naoLida ? 'Não lido. ' : ''}${notif.title}. ${notif.body}',
+        excludeSemantics: true,
+        child: CartaoVidro(
+          padding: EdgeInsets.zero,
+          tingimento: naoLida ? pri : null,
+          onTap: onTap,
+          child: Container(
+            decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              child: Container(
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: isUnread ? 0.085 : 0.055)
-                      : Colors.white.withValues(alpha: isUnread ? 0.95 : 0.72),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? AppColors.darkBorder : const Color(0xFFE8EFFA),
-                  ),
-                  boxShadow: isDark
-                      ? []
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.03),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                ),
-                child: IntrinsicHeight(
-                  child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 220),
-                      width: 3,
-                      color: isUnread ? destaque : Colors.transparent,
-                    ),
-                    Expanded(
-                      child: Padding(
-                      padding: const EdgeInsets.fromLTRB(11, 14, 14, 14),
-                      child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Avatar de categoria
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: cat.color.withOpacity(isDark ? 0.22 : 0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(cat.icon, color: cat.color, size: 22),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  notif.title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: isUnread
-                                        ? FontWeight.bold
-                                        : FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _formatTimestamp(notif.timestamp),
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.45),
-                                  fontSize: 11,
-                                ),
-                              ),
-                              if (isUnread)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 6),
-                                  child: Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: destaque,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            notif.body,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface
-                                  .withOpacity(isUnread ? 0.75 : 0.6),
-                              height: 1.35,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                    ),
-                    ),
-                  ],
-                ),
-                ),
-              ),
+              border: naoLida ? Border(left: BorderSide(color: pri, width: 3)) : null,
             ),
+            padding: EdgeInsets.fromLTRB(naoLida ? 11 : 14, 12, 12, 12),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(color: pri.withValues(alpha: .2), borderRadius: BorderRadius.circular(10)),
+                child: Icon(cat.icon, size: AppIconSize.sm, color: pri),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(notif.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 15.5,
+                          height: 1.35,
+                          fontWeight: naoLida ? FontWeight.w700 : FontWeight.w500,
+                          color: theme.colorScheme.onSurface)),
+                  if (notif.body.trim().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 1),
+                      child: Text(notif.body,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 12.5, height: 1.35, color: mudo)),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(children: [
+                      Text('${_quando(notif.timestamp)} · ', style: TextStyle(fontSize: 12.5, color: mudo)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.onSurface.withValues(alpha: .06),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text('SouPMRR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: mudo)),
+                      ),
+                    ]),
+                  ),
+                ]),
+              ),
+              if (naoLida)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, top: 6),
+                  child: Container(
+                      width: 9, height: 9, decoration: BoxDecoration(color: pri, shape: BoxShape.circle)),
+                ),
+            ]),
           ),
         ),
       ),
@@ -546,7 +309,6 @@ class _NotifTile extends StatelessWidget {
   }
 }
 
-// ── Detalhe da notificação (aviso) ────────────────────────────────────────────
 class _NotifDetailSheet extends StatelessWidget {
   final NotificationModel notif;
   const _NotifDetailSheet({required this.notif});
@@ -554,173 +316,63 @@ class _NotifDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final cat = _categoriaDe(notif, theme);
     final aviso = notif.dadosAviso;
     final temRota =
         aviso != null || (notif.route != null && notif.route!.isNotEmpty);
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.5,
-      minChildSize: 0.3,
-      maxChildSize: 0.9,
-      expand: false,
-      builder: (context, scrollController) {
-        // Folha sobre a lista: superfície opaca, como a de emitir certidão.
-        // A cor de vidro dos cartões (translúcida) deixava a lista aparecer
-        // por trás do texto.
-        return Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+    // Folha do padrão 2.2 (FolhaArte): faixa com a arte de avisos no topo,
+    // o título do aviso nela e o texto no fundo opaco do tema.
+    return FolhaArte(
+      arte: Arte.de('institucional'),
+      icone: cat.icon,
+      titulo: notif.title,
+      subtitulo: '${cat.label} · ${_formatFull(notif.timestamp)}',
+      paddingCorpo: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            notif.body,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              height: 1.6,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+            ),
           ),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurface.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+          const SizedBox(height: 20),
+          if (temRota)
+            Row(children: [
               Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: cat.color.withOpacity(isDark ? 0.22 : 0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(cat.icon, color: cat.color, size: 24),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: cat.color.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  cat.label,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: cat.color,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _formatFull(notif.timestamp),
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.5),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    Text(
-                      notif.title,
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      notif.body,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        height: 1.6,
-                        color: theme.colorScheme.onSurface.withOpacity(0.8),
-                      ),
-                    ),
-                  ],
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Fechar'),
                 ),
               ),
-              // Ações
-              Container(
-                padding: EdgeInsets.fromLTRB(
-                    20, 12, 20, 16 + MediaQuery.of(context).padding.bottom),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(
-                      color: theme.colorScheme.outlineVariant.withOpacity(0.3),
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    if (temRota) ...[
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text('Fechar'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            if (aviso != null) {
-                              abrirAviso(AvisoAberto.doPush(aviso));
-                            } else {
-                              navegarPorNotificacao(notif.route);
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: theme.colorScheme.onPrimary,
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          icon:
-                              const Icon(Icons.arrow_forward_rounded, size: 18),
-                          label: Text(aviso != null ? 'Ver detalhes' : 'Abrir',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    ] else
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: theme.colorScheme.onPrimary,
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text('Fechar',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                  ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    if (aviso != null) {
+                      abrirAviso(AvisoAberto.doPush(aviso));
+                    } else {
+                      navegarPorNotificacao(notif.route);
+                    }
+                  },
+                  icon: const Icon(Icons.arrow_forward_rounded,
+                      size: AppIconSize.sm),
+                  label: Text(aviso != null ? 'Ver detalhes' : 'Abrir'),
                 ),
               ),
-            ],
-          ),
-        );
-      },
+            ])
+          else
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Fechar'),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -752,7 +404,7 @@ class _EmptyState extends StatelessWidget {
             textAlign: TextAlign.center,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withOpacity(0.62),
             ),
           ),
           const SizedBox(height: 8),

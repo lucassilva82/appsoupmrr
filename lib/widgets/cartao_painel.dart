@@ -99,9 +99,7 @@ class CabecalhoCartao extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(icone,
-            size: AppIconSize.sm,
-            color: cor.withValues(alpha: 0.80)),
+        Icon(icone, size: AppIconSize.sm, color: cor.withValues(alpha: 0.80)),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
@@ -128,8 +126,7 @@ class CabecalhoCartao extends StatelessWidget {
         ],
         if (mostrarSeta)
           Icon(Icons.chevron_right_rounded,
-              size: AppIconSize.sm,
-              color: cor.withValues(alpha: 0.38)),
+              size: AppIconSize.sm, color: cor.withValues(alpha: 0.38)),
       ],
     );
   }
@@ -168,48 +165,53 @@ class DestaqueCartao extends StatelessWidget {
   Widget build(BuildContext context) {
     final cor = corValor ?? Theme.of(context).colorScheme.onSurface;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (rotulo != null) ...[
-          Text(rotulo!.toUpperCase(), style: estiloRotulo(context)),
-          const SizedBox(height: 6),
-        ],
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            valor,
-            maxLines: 1,
-            style: TextStyle(
-              fontSize: tamanho,
-              fontWeight: FontWeight.w800,
-              height: 1.05,
-              letterSpacing: -0.5,
-              color: cor,
-            ),
-          ),
-        ),
-        if (complemento != null) ...[
-          const SizedBox(height: 2),
+    // Dynamic Type: o número herói cresce com o tamanho de fonte do sistema
+    // até 1,3× (SOUPM_2_2 §15.2); o resto do card cresce sem limite.
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.3,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (rotulo != null) ...[
+            Text(rotulo!.toUpperCase(), style: estiloRotulo(context)),
+            const SizedBox(height: 6),
+          ],
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(
-              complemento!,
+              valor,
               maxLines: 1,
               style: TextStyle(
-                fontSize: tamanhoComplemento,
-                fontWeight: FontWeight.w700,
-                height: 1.15,
-                letterSpacing: -0.2,
-                color: cor.withValues(alpha: 0.92),
+                fontSize: tamanho,
+                fontWeight: FontWeight.w800,
+                height: 1.05,
+                letterSpacing: -0.5,
+                color: cor,
               ),
             ),
           ),
+          if (complemento != null) ...[
+            const SizedBox(height: 2),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                complemento!,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: tamanhoComplemento,
+                  fontWeight: FontWeight.w700,
+                  height: 1.15,
+                  letterSpacing: -0.2,
+                  color: cor.withValues(alpha: 0.92),
+                ),
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
@@ -261,9 +263,8 @@ class BarraProgressoCartao extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 gradient: claro ? null : gradienteAcao,
-                color: claro
-                    ? AppColors.acaoClara.withValues(alpha: 0.55)
-                    : null,
+                color:
+                    claro ? AppColors.acaoClara.withValues(alpha: 0.55) : null,
                 borderRadius: BorderRadius.circular(altura),
               ),
             ),
@@ -291,7 +292,8 @@ class BarraProgressoCartao extends StatelessWidget {
     );
 
     if (semantica == null) return ExcludeSemantics(child: barra);
-    return Semantics(label: semantica, value: '${(v * 100).round()}%', child: barra);
+    return Semantics(
+        label: semantica, value: '${(v * 100).round()}%', child: barra);
   }
 }
 
@@ -379,8 +381,14 @@ class ParCartao extends StatelessWidget {
         crossAxisAlignment: alinhamento,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(rotulo,
-              style: TextStyle(fontSize: 13, color: TomCartao.medio(context))),
+          // Com fonte grande (1,3×), quatro pares lado a lado quebravam a
+          // palavra no meio ("promoçõe / s"): o texto encolhe, não quebra.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(rotulo,
+                maxLines: 1,
+                style: TextStyle(fontSize: 13, color: TomCartao.medio(context))),
+          ),
           const SizedBox(height: 3),
           Text(
             valor,
@@ -452,8 +460,8 @@ class RodapeCartao extends StatelessWidget {
           Expanded(
             child: Text(
               texto!,
-              style: TextStyle(fontSize: 12, color: TomCartao.fraco(context)),
-              maxLines: 1,
+              style: TextStyle(fontSize: 12.5, height: 1.35, color: TomCartao.medio(context)),
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           )
@@ -466,7 +474,8 @@ class RodapeCartao extends StatelessWidget {
             style: TextStyle(
                 fontSize: 12.5, fontWeight: FontWeight.w600, color: primaria),
           ),
-          Icon(Icons.chevron_right_rounded, size: AppIconSize.xs, color: primaria),
+          Icon(Icons.chevron_right_rounded,
+              size: AppIconSize.xs, color: primaria),
         ],
       ],
     );

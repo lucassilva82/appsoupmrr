@@ -1,5 +1,3 @@
-import 'package:projetonovo/pages/mapa_da_forca.dart';
-
 class AppRoutes {
   static const AUTH_PAGE = '/auth-page';
   static const BIOMETRIC_AUTH_PAGE = '/biometric-auth-page';
@@ -41,6 +39,18 @@ class AppRoutes {
   static const POP_PAGE = "/pop-page"; // Rota para a página de plano de férias
   static const CALCULO_INATIVIDADE_PAGE =
       "/calculo-inatividade-page"; // Simulador de inatividade (reserva remunerada)
+  static const FEEDBACK = '/atend/feedback'; // Sugestões e elogios (2.2)
+  static const CHAMADOS = '/atend/chamados'; // Meus chamados, SISCHAMADOS (2.2)
+  static const CARREIRA = '/rh/carreira'; // Linha do tempo da carreira (2.2, P5)
+  static const DOCUMENTOS = '/rh/documentos'; // Central de documentos (2.2, P4)
+  static const VALIDAR = '/rh/validar'; // Validar documento (2.2, P6)
+  static const COMUNICADOS = '/com/central'; // Central de comunicados (2.2, §4.2)
+  // Funções do Perfil, para a ajuda e a busca levarem direto a elas (2.2)
+  static const CONTA_EMAIL = '/conta/email';
+  static const CONTA_SENHA = '/conta/senha';
+  static const BIOMETRIA = '/seg/biometria';
+  static const NOTIF_PREFERENCIAS = '/notif/preferencias';
+  static const APARENCIA = '/apar/tema';
   static const CONTRACHEQUE_GRAFICO_PAGE =
       "/contracheque-grafico-page"; // Evolução salarial
 }

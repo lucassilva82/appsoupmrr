@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:projetonovo/utils/app_theme.dart';
+import '../core/design/arte_cartao.dart';
 import 'package:projetonovo/widgets/dados_situacao_funcional.dart';
 
 import '../models/militar.dart';
-import '../services/dados_sql.dart';
 import '../utils/app_routes.dart';
 import 'card_image_militar.dart';
 import 'dados_contato.dart';
@@ -39,160 +39,47 @@ class _DadosMilitarState extends State<DadosMilitar> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    const primaryBlue = AppColors.blue;
-    final DadosSql dadosSql = DadosSql();
+    final primaria = theme.colorScheme.primary;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Hero banner + avatar ─────────────────────────────────────────
-        Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
-          children: [
-            // Banner: antes era um bloco azul chapado com corte reto. Agora o
-            // degradê desce para transparente, então ele encosta no fundo da
-            // tela sem costura — é o fundo que continua, não outra superfície.
-            Container(
-              width: double.infinity,
-              height: 110,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    // Acompanha o degradê da app bar: com a base nova, o tom
-                    // antigo ficava como um bloco claro logo abaixo dela.
-                    (isDark ? const Color(0xFF0A1726) : const Color(0xFF1976D2))
-                        .withOpacity(isDark ? 0.90 : 0.85),
-                    (isDark ? AppColors.navy : AppColors.navy)
-                        .withOpacity(isDark ? 0.16 : 0.35),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.62, 1.0],
-                ),
-              ),
-            ),
-            // Avatar centralizado sobrepondo o banner
-            Positioned(
-              bottom: -40,
-              child: Container(
+        // ── Topo com a arte da área (padrão 2.2) ─────────────────────────
+        // Nome, posto e lotação no cartão com a arte cheia de "Minha vida
+        // funcional", com a foto e os dois dados rápidos logo abaixo.
+        TopoArte(
+          arte: Arte.de('rh'),
+          icone: Icons.badge_outlined,
+          titulo: widget.militar.nomeCompleto,
+          subtitulo: _linhaPosto(),
+          child: Row(
+            children: [
+              Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.22)
-                        : Colors.white.withOpacity(0.90),
-                    width: 3,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.18),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                      color: Colors.white.withValues(alpha: 0.85), width: 2),
                 ),
                 child: ClipOval(
                   child: SizedBox(
-                    width: 90,
-                    height: 90,
+                    width: 64,
+                    height: 64,
                     child: CardImageMilitar(urlImage: widget.militar.imageUrl),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 48), // espaço para o avatar que sobressai
-
-        // ── Nome + Posto + Unidade ────────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [
-              Center(
-                child: Text(
-                  widget.militar.nomeCompleto,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: _parTopo('Matrícula', widget.militar.matricula),
               ),
-              const SizedBox(height: 4),
-              Center(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: primaryBlue.withValues(alpha: isDark ? 0.18 : 0.10),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${widget.militar.postoGraduacao} ${widget.militar.quadro}',
-                    style: const TextStyle(
-                      color: primaryBlue,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.location_on_outlined,
-                        size: 14,
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.5)),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        widget.militar.subUnidade,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _parTopo('Incorporação',
+                    _fmtDataBr(widget.militar.dataIncorporacao)),
               ),
             ],
           ),
         ),
-
-        const SizedBox(height: 16),
-
-        // ── Chips de stats rápidos ────────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              _statChip(
-                  context: context,
-                  icon: Icons.badge_outlined,
-                  label: 'Matrícula',
-                  value: widget.militar.matricula,
-                  isDark: isDark),
-              const SizedBox(width: 8),
-              _statChip(
-                  context: context,
-                  icon: Icons.calendar_today_outlined,
-                  label: 'Incorporação',
-                  value: _fmtDataBr(widget.militar.dataIncorporacao),
-                  isDark: isDark),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
 
         // ── Seções de dados ───────────────────────────────────────────────
         _sectionCard(
@@ -200,6 +87,7 @@ class _DadosMilitarState extends State<DadosMilitar> {
           icon: Icons.person_outline_rounded,
           title: 'Dados Principais',
           isDark: isDark,
+          arte: Arte.de('rh'),
           child: DadosPrincipal(militar: widget.militar),
         ),
 
@@ -208,6 +96,7 @@ class _DadosMilitarState extends State<DadosMilitar> {
           icon: Icons.phone_outlined,
           title: 'Contato',
           isDark: isDark,
+          arte: Arte.de('rh'),
           child: DadosContato(
             militar: widget.militar,
           ),
@@ -218,10 +107,13 @@ class _DadosMilitarState extends State<DadosMilitar> {
           icon: Icons.home_outlined,
           title: 'Endereço',
           isDark: isDark,
+          arte: Arte.de('rh'),
           trailingAction: IconButton(
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            icon: const Icon(Icons.edit_outlined, size: 18, color: primaryBlue),
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            tooltip: 'Editar endereço',
+            icon: Icon(Icons.edit_outlined,
+                size: AppIconSize.sm, color: primaria),
             onPressed: () => Navigator.of(context).pushNamed(
               AppRoutes.ENDERECO_PAGE,
               arguments: widget.militar,
@@ -235,6 +127,7 @@ class _DadosMilitarState extends State<DadosMilitar> {
           icon: Icons.work_history_outlined,
           title: 'Situação Funcional',
           isDark: isDark,
+          arte: Arte.de('rh'),
           child: DadosSituacaoFuncional(militar: widget.militar),
         ),
 
@@ -243,45 +136,42 @@ class _DadosMilitarState extends State<DadosMilitar> {
     );
   }
 
-  Widget _statChip({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required String value,
-    required bool isDark,
-  }) {
-    final theme = Theme.of(context);
-    return Expanded(
-      child: CartaoVidro(
-        raio: 14,
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon,
-                    size: 14,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.45)),
-                const SizedBox(width: 4),
-                Text(label,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.5))),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+  /// Posto, quadro e lotação numa linha só, para o subtítulo do topo.
+  String? _linhaPosto() {
+    final posto = '${widget.militar.postoGraduacao} ${widget.militar.quadro}'
+        .trim();
+    final partes = [posto, widget.militar.subUnidade.trim()]
+        .where((p) => p.isNotEmpty)
+        .toList();
+    return partes.isEmpty ? null : partes.join(' · ');
+  }
+
+  /// Rótulo e valor sobre a arte (o fundo é sempre escuro: texto branco).
+  Widget _parTopo(String rotulo, String valor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          rotulo.toUpperCase(),
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+            color: Colors.white.withValues(alpha: 0.72),
+          ),
         ),
-      ),
+        const SizedBox(height: 3),
+        Text(
+          valor.isEmpty ? '—' : valor,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      ],
     );
   }
 
@@ -292,30 +182,29 @@ class _DadosMilitarState extends State<DadosMilitar> {
     required Widget child,
     required bool isDark,
     Widget? trailingAction,
+    Arte? arte,
   }) {
     final theme = Theme.of(context);
-    const primaryBlue = AppColors.blue;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: CartaoVidro(
         raio: 16,
+        arte: arte,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Cabeçalho da seção
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 12, 8),
+              padding: EdgeInsets.fromLTRB(
+                  14, trailingAction != null ? 4 : 12, 4, trailingAction != null ? 0 : 8),
               child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color:
-                          primaryBlue.withValues(alpha: isDark ? 0.18 : 0.10),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(icon, size: 15, color: primaryBlue),
+                  // Sem quadradinho tingido atrás do ícone (DESIGN §2b).
+                  ExcludeSemantics(
+                    child: Icon(icon,
+                        size: AppIconSize.xs,
+                        color: theme.colorScheme.primary),
                   ),
                   const SizedBox(width: 10),
                   Text(title,

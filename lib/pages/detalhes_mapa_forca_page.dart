@@ -15,6 +15,10 @@ import '../models/auth_model.dart';
 import '../pages/militar_detalhe_full_page.dart';
 import '../widgets/custom_appbar.dart';
 import '../widgets/vidro.dart';
+import '../core/erros/falha_de.dart';
+import '../core/erros/estado_erro.dart';
+import '../core/design/arte_cartao.dart';
+import '../utils/app_theme.dart';
 
 class DetalhesMapaForcaPage extends StatefulWidget {
   final MapBuscaDetalhesModel dadosBusca;
@@ -124,57 +128,112 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
     final isDark = theme.brightness == Brightness.dark;
     final auth = Provider.of<Auth>(context, listen: false);
 
-    return FundoSuave(child: Scaffold(
+    // "— Busca Geral" chega com o travessão de antes; no topo, só o nome.
+    final titulo =
+        widget.dadosBusca.descricao.replaceFirst(RegExp(r'^[—-]\s*'), '');
+    final qtd = widget.dadosBusca.quantidade;
+
+    return FundoSuave(
+        child: Scaffold(
       appBar: CustomAppBar(
           title:
               '${widget.dadosBusca.descricao} - ${widget.dadosBusca.quantidade}'),
-      body: FutureBuilder<List<MilitarDetalheModel>>(
-        future: _future,
-        builder: (_, s) {
-          if (s.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (s.hasError) {
-            return Center(child: Text('Erro: ${s.error}'));
-          }
-          final dados = s.hasData ? _filtrados() : [];
-
-          return SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  child: SearchBar(
-                    controller: _searchCtrl,
-                    hintText: 'Pesquisar por nome...',
-                    leading: const Icon(Icons.search),
-                    elevation: const MaterialStatePropertyAll(0),
-                    onTap: () => _searchCtrl.selection = TextSelection(
-                        baseOffset: 0, extentOffset: _searchCtrl.text.length),
-                  ),
-                ),
-                Expanded(
-                  child: dados.isEmpty
-                      ? const Center(child: Text('Não possui dados.'))
-                      : ListView.separated(
-                          key: ValueKey(_searchCtrl.text),
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          itemCount: dados.length,
-                          separatorBuilder: (_, __) => Divider(
-                            height: 1,
-                            indent: 70,
-                            endIndent: 16,
-                            color: theme.dividerColor.withValues(alpha: 0.2),
-                          ),
-                          itemBuilder: (_, index) =>
-                              _itemCard(dados[index], auth, theme, isDark),
-                        ),
-                ),
-              ],
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            // Topo com a arte da área de Gestão (padrão 2.2).
+            TopoArte(
+              arte: Arte.de('gestao'),
+              icone: widget.dadosBusca.idSituacao.isEmpty
+                  ? Icons.person_search_outlined
+                  : Icons.groups_outlined,
+              titulo: titulo,
+              subtitulo: widget.dadosBusca.idSituacao.isEmpty
+                  ? 'Encontre qualquer militar da PMRR pelo nome.'
+                  : 'Militares nesta situação funcional. Toque para ver a ficha.',
+              direita: qtd.isEmpty
+                  ? null
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(qtd,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700)),
+                        Text('militares',
+                            style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.78),
+                                fontSize: 11)),
+                      ],
+                    ),
             ),
-          );
-        },
+            // Campo do tema (sem o SearchBar com fundo próprio).
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: TextField(
+                controller: _searchCtrl,
+                textInputAction: TextInputAction.search,
+                onTap: () => _searchCtrl.selection = TextSelection(
+                    baseOffset: 0, extentOffset: _searchCtrl.text.length),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  labelText: 'Pesquisar por nome',
+                  prefixIcon: Icon(Icons.search_rounded, size: AppIconSize.sm),
+                ),
+              ),
+            ),
+            Expanded(
+              child: FutureBuilder<List<MilitarDetalheModel>>(
+                future: _future,
+                builder: (_, s) {
+                  if (s.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (s.hasError) {
+                    return EstadoErro(
+                        falha:
+                            falhaDe('MF', s.error, tela: 'gestao.mapa_forca'),
+                        tela: 'gestao.mapa_forca');
+                  }
+                  final dados = s.hasData ? _filtrados() : [];
+
+                  if (dados.isEmpty) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: CartaoVidro(
+                          arte: Arte.de('gestao'),
+                          padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.person_off_outlined,
+                                  size: AppIconSize.xl,
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.6)),
+                              const SizedBox(height: 10),
+                              Text('Não possui dados.',
+                                  style: theme.textTheme.bodyMedium),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return ListView.builder(
+                    key: ValueKey(_searchCtrl.text),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    itemCount: dados.length,
+                    itemBuilder: (_, index) =>
+                        _itemCard(dados[index], auth, theme, isDark),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     ));
   }
@@ -194,25 +253,28 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
   /* ----------------- Card ----------------- */
   Widget _itemCard(
       MilitarDetalheModel m, Auth auth, ThemeData theme, bool isDark) {
-    return InkWell(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => MilitarDetalheFullPage(
-              matricula: m.matricula,
-              preloadedImageUrl: _resolveImgUrl(m.imagemUrl)),
+    // Item de lista: vidro simples (a arte fica no topo da tela).
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: CartaoVidro(
+        raio: 14,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MilitarDetalheFullPage(
+                matricula: m.matricula,
+                preloadedImageUrl: _resolveImgUrl(m.imagemUrl)),
+          ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
             _fotoCarimbada(m, auth),
             const SizedBox(width: 12),
             _dadosTexto(m, theme, isDark),
             Icon(Icons.chevron_right_rounded,
-                size: 16,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),
+                size: AppIconSize.sm,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
           ],
         ),
       ),
@@ -236,9 +298,17 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
               cacheManager: DefaultCacheManager(),
               placeholderFadeInDuration: const Duration(milliseconds: 300),
               placeholder: (_, __) => _placeholderImg(),
-              errorWidget: (_, __, ___) => Container(
-                color: Colors.grey.shade300,
-                child: const Icon(Icons.person, size: 28, color: Colors.white),
+              errorWidget: (_, __, ___) => ColoredBox(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.08),
+                child: Icon(Icons.person_outline_rounded,
+                    size: AppIconSize.lg,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.4)),
               ),
             ),
             IgnorePointer(
@@ -269,13 +339,7 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
   }
 
   Widget _placeholderImg() => Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.grey.shade300, Colors.grey.shade100],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
         alignment: Alignment.center,
         child: const SizedBox(
             width: 24,
@@ -300,14 +364,14 @@ class _DetalhesMapaForcaPageState extends State<DetalhesMapaForcaPage> {
             Text(m.postoGraduacao,
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontSize: 11.5,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
                 )),
             Text('${m.comando} • ${m.unidade}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontSize: 11,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
                 )),
           ],
         ),

@@ -1,9 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:projetonovo/core/design/arte_cartao.dart';
 import 'cartao_painel.dart';
-import 'marca_dagua_cartao.dart';
-import 'vidro.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
@@ -179,8 +178,9 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
           decoration: BoxDecoration(
               color: base, borderRadius: BorderRadius.circular(r)),
         );
-    return CartaoVidro(
-      raio: 16,
+    return CartaoArte(
+      arte: Arte.de('fe'),
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: kPaddingCartao,
         child: Column(
@@ -198,39 +198,13 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
     );
   }
 
-  // ── Linha de um período secundário ───────────────────────────────────
-  // Uma linha só: rótulo à esquerda, datas à direita. Antes eram duas
-  // linhas mais um círculo de 24px para dizer "1ª parcela, concluída".
-  Widget _linhaPeriodo(BuildContext context, _Periodo p) {
-    final d = _formatar(p.inicio, p.fim);
-    final sufixo = d.anos == null ? '' : ' de ${d.anos}';
 
-    return Row(
-      children: [
-        MarcadorCartao(concluido: p.concluido),
-        const SizedBox(width: 10),
-        Text(
-          p.rotulo,
-          style: TextStyle(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context)
-                .colorScheme
-                .onSurface
-                .withValues(alpha: p.concluido ? 0.72 : 0.92),
-          ),
-        ),
-        const Spacer(),
-        Text('${d.intervalo}$sufixo',
-            style: TextStyle(fontSize: 12.5, color: TomCartao.medio(context))),
-      ],
-    );
-  }
 
   // ── Card vazio ───────────────────────────────────────────────────────
   Widget _buildVazio(BuildContext context) {
-    return CartaoVidro(
-      raio: 16,
+    return CartaoArte(
+      arte: Arte.de('fe'),
+      padding: EdgeInsets.zero,
       onTap: () =>
           Navigator.of(context).pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE),
       child: Padding(
@@ -308,7 +282,6 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
           (p) => !p.concluido,
           orElse: () => periodos.last,
         );
-        final outros = periodos.where((p) => p != destaque).toList();
 
         final d = _formatar(destaque.inicio, destaque.fim);
         final faltam = destaque.faltam;
@@ -339,34 +312,13 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
 
         final duracao = destaque.duracao;
 
-        // 13º antecipado
-        final prevAntRaw = (r['prev_feri_antecipado'] ??
-                r['prev_feri_antecipado_format'] ??
-                '')
-            .toString();
-        String? antecipado;
-        if (prevAntRaw.isNotEmpty) {
-          final v = prevAntRaw.toLowerCase();
-          antecipado = v == 'a'
-              ? '13º pago no aniversário'
-              : v == 'b'
-                  ? '13º pago parcelado'
-                  : prevAntRaw;
-        }
-
-        return CartaoVidro(
-          raio: 16,
+        return CartaoArte(
+          arte: Arte.de('fe'),
+          padding: EdgeInsets.zero,
           onTap: () =>
               Navigator.of(context).pushNamed(AppRoutes.PLANO_DE_FERIAS_PAGE),
           child: Stack(
             children: [
-              // Marca d'água: dá profundidade ao bloco do destaque sem
-              // disputar leitura. Fora da árvore semântica, é decoração.
-              const Positioned(
-                top: 46,
-                right: -30,
-                child: MarcaDaguaCartao(desenho: DesenhoMarca.calendario),
-              ),
               Padding(
                 padding: kPaddingCartao,
                 child: Column(
@@ -380,6 +332,7 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
                       // corrente ou um período atrasado sendo gozado agora —
                       // a data sozinha não conta isso.
                       meta: 'Ref. $ano',
+                      mostrarSeta: false,
                     ),
                     const SizedBox(height: 12),
                     DestaqueCartao(
@@ -394,29 +347,16 @@ class _HomePlanoFeriasCardState extends State<HomePlanoFeriasCard> {
                           text: quando,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.primary,
+                            color: Arte.de('fe').destaque,
                           ),
                         ),
                         if (duracao != null)
                           TextSpan(
-                            text: '  ·  $duracao '
-                                '${duracao == 1 ? 'dia' : 'dias'} de férias',
+                            text: ' · $duracao ${duracao == 1 ? 'dia' : 'dias'}',
                             style: TextStyle(color: TomCartao.medio(context)),
                           ),
                       ]),
-                      style: const TextStyle(fontSize: 13.5),
-                    ),
-                    for (final p in outros) ...[
-                      const DivisorCartao(espaco: 12),
-                      _linhaPeriodo(context, p),
-                    ],
-                    const DivisorCartao(espaco: 12),
-                    RodapeCartao(
-                      icone: antecipado == null
-                          ? null
-                          : Icons.info_outline_rounded,
-                      texto: antecipado,
-                      acaoTexto: 'Ver detalhes',
+                      style: const TextStyle(fontSize: 15),
                     ),
                   ],
                 ),

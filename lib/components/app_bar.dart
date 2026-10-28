@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../animation/fade_animation.dart';
 import '../utils/app_routes.dart';
 import '../utils/my_strings.dart';
 

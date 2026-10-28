@@ -1,3 +1,4 @@
+import 'package:projetonovo/widgets/dialogo_confirmacao.dart';
 // DeclaracaoBensPage
 // Versão com melhorias visuais – mantém toda a lógica original.
 //
@@ -21,6 +22,8 @@ import '../utils/app_theme.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/alerta.dart';
 import '../widgets/vidro.dart';
+import '../core/erros/falha_de.dart';
+import '../core/design/arte_cartao.dart';
 
 class DeclaracaoBensPage extends StatefulWidget {
   final String ano;
@@ -152,7 +155,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
         _alerta('Erro ao buscar bens', erro: true);
       }
     } catch (e) {
-      _alerta('Erro inesperado: $e', erro: true);
+      _alerta(textoFalha('DC', e, tela: 'rh.declaracoes.bens'), erro: true);
     }
   }
 
@@ -191,7 +194,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
       }
     } catch (e) {
       Navigator.of(context).pop();
-      _alerta('Erro inesperado: $e', erro: true);
+      _alerta(textoFalha('DC', e, tela: 'rh.declaracoes.bens'), erro: true);
     }
   }
 
@@ -212,7 +215,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
       }
     } catch (e) {
       Navigator.of(context).pop();
-      _alerta('Erro inesperado: $e', erro: true);
+      _alerta(textoFalha('DC', e, tela: 'rh.declaracoes.bens'), erro: true);
     }
   }
 
@@ -244,7 +247,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
       }
     } catch (e) {
       Navigator.of(context).pop();
-      _alerta('Erro inesperado: $e', erro: true);
+      _alerta(textoFalha('DC', e, tela: 'rh.declaracoes.bens'), erro: true);
     }
   }
 
@@ -270,7 +273,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
       }
     } catch (e) {
       Navigator.of(context).pop();
-      _alerta('Erro inesperado: $e', erro: true);
+      _alerta(textoFalha('DC', e, tela: 'rh.declaracoes.bens'), erro: true);
     }
   }
 
@@ -391,105 +394,80 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   /// Atalho local: sucesso ou erro, com o visual dos alertas do app.
   void _alerta(String message, {bool erro = false}) {
     if (erro) {
-      alertaErro(context, titulo: 'Atenção', texto: message);
+      alertaErro(context, titulo: 'Atenção', texto: message, arte: Arte.de('rh'));
     } else {
-      alertaSucesso(context, titulo: 'Sucesso', texto: message);
+      alertaSucesso(context, titulo: 'Sucesso', texto: message, arte: Arte.de('rh'));
     }
   }
 
-  void _showLoading() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2.2),
-              ),
-              SizedBox(width: 10),
-              Text('Processando...'),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  void _showLoading() =>
+      mostrarCarregandoDialogo(context, 'Processando...', arte: Arte.de('rh'));
 
   Future<bool> _showConfirmDialog({
     required String title,
     required String message,
-  }) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Confirmar'),
-          ),
-        ],
-      ),
-    );
-    return result == true;
-  }
+  }) =>
+      dialogoConfirmacao(
+        context,
+        titulo: title,
+        mensagem: message,
+        // Todas as confirmações desta tela são de exclusão.
+        textoConfirmar: 'Excluir',
+        icone: Icons.delete_outline_rounded,
+        cor: Theme.of(context).colorScheme.error,
+        arte: Arte.de('rh'),
+      );
 
   //--------------------------------------------------------------------
   // BUILD
   //--------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final width = MediaQuery.of(context).size.width;
     final radius = BorderRadius.circular(12);
 
-    return FundoSuave(child: Scaffold(
+    return FundoSuave(
+        child: Scaffold(
       appBar: AppBar(
         elevation: 0,
         flexibleSpace: const FundoBarraVidro(),
-        title: const Text('Declarações de Bens',
-            style: TextStyle(color: Colors.white)),
-        leading: const BackButton(color: Colors.white),
+        title: Text('Declarações de Bens',
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        leading: BackButton(color: Theme.of(context).colorScheme.onSurface),
       ),
       body: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            // ---------- Título ----------
-            Center(child: Text('Tipo de Bem', style: _titleStyle(context))),
-            const SizedBox(height: 8),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // ---------- Topo com a arte da área (padrão 2.2) ----------
+          TopoArte(
+            arte: Arte.de('rh'),
+            icone: Icons.home_work_outlined,
+            titulo: 'Declaração de bens',
+            subtitulo: 'Informe seus bens móveis e imóveis do ciclo '
+                '${widget.ano}, ou declare que não possui.',
+            margem: const EdgeInsets.only(bottom: 16),
+          ),
+          // ---------- Título ----------
+          Center(child: Text('Tipo de Bem', style: _titleStyle(context))),
+          const SizedBox(height: 8),
 
-            // ---------- Radio Buttons ----------
-            Row(children: [
-              _radio('Imóvel'),
-              _radio('Móvel'),
-              _radio('Nenhum', label: 'Não possui'),
-            ]),
-            const SizedBox(height: 14),
-
-            // ---------- Conteúdo dinâmico ----------
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: tipoBem == 'Nenhum'
-                  ? _buildNaoPossui(radius, width)
-                  : _buildForm(radius, width),
-            ),
+          // ---------- Radio Buttons ----------
+          Row(children: [
+            _radio('Imóvel'),
+            _radio('Móvel'),
+            _radio('Nenhum', label: 'Não possui'),
           ]),
-        ),
+          const SizedBox(height: 14),
+
+          // ---------- Conteúdo dinâmico ----------
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: tipoBem == 'Nenhum'
+                ? _buildNaoPossui(radius, width)
+                : _buildForm(radius, width),
+          ),
+        ]),
+      ),
     ));
   }
 
@@ -538,23 +516,21 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   Widget _buildNaoPossui(BorderRadius radius, double width) {
     final theme = Theme.of(context);
     return Column(children: [
-      Container(
-        width: double.infinity,
+      CartaoVidro(
+        arte: Arte.de('rh'),
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: radius,
-          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.32)),
-        ),
-        child: Text(
-          jaDeclarouNaoPossui
-              ? 'Declarou Não possuir Bens'
-              : 'Não possuo bem móvel ou imóvel',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-              fontSize: _fs(context, 16)),
+        child: SizedBox(
+          width: double.infinity,
+          child: Text(
+            jaDeclarouNaoPossui
+                ? 'Declarou Não possuir Bens'
+                : 'Não possuo bem móvel ou imóvel',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+                fontSize: _fs(context, 16)),
+          ),
         ),
       ),
       const SizedBox(height: 16),
@@ -593,21 +569,9 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   //--------------------------------------------------------------------
   Widget _buildForm(BorderRadius radius, double width) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     return Column(children: [
-      Container(
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: radius,
-          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.28)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.14 : 0.05),
-              blurRadius: isDark ? 12 : 8,
-              offset: const Offset(0, 3),
-            )
-          ],
-        ),
+      CartaoVidro(
+        arte: Arte.de('rh'),
         padding: const EdgeInsets.all(14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           if (tipoBem == 'Imóvel') ...[
@@ -647,8 +611,7 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
               FilteringTextInputFormatter.digitsOnly,
               CurrencyInputFormatter()
             ],
-            decoration: const InputDecoration(
-                labelText: 'Valor', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Valor'),
             style: _labelStyle(context),
           ),
           const SizedBox(height: 6),
@@ -657,10 +620,10 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.green.shade700.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(8),
+                color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: Colors.green.shade700.withValues(alpha: 0.22)),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.20)),
               ),
               child: Text(valorExtenso,
                   style: TextStyle(
@@ -706,46 +669,41 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
             itemBuilder: (ctx, i) {
               final bem = bensEnviados[i];
               final tipoTexto = bem['tipo_bem'] == 1 ? 'Imóvel' : 'Móvel';
-              return Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                elevation: 0,
-                color: theme.cardColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: theme.dividerColor.withValues(alpha: 0.28),
-                  ),
-                ),
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: 1),
-                  duration: Duration(milliseconds: 240 + (i * 45)),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, child) => Opacity(
-                    opacity: value,
-                    child: Transform.translate(
-                      offset: Offset(0, (1 - value) * 8),
-                      child: child,
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: CartaoVidro(
+                  raio: 12,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: 1),
+                    duration: Duration(milliseconds: 240 + (i * 45)),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, child) => Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, (1 - value) * 8),
+                        child: child,
+                      ),
                     ),
-                  ),
-                  child: ListTile(
-                    dense: true,
-                    visualDensity: const VisualDensity(vertical: -2),
-                    title: Text('$tipoTexto: ${bem['descricao'] ?? ''}',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: _fs(context, 12.5))),
-                    subtitle: bem['valor'] != null
-                        ? Text(
-                            'R\$ ${NumberFormat.currency(locale: 'pt_BR', symbol: '').format(double.tryParse((bem['valor'] as String).replaceAll(',', '.')) ?? 0)}',
-                            style: _labelStyle(context)
-                                .copyWith(color: Colors.green.shade700))
-                        : null,
-                    trailing: IconButton(
-                      visualDensity: VisualDensity.compact,
-                      iconSize: 18,
-                      icon: const Icon(Icons.delete_outline_rounded,
-                          color: Colors.red),
-                      onPressed: () => _excluirBem(i),
+                    child: ListTile(
+                      dense: true,
+                      visualDensity: const VisualDensity(vertical: -2),
+                      title: Text('$tipoTexto: ${bem['descricao'] ?? ''}',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: _fs(context, 12.5))),
+                      subtitle: bem['valor'] != null
+                          ? Text(
+                              'R\$ ${NumberFormat.currency(locale: 'pt_BR', symbol: '').format(double.tryParse((bem['valor'] as String).replaceAll(',', '.')) ?? 0)}',
+                              style: _labelStyle(context)
+                                  .copyWith(color: Colors.green.shade700))
+                          : null,
+                      trailing: IconButton(
+                        visualDensity: VisualDensity.compact,
+                        iconSize: AppIconSize.sm,
+                        icon: Icon(Icons.delete_outline_rounded,
+                            color: theme.colorScheme.error),
+                        onPressed: () => _excluirBem(i),
+                      ),
                     ),
                   ),
                 ),
@@ -760,8 +718,6 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
   // INPUT WIDGETS
   //--------------------------------------------------------------------
   Widget _buildTextField(String label, TextEditingController ctrl) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: TextField(
@@ -771,10 +727,6 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
           isDense: true,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-          filled: true,
-          fillColor: isDark
-              ? theme.colorScheme.surface.withValues(alpha: 0.7)
-              : Colors.white,
         ),
         style: _labelStyle(context),
       ),
@@ -813,7 +765,6 @@ class _DeclaracaoBensPageState extends State<DeclaracaoBensPage>
         }),
         decoration: const InputDecoration(
           labelText: 'Forma de Aquisição',
-          border: OutlineInputBorder(),
           isDense: true,
           contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         ),

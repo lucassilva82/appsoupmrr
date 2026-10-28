@@ -1,6 +1,16 @@
 import 'dart:async';
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+
+import '../core/config/app_config.dart';
+import '../core/erros/falha_app.dart';
+import '../core/log/registro_log.dart';
+import '../core/rede/api_client.dart';
+import '../core/sessao/sessao.dart';
 import '../data/store.dart';
+import '../features/avisos/avisos_api.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
 
@@ -17,6 +27,12 @@ class NotificationProvider extends ChangeNotifier {
   StreamSubscription<List<NotificationModel>>? _subAvisos;
   StreamSubscription<Map<String, Map<String, bool>>>? _subStatus;
   String? _matricula;
+
+  /// 2.2, fase 4: com `notificacoes.fonte = api` no app_config, a lista vem
+  /// do Postgres (notificacoes.php) e não do Firestore. Sem stream: recarrega
+  /// ao abrir, ao voltar ao app, ao puxar e quando chega um push.
+  AvisosApi? _api;
+  bool get _modoApi => _api != null;
 
   /// Chamado quando uma notificação NOVA chega via stream do Firestore com o
   /// app aberto. Usado para exibir o banner local em foreground (funciona
@@ -49,6 +65,27 @@ class NotificationProvider extends ChangeNotifier {
   Future<void> bindUser([String? matricula]) async {
     matricula ??= (await Store.getMap('userData'))['matricula']?.toString();
     if (matricula == null || matricula.isEmpty) return;
+
+    if (RepositorioConfig.atual.fonteAvisos == 'api') {
+      if (matricula != _matricula || _api == null) {
+        await _subIndividual?.cancel();
+        await _subAvisos?.cancel();
+        await _subStatus?.cancel();
+        _subIndividual = _subAvisos = null;
+        _subStatus = null;
+        _matricula = matricula;
+        _baselineReady = false;
+        _idsConhecidos.clear();
+        _api = AvisosApi(
+          api: ApiClient(),
+          matricula: matricula,
+          senhaMd5: md5.convert(utf8.encode(await Sessao.instancia.senha() ?? '')).toString(),
+        );
+      }
+      await _recarregarApi();
+      return;
+    }
+    _api = null;
     if (matricula == _matricula && _subIndividual != null)
       return; // já conectado
 
@@ -145,6 +182,7 @@ class NotificationProvider extends ChangeNotifier {
     _subAvisos = null;
     _subStatus = null;
     _matricula = null;
+    _api = null;
     _notifications = [];
     _individuais = [];
     _avisosRaw = [];
@@ -157,11 +195,36 @@ class NotificationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Lê a lista do Postgres. Falha fica no log e a lista atual continua.
+  Future<void> _recarregarApi() async {
+    final api = _api;
+    if (api == null) return;
+    try {
+      _individuais = await api.listar();
+      _avisosRaw = [];
+      _avisosStatus = {};
+      _loadedIndividual = _loadedAvisos = _loadedStatus = true;
+      _recompute();
+    } on FalhaApp catch (f) {
+      registrarErro(f, tela: 'avisos', mostrado: false);
+    }
+  }
+
+  /// Faz a ação na API e relê a lista (lida, excluída...).
+  Future<void> _naApi(Future<void> Function(AvisosApi api) acao) async {
+    try {
+      await acao(_api!);
+    } on FalhaApp catch (f) {
+      registrarErro(f, tela: 'avisos', mostrado: false);
+    }
+    await _recarregarApi();
+  }
+
   /// Recarrega manualmente (pull-to-refresh). Garante conexão aos streams e
   /// faz uma releitura única das duas fontes.
   Future<void> loadNotifications() async {
     await bindUser();
-    if (_matricula == null) return;
+    if (_matricula == null || _modoApi) return;
     try {
       final results = await Future.wait([
         _service.fetchNotifications(_matricula!),
@@ -181,6 +244,7 @@ class NotificationProvider extends ChangeNotifier {
   /// global = apenas oculta para este usuário (não afeta os demais).
   Future<void> removeNotification(NotificationModel n) async {
     if (_matricula == null) return;
+    if (_modoApi) return _naApi((a) => a.excluir(n.id));
     if (n.isGlobal) {
       await _service.hideAvisoGeral(_matricula!, n.id);
     } else {
@@ -192,6 +256,7 @@ class NotificationProvider extends ChangeNotifier {
   /// atualmente visíveis para este militar.
   Future<void> clearAll() async {
     if (_matricula == null) return;
+    if (_modoApi) return _naApi((a) => a.limpar());
     final idsGlobais = _notifications
         .where((n) => n.isGlobal)
         .map((n) => n.id)
@@ -202,6 +267,7 @@ class NotificationProvider extends ChangeNotifier {
 
   Future<void> markAsClicked(NotificationModel n) async {
     if (_matricula == null) return;
+    if (_modoApi) return _naApi((a) => a.marcarLida(n.id));
     if (n.isGlobal) {
       await _service.markAvisoGeralAsRead(_matricula!, n.id);
     } else {
@@ -215,6 +281,7 @@ class NotificationProvider extends ChangeNotifier {
 
   Future<void> markAllAsRead() async {
     if (_matricula == null) return;
+    if (_modoApi) return _naApi((a) => a.marcarTodas());
     final idsGlobais = _notifications
         .where((n) => n.isGlobal && !n.clicked)
         .map((n) => n.id)

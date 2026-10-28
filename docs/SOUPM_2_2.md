@@ -1198,6 +1198,12 @@ Prefixos por módulo (o sufixo segue o padrão `LG-`: `REDE`, `FORA`,
 | `FI` | ficha individual | `CH` | SISCHAMADOS |
 | `DC-FECHADA` | declaração fora da campanha aberta pelo painel | `PD` | pendência de um sistema que não respondeu |
 | `MD` | bloqueio pelo painel | `AP` | app (falha geral) |
+| `ES` | Minhas escalas (SIGE) | `SV` | serviço voluntário (SVI) |
+| `AJ` | "Preciso de ajuda" | `LOG` | envio do log (nunca vira log) |
+| `DO` | central de documentos | `NT` | notícias e agenda |
+| `CM` | comunicados | `CR` | linha do tempo da carreira |
+| `VD` | validar documento | `BG` | boletins (reservado) |
+| `PT` | patrimônio e frota (reservado) | | |
 
 ### 9.2 Logs
 
@@ -1218,14 +1224,16 @@ cancelado, falhou + código).
 
 | Evento | Quando | Dados extras |
 |---|---|---|
-| `app.abrir`, `app.fundo`, `app.voltar`, `app.fechar` | ciclo de vida | tempo de abertura (ms), abertura a frio ou a quente |
-| `sessao.entrar`, `sessao.sair`, `sessao.expirar`, `sessao.biometria` | login e saída | método, resultado |
+| `app.abrir`, `app.fundo`, `app.voltar`, `app.fechar` | ciclo de vida | no `app.abrir`: `ms` (tempo de abertura), `abertura` (fria ou quente), `tema`, `fonte_escala` e `modelo`. A `rede` fica de fora: precisaria de um pacote nativo novo |
+| `sessao.entrar`, `sessao.sair`, `sessao.expirar`, `sessao.biometria` | login e saída | método, resultado (no `sessao.biometria`: ok, cancelado ou falhou com `LG-BIO`) |
 | `tela.abrir`, `tela.sair` | toda tela | chave, de onde veio (menu, busca, atalho, card, push, link), tempo na tela |
 | `funcao.tocar` | item de menu, atalho, card | chave, estado (ativo, bloqueado) |
 | `modulo.bloqueio_visto` | folha de bloqueio | chave, motivo |
+| `modulo.avisar_quando_voltar` | "Avisar quando voltar" na folha | código `MD-` da função |
 | `busca.executar`, `busca.abrir_resultado`, `busca.sem_resultado` | busca | termo, total, posição |
-| `ajuda.ver`, `ajuda.resolveu`, `ajuda.abriu_chamado` | "Preciso de ajuda" | assunto, id da pergunta |
+| `ajuda.ver`, `ajuda.resolveu`, `ajuda.abriu_chamado` | "Preciso de ajuda" | `assunto` (chave) e `pergunta_id` (id em `soupm_faq`) |
 | `inicio.personalizar`, `inicio.card_tocar` | Início | ordem nova; chave do card |
+| `inicio.editar_abrir`, `inicio.editar_concluir` | Início | edição na própria tela: quantos blocos ao abrir; ordem e escondidos ao concluir |
 | `comunicado.ver`, `comunicado.abrir`, `comunicado.ciencia`, `comunicado.popup_fechar` | comunicados | id, tempo de leitura |
 | `pendencia.abrir`, `pendencia.dispensar` | Suas pendências | tipo |
 | `push.receber`, `push.abrir` | notificação | id, rota |
@@ -1256,7 +1264,32 @@ modelo do aparelho, versão e build do app, tipo de rede, tema (claro/escuro),
 tamanho de fonte do sistema, data e hora do aparelho e do servidor. Unidade e
 nível são resolvidos no servidor pela matrícula (não viajam no log).
 
-**Retenção:** ações 180 dias, erros 1 ano (decisão do usuário, 21/10/2026).
+**Log leve (decisão do usuário, 22/10/2026, que substitui a de 21/10).** "Saber
+de modo geral o que está sendo feito, o mais leve possível, para suporte e
+correções", no modelo do Sentry e do Firebase. Medido no banco de
+desenvolvimento: 1 milhão de eventos ocupa cerca de 380 MB; com tudo por 180
+dias seriam uns 4 GB.
+
+| O quê | Onde | Por quanto tempo |
+|---|---|---|
+| Ações que interessam (abrir o app, entrar, abrir tela, ver, baixar, compartilhar, emitir, enviar, tocar) | `soupm_evento` | **30 dias** |
+| Erros, cada um com os **últimos 20 passos da sessão** (evento, chave, resultado, código e hora; sem dados extras) | `soupm_erro.passos` | 1 ano |
+| Resumo por dia: vezes, militares distintos e falhas por evento, função, plataforma e versão | `soupm_uso_dia`, montado por um cron noturno que refaz os últimos 3 dias | 2 anos |
+
+- Ir para o fundo, voltar, sair da tela, trocar de rede e receber o
+  `app_config` **não viram linha**: ficam só nos passos dos erros
+  (`RegistroLog.soPassos`). O tempo na tela, se for preciso, vai como dado do
+  próximo `tela.abrir`.
+- Os gráficos do painel leem o `soupm_uso_dia`, não o detalhe. Os ativos em 1,
+  7 e 30 dias, por plataforma e no total, ficam prontos em `soupm_ativos_dia`
+  (pedido da sessão do painel, para não recalcular no detalhe).
+- O cron noturno é uma função só, `soupm_cron_log()` (`SECURITY DEFINER`):
+  o usuário da API pode chamá-la, mas continua sem poder apagar nada direto.
+  Scripts em `sigrh/cron/` da API (`cron_log.php`, uma vez por noite;
+  `sonda.php`, a cada minuto), só pela linha de comando. Os alvos da sonda
+  ficam em `~/private/config_sonda.php`, fora do código e do banco.
+- SQL: `api-soupmrr/sql/2026-10-22_soupm_log.sql`, aplicado em produção em
+  22/10/2026.
 
 **Nunca no log:** senha, MD5, token, CPF completo, valores de contracheque,
 conteúdo de documentos, texto livre do feedback (fica no feedback, não no log).
@@ -1432,11 +1465,32 @@ Todos com consulta preparada, POST, sem dado na URL e passando pelo
 
 > **O desenho final das tabelas fica no `docs/PAINEL_ADMIN.md` §8**, combinado
 > com a sessão do painel em 21/10/2026: `TIMESTAMPTZ` em vez de `TIMESTAMP`,
-> `CHECK` em vez de `ENUM` (o banco é PostgreSQL 9.6), log em tabela por mês
-> com uma view (o 9.6 não tem partição declarativa), auditoria na
+> `CHECK` em vez de `ENUM`, log em tabela por mês
+> com uma view, auditoria na
 > `intranet.auditoria` (sem `soupm_admin_log`), `soupm_pendencia_tipo` com
 > `fonte_status`, `prazo_tipo` e `prazo`, e `soupm_feedback_anexo`. Os
 > rascunhos abaixo mostram a ideia; em conflito, vale o PAINEL_ADMIN.
+>
+> **Bancos (22/10/2026).** Hoje são dois: o **banco de produção**, do SIGRH,
+> que a API do app usa (conferido: **PostgreSQL 13.23**, e não 9.6 como se
+> supunha), e o **banco de desenvolvimento da intranet**, onde roda a intranet
+> nova e onde o painel é desenvolvido. Quando a intranet entrar em produção,
+> os dois se juntam. Até lá:
+> - as tabelas `soupm_*` que a API do app grava (log, configuração) existem
+>   **no banco de produção**; as do banco de desenvolvimento servem só para
+>   desenvolver o painel;
+> - o mesmo SQL versionado em `sql/` da API é aplicado **nos dois**, para o
+>   esquema não divergir;
+> - o painel chega aos dados reais do app pela troca de conexão por nome
+>   (PAINEL_ADMIN §5.17), nunca com endereço ou senha no código;
+> - SQL no banco de produção é rodado **pelo usuário**, no phpPgAdmin; a sessão
+>   prepara o script, testa num Postgres local e diz a ordem.
+>
+> O banco de desenvolvimento é **PostgreSQL 9.6.6** (conferido pela sessão do
+> painel no mesmo dia). Como o mesmo SQL vai para os dois e passa primeiro pelo
+> de desenvolvimento, **todo DDL continua escrito para o 9.6**: sem partição
+> declarativa, sem `GENERATED`, `EXECUTE PROCEDURE` nos gatilhos, `CHECK` no
+> lugar de `ENUM`.
 
 ```sql
 -- Árvore de menus e estado de cada função (substitui o soupm_modulo do PAINEL §8)
@@ -1498,9 +1552,11 @@ CREATE TABLE public.soupm_evento (
     dados        JSONB,
     PRIMARY KEY (id, recebido_em)
 ) PARTITION BY RANGE (recebido_em);
--- Atenção: o banco de produção é PostgreSQL 9.6 (lado da intranet). Se a API do
--- app usar o mesmo servidor, partição declarativa não existe no 9.6: usar tabela
--- por mês (soupm_evento_2026_11) com uma view de união. Conferir a versão antes.
+-- Produção é PostgreSQL 13.23 e o banco de desenvolvimento 9.6.6 (22/10/2026);
+-- o DDL é escrito para o 9.6. Fase 0: ficou uma tabela só por tipo (soupm_evento, soupm_erro),
+-- com índice por data e limpeza por DELETE (180 dias e 1 ano). Quando o volume
+-- pedir, vira tabela por mês com uma view de mesmo nome; app e log.php não mudam.
+-- SQL: api-soupmrr/sql/2026-10-22_soupm_log.sql.
 
 -- Log de erros (mesmas colunas de identificação)
 CREATE TABLE public.soupm_erro (
@@ -2052,7 +2108,7 @@ usuário antes da próxima.
 | Fase | Entrega | Fatias (cada uma ≤ 5 arquivos) | Riscos |
 |---|---|---|---|
 | **0. Fundação** | Nada muda na tela | `ApiClient` + `FalhaApp`; log local + `log.php` + tabelas; sonda de saúde dos serviços (`soupm_saude`, mapa de conexões do Painel); códigos de erro em `soupm_config` (`erros`); `Sessao` com armazenamento seguro (senha sai do SharedPreferences); captura global de erros; registro de módulos | Migrar a sessão guardada sem deslogar ninguém (ler o antigo, gravar no novo, apagar o antigo). `log.php` lento atrasando o app (envio sempre em segundo plano) |
-| **1. app_config** | API decide | `soupm_menu_item` com carga igual ao app de hoje; `app_config.php` (público e logado); app lê, guarda e usa padrões; versão por plataforma | Carga inicial diferente do app atual muda o que o militar vê: comparar item a item. PostgreSQL 9.6 (sem alguns recursos) |
+| **1. app_config** | API decide | `soupm_menu_item` com carga igual ao app de hoje; `app_config.php` (público e logado); app lê, guarda e usa padrões; versão por plataforma | Carga inicial diferente do app atual muda o que o militar vê: comparar item a item |
 | **2. Navegação nova** | Abas, Serviços, Início, comandantes compactos, iPad | shell com navegador por aba; Serviços e áreas; nova Início (sem personalizar ainda); folha de bloqueio; barra lateral do iPad | Push que abre rota precisa achar a aba certa. Telas antigas que assumem o navegador raiz. Rejeição da Apple por iPad: testar em iPad Air 11" (onde a Apple revisou) |
 | **3. Busca e feedback** | Busca, "Preciso de ajuda" e "Sugestões e elogios" | índice e tela de busca; `feedback.php` e as tabelas de feedback; "Minhas mensagens"; tela Feedback no painel (P3) | Anexo grande em rede ruim: envio com progresso e retomada |
 | **3b. Contracheque na API** | PDF do contracheque gerado no servidor | `contracheque_pdf.php` com conferência e hash; padrão em `soupm_documento_padrao`; grupo "Documentos" do painel (casa com esta fase); app passa a pedir o PDF pronto; eventos `contracheque.pdf_*` | PDF diferente do de hoje: comparação página por página antes de trocar. Carga no dia da folha: cache por mês |
@@ -2061,6 +2117,409 @@ usuário antes da próxima.
 | **5. Níveis e papéis pelo painel** | Fim do `isSuperUser` | níveis e papéis calculados no servidor (seção 6.5); módulo `soupm` na ACL da intranet; endpoints de gestão conferem nível e escopo. **O login pela intranet não entra aqui: vai para a 2.3** (seção 6.6) | Depende da sessão "Chat Intranet". Quem hoje é gestor perder acesso: comparação obrigatória no painel e lista revisada pelo usuário |
 | **6. Acabamento** | Bonito e acessível | migração das telas grandes para `features/`; esqueletos; movimento; Dynamic Type; leitor de tela; contraste nos dois temas | Escopo grande: limitar às telas mais usadas (log da fase 0 mostra quais) |
 | **7. Lançamento 2.2.0** | Lojas | versão nos três arquivos; capturas novas em todos os tamanhos (§31–32); "O que há de novo" separado por loja; TestFlight em iPhone e iPad físicos (§1) | Mudança grande de navegação confunde quem já usa: vídeo tutorial (§33) e um cartão "Conheça o novo SouPM" na primeira abertura |
+
+**Fase 0 concluída (22/10/2026), na branch `feature/soupm-2-2`.** App:
+`ApiClient` e `FalhaApp`, log local com os últimos 20 passos em cada erro,
+`Sessao` no Keychain/Keystore (migração conferida no simulador por cima da
+2.1.7, sem deslogar), captura global (`AP-FATAL`) e registro de módulos. API e
+banco de produção: `log.php` no ar; tabelas de log, resumo diário, ativos e
+sonda (`sql/2026-10-22_*` e `2026-10-23_soupm_cron_log.sql`); scripts em
+`sigrh/cron/` com dois crons no cPanel (sonda a cada minuto, `cron_log` às
+03:10) e os alvos da sonda em `~/private/config_sonda.php`. Os códigos de erro
+em `soupm_config` (`erros`) ficam para a fase 1, junto com o `app_config`.
+
+**Fase 1 (22/10/2026): no ar.** O SQL rodou em produção e o `app_config.php`
+está publicado; falta só o cron que grava `versao_legada` no Firestore.
+`sql/2026-10-23_soupm_app_config.sql` cria `soupm_menu_item` (carga igual à
+loja: Escalas e SVI "Em breve", Mapa da Força para gestor pela regra de hoje),
+`soupm_versao_regra`, `soupm_versao_app`, `soupm_ajuda_assunto`, `soupm_faq` e
+as chaves `versao_config`, `versao_legada`, `bloqueio` (textos padrão da folha
+por motivo), `rede`, `log` e `erros` em `soupm_config`. A árvore de cada
+militar sai de **uma função**, `soupm_menu_para(matricula, plataforma,
+app_versao, gestor)`, usada pelo `app_config.php` e pelo "ver o app como" do
+painel (decisão da spec P1 do painel): público, estado, agendamento, versão
+mínima e o código `MD-` moram nela. O `app_config.php` devolve a parte pública
+sem login e o menu com login; o ETag é o hash do corpo (304 quando nada
+mudou), e senha errada conta no mesmo limite do `login.php`. No app,
+`lib/core/config/app_config.dart` lê na abertura e depois do login, guarda a
+última resposta por matrícula e cai na cópia ou nos padrões do código; as
+telas passam a usar o menu na fase 2. Pendente: rodar o SQL em produção,
+subir o `app_config.php` e o cron que grava `versao_legada` no Firestore das
+2.1.x (precisa da conta de serviço do FCM em `/private`).
+
+**Fase 2 (22/10/2026): app pronto na branch, falta produção.** Quatro abas
+(Início, Serviços, Avisos, Perfil), cada uma com o próprio navegador: a barra
+não some ao abrir uma função, tocar de novo na aba volta ao começo e o voltar
+do Android sobe dentro da aba, depois vai para a Início. A partir de 600 pt as
+abas vão para a lateral (iPad e Android largo). Serviços: busca sem acento e
+por sinônimo, "Mais usados", áreas em cartões com arte e ladrilhos de função;
+função bloqueada abre a folha com o motivo e o código `MD-`, e rota que a
+versão não conhece pede para atualizar o app (`funcao.tocar`,
+`modulo.bloqueio_visto`, `busca.*` no log). Início: faixa do Comando de 64 pt
+(dois cartões com a arte das estrelas; tocar abre o cartão grande), atalhos
+numa linha só (o que não cabe vai para "Mais") e os blocos na ordem do painel.
+Configurações virou a aba Perfil, com a Ficha Individual num botão da barra. Ainda fora: comunicados
+e pendências (fases seguintes), personalizar a Início e os dados do Comando
+pelo `app_config` (fase 4). API: `sql/2026-10-23_soupm_inicio.sql` (blocos
+`bloco_inicio`, `soupm_atalho_padrao` por perfil militar/gestor até a fase 5,
+`soupm_config` `servicos`, funções `soupm_inicio_para` e
+`soupm_mais_usados_para`), e o `app_config.php` passa a mandar `home` e
+`servicos.mais_usados` quando o SQL existe.
+
+**Fase 3 (22/10/2026): app pronto na branch, API no ar, falta o SQL em
+produção.** "Preciso de ajuda" guiado (assunto, perguntas, resposta com o
+botão da função que resolve, "Isso resolveu?" e, se não, o chamado técnico,
+"Em breve" até a 3c), com os assuntos do `app_config` e a mesma carga como
+reserva no app. Sugestões e elogios: tipo, texto, até 5 anexos (25 MB),
+protocolo `FB-`, Minhas mensagens e conversa com a equipe. API:
+`sigrh/feedback.php` (enviar, listar, ver, responder; anexos fora da pasta
+pública, tipo conferido pelo conteúdo) e `sigrh/sessao_app.php`, o arquivo
+comum da conferência de senha e do limite de tentativas, usado também pelo
+`app_config.php` (que passou a aceitar matrícula com letra, como o
+`login.php`). SQL: `2026-10-23_soupm_feedback.sql` e
+`2026-10-23_soupm_atendimento.sql` (área Atendimento DTI no menu e carga do
+"Preciso de ajuda"). Ficam para depois: o push "a equipe respondeu" (fase 4) e
+a limpeza dos anexos depois de 180 dias (no `cron_log`).
+
+**Fase 3b (22/10/2026): pronta e desligada.** `sigrh/contracheque_pdf.php`
+monta o PDF do contracheque num papel timbrado próprio, **sem a Diretoria de
+Recursos Humanos** (o contracheque não é da DRH; decisão do usuário,
+APRENDIZADOS §44), confere os valores antes (rubrica sem nome, valor negativo
+ou impossível, mês sem provento) e devolve com SHA-256, registrando cada
+emissão com código e **QR Code** de conferência pública
+(`sigrh/doc/conferir.php`: situação, mês, folha, nome com o meio abreviado,
+matrícula parcial e os totais; nunca rubricas, CPF nem conta). O CPF sai do
+SIGRH pela matrícula de quem entrou (o app não manda mais), então nunca sai o
+contracheque de outro militar. Folhas novas vêm da `vw_cc_novo2`
+(`mes_extenso` = 'AAAA/Mês'); as de até 2023, da `vw_contracheque3`. O padrão
+vem de `soupm_documento_padrao` (versão 0 = o do código). O app pede o PDF
+pronto e confere o hash. Enquanto `contracheque.pdf_api` estiver desligado, a
+API responde DESLIGADO e o app usa o PDF de hoje; `pdf_api_matriculas` é a
+lista piloto para comparar com uma conta real antes de ligar para todos.
+Testado com dados fictícios: caso curto (1 página) e longo (42 rubricas, 2
+páginas, cabeçalho da tabela repetido e fecho junto). Falta: o SQL em
+produção, a comparação com uma conta real e a tela Documentos do painel.
+
+**Fase 4 (22/10/2026): pronta e desligada.** `sql/2026-10-23_soupm_notificacoes.sql`
+(aparelhos, notificações, leitura, envios e destino por aparelho),
+`sigrh/dispositivo.php` (registrar e remover o aparelho), `sigrh/notificacoes.php`
+(a aba Avisos: listar, lida, todas lidas, excluir, limpar) e o cron
+`sigrh/cron/envio_push.php`, que tira os envios da fila, grava no Postgres,
+manda pelo FCM v1 com a conta de serviço em `~/private/soupm_fcm.json` e grava
+também no Firestore enquanto houver 2.1.x. Na transição: "todos" vai pelo
+tópico `todos_militares` (que todas as versões assinam); um militar ou grupo
+vai para os aparelhos da 2.2 e, sem nenhum, para o token que a 2.1.x deixou no
+Firestore. Quem pede push (painel, certidão, feedback) só grava
+`soupm_notificacao_envio` (`soupmPedirPush`). No app: o aparelho é registrado no
+login e na renovação do token e sai no logout (antes, o aparelho continuava
+recebendo os avisos da conta anterior); a aba Avisos lê da API quando o
+`app_config` disser `notificacoes.fonte = api`. Desligado até: o usuário pôr a
+conta de serviço em `/private`, criar o cron (a cada minuto) e ligar
+`envio_fcm`; depois, copiar o histórico do Firestore (`cron/exportar_firestore.php`, só conta sem
+`--gravar`) e trocar `fonte_app` para `api`. A certidão já pede push pela fila quando `envio_fcm` está ligado; a
+resposta ao feedback é do painel, que já grava na fila.
+
+**Central de comunicados (22/10/2026): pronta e desligada.**
+`sql/2026-10-23_soupm_comunicados.sql` (categorias, comunicados com o público já
+resolvido pelo painel em `matriculas`, leitura e ciência com a versão lida) e
+`sigrh/comunicados.php` (listar os no ar para o militar, lido, ciente). No app,
+`lib/features/comunicados/`: carrossel na Início (passa sozinho a cada 6,5 s,
+para ao segurar e com "Reduzir movimento", some sem comunicado), central com os
+filtros Todos, Não lidos e Ciência pendente, e o comunicado com "Estou ciente";
+o destaque de abertura aparece uma vez por versão (ou até a ciência, se o
+painel pedir). Eventos `comunicado.*`, erros `CM-`. A Início só troca o anúncio
+do Firestore pela central quando `soupm_config.comunicados.fonte_app = api`.
+
+**Cards do painel, Comando e dicas (22/10/2026): prontos, esperando o SQL.**
+`sql/2026-10-23_soupm_cards.sql` cria `soupm_card` (modelos campanha, atalho,
+número e lista), `soupm_comando` (só o aprovado vai para o app; as estrelas
+saem do posto e precisam ser conferidas com o regulamento de uniformes) e
+`soupm_dica` (ícone por chave, sem emoji), e a função `soupm_home_extra`. O
+`app_config.php` põe os cards no ar como `home.livre.<chave>` e os dados
+aprovados nos blocos `home.comandantes` e `home.dicas`. No app,
+`lib/features/inicio/card_painel.dart` desenha os modelos (o "Número" só
+aparece com o valor pronto, e modelo desconhecido não desenha nada); a faixa
+do Comando e as dicas leem o `app_config` e, sem nada aprovado, continuam no
+Firestore. No modo vitrine o Comando é fictício, sem foto.
+
+**Suas pendências (22/10/2026): prontas e desligadas.**
+`sql/2026-10-23_soupm_pendencias.sql` cadastra os 37 tipos do §4.3, todos
+desligados; o banco recusa ligar tipo sem fonte `confirmada`.
+`sigrh/pendencias.php` calcula os tipos do próprio SouPMRR (ciência de
+comunicado, e-mail não confirmado, certidão vencendo, sugestão aguardando
+resposta, app desatualizado); tipo ligado sem cálculo, ou fonte que falhou,
+vira o item "Não foi possível conferir" com `PD-<SISTEMA>-...`, nunca some.
+Lembrete pode ser dispensado; obrigatória, não. No app,
+`lib/features/pendencias/`: bloco na Início (some sem tipo ligado; com tipo
+ligado e nada pendente, "Sem pendências") e a lista completa; dar ciência num
+comunicado tira a pendência na hora. Os tipos do SIGRH, SIGE, SVI e
+SISCHAMADOS ganham cálculo quando as fontes forem conferidas no banco.
+
+**Declarações por campanha (22/10/2026): prontas e desligadas.**
+`sql/2026-10-23_soupm_declaracao_campanha.sql` cria a campanha por tipo e ano;
+`sigrh/declaracao_campanha.php` entra nos 11 endpoints que gravam ou apagam
+declaração e, com `declaracoes.campanhas_ligadas`, recusa fora da campanha
+com o motivo e o código no texto ("ainda não foi aberta", com a data
+prevista, ou "o prazo terminou em …", `DC-FECHADA`), o que vale também para
+a 2.1.x. As pendências `sigrh.declaracao_*` só aparecem com campanha aberta e
+só para quem não enviou no ano.
+
+**SISCHAMADOS do solicitante (22/10/2026): app pronto, esperando a chave.**
+`lib/features/chamados/`: login na API móvel do SISCHAMADOS com a senha da
+intranet guardada pelas Escalas e, sem ela, a do app (se as duas forem
+recusadas, a tela pede a senha da intranet uma vez e guarda no cofre); token
+no Keychain/Keystore e novo login sozinho quando vence. Meus chamados com os
+filtros Em aberto, Aguardando você e Encerrados; abrir em 3 passos (assunto
+pelo catálogo, campos do assunto, até 5 anexos e 25 MB, revisar), com o
+recado por campo que a API devolve; detalhe com a conversa. Falha de rede no
+envio não repete sozinha (pode abrir dois chamados). A chave do app vem do
+`env.json` (`SISCHAMADOS_APP_CHAVE`). Ainda não dá para responder, confirmar a
+solução nem avaliar: faltam as rotas da API móvel (§8.3), pedidas à intranet.
+A função continua "Em breve" no menu até a chave existir.
+
+**Personalizar a Início (22/10/2026): pronta.** "Personalizar início" (no fim
+da Início e em "Mais" dos atalhos) abre a tela de arrastar pela alça (também
+"subir/descer" pelo leitor de tela), esconder com o interruptor (bloco fixo
+mostra o cadeado) e escolher até 12 atalhos, com busca, e "Restaurar o padrão
+da PMRR". Guarda no aparelho na hora e no servidor
+(`sigrh/inicio_preferencias.php`, `sql/2026-10-23_soupm_inicio_preferencia.sql`);
+o `app_config` devolve a escolha em `preferencias`. A regra de junção
+(`ordenarBlocos`): bloco novo do painel entra depois do vizinho de cima, o
+escondido continua escondido, o fixo nunca some e o bloco desligado volta para
+onde estava. **Modo de edição na própria Início (23/10/2026): pronto.** Segurar um bloco
+(ou a ação "Editar a tela inicial" no leitor de tela) põe a Início em edição:
+os blocos tremem, cada um ganha o botão de esconder — cadeado no fixo — e o
+toque longo arrasta para reordenar ali mesmo, sem sair da tela. "Concluído"
+grava no aparelho e no servidor, e falha de rede avisa sem desfazer nada
+(eventos `inicio.editar_abrir` e `inicio.editar_concluir`). Com "Reduzir
+movimento" não treme: a barra do topo e os botões bastam. A tela
+"Personalizar início" continua sendo onde se mexe nos atalhos e se restaura o
+padrão.
+
+**Busca global (22/10/2026).** Lupa no topo da Início, de Avisos e de Perfil
+(em Serviços a busca já fica no topo), abrindo a busca dentro da aba: acha
+por nome, descrição e sinônimo, guarda as 5 últimas buscas no aparelho e, sem
+resultado, oferece "Sugerir esta função" e "Ver todos os serviços" (eventos
+`busca.*`). Tolerância a um erro de digitação e `⌘F` no iPad entraram depois, em
+9d68e2a.
+
+**Tela de erro (22/10/2026).** `EstadoErro` ganhou a viatura quebrada
+(inclinada, pneu dianteiro murcho, fumaça no capô, giroflex apagado,
+pisca-alerta âmbar e triângulo no chão, parada com "Reduzir movimento") com o
+selo do tipo de erro, "Detalhes técnicos" fechados (código, data e hora, tela,
+função, origem, versão e build, sistema e aparelho, sessão, com "Copiar
+detalhes") e "Abrir chamado técnico", que abre o chamado já preenchido com
+esses detalhes. O botão só aparece com a função de chamados liberada e a chave
+do SISCHAMADOS no build.
+
+**Versão por plataforma (22/10/2026).** Na abertura, o app espera até 3 s pelo
+`app_config` e aplica a regra da própria plataforma (`versao.ios` ou
+`versao.android`); sem regra (sem rede e sem cópia), continua valendo o
+`min_version` do Firestore, como na 2.1.x. Abaixo da mínima, a nova tela de
+atualização obrigatória (§10.3: o Fusca velho com a versão instalada e a
+viatura nova com a da loja; ao tocar, a velha apaga, a nova salta e a loja da
+plataforma abre; parada com "Reduzir movimento"; textos do painel e código
+`CF-VERSAO-IOS`/`CF-VERSAO-ANDROID`). Abaixo da recomendada, um cartão
+dispensável no topo da Início, uma vez por versão. A falha na abertura deixou
+de ser "Ocorreu um erro": vira a tela de erro com `AP-ABERTURA`. O policial
+ilustrado entrou na cena: triste ao lado do Fusca, dá dois pulinhos até a
+viatura nova e fica feliz.
+
+**Níveis de acesso (fase 5): estrutura pronta e desligada.**
+`sql/2026-10-23_soupm_niveis.sql` cria a escada (os 5 níveis), as regras, os
+papéis e a função `soupm_nivel_para` (o mais alto em que uma regra vale e
+nenhuma exceção vale, com o porquê). Hoje só valem as regras que têm fonte no
+banco: matrícula (com data de fim), o "nivel" e o posto do SIGRH, a regra
+antiga do app e o perfil da intranet (onde existir). "Função no SIGRH",
+lotação e quadro ficam cadastráveis e **ainda não foram implementadas**.
+O motivo que este plano dava ("o SIGRH não tem a tabela de função") é
+**falso**, e a fonte já está medida (27/10/2026; a medição inteira, com as
+contagens, está no `PENDENTE_USUARIO` §1, item 23): o comando está em
+**`escalaservico.funcoes_servico`**, pela lotação ativa
+(`policial_lotacao.fk_func_serv_cod`), e o cadastro é mantido — Comandante
+Geral tem exatamente 1. O outro catálogo (`tipo_funcao`, por
+`fk_tipo_func_cod`) só tem *Administrativo* e *Operacional*, grosso demais.
+Implementar `funcao_sigrh` é o que faz "entrou como comandante no SIGRH,
+vira gestor no app" acontecer sozinho, e três achados da medição mudam como
+a regra tem de ser escrita:
+
+- **Função com dois códigos** (*Comandante de Companhia* é 54 e 42, e o mesmo
+  em Pelotão, Subcomandante de Companhia e Comandante de Guarnição). Regra
+  cadastrada por id pega metade **sem dar erro**. Como o `valor` da
+  `soupm_nivel_regra` é `VARCHAR(80)`, a regra pode casar por **nome**: uma
+  linha cobre os dois códigos e o porquê fica legível no painel. O risco é a
+  renomeação no SIGRH, que derruba a regra em silêncio, então a prévia do
+  painel (quantos militares cada regra pega agora) passa a ser parte da regra,
+  não só conferência.
+- **A função de serviço NÃO entra como fonte de nível.** Medidos um por um
+  os 140 de *Chefe / Diretor* (código 17): o mesmo código cobre chefia de
+  seção, situações que não são chefia (`Reserva`, `Agregado Proc.
+  Reserva/Reforma`) e **7 militares lotados na subunidade `Cmt`**, isto é,
+  comandantes cadastrados como "Chefe / Diretor". O que isso prova não é que
+  o código 17 é um saco de gatos: é que **o campo de função não identifica o
+  comandante de forma confiável**. Uma regra sobre a função 54 não erraria —
+  ela apenas **não acharia** esses 7, sem erro nenhum, e sete comandantes
+  ficariam sem Gestão. É o §37 na escolha da fonte.
+- **O nível 3 (*Gestor de unidade*) fecha com a lotação, e sem os
+  dirigentes.** Um desvio registrado para não se repetir: ao ver que os
+  diretores aparecem na lotação do mesmo jeito que os comandantes
+  (`Diretor`, `Dir DRH`, `Ch Gab`, `Dir Polic`, `Dir do SS`, sempre efetivo
+  1 com o cargo no nome), escrevemos que o degrau 3 teria dois públicos. A
+  §6.2 **deste plano** já dizia o contrário, por decisão do usuário:
+  **diretores são Alto Comando** (nível 5). Com isso o degrau 3 fecha
+  certinho — as 22 unidades operacionais, que são as que têm subunidade de
+  comando; as outras 28 são diretorias e assessorias, e sobem para o 5. O
+  degrau nunca esteve sem fonte: estava com a gente errada dentro.
+- **O nível 2 (*Gestor de subunidade*) continua sem fonte boa.** A lotação
+  não serve (o comandante de Companhia é lotado na própria Cia, junto com os
+  80 militares dela) e a função 54+42 falha por falta, que é o modo que
+  recusamos acima. Fica **vazio na primeira carga**: ou a função com o vigia
+  ligado, ou concessão por matrícula — que também envelhece, mas envelhece
+  à vista, com data de fim e na tela.
+- **Terceira fonte, medida e boa: a lotação.** Cada unidade operacional tem
+  uma **subunidade de comando com efetivo 1** onde o comandante é lotado
+  (`Cmt` nos BPM e CIPM, `Cmt Geral` no Gab Cmdo Geral, `Cmt CPC` no E.M.
+  CPC, `Com da …ª CIPMFron` nas de fronteira). Cobre **22 das 50 unidades**,
+  e as 28 que faltam são justamente as diretorias e seções, que têm chefe,
+  não comandante: a lacuna é coerente, não falha de cadastro. O tipo
+  `lotacao` já existe na tabela de regras.
+- **Nenhuma classificação marca comando.** `subunidades_tipo` só tem
+  *Administrativa* e *Operacional*. A informação está **no nome**, em texto
+  livre, nas duas fontes — e **sem chave estrangeira que proteja**. Mudou o
+  nome, a regra para de casar sem erro algum.
+- **A lotação tem cinco grafias** (`Cmt`, `Cmte`, `CMT`, `Cmt Geral`,
+  `Cmt CPC`, `Com da …`), mais as da direção (`Diretor`, `Dir DRH`, `Ch Gab`,
+  `Dir Polic`, `Dir do SS`), e dois falsos positivos que **não** são comando
+  de unidade: `Cmte Guarn` e `Cmte do Gp de Cons. e Seg.`. Um `ILIKE 'cmt%'`
+  pegaria os dois — plausível e errado. Então a regra de lotação é **lista
+  explícita de nomes**, nunca padrão; e, como lista explícita envelhece em
+  silêncio quando nasce uma unidade com grafia nova, ela vem com um **vigia
+  no painel**. Dos três modos de vigiar, o que vale é o que **pergunta de
+  cima para baixo**: *unidade ativa sem nenhum militar no nível 3 ou acima*.
+  Vigiar a grafia (subunidade com cara de cargo fora da lista) envelhece
+  junto com ela, porque só acha o que o padrão souber parecer; a pergunta de
+  cima acusa o 5º BPM sem gestor **sem precisar adivinhar** se a subunidade
+  virou `Cmt Btl`, `Cmte` ou outra coisa.
+- **O valor da regra não é um nome nem um par: é um trio, e a regra precisa de uma interseção, e `soupm_nivel_regra` não a
+expressa.** As premissas caíram na terceira medição: "subunidade de cargo tem
+efetivo 1" só vale para `Cmt` **dentro de uma unidade**. Em chefia e gabinete
+a subunidade é a equipe toda — `S Cmt Geral` tem **10 militares, um deles
+soldado**, `Chefia DTI` tem 5, `Coord. Ens. Pol.` tem 10. Lotação sozinha
+daria Alto Comando a um soldado do gabinete do Subcomandante: o erro
+espelhado do que a função fazia, e do mesmo tamanho.
+
+Quem identifica o titular é **(subunidade, unidade) ∩ função**:
+`S Cmt Geral` ∩ 34 = 1, `Chefia DTI` ∩ 17 = 1. E as duas fontes se corrigem
+**em direções opostas**, o que impede hierarquizar uma sobre a outra: a
+função separa o diretor dentro de `Chefia DTI`, e a **subunidade desmente a
+função** em `Sbc da 2ª CIPMFron`, onde o subcomandante está cadastrado com a
+função 54 (*Comandante de Companhia*) — quem confiasse na função daria
+comando a ele. A regra que sobrou: **a subunidade manda quando o nome dela
+diz o cargo; a função manda quando a subunidade é coletiva.**
+
+Consequência direta para o SQL 15: as linhas de `soupm_nivel_regra` somam
+com **OU** (o nível é o maior degrau em que *alguma* regra vale), então
+cadastrar "subunidade = Chefia DTI" e "função = 17" como duas linhas daria o
+nível aos 5 da chefia **e** aos 140 da função. **Duas regras somadas sai da
+lista de opções.** O trio tem de caber **numa linha**, num tipo novo
+(`lotacao_funcao`, com valor composto), e isso se decide antes de escrever a
+`soupm_regra_vale`, não depois. Mais três medições para a comparação: **não
+existe CPE** (só CPC e CPI; o EMG é grande comando, com 297 militares),
+`ch DF` é minúsculo ao lado de `Ch DCS` — **comparar ignorando caixa** — e a
+abreviação da subunidade **não segue** a da unidade (`Com da 3ª CIPMFron Ror`
+dentro de `3ª CIPMFron Rorai`).
+
+  (`Cmt` ainda vale nível 4 em `E.M. CPI` e nível 3 no 1º BPM, então a
+  unidade continua no valor: regra por subunidade solta erraria **para
+  cima**, dando escopo de grande comando a quem comanda uma unidade.)
+
+Decisão do usuário (27/10/2026): **estudar antes de montar regra.** `soupm_niveis_calculados()` dá
+ao painel a lista de quem fica acima do primeiro nível, para comparar antes e
+depois. Com `niveis.ligado`, o "gestor" do menu e da Início passa a ser
+"nível acima do primeiro", e o `app_config` manda o nível para o selo; até lá,
+nada muda. Também prontos: o Comando lido do SIGRH (cron
+`comando_sigrh.php`, pela matrícula que o painel grava em cada cargo) e a
+simulação de pendências para o painel (`pendencias_simular.php`, link
+assinado).
+
+**Funções novas P1, P4, P5 e P6 (22/10/2026): prontas no app; P5 com API no
+ar.** P1, "O que mudou": botão no contracheque que compara rubrica a rubrica
+com o mês anterior da mesma folha (entrou, saiu, mudou de valor), calculado no
+aparelho com as mesmas consultas, obedecendo ao "olho" dos valores. P4, Central
+de documentos (`rh.documentos`): certidões e contracheques em PDF guardados no
+aparelho, com busca sem acento; o PDF do contracheque fica guardado ao ser
+gerado (até 24 meses, fila única de leitura e gravação). P5, Linha do tempo
+(`rh.carreira`): `sigrh/carreira.php` (no ar) com incorporação, postos,
+comportamento, escolaridade e tempo averbado, cada seção isolada (a que falhar
+aparece como "não foi possível conferir", `CR-<SEÇÃO>`). P6, Validar documento
+(`rh.validar`): o código impresso ou o link do QR abre a página pública de
+conferência (`verificar.php` ou `doc/conferir.php`). O **leitor de QR dentro
+do app entrou** (`mobile_scanner` 7.4.2), ao contrário do que este plano
+dizia: conferido em aparelho pelo usuário em 27/10/2026, lendo o QR de uma
+certidão. No menu:
+`sql/2026-10-23_soupm_funcoes_novas.sql`, com o selo "Novo" e versão mínima
+2.2.0. P3 (lembretes): `sigrh/cron/lembretes.php` calcula, para os lembretes ligados no painel,
+férias que começam, certidão que vence, prazo de declaração (campanha aberta,
+quem tem o app e não enviou) e ciência de comunicado (público do comunicado,
+ou quem tem o app, sem ciência), e põe na fila um envio por texto, com todos
+que recebem a mesma mensagem; `sql/2026-10-23_soupm_lembretes.sql` evita
+repetir. O contracheque disponível continua no `notificacoes/notifica_contracheque.php`,
+que espera a folha carregar: com o lembrete e o `envio_fcm` ligados, usa a
+fila e o texto do painel; senão, a Cloud Function de sempre.
+
+**Fase 6, acabamento (22/10/2026): feito o que não depende do usuário.**
+Esqueletos no lugar do círculo girando nas listas novas; número herói dos cards
+até 1,3× no Dynamic Type; folhas inferiores opacas (o texto de trás aparecia no
+meio); erros das telas antigas (declarações, Mapa da Força, plantão, e-mail)
+com código e log no lugar de "Erro inesperado: $e" (`core/erros/falha_de.dart`);
+Serviços com "Novidades no SouPMRR", "com novidade" nas áreas e "Não achou o que
+procurava?"; selos com contraste nos dois temas; Perfil com capa da arte, foto
+sobreposta, "Reorganizar a tela inicial", tamanho do texto e o grupo Ajuda
+(Preciso de ajuda, Meus chamados, Sugestões e elogios), sem emoji e com o texto
+da biometria por plataforma; eventos `aparencia.tema`, `push.receber` e
+`push.abrir` (o `log.php` marca o "aberto" do envio); abertura nova com a
+viatura (§15.6), 4,2 s, que um toque pula; desenho comum em `core/design/viatura.dart`. Fica:
+conferir no iPad (o simulador do iPad precisa ser liberado pelo usuário) e a migração das telas grandes para `features/`.
+
+**Mais itens prontos (22/10/2026).** Busca com tolerância a erro de
+digitação (uma letra em palavras de 4 a 7 letras, duas a partir de 8, só
+quando não há resultado exato); atalhos de teclado no iPad e no Android com
+teclado (⌘F ou Ctrl+F busca, ⌘1 a ⌘4 abas, ⌘R relê o `app_config`); o
+`app_config` é relido ao voltar ao app depois de 5 minutos e no push
+silencioso de configuração, que o `envio_push.php` agora manda só com dados
+(`{"tipo":"config"}`, para o tópico, sem aviso na tela). O cron
+`cron/versao_legada.php` leva o mínimo legado ao Firestore das 2.1.x, nunca
+acima das mínimas da 2.2 nem da última versão publicada em cada loja. O cron
+noturno apaga os anexos de sugestões 180 dias depois de concluídas ou
+arquivadas (SQL `2026-10-23_soupm_feedback_retencao.sql`). Quando o servidor
+não responde, a Início mostra uma faixa "Sem conexão com o servidor", com a
+hora do que está guardado e "Tentar de novo" (§5.3).
+
+**P7, notícias e agenda: travada fora do app.** A API da intranet só tem a
+agenda **dos comandantes** (`/api/v1/agenda/eventos`, com a permissão
+`agenda.api.listar`), que não é uma agenda institucional para a tropa, e o
+módulo de notícias não tem API. Precisa de duas decisões e de rotas na
+intranet: o que da agenda pode ser mostrado a todos e uma rota de notícias
+publicadas.
+
+**Fase sem intranet (decisão do usuário, 24/10/2026), que vale mais que o
+resto deste plano onde houver conflito.** "Nós não vamos usar a intranet
+agora... Nesse momento vai ser só painel e app tudo no mesmo banco... Eu
+quero fazer tudo com esse usuário que tenho do cPanel." Consequências:
+
+- Painel e app usam o mesmo banco e o usuário de banco da API; todo SQL de
+  produção roda pela conta do cPanel (roteiro em `docs/PENDENTE_USUARIO.md`
+  §1). Nada em produção depende dos esquemas `intranet` nem `sccti`: o acesso
+  do painel (papéis, recursos, auditoria) passa para tabelas `soupm_*`.
+- Ficam para quando o painel for para a intranet, e no app continuam
+  bloqueadas com a folha e o código `MD-`: o login único (2.3, §6.6), Minhas
+  escalas e SVI e os avisos do SIGE, Meus chamados (SISCHAMADOS, §8.3, e o
+  "Abrir chamado técnico" das telas de erro), Notícias e agenda (P7) e a regra
+  de nível "perfil da intranet" (§6.4, item 2). O app só entra na intranet em
+  segundo plano se o painel liberar Escalas ou SVI.
+- O resto da 2.2 segue, **fiel ao protótipo** (`prototipos/soupm-2-2.html`):
+  a próxima etapa é comparar o app com ele tela a tela, no modo vitrine, e
+  fechar as diferenças.
 
 **Paralelismo possível** (sessões separadas, como o usuário prefere): a API
 (fases 1 e 4, em `~/code/api-soupmrr`) anda junto com o app (fases 0 e 2),
@@ -2074,6 +2533,69 @@ módulo da intranet e seguindo as regras de lá. As duas conversam direto e
 combinam toda mudança no contrato antes do código (PAINEL_ADMIN §10).
 
 ---
+
+## 16b. Versão 2.3: o que volta com a intranet
+
+Decisão do usuário (24/10/2026): a 2.2 vai para produção **hoje**, sem
+SISCHAMADOS nem SIGE (Escalas e SVI). Eles voltam na 2.3, em três passos:
+
+1. **Login silencioso na API da intranet de desenvolvimento.** Depois do login
+   do SouPMRR, o app entra sozinho na intranet de desenvolvimento, sem pedir
+   nada ao militar.
+2. **SISCHAMADOS e SIGE (Escalas e SVI) apontam para o desenvolvimento**, só
+   para teste.
+3. **Quando a intranet for para produção**, os mesmos módulos passam a
+   apontar para lá. O app muda só o endereço, que vem do `app_config`.
+
+**Cuidados:**
+
+- **O banco de desenvolvimento é uma cópia do SIGRH.** Senha trocada e dado
+  novo depois da cópia não estão lá: o login silencioso pode falhar para quem
+  trocou a senha. Essa falha tem código e mensagem próprios (prefixo `LG-`,
+  por exemplo `LG-INTRANET-SENHA`, a definir), aparece só na função que
+  depende da intranet e **nunca derruba o login do app**.
+- **Build de loja nunca aponta para o desenvolvimento.** O teste é só no
+  TestFlight ou em APK de teste, como já foi feito com Escalas e SVI na 2.1.7
+  (o endereço vem do `env.json` e só o de teste leva o de desenvolvimento).
+- Até lá, no app, as funções continuam "Em breve" com a folha de bloqueio e o
+  código `MD-` (§16, "Fase sem intranet").
+
+### 16c. Equipe de testes e intranet DEV na 2.3 (plano de 25/10/2026)
+
+Pedido do usuário (25/10/2026), guardado para a 2.3: módulos em
+desenvolvimento (Escalas, SVI, Chamados e os que vierem) só para uma **equipe
+de testes**, conectados à intranet de desenvolvimento (intranet.gitpmrr).
+Decisão do mesmo dia: **a 2.2 vai para as lojas sem isso**, com esses módulos
+"Em breve" para todos; a 2.3 sai pelo TestFlight e pelo teste interno da Play
+Store para a equipe.
+
+1. **Equipe de testes no painel:** um papel "Equipe de testes"
+   (`soupm_papel`, tela Papéis, com auditoria) com as matrículas.
+2. **Público "só testadores"** nas funções (`soupm_menu_item.publico`, hoje
+   `todos | gestor`). O servidor tira do menu de quem não é da equipe **e
+   recusa o acesso direto**. Uma função sai do teste trocando o público para
+   "todos" no painel, sem versão nova.
+3. **Login na intranet sem API nova:** a intranet já tem
+   `/api/v1/auth/login` (JWT) e o app já entra sozinho com a senha do app
+   (Escalas, 2.1.7), pedindo a senha da intranet uma vez se for diferente e
+   guardando no cofre (APRENDIZADOS §42). Na 2.3: isso logo depois do login do
+   app, **só para a equipe**; o SISCHAMADOS passa a usar a mesma entrada.
+   Quem não é da equipe não vê pergunta nem conexão nenhuma com a intranet.
+4. **Endereço da intranet pelo painel**, enviado no `app_config` só para a
+   equipe (não mais fixo no build). Quando a intranet for para o pmrr.online,
+   troca-se o endereço no painel e todos passam a usar produção.
+5. **Riscos a tratar antes de abrir para muita gente:**
+   - Apple: função escondida (2.3.1) e teste beta pela loja (2.2) não são
+     permitidos; por isso a equipe testa só pelo TestFlight (até 10 mil
+     testadores externos) e pelo teste interno da Play Store.
+   - Servidor DEV: tem cópia dos dados reais do SIGRH; a chave que assina o
+     JWT tem valor padrão no código e a renovação nunca expira (PAINEL_ADMIN
+     §6.4). Corrigir na intranet antes de abrir para a equipe.
+
+Ordem: banco e painel (papel, público, endereço) → API do app (menu e
+endereço só para a equipe) → app (entrada na intranet só para a equipe, em
+Escalas, SVI e Chamados). O painel é da sessão do painel; o contrato é
+combinado antes.
 
 ## 17. Decisões que dependem do usuário
 

@@ -8,6 +8,8 @@ import '../utils/app_routes.dart';
 import '../utils/app_theme.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/vidro.dart';
+import '../core/design/arte_cartao.dart';
+import '../core/design/folha_arte.dart';
 import '../widgets/aviso_rapido.dart';
 
 // ── EscalasPage ───────────────────────────────────────────────────────────────
@@ -419,8 +421,7 @@ class _EscalasPageState extends State<EscalasPage>
       }
     } on EscalaServiceException catch (e) {
       if (!mounted) return;
-      avisoErro(context, 'Não foi possível registrar',
-            texto: e.message);
+      avisoErro(context, 'Não foi possível registrar', texto: e.message);
     }
   }
 
@@ -459,8 +460,7 @@ class _EscalasPageState extends State<EscalasPage>
       }
     } on EscalaServiceException catch (e) {
       if (!mounted) return;
-      avisoErro(context, 'Não foi possível registrar',
-            texto: e.message);
+      avisoErro(context, 'Não foi possível registrar', texto: e.message);
     }
   }
 
@@ -470,8 +470,8 @@ class _EscalasPageState extends State<EscalasPage>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return FundoSuave(child: Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+    return FundoSuave(
+        child: Scaffold(
       appBar: _buildAppBar(theme),
       body: _buildBody(theme, isDark),
     ));
@@ -486,9 +486,11 @@ class _EscalasPageState extends State<EscalasPage>
     final tabBar = showTabs
         ? TabBar(
             controller: _tabController,
-            indicatorColor: AppColors.blue,
-            labelColor: AppColors.blue,
-            unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.70),
+            // Sobre a barra de vidro (sempre escura): texto branco.
+            indicatorColor: Theme.of(context).colorScheme.onSurface,
+            labelColor: Theme.of(context).colorScheme.onSurface,
+            unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: .65),
+            dividerColor: Colors.transparent,
             labelStyle:
                 const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             tabs: const [
@@ -499,7 +501,7 @@ class _EscalasPageState extends State<EscalasPage>
         : null;
 
     return AppBar(
-      iconTheme: const IconThemeData(color: Colors.white),
+      iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
       automaticallyImplyLeading: !_needsPasswordMigration,
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -508,20 +510,19 @@ class _EscalasPageState extends State<EscalasPage>
           ? [
               IconButton(
                 tooltip: 'Vagas SVI',
-                icon: const Icon(Icons.more_time_rounded, color: Colors.white),
+                icon: Icon(Icons.more_time_rounded, color: Theme.of(context).colorScheme.onSurface),
                 onPressed: () =>
                     Navigator.of(context).pushNamed(AppRoutes.SVI_ESCALAS),
               ),
             ]
           : null,
       flexibleSpace: const FundoBarraVidro(),
-
-      title: const Text(
+      title: Text(
         'Escalas de Serviço',
         style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onSurface,
           letterSpacing: 1.2,
         ),
       ),
@@ -558,30 +559,25 @@ class _EscalasPageState extends State<EscalasPage>
   /// do ar). Mantém o militar informado de que pode haver desatualização.
   Widget _buildCacheBanner(bool isDark) {
     if (!_usandoCache) return const SizedBox.shrink();
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.withOpacity(0.4)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.cloud_off_rounded, size: 16, color: Colors.orange),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Servidor indisponível. Exibindo dados salvos — podem estar desatualizados.',
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark ? Colors.orange.shade200 : Colors.orange.shade900,
-                fontWeight: FontWeight.w500,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: CartaoVidro(
+        raio: 12,
+        tingimento: corAtencao(Theme.of(context)),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Icon(Icons.cloud_off_rounded,
+                size: AppIconSize.xs, color: corAtencao(Theme.of(context))),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Servidor indisponível. Exibindo dados salvos — podem estar desatualizados.',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -609,21 +605,17 @@ class _EscalasPageState extends State<EscalasPage>
     ];
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 8),
-          Text(
-            'Definição de nova senha',
-            style: theme.textTheme.titleLarge
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _migrationMessage ??
+          TopoArte(
+            arte: Arte.de('operacional'),
+            icone: Icons.password_rounded,
+            titulo: 'Definição de nova senha',
+            subtitulo: _migrationMessage ??
                 'Sua senha atual veio do SIGRH. Por segurança, defina uma senha exclusiva para o app.',
-            style: theme.textTheme.bodyMedium,
+            margem: EdgeInsets.zero,
           ),
           const SizedBox(height: 20),
           TextField(
@@ -641,8 +633,6 @@ class _EscalasPageState extends State<EscalasPage>
                     ? Icons.visibility_off_rounded
                     : Icons.visibility_rounded),
               ),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
           const SizedBox(height: 12),
@@ -661,8 +651,6 @@ class _EscalasPageState extends State<EscalasPage>
                     ? Icons.visibility_off_rounded
                     : Icons.visibility_rounded),
               ),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
           const SizedBox(height: 16),
@@ -673,7 +661,11 @@ class _EscalasPageState extends State<EscalasPage>
                     Icon(
                       c.$2 ? Icons.check_circle_rounded : Icons.cancel_rounded,
                       size: 16,
-                      color: c.$2 ? Colors.green : Colors.redAccent,
+                      color: c.$2
+                          ? (theme.brightness == Brightness.dark
+                              ? AppColors.sucessoEscuro
+                              : AppColors.sucesso)
+                          : theme.colorScheme.error,
                     ),
                     const SizedBox(width: 8),
                     Text(c.$1, style: theme.textTheme.bodySmall),
@@ -682,34 +674,21 @@ class _EscalasPageState extends State<EscalasPage>
               )),
           const SizedBox(height: 18),
           if (_error != null)
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.redAccent.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
-              ),
-              child: Text(
-                _error!,
-                style: const TextStyle(color: Colors.redAccent),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: CartaoVidro(
+                raio: 12,
+                tingimento: theme.colorScheme.error,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Text(_error!),
               ),
             ),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: _migrarSenha,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text(
-                'Atualizar senha e continuar',
-                style:
-                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
+              child: const Text('Atualizar senha e continuar'),
             ),
           ),
         ],
@@ -721,7 +700,6 @@ class _EscalasPageState extends State<EscalasPage>
   Widget _buildProximaTab(ThemeData theme, bool isDark) {
     return RefreshIndicator(
       onRefresh: () => _load(forceRelogin: false),
-      color: AppColors.blue,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics()),
@@ -767,7 +745,6 @@ class _EscalasPageState extends State<EscalasPage>
       return _usandoCache
           ? RefreshIndicator(
               onRefresh: () => _load(forceRelogin: false),
-              color: AppColors.blue,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(
                     parent: BouncingScrollPhysics()),
@@ -781,7 +758,6 @@ class _EscalasPageState extends State<EscalasPage>
     }
     return RefreshIndicator(
       onRefresh: () => _load(forceRelogin: false),
-      color: AppColors.blue,
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics()),
@@ -804,56 +780,30 @@ class _EscalasPageState extends State<EscalasPage>
   // ── Login Manual ────────────────────────────────────────────────────────────
   Widget _buildLoginManualView(ThemeData theme) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 20),
-          Center(
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.blue.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.lock_person_rounded,
-                  size: 48, color: AppColors.blue),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Center(
-            child: Text('Acesso à Intranet',
-                style: theme.textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.bold)),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: Text(
-              'Use as credenciais do sistema da intranet\npara acessar suas escalas.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.55)),
-            ),
+          TopoArte(
+            arte: Arte.de('operacional'),
+            icone: Icons.lock_person_rounded,
+            titulo: 'Acesso à Intranet',
+            subtitulo:
+                'Use as credenciais do sistema da intranet para acessar suas escalas.',
+            margem: EdgeInsets.zero,
           ),
           if (_error != null) ...[
             const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
+            CartaoVidro(
+              raio: 12,
+              tingimento: theme.colorScheme.error,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.redAccent.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                    color: Colors.redAccent.withValues(alpha: 0.3), width: 1),
-              ),
               child: Row(children: [
-                const Icon(Icons.error_outline_rounded,
-                    color: Colors.redAccent, size: 16),
+                Icon(Icons.error_outline_rounded,
+                    color: theme.colorScheme.error, size: AppIconSize.xs),
                 const SizedBox(width: 8),
                 Expanded(
-                    child: Text(_error!,
-                        style: const TextStyle(
-                            color: Colors.redAccent, fontSize: 13))),
+                    child: Text(_error!, style: const TextStyle(fontSize: 13))),
               ]),
             ),
           ],
@@ -869,8 +819,6 @@ class _EscalasPageState extends State<EscalasPage>
               hintText: 'Somente números (ex: 015997501)',
               helperText: 'Use apenas os dígitos, sem traços',
               prefixIcon: const Icon(Icons.badge_rounded, size: 20),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             ),
@@ -895,8 +843,6 @@ class _EscalasPageState extends State<EscalasPage>
                     setS(() => _loginObscure = !_loginObscure);
                   },
                 ),
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               ),
@@ -907,16 +853,7 @@ class _EscalasPageState extends State<EscalasPage>
             width: double.infinity,
             child: ElevatedButton(
               onPressed: _loginManual,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Entrar',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16)),
+              child: const Text('Entrar'),
             ),
           ),
           const SizedBox(height: 12),
@@ -935,30 +872,17 @@ class _EscalasPageState extends State<EscalasPage>
   // ── 2FA ─────────────────────────────────────────────────────────────────────
   Widget _build2FAView(ThemeData theme) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.blue.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.security_rounded,
-                  size: 48, color: AppColors.blue),
-            ),
-            const SizedBox(height: 20),
-            Text('Verificação em dois fatores',
-                style: theme.textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(
-              'Digite o código de 6 dígitos do seu autenticador.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6)),
+            TopoArte(
+              arte: Arte.de('operacional'),
+              icone: Icons.security_rounded,
+              titulo: 'Verificação em dois fatores',
+              subtitulo: 'Digite o código de 6 dígitos do seu autenticador.',
+              margem: EdgeInsets.zero,
             ),
             const SizedBox(height: 24),
             TextField(
@@ -971,8 +895,6 @@ class _EscalasPageState extends State<EscalasPage>
               decoration: InputDecoration(
                 counterText: '',
                 hintText: '000000',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
             const SizedBox(height: 20),
@@ -980,14 +902,7 @@ class _EscalasPageState extends State<EscalasPage>
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _confirm2FA,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Verificar',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
+                child: const Text('Verificar'),
               ),
             ),
           ],
@@ -1048,24 +963,12 @@ class _ProximaEscalaCard extends StatelessWidget {
     final status = escala.statusVisual;
     final (statusLabel, statusColor, statusIcon) = _statusInfo(status);
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF0D2B5A), const Color(0xFF1565C0)]
-              : [AppColors.blue, const Color(0xFF1976D2)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.blue.withOpacity(0.35),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+    // Card de resumo com a arte operacional (padrão 2.2): o fundo é sempre
+    // escuro, por isso o texto branco continua legível nos dois temas.
+    return CartaoArte(
+      arte: Arte.de('operacional'),
+      raio: 20,
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1183,14 +1086,6 @@ class _ProximaEscalaCard extends StatelessWidget {
                       icon: const Icon(Icons.check_circle_rounded, size: 18),
                       label: const Text('Dar Ciência',
                           style: TextStyle(fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.blue,
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        elevation: 0,
-                      ),
                     ),
                   ),
                 if (escala.temCiencia && escala.cienciaEmBr != null)
@@ -1229,12 +1124,10 @@ class _ProximaEscalaCard extends StatelessWidget {
                           icon: const Icon(Icons.block_rounded, size: 16),
                           label: const Text('Impossibilidade'),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.orange.shade300,
+                            foregroundColor: const Color(0xFFFFC266),
                             side: BorderSide(
-                                color: Colors.orange.withOpacity(0.4)),
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
+                                color: const Color(0xFFFFC266)
+                                    .withValues(alpha: 0.5)),
                           ),
                         ),
                       ),
@@ -1246,12 +1139,9 @@ class _ProximaEscalaCard extends StatelessWidget {
                         icon: const Icon(Icons.open_in_new_rounded, size: 16),
                         label: const Text('Ver Detalhes'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white70,
-                          side:
-                              BorderSide(color: Colors.white.withOpacity(0.3)),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                          foregroundColor: Colors.white,
+                          side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.4)),
                         ),
                       ),
                     ),
@@ -1298,14 +1188,9 @@ class _GuarnicaoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppColors.darkBorder : const Color(0xFFE8EFFA),
-        ),
-      ),
+    final primaria = theme.colorScheme.primary;
+    return CartaoVidro(
+      arte: Arte.de('operacional'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1313,15 +1198,8 @@ class _GuarnicaoCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(7),
-                  decoration: BoxDecoration(
-                    color: AppColors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.groups_rounded,
-                      size: 15, color: AppColors.blue),
-                ),
+                Icon(Icons.groups_rounded,
+                    size: AppIconSize.sm, color: primaria),
                 const SizedBox(width: 10),
                 Text('Composição da Guarnição',
                     style: theme.textTheme.titleSmall
@@ -1334,13 +1212,13 @@ class _GuarnicaoCard extends StatelessWidget {
                 dense: true,
                 leading: CircleAvatar(
                   radius: 18,
-                  backgroundColor: AppColors.blue.withOpacity(0.12),
+                  backgroundColor: primaria.withValues(alpha: 0.14),
                   child: Text(
                     m.nomeGuerra.isNotEmpty ? m.nomeGuerra[0] : '?',
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.blue),
+                        color: primaria),
                   ),
                 ),
                 title: Text(
@@ -1406,27 +1284,14 @@ class _EscalaListCard extends StatelessWidget {
       mes = meses[dt.month - 1];
     } catch (_) {}
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
+    final primaria = theme.colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: CartaoVidro(
+        raio: 14,
+        onTap: onTap,
+        arte: Arte.de('operacional'),
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: isDark ? Colors.white.withValues(alpha: 0.055) : Colors.white.withValues(alpha: 0.72),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isDark ? AppColors.darkBorder : const Color(0xFFE8EFFA),
-          ),
-          boxShadow: isDark
-              ? []
-              : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-        ),
         child: Row(
           children: [
             // ── Data badge ─────────────────────────────────────────
@@ -1434,7 +1299,7 @@ class _EscalaListCard extends StatelessWidget {
               width: 48,
               padding: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.blue.withOpacity(isDark ? 0.2 : 0.1),
+                color: primaria.withValues(alpha: isDark ? 0.2 : 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Column(
@@ -1442,10 +1307,10 @@ class _EscalaListCard extends StatelessWidget {
                 children: [
                   Text(
                     dia,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.blue,
+                      color: primaria,
                     ),
                   ),
                   Text(
@@ -1453,7 +1318,7 @@ class _EscalaListCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.blue.withOpacity(0.7),
+                      color: primaria.withValues(alpha: 0.75),
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -1518,7 +1383,7 @@ class _EscalaListCard extends StatelessWidget {
                             .join('  ·  '),
                         style: theme.textTheme.bodySmall?.copyWith(
                             color:
-                                theme.colorScheme.onSurface.withOpacity(0.4)),
+                                theme.colorScheme.onSurface.withOpacity(0.62)),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -1544,68 +1409,33 @@ class _CienciaBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final primaria = theme.colorScheme.primary;
 
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-          24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
-      decoration: BoxDecoration(
-        color: isDark
-              ? AppColors.darkSurface.withOpacity(0.72)
-              : Colors.white.withOpacity(0.78),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+    return FolhaArte(
+      arte: Arte.de('operacional'),
+      icone: Icons.check_circle_rounded,
+      titulo: 'Confirmar Ciência',
+      subtitulo:
+          'Ao confirmar, você declara que tomou conhecimento da escala abaixo:',
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(2)),
-          ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.check_circle_rounded,
-                size: 40, color: Colors.green),
-          ),
-          const SizedBox(height: 16),
-          Text('Confirmar Ciência',
-              style: theme.textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text(
-            'Ao confirmar, você declara que tomou conhecimento da escala abaixo:',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6)),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            width: double.infinity,
+          CartaoVidro(
+            raio: 14,
+            arte: Arte.de('operacional'),
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.blue.withOpacity(0.07),
-              borderRadius: BorderRadius.circular(12),
-              border:
-                  Border.all(color: AppColors.blue.withOpacity(0.2), width: 1),
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _row('Data', escala.dataEscala),
-                _row('Horário', '${escala.horarioIni} – ${escala.horarioFim}'),
-                _row('Guarnição', escala.guarnicaoNome),
-                if (escala.vtr != null) _row('Viatura', escala.vtr!),
+                _row('Data', escala.dataEscala, primaria),
+                _row('Horário', '${escala.horarioIni} – ${escala.horarioFim}',
+                    primaria),
+                _row('Guarnição', escala.guarnicaoNome, primaria),
+                if (escala.vtr != null) _row('Viatura', escala.vtr!, primaria),
                 if (escala.localAtuacao != null)
-                  _row('Local', escala.localAtuacao!),
-                _row('Função', escala.funcaoNome),
+                  _row('Local', escala.localAtuacao!, primaria),
+                _row('Função', escala.funcaoNome, primaria),
               ],
             ),
           ),
@@ -1615,11 +1445,6 @@ class _CienciaBottomSheet extends StatelessWidget {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
                   child: const Text('Cancelar'),
                 ),
               ),
@@ -1627,14 +1452,7 @@ class _CienciaBottomSheet extends StatelessWidget {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(true),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade600,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('Confirmar',
-                      style: TextStyle(color: Colors.white)),
+                  child: const Text('Confirmar'),
                 ),
               ),
             ],
@@ -1644,7 +1462,7 @@ class _CienciaBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _row(String label, String value) => Padding(
+  Widget _row(String label, String value, Color cor) => Padding(
         padding: const EdgeInsets.only(bottom: 4),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1652,10 +1470,8 @@ class _CienciaBottomSheet extends StatelessWidget {
             SizedBox(
               width: 80,
               child: Text('$label:',
-                  style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.blue)),
+                  style: TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w600, color: cor)),
             ),
             Expanded(
               child: Text(value, style: const TextStyle(fontSize: 12)),
@@ -1689,113 +1505,63 @@ class _ImpossibilidadeBottomSheetState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
-    return Padding(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-        decoration: BoxDecoration(
-          color: isDark
-              ? AppColors.darkSurface.withOpacity(0.72)
-              : Colors.white.withOpacity(0.78),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2)),
-              ),
+    return FolhaArte(
+      arte: Arte.de('operacional'),
+      icone: Icons.block_rounded,
+      titulo: 'Declarar Impossibilidade',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Motivo',
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+          const SizedBox(height: 8),
+          if (widget.tipos.isEmpty)
+            Text('Carregando tipos...',
+                style: TextStyle(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.62)))
+          else
+            ...widget.tipos.map((t) => RadioListTile<EscalaImpossibilidadeTipo>(
+                  value: t,
+                  groupValue: _selected,
+                  onChanged: (v) => setState(() => _selected = v),
+                  title: Text(t.descricao, style: theme.textTheme.bodyMedium),
+                  subtitle: t.requerAnexo
+                      ? Text('* Requer anexo',
+                          style: TextStyle(color: corAtencao(Theme.of(context)), fontSize: 11))
+                      : null,
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                )),
+          const SizedBox(height: 12),
+          Text('Observação (opcional)',
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _obsController,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Observação',
+              hintText: 'Descreva o motivo...',
             ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.block_rounded,
-                      color: Colors.orange, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Text('Declarar Impossibilidade',
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.bold)),
-              ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _selected == null
+                  ? null
+                  : () => Navigator.of(context).pop({
+                        'tipo_id': _selected!.id,
+                        'observacao': _obsController.text.trim(),
+                      }),
+              child: const Text('Registrar Impossibilidade'),
             ),
-            const SizedBox(height: 20),
-            Text('Motivo',
-                style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.bold, letterSpacing: 0.8)),
-            const SizedBox(height: 8),
-            if (widget.tipos.isEmpty)
-              const Text('Carregando tipos...',
-                  style: TextStyle(color: Colors.grey))
-            else
-              ...widget.tipos.map((t) =>
-                  RadioListTile<EscalaImpossibilidadeTipo>(
-                    value: t,
-                    groupValue: _selected,
-                    onChanged: (v) => setState(() => _selected = v),
-                    title: Text(t.descricao, style: theme.textTheme.bodyMedium),
-                    subtitle: t.requerAnexo
-                        ? const Text('* Requer anexo',
-                            style:
-                                TextStyle(color: Colors.orange, fontSize: 11))
-                        : null,
-                    dense: true,
-                    activeColor: AppColors.blue,
-                    contentPadding: EdgeInsets.zero,
-                  )),
-            const SizedBox(height: 12),
-            Text('Observação (opcional)',
-                style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.bold, letterSpacing: 0.8)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _obsController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: 'Descreva o motivo...',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                contentPadding: const EdgeInsets.all(12),
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _selected == null
-                    ? null
-                    : () => Navigator.of(context).pop({
-                          'tipo_id': _selected!.id,
-                          'observacao': _obsController.text.trim(),
-                        }),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange.shade700,
-                  disabledBackgroundColor: Colors.grey.withOpacity(0.3),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Registrar Impossibilidade',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1811,11 +1577,54 @@ class _LoadingView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircularProgressIndicator(
-              color: AppColors.blue, strokeWidth: 2.5),
+          const CircularProgressIndicator(strokeWidth: 2.5),
           const SizedBox(height: 16),
           Text('Carregando escalas...',
               style: Theme.of(context).textTheme.bodySmall),
+        ],
+      ),
+    );
+  }
+}
+
+/// Estado vazio ou de erro no padrão 2.2: caixa de vidro com a arte
+/// operacional, ícone, título, texto e, se houver, o botão.
+class _CaixaEstado extends StatelessWidget {
+  final IconData icone;
+  final String titulo;
+  final String? texto;
+  final Widget? acao;
+  final Color? corIcone;
+  const _CaixaEstado(
+      {required this.icone,
+      required this.titulo,
+      this.texto,
+      this.acao,
+      this.corIcone});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final mudo = theme.colorScheme.onSurface.withValues(alpha: 0.62);
+    return CartaoVidro(
+      arte: Arte.de('operacional'),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icone, size: AppIconSize.xl, color: corIcone ?? mudo),
+          const SizedBox(height: 12),
+          Text(titulo,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold)),
+          if (texto != null) ...[
+            const SizedBox(height: 8),
+            Text(texto!,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(color: mudo)),
+          ],
+          if (acao != null) ...[const SizedBox(height: 20), acao!],
         ],
       ),
     );
@@ -1829,35 +1638,19 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.wifi_off_rounded, size: 56, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text('Não foi possível carregar',
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(message,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: Colors.grey.shade500)),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Tentar novamente'),
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-          ],
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: _CaixaEstado(
+          icone: Icons.wifi_off_rounded,
+          corIcone: Theme.of(context).colorScheme.error,
+          titulo: 'Não foi possível carregar',
+          texto: message,
+          acao: ElevatedButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded, size: AppIconSize.sm),
+            label: const Text('Tentar novamente'),
+          ),
         ),
       ),
     );
@@ -1870,27 +1663,10 @@ class _EmptyProxima extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.event_available_rounded,
-              size: 72, color: isDark ? Colors.white24 : Colors.grey.shade300),
-          const SizedBox(height: 16),
-          Text('Nenhuma escala futura',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text('Você não possui escalas agendadas no momento.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: Colors.grey.shade500)),
-        ],
-      ),
+    return const _CaixaEstado(
+      icone: Icons.event_available_rounded,
+      titulo: 'Nenhuma escala futura',
+      texto: 'Você não possui escalas agendadas no momento.',
     );
   }
 }
@@ -1900,15 +1676,11 @@ class _EmptyHistorico extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.history_rounded, size: 64, color: Colors.grey),
-          const SizedBox(height: 16),
-          Text('Sem histórico de escalas',
-              style: Theme.of(context).textTheme.titleMedium),
-        ],
+    return const Padding(
+      padding: EdgeInsets.all(16),
+      child: _CaixaEstado(
+        icone: Icons.history_rounded,
+        titulo: 'Sem histórico de escalas',
       ),
     );
   }

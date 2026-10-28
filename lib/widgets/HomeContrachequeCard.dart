@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:projetonovo/core/design/arte_cartao.dart';
 import 'cartao_painel.dart';
-import 'marca_dagua_cartao.dart';
 import 'vidro.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -268,8 +268,9 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
 
     // Verde e vermelho por modo — o par do Material reprova em contraste
     // sobre a base escura nova (ver DESIGN.md §3 Cores).
-    final verde = isDark ? AppColors.sucessoEscuro : AppColors.sucesso;
-    final vermelho = isDark ? AppColors.falhaEscuro : AppColors.falha;
+    // Sobre a arte o fundo é sempre escuro: valem os tons claros.
+    const verde = AppColors.sucessoEscuro;
+    const vermelho = AppColors.falhaEscuro;
 
     final temVarios = _vinculos.length > 1;
 
@@ -289,17 +290,12 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
 
     final referencia = '${mesNome ?? ''} ${ano ?? ''}'.trim();
 
-    return CartaoVidro(
-      raio: 16,
+    return CartaoArte(
+      arte: Arte.de('cc'),
+      padding: EdgeInsets.zero,
       onTap: temVarios ? null : aoTocarCartao,
       child: Stack(
         children: [
-          // Abaixo do olho e da seta, para não disputar com os controles.
-          const Positioned(
-            top: 46,
-            right: -4,
-            child: MarcaDaguaCartao(desenho: DesenhoMarca.cedula),
-          ),
           Padding(
             padding: kPaddingCartao,
             child: Column(
@@ -310,7 +306,7 @@ class _HomeContrachequeCardState extends State<HomeContrachequeCard> {
                   icone: Icons.receipt_long_outlined,
                   titulo: 'Contracheque',
                   meta: referencia.isEmpty ? null : referencia,
-                  mostrarSeta: !temVarios,
+                  mostrarSeta: false,
                   acao: Semantics(
                     button: true,
                     label: _showValues ? 'Ocultar valores' : 'Mostrar valores',

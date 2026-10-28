@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
+import '../core/design/arte_cartao.dart';
 import '../models/auth_model.dart';
 import '../models/aviso_model.dart';
 import '../models/escala_model.dart';
@@ -402,6 +403,8 @@ class _AvisoDetalhePageState extends State<AvisoDetalhePage> {
     final quando = _quando ?? _formatar(widget.aviso.recebidoEm);
     return CartaoVidro(
       padding: const EdgeInsets.all(16),
+      // Arte discreta (padrão 2.2) só no cartão do aviso.
+      arte: Arte.de('institucional'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -518,8 +521,6 @@ class _AvisoDetalhePageState extends State<AvisoDetalhePage> {
               labelText: 'Senha da intranet',
               errorText: _erroSenha,
               errorMaxLines: 3,
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14)),
             ),
           ),
           const SizedBox(height: 14),

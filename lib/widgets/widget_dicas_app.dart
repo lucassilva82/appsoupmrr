@@ -2,11 +2,15 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../core/log/registro_log.dart';
+import '../features/servicos/servicos_page.dart' show menuEmUso;
+import '../core/navegacao/abrir_funcao.dart';
 import 'package:provider/provider.dart';
 
+import '../core/config/app_config.dart';
+import '../core/design/arte_cartao.dart';
 import '../models/auth_model.dart';
 import '../utils/app_theme.dart';
-import 'vidro.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WidgetDicasApp
@@ -35,7 +39,6 @@ class WidgetDicasApp extends StatefulWidget {
 }
 
 class _WidgetDicasAppState extends State<WidgetDicasApp> {
-  final PageController _pageCtrl = PageController();
   int _current = 0;
   Timer? _timer;
   List<Map<String, dynamic>> _dicas = [];
@@ -50,16 +53,14 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
   // coleção do Firestore está vazia (nunca gravadas de volta no banco).
   static const _defaults = [
     {
-      'texto':
-          'Confira seu Plano de Férias e acompanhe suas próximas folgas programadas.',
+      'texto': 'Confira seu Plano de Férias e acompanhe suas próximas folgas programadas.',
       'icone': '🏖️',
       'tipo': 'dica',
       'ordem': 1,
       'ativo': true,
     },
     {
-      'texto':
-          'Use o Mapa da Força para visualizar a distribuição de militares em cada unidade da PMRR.',
+      'texto': 'Use o Mapa da Força para visualizar a distribuição de militares em cada unidade da PMRR.',
       'icone': '📍',
       'tipo': 'dica',
       'ordem': 2,
@@ -67,64 +68,56 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
       'perfil': 'admin',
     },
     {
-      'texto':
-          'Ative a biometria em Configurações para um acesso mais rápido e seguro ao SouPMRR.',
+      'texto': 'Ative a biometria em Perfil para um acesso mais rápido e seguro ao SouPMRR.',
       'icone': '🔐',
       'tipo': 'dica',
       'ordem': 3,
       'ativo': true,
     },
     {
-      'texto':
-          'O módulo de Escalas exibe sua escala de serviço atualizada direto do sistema da PMRR.',
+      'texto': 'O módulo de Escalas exibe sua escala de serviço atualizada direto do sistema da PMRR.',
       'icone': '📅',
       'tipo': 'dica',
       'ordem': 4,
       'ativo': true,
     },
     {
-      'texto':
-          'Consulte certidões e documentos oficiais diretamente pelo app, sem precisar ir ao quartel.',
+      'texto': 'Consulte certidões e documentos oficiais diretamente pelo app, sem precisar ir ao quartel.',
       'icone': '📄',
       'tipo': 'dica',
       'ordem': 5,
       'ativo': true,
     },
     {
-      'texto':
-          'Mantenha as notificações ativadas para receber avisos importantes da PMRR em tempo real.',
+      'texto': 'Mantenha as notificações ativadas para receber avisos importantes da PMRR em tempo real.',
       'icone': '🔔',
       'tipo': 'aviso',
       'ordem': 6,
       'ativo': true,
     },
     {
-      'texto':
-          'SouPMRR Módulo 2.0: nova interface, mais recursos e desempenho melhorado para você.',
+      'texto': 'SouPMRR Módulo 2.0: nova interface, mais recursos e desempenho melhorado para você.',
       'icone': '🚀',
       'tipo': 'novidade',
       'ordem': 7,
       'ativo': true,
     },
     {
-      'texto':
-          'Acesse seu extrato de proventos e vantagens no módulo Contracheque a qualquer momento.',
+      'texto': 'Acesse seu extrato de proventos e vantagens no módulo Contracheque a qualquer momento.',
       'icone': '💰',
       'tipo': 'dica',
       'ordem': 8,
       'ativo': true,
     },
     {
-      'texto':
-          'O módulo SVI permite adesão ao Serviço Voluntário Interno diretamente pelo app.',
+      'texto': 'O módulo SVI permite adesão ao Serviço Voluntário Interno diretamente pelo app.',
       'icone': '🤝',
       'tipo': 'dica',
       'ordem': 9,
       'ativo': true,
     },
     {
-      'texto':
-          'Dúvidas ou problemas? Acesse Configurações → Suporte Técnico para falar com o DTI.',
+      'texto': 'Dúvidas ou problemas? Acesse Configurações → Suporte Técnico para falar com o DTI.',
       'icone': '💬',
       'tipo': 'suporte',
       'ordem': 10,
@@ -139,6 +132,14 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
   }
 
   Future<void> _initDicas() async {
+    // Dicas do painel (app_config, `home.dicas`): quando vêm, valem elas e o
+    // Firestore nem é lido. Ícone é chave do catálogo, nunca emoji.
+    final doPainel = RepositorioConfig.atual.bloco('home.dicas')?.itens ?? const [];
+    if (doPainel.isNotEmpty) {
+      setState(() => _dicas = doPainel);
+      _startTimer();
+      return;
+    }
     // Escuta em tempo real — filtra e ordena no cliente.
     // OBS: o seed automático de documentos foi removido daqui — cada
     // cliente que abrisse o app com a coleção vazia tentava semeá-la,
@@ -149,65 +150,44 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
     // exibição local, sem gravar nada no Firestore.
     _sub = _col.orderBy('ordem').snapshots().listen((s) {
       if (!mounted) return;
-      final lista = s.docs.isEmpty
-          ? _defaults
-          : s.docs
-              .where((d) => d.data()['ativo'] == true)
-              .map((d) => d.data())
-              .toList();
+      final lista =
+          s.docs.isEmpty ? _defaults : s.docs.where((d) => d.data()['ativo'] == true).map((d) => d.data()).toList();
       setState(() => _dicas = lista);
       _startTimer();
     });
   }
 
+  /// Quantas dicas estão na tela agora (as do painel, quando vêm, valem).
+  int _total = 0;
+
   void _startTimer() {
     _timer?.cancel();
-    if (_dicas.length <= 1) return;
-    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!mounted || _dicas.isEmpty) return;
-      final next = (_current + 1) % _dicas.length;
-      _pageCtrl.animateToPage(
-        next,
-        duration: const Duration(milliseconds: 450),
-        curve: Curves.easeInOut,
-      );
+    // Passam sozinhas a cada 7 s; paradas com "Reduzir movimento" (o militar
+    // desliza ou toca nos pontos para trocar).
+    _timer = Timer.periodic(const Duration(seconds: 7), (_) {
+      if (!mounted || _total <= 1 || MediaQuery.disableAnimationsOf(context)) return;
+      setState(() => _current = (_current + 1) % _total);
     });
+  }
+
+  void _ir(int delta) {
+    if (_total <= 1) return;
+    setState(() => _current = (_current + delta) % _total);
+    _startTimer(); // o tempo recomeça depois de trocar à mão
+  }
+
+  Future<void> _abrirDestino(String chave) async {
+    registrar('inicio.card_tocar', chave: 'home.dicas', dados: {'destino': chave});
+    final gestor = context.read<Auth>().isSuperUser;
+    final item = itemPorChave(chave, menu: menuEmUso(RepositorioConfig.atual, gestor: gestor));
+    if (item != null && mounted) await abrirFuncao(context, item, origem: 'dica');
   }
 
   @override
   void dispose() {
     _sub?.cancel();
     _timer?.cancel();
-    _pageCtrl.dispose();
     super.dispose();
-  }
-
-  // ── Helpers de estilo ─────────────────────────────────────────────────────
-
-  Color _tipoColor(String tipo) {
-    switch (tipo) {
-      case 'aviso':
-        return Colors.orange;
-      case 'novidade':
-        return const Color(0xFF2E7D32);
-      case 'suporte':
-        return AppColors.lightBlue;
-      default:
-        return AppColors.blue;
-    }
-  }
-
-  String _tipoLabel(String tipo) {
-    switch (tipo) {
-      case 'aviso':
-        return 'AVISO';
-      case 'novidade':
-        return 'NOVIDADE';
-      case 'suporte':
-        return 'SUPORTE';
-      default:
-        return 'DICA';
-    }
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -216,136 +196,90 @@ class _WidgetDicasAppState extends State<WidgetDicasApp> {
   Widget build(BuildContext context) {
     final isSuperUser = Provider.of<Auth>(context, listen: false).isSuperUser;
 
-    final dicasFiltradas = _dicas.where((d) {
+    // As do painel valem mesmo quando o app_config chega depois de a tela
+    // abrir (na abertura ele ainda pode estar a caminho).
+    final doPainel = RepositorioConfig.atual.bloco('home.dicas')?.itens ?? const [];
+    final dicasFiltradas = (doPainel.isNotEmpty ? doPainel : _dicas).where((d) {
       final perfil = (d['perfil'] ?? 'todos') as String;
       if (perfil == 'admin' && !isSuperUser) return false;
       return true;
     }).toList();
 
     if (dicasFiltradas.isEmpty) return const SizedBox.shrink();
+    _total = dicasFiltradas.length;
+    if (_timer == null) _startTimer();
 
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
+    // Uma linha discreta com a arte da dica (protótipo `.dica`): ícone na
+    // cor de destaque e o texto em cinza claro. Com mais de uma dica, elas
+    // se revezam no mesmo lugar, sem pontos (um só cartão, sem disputar com
+    // o carrossel dos comunicados).
+    final d = dicasFiltradas[_current % dicasFiltradas.length];
+    final icone = iconePorNome('${d['icone']}') ?? Icons.tips_and_updates_outlined;
+    final semMovimento = MediaQuery.of(context).disableAnimations;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Column(
-        children: [
-          // ── Card balão ───────────────────────────────────────────────────
-          CartaoVidro(
-            raio: 14,
-            child: SizedBox(
-            height: 76,
-            child: PageView.builder(
-              controller: _pageCtrl,
-              onPageChanged: (i) => setState(() => _current = i),
-              itemCount: dicasFiltradas.length,
-              itemBuilder: (_, i) {
-                final d = dicasFiltradas[i];
-                final tipo = (d['tipo'] ?? 'dica') as String;
-                final cor = _tipoColor(tipo);
-                return Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  child: Row(
-                    children: [
-                      // Ícone (largura fixa — protege o layout caso o campo
-                      // 'icone' venha do Firestore com um valor malformado
-                      // e mais longo que um emoji único).
-                      SizedBox(
-                        width: 30,
-                        child: Text(
-                          d['icone'] ?? '💡',
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.clip,
-                          style: const TextStyle(fontSize: 26),
-                        ),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Semantics(
+        container: true,
+        label: 'Dica ${_current % _total + 1} de $_total: ${d['texto'] ?? ''}',
+        hint: _total > 1 ? 'Deslize para ver a próxima' : null,
+        onIncrease: _total > 1 ? () => _ir(1) : null,
+        onDecrease: _total > 1 ? () => _ir(_total - 1) : null,
+        excludeSemantics: true,
+        child: GestureDetector(
+          // Deslizar troca de dica, como nos comunicados.
+          onHorizontalDragEnd: (e) {
+            final v = e.primaryVelocity ?? 0;
+            if (v.abs() < 120) return;
+            _ir(v < 0 ? 1 : _total - 1);
+          },
+          child: CartaoArte(
+            // Dica com função (painel: `destino`) abre a função ao tocar.
+            onTap: '${d['destino'] ?? ''}'.isEmpty ? null : () => _abrirDestino('${d['destino']}'),
+            arte: Arte.de('dc'),
+            raio: 16,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: AnimatedSwitcher(
+              duration: semMovimento ? Duration.zero : const Duration(milliseconds: 320),
+              child: Row(
+                key: ValueKey(_current),
+                children: [
+                  Icon(icone, size: AppIconSize.sm, color: const Color(0xFF42A5F5)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '${d['texto'] ?? ''}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.35,
+                        color: Colors.white.withValues(alpha: 0.78),
                       ),
-                      const SizedBox(width: 12),
-                      // Texto + label
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 5, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: cor.withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    _tipoLabel(tipo),
-                                    style: TextStyle(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                      color: cor,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              d['texto'] ?? '',
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12,
-                                height: 1.35,
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.85),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Chevron sutil
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 16,
-                        color: theme.colorScheme.onSurface.withOpacity(0.2),
-                      ),
-                    ],
+                    ),
                   ),
-                );
-              },
-            ),
+                  // Quantas dicas há e qual está na tela: antes elas se
+                  // revezavam sem sinal nenhum e pareciam uma só.
+                  if (_total > 1) ...[
+                    const SizedBox(width: 10),
+                    Column(mainAxisSize: MainAxisSize.min, children: [
+                      for (var i = 0; i < _total && i < 8; i++)
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 220),
+                          margin: const EdgeInsets.symmetric(vertical: 1.5),
+                          width: 4,
+                          height: i == _current % _total ? 10 : 4,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: i == _current % _total ? .85 : .30),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                    ]),
+                  ],
+                ],
+              ),
             ),
           ),
-
-          const SizedBox(height: 6),
-
-          // ── Dots indicadores ─────────────────────────────────────────────
-          // Envolvido em scroll horizontal: com muitas dicas cadastradas no
-          // Firestore, a linha de pontos pode ficar mais larga que a tela.
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(dicasFiltradas.length, (i) {
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 280),
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  width: i == _current ? 18.0 : 5.0,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: i == _current
-                        ? AppColors.blue
-                        : AppColors.blue.withOpacity(0.18),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                );
-              }),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -3,9 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:projetonovo/core/design/arte_cartao.dart';
 import 'cartao_painel.dart';
-import 'marca_dagua_cartao.dart';
-import 'vidro.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -176,23 +175,7 @@ class _CardTempoServicoState extends State<CardTempoServico> {
     return (heroi: plural(dias, 'dia', 'dias'), resto: null);
   }
 
-  String _mesAbrev(int mes) {
-    const m = [
-      'Jan',
-      'Fev',
-      'Mar',
-      'Abr',
-      'Mai',
-      'Jun',
-      'Jul',
-      'Ago',
-      'Set',
-      'Out',
-      'Nov',
-      'Dez'
-    ];
-    return m[mes - 1];
-  }
+
 
   Widget _blob(
           {double w = double.infinity,
@@ -228,8 +211,9 @@ class _CardTempoServicoState extends State<CardTempoServico> {
 
         // Esqueleto só enquanto não há nem o tempo da PM para mostrar.
         if (isLoading && diasNormal == 0) {
-          return CartaoVidro(
-            raio: 16,
+          return CartaoArte(
+            arte: Arte.de('ts'),
+            padding: EdgeInsets.zero,
             child: Padding(
               padding: kPaddingCartao,
               child: Column(
@@ -259,90 +243,67 @@ class _CardTempoServicoState extends State<CardTempoServico> {
         final partes = _partes(diasTotal);
         final pct = (percTotal * 100).toStringAsFixed(1).replaceAll('.', ',');
 
-        // Projeção dos 30 anos.
-        String? previsao;
-        String? faltam;
-        if (dataInc != null) {
-          final meta = DateTime(dataInc.year + 30, dataInc.month, dataInc.day);
-          previsao = '${_mesAbrev(meta.month)}/${meta.year}';
-          final diff = meta.difference(DateTime.now()).inDays;
-          if (diff > 0) {
-            final anosR = diff ~/ 365;
-            faltam = anosR > 0
-                ? 'faltam $anosR ${anosR == 1 ? "ano" : "anos"}'
-                : 'faltam $diff dias';
-          } else {
-            faltam = 'meta atingida';
-          }
-        }
-
-        // O rodapé é onde o IPER aparece. A legenda de quadradinhos coloridos
-        // que havia aqui gastava uma linha inteira para dizer o que cabe numa
-        // frase — e o segundo trecho da barra já mostra a proporção.
+        // Rodapé (protótipo): a incorporação e o IPER numa frase só.
+        final inc = dataInc == null
+            ? ''
+            : 'Incorporação em ${dataInc.day.toString().padLeft(2, '0')}/'
+                '${dataInc.month.toString().padLeft(2, '0')}/${dataInc.year} · ';
         final String origem;
         if (isLoading) {
-          origem = 'Fonte: SIGRH  •  consultando IPER…';
+          origem = '${inc}consultando IPER…';
         } else if (diasAgregados == 0) {
-          origem = 'Fonte: SIGRH  •  sem tempo agregado do IPER';
+          origem = '${inc}sem tempo agregado do IPER';
         } else {
-          origem = 'Fonte: SIGRH  •  IPER: ${_extensoDias(diasAgregados)}';
+          origem = '${inc}IPER: ${_extensoDias(diasAgregados)}';
         }
 
-        return CartaoVidro(
-          raio: 16,
+        return CartaoArte(
+          arte: Arte.de('ts'),
+          padding: EdgeInsets.zero,
           onTap: () => Navigator.of(context)
               .pushNamed(AppRoutes.CALCULO_INATIVIDADE_PAGE),
           child: Stack(
             children: [
-              // O arco da medalha é o mesmo percentual da barra — por isso
-              // ele recebe percTotal em vez de um valor bonito fixo.
-              Positioned(
-                top: 58,
-                right: -34,
-                child: MarcaDaguaCartao(
-                  desenho: DesenhoMarca.medalha,
-                  progresso: percTotal,
-                ),
-              ),
               Padding(
                 padding: kPaddingCartao,
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const CabecalhoCartao(
+                      // O percentual no cabeçalho, como no protótipo.
+                      CabecalhoCartao(
                         icone: Icons.military_tech_outlined,
                         titulo: 'Tempo de serviço',
-                      ),
-                      const SizedBox(height: 10),
-
-                      // O percentual ao lado do número, não numa legenda embaixo
-                      // da barra: é a mesma informação e economiza uma linha.
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: DestaqueCartao(
-                              valor: partes.heroi,
-                              complemento: partes.resto,
-                              tamanho: AppDisplaySize.heroi,
+                        mostrarSeta: false,
+                        // Na cor de destaque da própria arte (dourado), numa
+                        // pílula discreta: o azul da primária destoava do card.
+                        acao: Semantics(
+                          label: '$pct% do tempo para a reserva',
+                          excludeSemantics: true,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Arte.de('ts').destaque.withValues(alpha: .14),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Arte.de('ts').destaque.withValues(alpha: .40)),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 3),
                             child: Text(
                               '$pct%',
                               style: TextStyle(
-                                fontSize: 17,
+                                fontSize: 13.5,
                                 fontWeight: FontWeight.w700,
-                                color: Theme.of(context).colorScheme.primary,
+                                color: Arte.de('ts').destaque,
                               ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
-
+                      const SizedBox(height: 10),
+                      DestaqueCartao(
+                        valor: partes.heroi,
+                        complemento: partes.resto,
+                        tamanho: AppDisplaySize.heroi,
+                      ),
                       const SizedBox(height: 12),
 
                       BarraProgressoCartao(
@@ -350,19 +311,6 @@ class _CardTempoServicoState extends State<CardTempoServico> {
                         valorBase: diasAgregados > 0 ? percNormal : null,
                         semantica: 'Tempo de serviço cumprido',
                       ),
-
-                      // Meta, data e quanto falta numa frase só. Eram três
-                      // blocos — par rótulo/valor, pílula e divisor — para
-                      // dizer o que cabe aqui.
-                      if (previsao != null) ...[
-                        const SizedBox(height: 10),
-                        Text(
-                          'Meta de 30 anos em $previsao'
-                          '${faltam == null ? '' : ' · $faltam'}',
-                          style: TextStyle(
-                              fontSize: 13, color: TomCartao.medio(context)),
-                        ),
-                      ],
 
                       // Explica a parcela de dias quando ela passa de 29.
                       // Mesma nota do cálculo de inatividade, pela mesma
