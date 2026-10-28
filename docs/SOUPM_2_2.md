@@ -1879,16 +1879,37 @@ ele). Sai todo o resto.
    no Firestore. Painel e Functions continuam funcionando.
 2. **2.2 lê só do Postgres** e registra o token em `soupm_dispositivo` (e
    continua gravando no Firestore enquanto houver envio pelas Functions).
-3. **Corte** (critério escolhido pelo planejamento, já que o usuário deixou
-   a decisão aberta): só depois de **30 dias** com a 2.2 publicada nas duas
-   lojas **e** com menos de **2% das aberturas da última semana** em versões
-   antigas, contado por plataforma. Se em **90 dias** os 2% não chegarem, o
-   corte acontece mesmo assim: a versão mínima sobe e quem ficou para trás é
-   obrigado a atualizar. Detalhe original: quando os logs mostrarem menos de 2% de aberturas com versão
-   anterior à 2.2 (o `soupm_evento` passa a dizer isso) ou 60 dias depois da
-   publicação: `min_version` do Firestore sobe para 2.2.0 (as antigas pedem
-   atualização), as Functions são desligadas, a escrita dupla para e o
-   Firestore vira só leitura por mais 30 dias antes de apagar.
+3. **Corte:** só depois de **30 dias** com a 2.2 publicada nas duas lojas
+   **e** com menos de **2% dos aparelhos ativos** em versões antigas,
+   contado por plataforma.
+
+   > **O 2% NÃO pode sair do nosso log, e isto derruba o que este plano dizia
+   > antes.** As versões 2.1.x **não mandam log**: o `log.php` e o cliente
+   > dele entraram na fase 0 da própria 2.2 (medido em 28/10/2026 — o commit
+   > do `registro_log.dart` não é ancestral do da 2.1.7, que não tem o
+   > arquivo). Então o `soupm_evento` mostra **0% em versões antigas desde
+   > sempre** — não porque ninguém está nelas, mas porque quem está não
+   > reporta. O painel chegou a mostrar "2.2.0: 587 aparelhos" e nenhuma
+   > 2.1.x, enquanto o Organizer do Xcode mostrava **156 aparelhos** no
+   > mesmo crash, **54% na 2.1.6** (APRENDIZADOS §51).
+   >
+   > Cortar por esse zero desligaria o Firestore com militares na 2.1.x, que
+   > perderiam o cartaz de abertura, o Comando e as notificações **sem nada
+   > que pudessem fazer**, porque nem saberiam que precisam atualizar.
+   >
+   > O número vem das **lojas** (App Store Connect e Play Console), a única
+   > fonte que enxerga quem não reporta. Os relatórios de crash do Organizer
+   > servem como segunda fonte, parcial — foi a que funcionou em 28/10.
+
+   **Os 90 dias são teto de paciência, não medição.** Eles existem para o
+   caso de os 2% nunca chegarem, e **não** são uma alternativa a medir: usar
+   o prazo porque "o 2% já está atingido" é cometer o mesmo erro com outro
+   nome. Quem lê os dois lado a lado, com um "ou" no meio, tende a escolher o
+   que já está satisfeito — e aqui o que "já está satisfeito" é um zero
+   falso. Atingido o corte: `min_version` do Firestore sobe para 2.2.0 (as
+   antigas passam a pedir atualização), as Functions são desligadas, a
+   escrita dupla para e o Firestore vira só leitura por mais 30 dias antes de
+   apagar.
 4. Exportar o histórico de notificações do Firestore para o Postgres antes do
    corte (script único, conferido por contagem).
 
