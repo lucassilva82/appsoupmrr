@@ -447,6 +447,44 @@ quem pede. A correção tem ordem obrigatória e começa por uma versão nova do
 app, então não dava para fazer hoje.
 
 
+## A Apple aprovou a 2.2.0 (28/10/2026)
+
+A espera acabou. Os quatro passos que estavam anotados na seção de 27/10
+valem a partir de agora, **nesta ordem**:
+
+1. **Juntar a `feature/soupm-2-2` no `main`.**
+2. **Mínima e recomendada no painel**, com o cuidado do mínimo legado: ele
+   nunca pode passar do que cada loja tem publicado.
+3. **SQL do item 22** (a `soupm_e_gestor`), compilando antes num Postgres
+   local (§19 e §47). Esta máquina não tem Postgres, então é o primeiro
+   obstáculo prático.
+4. **Os interruptores, do mais barato ao mais arriscado:** comunicados →
+   piloto do contracheque → um tipo de pendência homologado → níveis. O de
+   níveis continua esperando a decisão do trio (§1, item 23).
+
+### Teste no simulador, 28/10
+
+Rodado em modo vitrine (iPhone 17 Pro, `VITRINE=true`), conferindo o que
+mudou hoje:
+
+- **O contracheque fecha as contas.** 5.486,42 + 500,00 + 1.500,00 =
+  7.486,42 de proventos; 742,18 + 767,20 = 1.509,38 de descontos; líquido
+  5.977,04. É o teste direto do leitor de valores novo, que é a mudança mais
+  arriscada do dia — se ele estivesse errado, o líquido estaria errado.
+- **"O que mudou" abre** e usa o mesmo leitor, sem falha.
+- **A Início desenha certo** com Comando, comunicados, pendências, atalhos e
+  cards.
+- **O convite de biometria diz "Face ID"**, não "Touch ID" — a pendência do
+  §33 está resolvida.
+
+**O que o simulador NÃO testou, e por quê:** no modo vitrine sempre há dado,
+então os dois caminhos que mudei hoje não acontecem lá. O das pendências sem
+tipo ligado está coberto por teste de widget; o da faixa do Comando vazia
+**foi conferido só por leitura** — testá-lo exigiria simular o Firestore, o
+que custa mais do que vale para uma remoção de cinco linhas. Quem confirma é
+a próxima abertura real: a faixa não deve reservar espaço antes de ter o que
+mostrar.
+
 ## Onde paramos em 27/10/2026 (esperando a Apple)
 
 O usuário decidiu **aguardar a resposta da Apple** antes de mexer em produção.
