@@ -91,7 +91,7 @@ class SettingsBody extends StatelessWidget {
 
         // ── Nível de acesso (§6.2) ──────────────────────────────────────
         const _Rotulo('Nível de acesso'),
-        _CartaoNivel(nome: _nomeNivel(config, auth), escopo: _escopoNivel(config, auth)),
+        _CartaoNivel(nome: _nomeNivel(config, auth)),
 
         // ── Ajuda (§8: todo suporte é chamado técnico) ──────────────────
         const _Rotulo('Ajuda'),
@@ -441,9 +441,8 @@ class _CartaoMilitar extends StatelessWidget {
 
 /// Cartão do nível de acesso (§6.2), com a arte discreta da Gestão.
 class _CartaoNivel extends StatelessWidget {
-  const _CartaoNivel({required this.nome, required this.escopo});
+  const _CartaoNivel({required this.nome});
   final String nome;
-  final String escopo;
 
   @override
   Widget build(BuildContext context) {
@@ -457,7 +456,6 @@ class _CartaoNivel extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(nome, style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700, color: theme.colorScheme.onSurface)),
-            Text('Escopo: $escopo', style: TextStyle(fontSize: 12.5, height: 1.35, color: mudo)),
             const SizedBox(height: 8),
             Text(
               'Definido pela sua função no SIGRH e pelo painel do SouPMRR. Se estiver errado, '
@@ -781,12 +779,6 @@ class Configuracoes extends StatelessWidget {
 /// "Militar" mesmo para o Administrador, enquanto a Início mostrava "Admin".
 String _nomeNivel(AppConfig config, Auth auth) =>
     config.nivel?.nome ?? (auth.nivel == 1 ? 'Administrador' : (auth.isSuperUser ? 'Gestor' : 'Militar'));
-
-String _escopoNivel(AppConfig config, Auth auth) =>
-    config.nivel?.escopo ??
-    (auth.nivel == 1
-        ? 'Toda a PMRR, com acesso à configuração do app'
-        : (auth.isSuperUser ? 'Militares do seu escopo de comando' : 'Seus próprios dados'));
 
 /// "iPad" ou "iPhone", pelo tamanho da tela: no iPad o texto dizia "iPhone"
 /// (a Apple revisa no iPad; achado na revisão de 26/10/2026).
