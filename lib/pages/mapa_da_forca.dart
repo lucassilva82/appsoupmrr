@@ -9,8 +9,10 @@ import '../widgets/widget_mapa_geral.dart';
 import '../widgets/widget_grandes_comandos.dart';
 import '../widgets/vidro.dart';
 import '../core/design/arte_cartao.dart';
+import '../core/erros/falha_app.dart';
+import '../core/log/registro_log.dart';
 import '../features/mapa_efetivo/mapa_efetivo.dart';
-import '../features/mapa_efetivo/ocupacao_page.dart';
+import '../features/mapa_efetivo/mapa_efetivo_repo.dart';
 
 class MapadaforcaPage extends StatefulWidget {
   const MapadaforcaPage({super.key});
@@ -27,7 +29,25 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this, initialIndex: 1);
+    _tabController = TabController(length: 3, vsync: this, initialIndex: 1);
+    // Previsto x existente é carregado uma vez, ao abrir a tela, e fica no
+    // `MapaEfetivoRepositorio.pmrr` para o banner e as abas lerem a MESMA
+    // fonte. Duas medidas da mesma coisa em telas diferentes foi o que deixou
+    // "Previsto 3.500" conviver com "Total 2.461" sem ninguém notar
+    // (APRENDIZADOS §52).
+    _carregarEfetivo();
+  }
+
+  Future<void> _carregarEfetivo() async {
+    try {
+      MapaEfetivoRepositorio.pmrr.value =
+          await repositorioMapaEfetivo(context).carregar();
+    } on FalhaApp catch (f) {
+      // O Mapa da Força continua funcionando sem a previsão: o banner e as
+      // barras simplesmente não aparecem, e o motivo vai para o log. Falha
+      // de previsão nunca derruba a tela de efetivo.
+      registrarErro(f, tela: 'Mapa da Força (previsão)', mostrado: false);
+    }
   }
 
   @override
@@ -129,7 +149,6 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
                   Tab(height: 36, text: 'Gráficos'),
                   Tab(height: 36, text: 'Mapa Geral'),
                   Tab(height: 36, text: 'Comandos'),
-                  Tab(height: 36, text: 'Ocupação'),
                 ],
               ),
             ),
@@ -145,7 +164,6 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
                 WidgetGraficos(),
                 WidgetMapaGeral(),
                 WidgetGrandesComandos(),
-                OcupacaoView(),
               ],
             ),
           ),
