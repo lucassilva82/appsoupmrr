@@ -2026,3 +2026,105 @@ framing layer`. Os mesmos arquivos baixavam normalmente com `curl` — é a rede
 interna do CocoaPods, não a conexão. A saída foi um laço que lê a URL da
 mensagem de erro, baixa com `curl --http1.1` para o lugar certo em
 `~/.cocoapods/repos/trunk/Specs/...` e repete. Foram três arquivos.
+
+---
+
+## 52. Quatro maneiras de olhar para um número e não ver nada
+
+**O dia (29/10/2026).** A escada de níveis foi reduzida a três degraus, a
+regra antiga saiu, e no caminho apareceram quatro defeitos de **leitura** —
+não de código. Cada um tinha a mesma forma: alguma coisa parecia uma resposta
+e não era. Dois foram da sessão do painel, dois desta; os quatro valem para
+quem vier depois, porque nenhum seria pego em revisão de código.
+
+### 1. Regra nova não é regra certa
+
+A sessão do painel previu, com segurança, que o vigia recém-escrito não
+apontaria nada, *"porque as regras foram feitas ontem"*. O vigia apontou **17
+unidades sem ninguém no degrau de Comando**, entre elas o gabinete do
+Subcomandante-Geral e a Corregedoria.
+
+A suposição era que **recência implica correção**. O vigia não mede a idade da
+regra, mede se ela **cobre o mundo** — e aquela nasceu, no dia anterior, já
+sem 17 unidades.
+
+E a metade que completa: se o vigia tivesse sido construído "para o futuro",
+como ele mesmo foi descrito ao usuário ("o valor dele aparece em três meses"),
+seria uma tela que ninguém abriria hoje — e o Subcomandante-Geral seguiria
+com o alcance errado até alguém reclamar.
+
+### 2. Medir a fonte não é medir o efeito
+
+A conclusão seguinte foi que três coronéis **tinham perdido acesso**. Era
+falso. O campo `soupm_nivel.escopo` existia, dizia `unidade`, e foi lido como
+se filtrasse dados. Ninguém procurou **quem lê esse campo**: nenhum PHP da
+API, nenhum endpoint do Mapa da Força. Era rótulo.
+
+> Sem achar o consumidor, *"o campo diz X"* não autoriza dizer *"acontece X"*.
+
+Dois minutos de `grep` na API e no app desfizeram a conclusão. E o campo era
+pior que inócuo: o app **imprimia o valor cru na tela** do Perfil — lia-se
+`Escopo: pmrr` —, o que só apareceu quando alguém abriu o aplicativo e olhou.
+
+A mesma armadilha pegou esta sessão em escala menor, no mesmo dia:
+`has_table_privilege(oid, 'SELECT')` devolveu **TRUE** para uma tabela e a
+leitura falhou com `permission denied for schema`. Privilégio de tabela sem
+`USAGE` do esquema é um "sim" que não serve. A função respondeu com exatidão à
+pergunta que foi feita, e não à que importava.
+
+### 3. Foi o teste que mostrou; a leitura não mostrava
+
+O script que remove a regra antiga foi lido, revisado e parecia correto.
+Rodado num Postgres local **sem regras cadastradas**, pôs **todo mundo como
+Militar comum**: a área Gestão sumiria para todos os 3 mil militares, em
+silêncio.
+
+Nenhuma leitura do SQL mostra isso, porque o defeito não está no texto — está
+na **interação entre o texto e um estado do banco**. O script ganhou uma trava
+que recusa esse estado (§50: o interruptor diz o estrago, não só a
+precondição), e ela existe porque o teste rodou, não porque alguém foi
+cuidadoso lendo.
+
+### 4. Medida que não convive com outra medida não se corrige
+
+O melhor achado do dia não foi um número, foi uma **vizinhança**.
+
+- A sessão do painel pôs duas contagens na mesma tela e, em dez minutos, uma
+  denunciou a outra: 97 "coronéis" contra 78. Ela contava **linhas** da
+  `vw_users_unidade_comando_groups`, que tem uma linha por grupo, e não
+  pessoas. Se as duas tivessem errado do mesmo jeito, ninguém veria nunca.
+- Horas depois, a quinta pergunta do vigia explicou um achado **da segunda
+  pergunta do mesmo vigia**: a Cel GISELLY aparecia como "coronel que não vê o
+  Mapa da Força" sem motivo conhecido. O motivo era estar em dois grupos.
+
+E o defeito que isso destravou é o que fecha o §52, porque é o pior tipo:
+
+```sql
+SELECT nivel::int, id_posto::int FROM public.vw_users_unidade_comando_groups
+ WHERE ltrim(matricula::text, chr(48)) = ltrim($1, chr(48)) LIMIT 1
+```
+
+`nivel` é `sec_users_groups.group_id`, e a visão tem **uma linha por grupo**.
+`LIMIT 1` **sem `ORDER BY`** faz o nível sair da linha que o planejador
+devolver primeiro. Para 13 militares — entre eles um coronel e um cabo do DTI
+cujo grupo é o de Administrador — o acesso **mudava sozinho entre execuções**.
+
+**Um erro instável é pior que um erro constante**, e não por ser maior: é
+porque ninguém consegue reproduzi-lo para acreditar nele. O militar que
+perdeu a Gestão hoje e a recuperou amanhã nunca teria como provar que
+aconteceu.
+
+A correção não foi um desempate melhor; foi parar de sortear. A regra passou a
+perguntar *"pertence ao grupo N?"* (`= ANY(niveis)`) em vez de *"o grupo
+sorteado é N?"*. O desempate entre níveis — o maior vence — sempre esteve
+certo; o que faltava era **todos os candidatos chegarem até ele**.
+
+### O que fazer com isto
+
+- Antes de afirmar um efeito a partir de um campo, **ache quem lê o campo**.
+- Contagem e lista nominal na **mesma tela**, sempre que couber: medida
+  sozinha não tem como se desmentir.
+- Script de banco se **roda** num Postgres local antes de produção, inclusive
+  nos estados em que você acha que ele não será rodado.
+- `LIMIT 1` sem `ORDER BY` numa consulta que decide permissão é um sorteio.
+  Numa visão com mais de uma linha por chave, é um sorteio silencioso.
