@@ -1212,7 +1212,7 @@ Prefixos por módulo (o sufixo segue o padrão `LG-`: `REDE`, `FORA`,
 | `DO` | central de documentos | `NT` | notícias e agenda |
 | `CM` | comunicados | `CR` | linha do tempo da carreira |
 | `VD` | validar documento | `BG` | boletins (reservado) |
-| `PT` | patrimônio e frota (reservado) | `OP` | Operações (token do aparelho e tela do módulo) |
+| `PT` | patrimônio e frota (reservado) | | |
 
 ### 9.2 Logs
 
