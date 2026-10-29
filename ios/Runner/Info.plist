@@ -45,7 +45,9 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>A câmera é usada só para ler o QR Code de certidões e contracheques em Validar documento.</string>
+	<string>A câmera é usada para ler o QR Code de certidões e contracheques em Validar documento e para registrar fotos de serviço no módulo Operações (alteração, atestado e viatura).</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>A localização é usada no módulo Operações para registrar a sua apresentação no posto de serviço.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
 	<string>Permissão para acessar documentos no dispositivo.</string>
 	<key>NSFaceIDUsageDescription</key>

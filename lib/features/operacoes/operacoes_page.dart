@@ -1,0 +1,369 @@
+import 'dart:collection';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../core/enderecos.dart';
+import '../../core/erros/falha_app.dart';
+import '../../core/log/registro_log.dart';
+import '../../utils/app_theme.dart';
+import '../../widgets/aviso_rapido.dart';
+import '../../widgets/custom_appbar.dart';
+import '../../widgets/vidro.dart';
+import 'operar_api.dart';
+
+/// O módulo Operações: o app de campo do Operar dentro do Sou PM.
+///
+/// O conteúdo é a tela do Operar, com o desenho dele — isto aqui é a moldura.
+/// O que esta tela faz de próprio: pega o token de aparelho, **planta-o no
+/// `localStorage` do Operar antes de a página rodar** (daí o
+/// `AT_DOCUMENT_START`) e concede câmera e GPS só para a origem dele.
+///
+/// Se o token não vier, a tela abre do mesmo jeito: o Operar mostra o próprio
+/// login, que funciona com matrícula, CPF e senha da operação. Decisão do
+/// Lucas em 29/10/2026 — falha de login automático não pode deixar o militar
+/// de fora no dia da operação.
+class OperacoesPage extends StatefulWidget {
+  const OperacoesPage({super.key, this.sessao, this.caminho = '/app/'});
+
+  /// Nulo quando a tela é aberta por rota (menu, atalho): ela mesma resolve a
+  /// sessão do login atual. O card da Início já tem a dele e a passa pronta.
+  final SessaoOperar? sessao;
+
+  /// Caminho dentro do Operar. O padrão é o app de campo; o card da Início
+  /// pode abrir direto numa tela (`/app/?abrir=...`).
+  final String caminho;
+
+  @override
+  State<OperacoesPage> createState() => _OperacoesPageState();
+}
+
+class _OperacoesPageState extends State<OperacoesPage> {
+  static const _chaveLog = OperarApi.chaveLog;
+
+  /// A origem do Operar. Tudo fora dela abre no navegador do sistema.
+  static final Uri _origem = Uri.parse(urlOperar);
+
+  bool _preparando = true;
+  SessaoOperar? _sessao;
+  String? _token;
+  FalhaApp? _falhaToken;
+  InAppWebViewController? _web;
+  bool _carregandoPagina = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _preparar();
+  }
+
+  Future<void> _preparar() async {
+    try {
+      _sessao = widget.sessao ?? await SessaoOperar.doLoginAtual();
+      final t = await _sessao?.token();
+      if (!mounted) return;
+      setState(() {
+        _token = t;
+        _preparando = false;
+      });
+    } on FalhaApp catch (f) {
+      // Sem token o módulo não fecha: o Operar pede o login dele.
+      registrar('operacoes.abrir', chave: _chaveLog, resultado: 'falhou', codigo: f.codigo);
+      if (!mounted) return;
+      setState(() {
+        _falhaToken = f;
+        _preparando = false;
+      });
+    }
+  }
+
+  /// Planta o token do aparelho onde o app do Operar o procura.
+  ///
+  /// O Operar guarda tudo com `JSON.stringify` sob o prefixo `e26.`, então o
+  /// valor vai codificado — gravar a string crua faria o `JSON.parse` dele
+  /// falhar e o militar cairia no primeiro acesso. O sinal `e26.soupm` não vem
+  /// daqui: o `?soupm=1` da URL é o próprio app dele que o grava.
+  UnmodifiableListView<UserScript> _scriptsIniciais(String token, String matricula) {
+    final t = jsonEncode(jsonEncode(token));
+    final m = jsonEncode(jsonEncode(matricula));
+    return UnmodifiableListView([
+      UserScript(
+        source: 'try{'
+            'window.localStorage.setItem("e26.token", $t);'
+            'window.localStorage.setItem("e26.matricula", $m);'
+            '}catch(e){}',
+        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+      ),
+      UserScript(
+        source: _pontePonte,
+        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_END,
+      ),
+    ]);
+  }
+
+  /// A ponte de download.
+  ///
+  /// Por que não dá para deixar o WebView baixar: o Operar entrega PDF e
+  /// planilha de dois jeitos que o download nativo não alcança — por `blob:`,
+  /// que ele não sabe buscar, e por rota que exige o token no `Authorization`,
+  /// que ele não manda. Então o arquivo é buscado AQUI DENTRO, com o token do
+  /// aparelho, e entregue ao Flutter em base64.
+  ///
+  /// ES5 de propósito: roda no mesmo motor do app do Operar.
+  static const _pontePonte = r'''
+(function(){
+  if (window.__soupmPonte) { return; }
+  window.__soupmPonte = 1;
+  function token() {
+    try { return JSON.parse(window.localStorage.getItem('e26.token') || 'null'); }
+    catch (e) { return null; }
+  }
+  function entregar(nome, tipo, b64) {
+    try { window.flutter_inappwebview.callHandler('baixarOperar', nome, tipo, b64); }
+    catch (e) { /* sem ponte: nada a fazer */ }
+  }
+  window.__soupmBaixar = function (url, nome) {
+    var op = {}, t = token();
+    if (t && url.indexOf('blob:') !== 0) { op.headers = { 'Authorization': 'Bearer ' + t }; }
+    fetch(url, op).then(function (r) {
+      if (!r.ok) { throw 0; }
+      return r.blob();
+    }).then(function (b) {
+      var fr = new FileReader();
+      fr.onloadend = function () {
+        var s = String(fr.result || ''), i = s.indexOf(',');
+        entregar(nome || '', b.type || '', i < 0 ? '' : s.slice(i + 1));
+      };
+      fr.onerror = function () { entregar(nome || '', '', ''); };
+      fr.readAsDataURL(b);
+    })['catch'](function () { entregar(nome || '', '', ''); });
+  };
+  document.addEventListener('click', function (e) {
+    var n = e.target;
+    while (n && n.tagName !== 'A') { n = n.parentNode; }
+    if (!n || !n.getAttribute) { return; }
+    if (!n.hasAttribute('download')) { return; }
+    var h = n.getAttribute('href') || '';
+    if (!h) { return; }
+    e.preventDefault();
+    window.__soupmBaixar(h, n.getAttribute('download'));
+  }, true);
+}());
+''';
+
+  /// Recebe o arquivo da ponte, grava e abre a folha de compartilhar — de lá o
+  /// militar salva, abre no leitor de PDF ou manda adiante.
+  ///
+  /// Ao depurar isto, NÃO imprima o base64 com `debugPrint`: ele corta a linha
+  /// perto de 1024 caracteres, e o arquivo vai parecer truncado ou corrompido
+  /// quando o problema é só o log. Use o tamanho (`b64.length`) ou grave em
+  /// arquivo. Por isso aqui só o número de bytes vai para o registro.
+  Future<void> _receberArquivo(List<dynamic> args) async {
+    final nome = args.isNotEmpty ? '${args[0]}' : '';
+    final tipo = args.length > 1 ? '${args[1]}' : '';
+    final b64 = args.length > 2 ? '${args[2]}' : '';
+    if (b64.isEmpty) {
+      registrar('operacoes.baixar', chave: _chaveLog, resultado: 'falhou', codigo: 'OP-BAIXAR');
+      if (mounted) {
+        avisoErro(context, 'Não foi possível baixar',
+            texto: 'O arquivo não veio completo. Tente de novo com sinal melhor.');
+      }
+      return;
+    }
+    try {
+      final bytes = base64Decode(b64);
+      final pasta = await getTemporaryDirectory();
+      final arquivo = File('${pasta.path}/${_nomeLimpo(nome, tipo)}');
+      await arquivo.writeAsBytes(bytes, flush: true);
+      registrar('operacoes.baixar', chave: _chaveLog, dados: {'bytes': bytes.length});
+      await Share.shareXFiles(
+        [XFile(arquivo.path, mimeType: tipo.isEmpty ? null : tipo)],
+      );
+    } catch (e) {
+      registrar('operacoes.baixar', chave: _chaveLog, resultado: 'falhou', codigo: 'OP-GRAVAR');
+      if (mounted) {
+        avisoErro(context, 'Não foi possível guardar o arquivo',
+            texto: 'O aparelho não deixou gravar. Libere espaço e tente de novo.');
+      }
+    }
+  }
+
+  /// Nome seguro para o sistema de arquivos, com extensão quando o Operar não
+  /// manda uma (acontece nos `blob:`).
+  static String _nomeLimpo(String nome, String tipo) {
+    var n = nome.replaceAll(RegExp(r'[^\w .\-]'), '_').trim();
+    if (n.isEmpty) n = 'arquivo';
+    if (!n.contains('.')) {
+      n += switch (tipo) {
+        'application/pdf' => '.pdf',
+        'image/jpeg' => '.jpg',
+        'image/png' => '.png',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => '.xlsx',
+        _ => '',
+      };
+    }
+    return n;
+  }
+
+  bool _daCasa(WebUri? u) => u != null && u.host == _origem.host;
+
+  @override
+  Widget build(BuildContext context) {
+    // O "voltar" do Android tem de andar para trás DENTRO do Operar antes de
+    // fechar o módulo: as telas dele são pilha própria, e sair no primeiro
+    // toque faria o militar perder o lugar onde estava.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (saiu, _) async {
+        if (saiu) return;
+        final nav = Navigator.of(context);
+        if (await _web?.canGoBack() ?? false) {
+          await _web?.goBack();
+          return;
+        }
+        if (mounted) nav.pop();
+      },
+      child: Scaffold(
+        appBar: const CustomAppBar(title: 'Operações'),
+        body: _preparando ? const _Preparando() : _corpo(context),
+      ),
+    );
+  }
+
+  Widget _corpo(BuildContext context) {
+    final alvo = WebUri('$urlOperar${widget.caminho}'
+        '${widget.caminho.contains('?') ? '&' : '?'}soupm=1');
+    return Stack(
+      children: [
+        InAppWebView(
+          initialUrlRequest: URLRequest(url: alvo),
+          initialUserScripts: (_token == null || _sessao == null)
+              ? null
+              : _scriptsIniciais(_token!, _sessao!.api.matricula),
+          initialSettings: InAppWebViewSettings(
+            javaScriptEnabled: true,
+            // Obrigatório: o token do aparelho mora no localStorage do Operar.
+            // Sem isto o militar cai no primeiro acesso a cada abertura.
+            domStorageEnabled: true,
+            supportZoom: false,
+            useOnDownloadStart: true,
+            useShouldOverrideUrlLoading: true,
+            mediaPlaybackRequiresUserGesture: false,
+            geolocationEnabled: true,
+            allowsInlineMediaPlayback: true,
+            transparentBackground: true,
+          ),
+          onWebViewCreated: (c) {
+            _web = c;
+            c.addJavaScriptHandler(
+              handlerName: 'baixarOperar',
+              callback: (args) => _receberArquivo(args),
+            );
+          },
+          onLoadStop: (_, __) {
+            if (mounted) setState(() => _carregandoPagina = false);
+          },
+          onReceivedError: (_, __, erro) {
+            if (!mounted) return;
+            setState(() => _carregandoPagina = false);
+            registrar('operacoes.pagina', chave: _chaveLog, resultado: 'falhou',
+                codigo: 'OP-PAGINA', dados: {'tipo': '${erro.type}'});
+          },
+          // Câmera (foto de alteração, atestado, viatura) só para o Operar.
+          // O microfone não entra: a chamada de voz dele depende de um
+          // servidor TURN que ainda não existe.
+          onPermissionRequest: (_, pedido) async => PermissionResponse(
+            resources: pedido.resources,
+            action: _daCasa(pedido.origin is String ? WebUri('${pedido.origin}') : null) ||
+                    '${pedido.origin}'.contains(_origem.host)
+                ? PermissionResponseAction.GRANT
+                : PermissionResponseAction.DENY,
+          ),
+          // GPS: é o "Cheguei" do militar no posto.
+          onGeolocationPermissionsShowPrompt: (_, origem) async =>
+              GeolocationPermissionShowPromptResponse(
+            origin: origem,
+            allow: origem.contains(_origem.host),
+            retain: true,
+          ),
+          shouldOverrideUrlLoading: (_, acao) async {
+            final u = acao.request.url;
+            if (_daCasa(u)) return NavigationActionPolicy.ALLOW;
+            if (u != null) await launchUrl(u, mode: LaunchMode.externalApplication);
+            return NavigationActionPolicy.CANCEL;
+          },
+          // Download que o WebView tentaria sozinho (sem passar pelo clique
+          // que a ponte intercepta): manda pela mesma ponte, para o pedido
+          // levar o token do aparelho.
+          onDownloadStartRequest: (_, pedido) async {
+            final url = jsonEncode('${pedido.url}');
+            final nome = jsonEncode(pedido.suggestedFilename ?? '');
+            await _web?.evaluateJavascript(
+                source: 'window.__soupmBaixar && window.__soupmBaixar($url, $nome);');
+          },
+        ),
+        if (_carregandoPagina) const _Preparando(),
+        if (_falhaToken != null) _AvisoLoginManual(falha: _falhaToken!),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    _web = null;
+    super.dispose();
+  }
+}
+
+class _Preparando extends StatelessWidget {
+  const _Preparando();
+
+  @override
+  Widget build(BuildContext context) => const Center(
+        child: SizedBox(
+          width: AppIconSize.xl,
+          height: AppIconSize.xl,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+}
+
+/// Faixa discreta quando o login automático falhou: o Operar vai pedir o login
+/// dele, e o militar precisa entender por quê antes de digitar.
+class _AvisoLoginManual extends StatelessWidget {
+  const _AvisoLoginManual({required this.falha});
+
+  final FalhaApp falha;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Positioned(
+      left: 12,
+      right: 12,
+      bottom: 12,
+      child: CartaoVidro(
+        raio: 14,
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, size: AppIconSize.sm, color: theme.colorScheme.primary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Entre com a sua matrícula, o CPF e a senha da operação. '
+                'O acesso automático não respondeu (${falha.codigo}).',
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

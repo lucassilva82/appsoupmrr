@@ -376,6 +376,7 @@ IconData iconePorChave(String? chave) => switch (chave) {
       'documento' => Icons.folder_open_rounded,
       'validar' => Icons.qr_code_scanner_rounded,
       'escala' => Icons.calendar_month_outlined,
+      'escudo' => Icons.shield_outlined,
       'svi' => Icons.more_time_rounded,
       'lei' => Icons.menu_book_outlined,
       'pop' => Icons.rule_rounded,

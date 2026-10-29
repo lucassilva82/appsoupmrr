@@ -41,6 +41,7 @@ String nomeBloco(BlocoInicio b) => switch (b.chave) {
       'home.carreira' => 'Sua carreira',
       'home.dicas' => 'Dica',
       'home.pendencias' => 'Suas pendências',
+      'home.operacoes' => 'Operações',
       'home.atalhos' => 'Atalhos',
       'home.contracheque' => 'Contracheque',
       'home.tempo_servico' => 'Tempo de serviço',

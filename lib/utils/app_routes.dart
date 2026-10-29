@@ -45,6 +45,7 @@ class AppRoutes {
   static const DOCUMENTOS = '/rh/documentos'; // Central de documentos (2.2, P4)
   static const VALIDAR = '/rh/validar'; // Validar documento (2.2, P6)
   static const COMUNICADOS = '/com/central'; // Central de comunicados (2.2, §4.2)
+  static const OPERACOES = '/op/operacoes'; // Operações: o Operar do GAPE, em WebView
   // Funções do Perfil, para a ajuda e a busca levarem direto a elas (2.2)
   static const CONTA_EMAIL = '/conta/email';
   static const CONTA_SENHA = '/conta/senha';
