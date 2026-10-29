@@ -9,6 +9,8 @@ import '../widgets/widget_mapa_geral.dart';
 import '../widgets/widget_grandes_comandos.dart';
 import '../widgets/vidro.dart';
 import '../core/design/arte_cartao.dart';
+import '../features/mapa_efetivo/mapa_efetivo.dart';
+import '../features/mapa_efetivo/ocupacao_page.dart';
 
 class MapadaforcaPage extends StatefulWidget {
   const MapadaforcaPage({super.key});
@@ -25,7 +27,7 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this, initialIndex: 1);
+    _tabController = TabController(length: 4, vsync: this, initialIndex: 1);
   }
 
   @override
@@ -127,6 +129,7 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
                   Tab(height: 36, text: 'Gráficos'),
                   Tab(height: 36, text: 'Mapa Geral'),
                   Tab(height: 36, text: 'Comandos'),
+                  Tab(height: 36, text: 'Ocupação'),
                 ],
               ),
             ),
@@ -142,6 +145,7 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
                 WidgetGraficos(),
                 WidgetMapaGeral(),
                 WidgetGrandesComandos(),
+                OcupacaoView(),
               ],
             ),
           ),
@@ -150,8 +154,9 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
     ));
   }
 
-  // Topo com a arte da área de Gestão (padrão 2.2); o efetivo previsto,
-  // que o banner antigo mostrava, fica à direita do título.
+  // Topo com a arte da área de Gestão (padrão 2.2). O número à direita vem da
+  // aba Ocupação (`mapa_efetivo.php`); antes era **3.500 fixo no código**, um
+  // número que ninguém media e que a tela afirmava como se fosse o quadro.
   Widget _bannerEfetivo(BuildContext context) {
     return TopoArte(
       arte: Arte.de('gestao'),
@@ -159,33 +164,45 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
       titulo: 'Mapa da Força',
       subtitulo: 'Efetivo e situação dos militares, por comando e unidade.',
       margem: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      direita: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            'Previsto',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.78),
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const Text(
-            '3.500',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          Text(
-            'militares',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.78),
-              fontSize: 11,
-            ),
-          ),
-        ],
+      direita: ValueListenableBuilder<EfetivoEscopo?>(
+        valueListenable: MapaEfetivoRepositorio.pmrr,
+        builder: (context, escopo, _) {
+          final o = escopo?.total;
+          // Sem leitura ainda, o topo não escreve número nenhum: "não sei"
+          // não pode sair como um valor (APRENDIZADOS §37).
+          if (o == null) return const SizedBox.shrink();
+          final semPrevisao = o.semPrevisao || escopo!.fonteSuspeita;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                semPrevisao ? 'Efetivo' : 'Ocupação',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.78),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                semPrevisao
+                    ? '${o.existente}'
+                    : '${o.pct!.toStringAsFixed(0)}%',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(
+                semPrevisao ? 'militares' : '${o.existente} de ${o.previsto}',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.78),
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
