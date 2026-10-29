@@ -2087,7 +2087,11 @@ cuidadoso lendo.
 
 ### 4. Medida que não convive com outra medida não se corrige
 
-O melhor achado do dia não foi um número, foi uma **vizinhança**.
+O melhor achado do dia não foi um número, foi uma **vizinhança**. E o
+mecanismo importa tanto quanto o princípio, porque é ele que dá para repetir:
+as duas medidas têm de estar **na mesma tela, lado a lado, medindo a mesma
+coisa por caminhos diferentes**. Não basta as duas existirem; elas se
+corrigem porque quem lê uma lê a outra no mesmo rolar de página.
 
 - A sessão do painel pôs duas contagens na mesma tela e, em dez minutos, uma
   denunciou a outra: 97 "coronéis" contra 78. Ela contava **linhas** da
@@ -2118,6 +2122,12 @@ A correção não foi um desempate melhor; foi parar de sortear. A regra passou 
 perguntar *"pertence ao grupo N?"* (`= ANY(niveis)`) em vez de *"o grupo
 sorteado é N?"*. O desempate entre níveis — o maior vence — sempre esteve
 certo; o que faltava era **todos os candidatos chegarem até ele**.
+
+E aqui está a parte que mais engana numa investigação: **o defeito estava um
+passo antes do lugar onde ele aparecia**. O sintoma era o degrau errado, e o
+código que escolhe o degrau (`ORDER BY ordem DESC LIMIT 1`) estava correto o
+tempo todo. Quem fosse olhar só ali — que é onde o sintoma mora — concluiria
+que estava tudo bem, e teria razão sobre aquele trecho.
 
 ### O que fazer com isto
 
