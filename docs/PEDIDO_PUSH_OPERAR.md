@@ -55,7 +55,7 @@ Content-Type: application/json
 |---|---|---|
 | `modulo` | sim | sempre `operar` — é o módulo já cadastrado do lado de cá |
 | `chave` | sim | o segredo do módulo (seção 7) |
-| `matricula` | sim | **uma** matrícula. A notificação é individual, não por grupo |
+| `matricula` | sim | a **matrícula curta, a que aparece na escala**, só dígitos: `45.295-5` → `452955`. Zeros à esquerda são ignorados. **Uma** por pedido: a notificação é individual, não por grupo |
 | `tipo` | sim | um dos tipos aceitos (seção 5) |
 | `titulo` | sim | o título da notificação, como o militar vê |
 | `mensagem` | sim | o corpo da notificação |
@@ -82,9 +82,21 @@ aquela hora (é o horário de silêncio, seção 5). Nos dois casos a notificaç
 | `MODULO_DESCONHECIDO` | `modulo` não é `operar` | corrigir |
 | `DESLIGADO` | o módulo foi desligado do lado de cá | avisar a DTI |
 | `TIPO_RECUSADO` | `tipo` ausente ou fora da lista | ver seção 5 — o campo é obrigatório |
+| `MATRICULA_DESCONHECIDA` | a matrícula não existe no cadastro da PMRR | quase sempre é **formato**: mande a curta, a da escala (`452955`), não a de dez dígitos interna do Operar |
 | `LIMITE_HORA` / `LIMITE_DIA` | cota do módulo estourada | ver seção 5 |
 | `SEM_APARELHO` | aquela matrícula não tem aparelho registrado | **normal**: o militar não usa o Sou PM, ou não entrou ainda. Não é erro |
 | `ERRO_SERVIDOR` | falha do nosso lado | tentar de novo mais tarde |
+
+**`SEM_APARELHO` e `MATRICULA_DESCONHECIDA` são coisas diferentes, de
+propósito.** Antes de responder `SEM_APARELHO`, o Sou PM confere no SIGRH se a
+matrícula existe. Então:
+
+- `MATRICULA_DESCONHECIDA` = o número não é de ninguém. **Confira o formato.**
+- `SEM_APARELHO` = a pessoa existe, mas não tem o Sou PM instalado e logado.
+
+Sem essa separação, um erro de formato apareceria como "ninguém instalou o
+app" — uma explicação plausível e falsa, que mandaria a investigação para o
+lado errado.
 
 **`SEM_APARELHO` vai acontecer bastante, e está certo.** Militar que não
 instalou o Sou PM não tem para onde receber. Trate como resultado esperado, não
@@ -214,7 +226,8 @@ mesmo espírito do `ELEICOES_PUSH` que já existe.
 
 ## 10. Como testar
 
-1. Peça ao Lucas uma matrícula de teste que tenha o Sou PM instalado e logado.
+1. Matrícula de teste: **452955** (do Lucas, com o Sou PM instalado e logado).
+   Use **uma** matrícula no primeiro disparo, nunca a tropa inteira.
 2. Dispare um pedido só, tipo `aviso`, com `rota` apontando para uma tela que
    você queira conferir.
 3. Esperado: `{"code": 1, ...}`, a notificação chega ao celular em segundos, e o
