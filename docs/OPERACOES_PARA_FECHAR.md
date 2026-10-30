@@ -48,10 +48,21 @@ tira a rota do topo **sem perguntar nada a ela** — e com isso todo `PopScope`
 de página aqui dentro era ignorado. Trocado por `nav.maybePop()`.
 
 > **Isso conserta outras quatro telas junto**, que tinham o mesmo problema sem
-> ninguém ter notado: o fechamento animado do comunicado, o passo a passo do
-> chamado (o voltar fechava o formulário em vez de voltar um passo) e o
-> bloqueio do voltar enquanto a certidão é emitida ou a Início é salva. Vale
-> um olhar nessas quatro antes de publicar.
+> ninguém ter notado. Conferidas no emulador em 30/10:
+>
+> - **Comunicado:** volta a fechar com a animação de encolher para o card
+>   (peguei no meio do caminho). Antes o `pop` cortava a animação.
+> - **Chamado:** o voltar agora anda **um passo** — do grupo para a lista de
+>   assuntos — e só fecha a tela no passo seguinte. Antes fechava tudo de uma
+>   vez.
+> - **Certidões:** a folha fecha normalmente, sem prender ninguém.
+> - **Personalizar início:** fecha normalmente.
+>
+> **Não conferido:** os dois estados que BLOQUEIAM o voltar — enquanto a
+> certidão é emitida (`_emitindo`) e enquanto a Início é salva (`_salvando`).
+> São janelas curtas demais para acertar na mão; o salvamento é local e
+> termina antes do toque. Pela leitura do código nenhum dos dois prende o
+> usuário (os dois acabam liberando o pop), mas isso é leitura, não teste.
 
 ## 2. GPS do "Cheguei", foto de alteração e assumir viatura — **parado, esperando escala**
 
