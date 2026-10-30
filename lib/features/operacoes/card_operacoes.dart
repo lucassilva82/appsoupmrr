@@ -79,7 +79,7 @@ class _Corpo extends StatelessWidget {
     final s = servico?.proximo;
 
     return CartaoArte(
-      arte: Arte.de('operacional'),
+      arte: Arte.de('operacoes'),
       padding: EdgeInsets.zero,
       onTap: carregando
           ? null
@@ -92,10 +92,13 @@ class _Corpo extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Sem `meta`: "Expoferr" sozinho ali em cima não dizia ao militar
+            // o que aquela palavra era (usuário, 30/10/2026). A operação vai
+            // nomeada no rodapé, com "Próxima operação" ou "Operação em curso"
+            // na frente.
             CabecalhoCartao(
               icone: Icons.shield_outlined,
               titulo: 'Operações',
-              meta: servico?.evento,
               mostrarSeta: !carregando,
             ),
             const SizedBox(height: 12),
@@ -139,14 +142,35 @@ class _Corpo extends StatelessWidget {
         const SizedBox(height: 4),
         Text(apoio, style: TextStyle(fontSize: 12.5, height: 1.35, color: TomCartao.medio(context))),
       ],
+      ..._rodapeEvento(context),
+    ];
+  }
+
+  /// A operação nomeada, com o que ela é: "Próxima operação: Expoferr ·
+  /// 03/11 a 08/11". Sem isso o militar lia só "Expoferr" e não sabia se
+  /// aquilo já estava acontecendo, se era dele, ou o que era.
+  List<Widget> _rodapeEvento(BuildContext context) {
+    final rotulo = servico?.rotuloEvento;
+    if (rotulo == null) return const [];
+    final periodo = servico!.periodoEvento;
+    return [
+      const SizedBox(height: 10),
+      RodapeCartao(
+        icone: Icons.event_outlined,
+        texto: '$rotulo: ${servico!.evento}${periodo == null ? '' : ' · $periodo'}',
+      ),
     ];
   }
 
   /// Com escala: o dia em destaque, o posto como apoio, a função no rodapé.
+  /// O rótulo nomeia a operação ("Seu serviço na Expoferr") — DESIGN §2b: o
+  /// rótulo diz a posição, não só o nome.
   List<Widget> _comServico(BuildContext context, ServicoOperacao s, MeuServicoOperacao servico) {
+    final rotulo =
+        servico.evento == null ? 'Seu serviço' : 'Seu serviço na ${servico.evento}';
     if (s.restrita) {
       return [
-        DestaqueCartao(valor: _dia(s.data), rotulo: 'Seu serviço'),
+        DestaqueCartao(valor: _dia(s.data), rotulo: rotulo),
         const SizedBox(height: 10),
         RodapeCartao(icone: Icons.lock_outline, texto: s.escala, acaoTexto: 'Abrir'),
       ];
@@ -158,7 +182,7 @@ class _Corpo extends StatelessWidget {
       DestaqueCartao(
         valor: _dia(s.data),
         complemento: horario.isEmpty ? null : horario,
-        rotulo: 'Seu serviço',
+        rotulo: rotulo,
       ),
       if (onde != null) ...[
         const SizedBox(height: 10),

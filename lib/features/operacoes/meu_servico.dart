@@ -53,19 +53,50 @@ class ServicoOperacao {
 
 /// O que o card desenha: a operação em curso e o serviço mais próximo.
 class MeuServicoOperacao {
-  const MeuServicoOperacao({required this.servicos, this.evento, this.nomeGuerra});
+  const MeuServicoOperacao({
+    required this.servicos,
+    this.evento,
+    this.eventoInicio,
+    this.eventoFim,
+    this.nomeGuerra,
+  });
 
   final List<ServicoOperacao> servicos;
 
   /// Nome curto da operação (Expoferr, ENEM). Nulo fora do modo evento — na
   /// eleição o Operar manda `evento: null`.
   final String? evento;
+
+  /// A janela da operação, em ISO. Serve para o card dizer se ela está em
+  /// curso ou ainda por vir — "Expoferr" sozinho não diz ao militar o que
+  /// aquela palavra é.
+  final String? eventoInicio;
+  final String? eventoFim;
   final String? nomeGuerra;
 
   bool get temServico => servicos.isNotEmpty;
 
   /// O primeiro serviço da lista: o Operar já a devolve na ordem do dia.
   ServicoOperacao? get proximo => servicos.isEmpty ? null : servicos.first;
+
+  /// "Operação em curso" ou "Próxima operação", pela janela do evento. Nulo
+  /// quando não há evento (a eleição manda `evento: null`).
+  String? get rotuloEvento {
+    if (evento == null || evento!.isEmpty) return null;
+    final hoje = DateTime.now().toIso8601String().substring(0, 10);
+    final ini = eventoInicio, fim = eventoFim;
+    if (ini != null && hoje.compareTo(ini) < 0) return 'Próxima operação';
+    if (fim != null && hoje.compareTo(fim) > 0) return 'Última operação';
+    return 'Operação em curso';
+  }
+
+  /// "03/11 a 08/11", ou nulo se o Operar não mandou a janela.
+  String? get periodoEvento {
+    final ini = eventoInicio, fim = eventoFim;
+    if (ini == null || fim == null || ini.length < 10 || fim.length < 10) return null;
+    String d(String iso) => '${iso.substring(8, 10)}/${iso.substring(5, 7)}';
+    return ini == fim ? d(ini) : '${d(ini)} a ${d(fim)}';
+  }
 }
 
 class MeuServicoApi {
@@ -105,6 +136,8 @@ class MeuServicoApi {
           if (ServicoOperacao.deJson(s) case final v?) v,
       ],
       evento: evento is Map ? '${evento['curto'] ?? evento['nome'] ?? ''}' : null,
+      eventoInicio: evento is Map ? evento['inicio'] as String? : null,
+      eventoFim: evento is Map ? evento['fim'] as String? : null,
       nomeGuerra: militar is Map ? militar['nome_guerra'] as String? : null,
     );
   }

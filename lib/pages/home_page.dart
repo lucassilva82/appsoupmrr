@@ -126,7 +126,7 @@ const _arteDoCard = {
   'rh.tempo_servico': 'ts',
   'rh.ferias': 'fe',
   'rh.carreira': 'rh',
-  'op.operacoes': 'operacional',
+  'op.operacoes': 'operacoes',
 };
 
 /// O selo de função bloqueada sobre um card ("Manutenção", "Em breve").
