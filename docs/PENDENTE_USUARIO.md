@@ -874,3 +874,55 @@ telas (leitura e gravação).
 A área **Gestão** deve ter voltado ao menu depois do conserto das funções,
 mas o simulador caiu para a tela de login antes de eu confirmar. Entrar e
 abrir Serviços: devem aparecer **6 áreas**, não 5.
+
+---
+
+## Reset dos atalhos e a versão mínima de Operações (30/10/2026)
+
+**Decisão do usuário:** "depois eu vejo isso". Fica aqui para não se perder.
+
+**O problema, que é real e se repete.** A escolha de atalhos do militar
+**substitui** a lista do painel, não se mescla
+(`lib/features/inicio/linha_atalhos.dart:84`, `doMilitar ?? doPainel`). Quem
+personalizou uma vez **nunca mais vê função nova** na linha de atalhos. O
+usuário bateu nisso na prática: pôs Operações na segunda casa, publicou, e o
+app dele não mudou — só apareceu depois de ele restaurar a personalização à
+mão.
+
+**O que ele pediu:** ao reorganizar os atalhos no painel, apagar a
+personalização de todos. A alternativa (só acrescentar a função nova à lista
+de quem personalizou) foi oferecida pela sessão do módulo e ele escolheu
+apagar.
+
+**Três pontos de desenho, já combinados entre as sessões:**
+
+1. `UPDATE ... SET atalhos = NULL`, **nunca `DELETE`**. A mesma linha de
+   `soupm_inicio_preferencia` guarda `blocos` (ordem e blocos escondidos da
+   Início), que não têm relação com a lista do painel. O app já trata
+   `atalhos` nulo caindo na lista do painel.
+2. Disparar **só quando a lista mudar** (chaves ou ordem). Em qualquer
+   salvamento, uma correção de rótulo apagaria dado de ~3 mil militares.
+3. Registrar **quantas** personalizações foram apagadas.
+
+**O que falta decidir, e é só isso: qual versão leva o módulo de Operações.**
+
+Medido no banco em 30/10/2026: `op.operacoes` está com `visivel_menu = TRUE`,
+estado `ativo`, e **`versao_min_app` NULL**. O módulo **não está na 2.2.x
+publicada** — vive no worktree `~/code/appsoupmrr-operacoes`.
+
+Com `versao_min_app` nulo, o item é anunciado a **todo mundo**: a tropa, na
+versão da loja, vê um atalho que o app dela não sabe abrir e recebe "Atualize
+o app" para uma versão que não existe na loja.
+
+**Ordem que evita isso:** preencher `versao_min_app` com a versão que vai
+trazer o módulo → depois fazer o reset. Na ordem inversa, a tropa perde a
+organização dos atalhos e ganha um atalho morto.
+
+**Nota de método, porque custou duas correções no mesmo dia.** Eu afirmei ao
+usuário que `op.operacoes` estava invisível, lendo o relato de **outra
+sessão** em vez do banco. Ele tinha ligado o item horas antes. A sessão do
+módulo me corrigiu — e aí eu fui medir, porque a correção dela também era de
+segunda mão. É o §50: tanto o retrato antigo quanto a correção precisam ser
+medidos na fonte. O `versao_min_app` nulo, que é o achado que importa aqui,
+só apareceu porque fui ao banco em vez de aceitar qualquer um dos dois
+relatos.
