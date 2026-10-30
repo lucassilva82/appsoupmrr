@@ -126,6 +126,7 @@ const _arteDoCard = {
   'rh.tempo_servico': 'ts',
   'rh.ferias': 'fe',
   'rh.carreira': 'rh',
+  'op.operacoes': 'operacional',
 };
 
 /// O selo de função bloqueada sobre um card ("Manutenção", "Em breve").
@@ -311,9 +312,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
         'home.contracheque' => const _Card(HomeContrachequeCard(), chave: 'rh.contracheques'),
         'home.tempo_servico' => _Card(CardTempoServico(), chave: 'rh.tempo_servico'),
         'home.ferias' => const _Card(HomePlanoFeriasCard(), chave: 'rh.ferias'),
-        // Sem o _Card: este card lê outro sistema e já se esconde sozinho
-        // quando o painel o desliga ou não há serviço.
-        'home.operacoes' => const CardOperacoes(),
+        'home.operacoes' => const _Card(CardOperacoes(), chave: 'op.operacoes'),
         'home.carreira' => const _Card(CardCarreira(), chave: 'rh.carreira'),
         _ when chave.startsWith('home.livre.') => switch (RepositorioConfig.atual.bloco(chave)) {
             final b? when CardPainel.desenha(b) => CardPainel(bloco: b),

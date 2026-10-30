@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 
-import '../../core/config/app_config.dart';
+import '../../core/design/arte_cartao.dart';
 import '../../core/erros/falha_app.dart';
 import '../../core/rede/api_client.dart';
 import '../../widgets/cartao_painel.dart';
-import '../../widgets/vidro.dart';
 import 'meu_servico.dart';
 import 'operacoes_page.dart';
 import 'operar_api.dart';
 
 /// Card da Início: o serviço do militar na operação em curso.
 ///
-/// Ele só existe quando há serviço. Sem escala, sem login, módulo desligado no
-/// painel ou Operar fora do ar, o card **não desenha** — é o mesmo contrato do
-/// `CardPainel.desenha`: card de dado que não tem dado não vira card vazio.
+/// Card de resumo da Início, então `CartaoArte` com a arte da área
+/// `operacional` e a gramática do DESIGN §2b — cabeçalho discreto, um número
+/// grande, apoio, rodapé. Quem aplica o `temaSobreArte` é o `_Card` da
+/// home_page, que também trata a função bloqueada no painel.
+///
+/// O card é FIXO (decisão do usuário, 30/10/2026): sem escala, sem rede ou
+/// ainda carregando, ele continua na tela e explica. Card que some é função
+/// que o militar deixa de descobrir — ele só saberia que o módulo existe
+/// depois de ser escalado, que é tarde demais.
 class CardOperacoes extends StatefulWidget {
   const CardOperacoes({super.key});
 
@@ -22,24 +27,12 @@ class CardOperacoes extends StatefulWidget {
 }
 
 class _CardOperacoesState extends State<CardOperacoes> {
-  static const _chaveFuncao = OperarApi.chaveLog;
-
   Future<({MeuServicoOperacao? servico, SessaoOperar? sessao})>? _futuro;
 
   @override
   void initState() {
     super.initState();
     _futuro = _carregar();
-  }
-
-  /// Desligado no painel: nem chama o Operar, e o card some. É o único jeito de
-  /// ele sumir — ver [build].
-  ///
-  /// Chave que o painel ainda não conhece NÃO esconde o card: é a mesma regra
-  /// do `_Card` da Início (home_page.dart), item nulo vale como permitido.
-  bool get _desligadoNoPainel {
-    final item = RepositorioConfig.atual.item(_chaveFuncao);
-    return item != null && (!item.visivel || item.bloqueado);
   }
 
   Future<({MeuServicoOperacao? servico, SessaoOperar? sessao})> _carregar() async {
@@ -50,31 +43,21 @@ class _CardOperacoesState extends State<CardOperacoes> {
       return (servico: s, sessao: sessao);
     } on FalhaApp {
       // Operar fora do ar, aparelho desligado do outro lado, sem rede: o card
-      // continua na tela e diz o que sabe. Quem toca cai no Operar, que mostra
-      // o erro dele — melhor que um buraco na Início.
+      // continua e diz o que sabe. Quem toca cai no Operar, que explica o
+      // próprio erro melhor do que eu adivinharia daqui.
       return (servico: null, sessao: sessao);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_desligadoNoPainel) return const SizedBox.shrink();
     return FutureBuilder<({MeuServicoOperacao? servico, SessaoOperar? sessao})>(
       future: _futuro,
-      builder: (context, snap) {
-        // O card é FIXO (decisão do usuário, 30/10/2026): sem escala, sem rede
-        // ou ainda carregando, ele continua na tela e explica. Some só quando o
-        // painel desliga a função. Card que some é função que o militar deixa
-        // de descobrir.
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _Corpo(
-            servico: snap.data?.servico,
-            sessao: snap.data?.sessao,
-            carregando: snap.connectionState != ConnectionState.done,
-          ),
-        );
-      },
+      builder: (context, snap) => _Corpo(
+        servico: snap.data?.servico,
+        sessao: snap.data?.sessao,
+        carregando: snap.connectionState != ConnectionState.done,
+      ),
     );
   }
 }
@@ -92,23 +75,22 @@ class _Corpo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final servico = this.servico;
     final s = servico?.proximo;
-    void abrir() => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => OperacoesPage(sessao: sessao)),
-        );
 
-    // Sem serviço ainda: o card continua, dizendo o que há para dizer. É
-    // assim que o militar fica sabendo que o módulo existe antes de ser
-    // escalado pela primeira vez.
-    if (s == null) {
-      return CartaoVidro(
-        raio: 16,
-        padding: const EdgeInsets.all(14),
-        onTap: carregando ? null : abrir,
+    return CartaoArte(
+      arte: Arte.de('operacional'),
+      padding: EdgeInsets.zero,
+      onTap: carregando
+          ? null
+          : () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => OperacoesPage(sessao: sessao)),
+              ),
+      child: Padding(
+        padding: kPaddingCartao,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             CabecalhoCartao(
               icone: Icons.shield_outlined,
@@ -116,80 +98,95 @@ class _Corpo extends StatelessWidget {
               meta: servico?.evento,
               mostrarSeta: !carregando,
             ),
-            const SizedBox(height: 10),
-            Text(
-              carregando
-                  ? 'Procurando o seu serviço…'
-                  : servico == null
-                      ? 'Não deu para consultar agora. Toque para abrir.'
-                      : 'Sem escala para você ainda.',
-              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            if (!carregando) ...[
-              const SizedBox(height: 2),
-              Text(
-                servico == null
-                    ? 'O Operar não respondeu. Lá dentro ele explica o porquê.'
-                    : 'Quando você for escalado numa operação, o seu posto, o '
-                        'horário e a equipe aparecem aqui.',
-                style: theme.textTheme.bodySmall,
-              ),
-            ],
+            const SizedBox(height: 12),
+            if (s == null) ..._semServico(context) else ..._comServico(context, s, servico!),
           ],
         ),
-      );
-    }
-
-    final horario = [s.horaInicio, s.horaFim].whereType<String>().join(' às ');
-    final onde = s.local ?? s.posto;
-    return CartaoVidro(
-      raio: 16,
-      padding: const EdgeInsets.all(14),
-      onTap: abrir,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CabecalhoCartao(
-            icone: Icons.shield_outlined,
-            titulo: 'Operações',
-            meta: servico!.evento,
-          ),
-          const SizedBox(height: 10),
-          if (s.restrita)
-            Text(s.escala, style: theme.textTheme.titleSmall)
-          else ...[
-            Text(
-              onde ?? s.escala,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            if (s.municipio != null) ...[
-              const SizedBox(height: 2),
-              Text(s.municipio!, style: theme.textTheme.bodySmall),
-            ],
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(child: ParCartao(rotulo: 'Dia', valor: _dia(s.data))),
-                if (horario.isNotEmpty)
-                  Expanded(child: ParCartao(rotulo: 'Horário', valor: horario)),
-                if (s.funcao != null)
-                  Expanded(
-                    child: ParCartao(rotulo: 'Função', valor: s.funcao!.replaceAll('_', ' ')),
-                  ),
-              ],
-            ),
-          ],
-          if (servico.servicos.length > 1) ...[
-            const SizedBox(height: 8),
-            Text(
-              '+${servico.servicos.length - 1} serviço${servico.servicos.length > 2 ? 's' : ''} na operação',
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary),
-            ),
-          ],
-        ],
       ),
     );
+  }
+
+  /// Sem escala, sem resposta ou carregando: uma frase no lugar do número.
+  /// Não há dado para pôr em destaque, e inventar um seria pior.
+  List<Widget> _semServico(BuildContext context) {
+    final theme = Theme.of(context);
+    final (titulo, apoio) = carregando
+        ? ('Procurando o seu serviço…', null)
+        : servico == null
+            ? (
+                'Não deu para consultar agora',
+                'Toque para abrir — lá dentro o Operar explica o porquê.',
+              )
+            : (
+                'Sem escala para você ainda',
+                'Quando você for escalado numa operação, o seu posto, o horário '
+                    'e a equipe aparecem aqui.',
+              );
+    return [
+      // A cor vem do colorScheme, não do textTheme: o `temaSobreArte` troca só
+      // o `onSurface` para branco e não refaz o textTheme, então um
+      // `titleMedium` sai com a cor do tema claro — escuro sobre arte escura.
+      Text(
+        titulo,
+        style: TextStyle(
+          fontSize: 17,
+          height: 1.25,
+          fontWeight: FontWeight.w700,
+          color: theme.colorScheme.onSurface,
+        ),
+      ),
+      if (apoio != null) ...[
+        const SizedBox(height: 4),
+        Text(apoio, style: TextStyle(fontSize: 12.5, height: 1.35, color: TomCartao.medio(context))),
+      ],
+    ];
+  }
+
+  /// Com escala: o dia em destaque, o posto como apoio, a função no rodapé.
+  List<Widget> _comServico(BuildContext context, ServicoOperacao s, MeuServicoOperacao servico) {
+    if (s.restrita) {
+      return [
+        DestaqueCartao(valor: _dia(s.data), rotulo: 'Seu serviço'),
+        const SizedBox(height: 10),
+        RodapeCartao(icone: Icons.lock_outline, texto: s.escala, acaoTexto: 'Abrir'),
+      ];
+    }
+    final horario = [s.horaInicio, s.horaFim].whereType<String>().join(' às ');
+    final onde = s.local ?? s.posto;
+    final outros = servico.servicos.length - 1;
+    return [
+      DestaqueCartao(
+        valor: _dia(s.data),
+        complemento: horario.isEmpty ? null : horario,
+        rotulo: 'Seu serviço',
+      ),
+      if (onde != null) ...[
+        const SizedBox(height: 10),
+        Text(
+          onde,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: AppDisplaySize.valor,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        if (s.municipio != null)
+          Text(
+            s.municipio!,
+            style: TextStyle(fontSize: 12.5, color: TomCartao.medio(context)),
+          ),
+      ],
+      const SizedBox(height: 10),
+      RodapeCartao(
+        icone: Icons.badge_outlined,
+        texto: [
+          if (s.funcao != null) s.funcao!.replaceAll('_', ' '),
+          if (outros > 0) '+$outros serviço${outros > 1 ? 's' : ''} na operação',
+        ].join(' · '),
+        acaoTexto: 'Abrir',
+      ),
+    ];
   }
 }
