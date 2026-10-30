@@ -9,10 +9,6 @@ import '../widgets/widget_mapa_geral.dart';
 import '../widgets/widget_grandes_comandos.dart';
 import '../widgets/vidro.dart';
 import '../core/design/arte_cartao.dart';
-import '../core/erros/falha_app.dart';
-import '../core/log/registro_log.dart';
-import '../features/mapa_efetivo/mapa_efetivo.dart';
-import '../features/mapa_efetivo/mapa_efetivo_repo.dart';
 
 class MapadaforcaPage extends StatefulWidget {
   const MapadaforcaPage({super.key});
@@ -30,24 +26,6 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this, initialIndex: 1);
-    // Previsto x existente é carregado uma vez, ao abrir a tela, e fica no
-    // `MapaEfetivoRepositorio.pmrr` para o banner e as abas lerem a MESMA
-    // fonte. Duas medidas da mesma coisa em telas diferentes foi o que deixou
-    // "Previsto 3.500" conviver com "Total 2.461" sem ninguém notar
-    // (APRENDIZADOS §52).
-    _carregarEfetivo();
-  }
-
-  Future<void> _carregarEfetivo() async {
-    try {
-      MapaEfetivoRepositorio.pmrr.value =
-          await repositorioMapaEfetivo(context).carregar();
-    } on FalhaApp catch (f) {
-      // O Mapa da Força continua funcionando sem a previsão: o banner e as
-      // barras simplesmente não aparecem, e o motivo vai para o log. Falha
-      // de previsão nunca derruba a tela de efetivo.
-      registrarErro(f, tela: 'Mapa da Força (previsão)', mostrado: false);
-    }
   }
 
   @override
@@ -172,9 +150,23 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
     ));
   }
 
-  // Topo com a arte da área de Gestão (padrão 2.2). O número à direita vem da
-  // aba Ocupação (`mapa_efetivo.php`); antes era **3.500 fixo no código**, um
-  // número que ninguém media e que a tela afirmava como se fosse o quadro.
+  // Topo com a arte da área de Gestão (padrão 2.2).
+  //
+  // SEM NÚMERO À DIREITA, de propósito. Até 29/10/2026 havia "Previsto
+  // 3.500 militares", escrito à mão num commit de interface de 12/06/2026 e
+  // nunca calculado de nada. Trocá-lo pelo previsto do SIGRH foi tentado e
+  // desfeito a pedido do usuário: medido em 30/10/2026, o SIGRH tem só
+  // **1.579 das 3.002 vagas autorizadas distribuídas por unidade** (53%), com
+  // 6 de 12 comandos e 58 de 304 subunidades sem nenhum lançamento — CPI,
+  // DEP, DRH e Corregedoria zerados. Percentual de ocupação sobre isso não
+  // mede ocupação: o CPI apareceria sem vaga nenhuma e a ASS MIL TJE com
+  // "989% ocupado", que é lançamento faltando lido como excedente.
+  //
+  // A decisão: enquanto o cadastro estiver incompleto, a tela não mostra
+  // previsão. Número redondo escrito à mão era pior; número do banco com
+  // metade do cadastro vazio é igualmente ruim, porque **parece** medido.
+  // Quando a DRH preencher o SIGRH, o endpoint sigrh/mapa_efetivo.php já
+  // está no ar e mede a cobertura (bloco `cobertura`) — é religar a tela.
   Widget _bannerEfetivo(BuildContext context) {
     return TopoArte(
       arte: Arte.de('gestao'),
@@ -182,46 +174,6 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
       titulo: 'Mapa da Força',
       subtitulo: 'Efetivo e situação dos militares, por comando e unidade.',
       margem: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      direita: ValueListenableBuilder<EfetivoEscopo?>(
-        valueListenable: MapaEfetivoRepositorio.pmrr,
-        builder: (context, escopo, _) {
-          final o = escopo?.total;
-          // Sem leitura ainda, o topo não escreve número nenhum: "não sei"
-          // não pode sair como um valor (APRENDIZADOS §37).
-          if (o == null) return const SizedBox.shrink();
-          final semPrevisao = o.semPrevisao || escopo!.fonteSuspeita;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                semPrevisao ? 'Efetivo' : 'Ocupação',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.78),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                semPrevisao
-                    ? '${o.existente}'
-                    : '${o.pct!.toStringAsFixed(0)}%',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(
-                semPrevisao ? 'militares' : '${o.existente} de ${o.previsto}',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.78),
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          );
-        },
-      ),
     );
   }
 }

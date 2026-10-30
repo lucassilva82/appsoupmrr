@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:projetonovo/models/map_busca_detalhes_model.dart';
 import 'package:projetonovo/pages/detalhes_mapa_forca_comando_page.dart';
-import '../features/mapa_efetivo/mapa_efetivo.dart';
 import 'package:projetonovo/utils/app_theme.dart';
 import '../core/erros/falha_de.dart';
 import '../core/design/arte_cartao.dart';
@@ -214,39 +213,11 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
     );
   }
 
-  /// Uma linha de grande comando.
-  ///
-  /// O percentual e a barra mudam de SIGNIFICADO conforme o SIGRH tenha ou
-  /// não a previsão de vagas daquele comando:
-  ///
-  ///  · com previsão  → **ocupação**: existente ÷ previsto ("45 de 90 · 50%")
-  ///  · sem previsão  → **fatia do efetivo**, que é o que a tela sempre
-  ///    mostrou ("12% do efetivo")
-  ///
-  /// São duas contas diferentes com o mesmo desenho, então o texto ao lado
-  /// nomeia qual está sendo mostrada. Trocar uma pela outra em silêncio era o
-  /// defeito a evitar: quem lê "50%" amanhã não pode ficar em dúvida se é
-  /// metade das vagas ou metade da tropa.
-  Widget _comandoCard(
-      Comando d, int total, ThemeData theme, bool isDark, EfetivoEscopo? efetivo) {
-    final ocupacao = efetivo?.filhos
-        .where((f) => f.chave == d.id.toString())
-        .map((f) => f.ocupacao)
-        .firstOrNull;
-    // Previsão que não cobre o efetivo não vira percentual: ver o comentário
-    // de EfetivoEscopo.fonteSuspeita.
-    final temOcupacao = ocupacao != null &&
-        !ocupacao.semPrevisao &&
-        !(efetivo?.fonteSuspeita ?? false);
-
-    final rawPct = temOcupacao
-        ? ocupacao.existente / ocupacao.previsto
-        : (total <= 0 ? 0.0 : d.quantidade / total);
+  Widget _comandoCard(Comando d, int total, ThemeData theme, bool isDark) {
+    final rawPct = total <= 0 ? 0.0 : d.quantidade / total;
     final pct = rawPct.clamp(0.0, 1.0);
     final visualPct = d.quantidade > 0 && pct < 0.05 ? 0.05 : pct;
-    final pctText = temOcupacao
-        ? '${d.quantidade} de ${ocupacao.previsto} · ${(rawPct * 100).toStringAsFixed(0)}% ocupado'
-        : '${(pct * 100).toStringAsFixed(pct < 0.1 ? 1 : 0)}% do efetivo';
+    final pctText = '${(pct * 100).toStringAsFixed(pct < 0.1 ? 1 : 0)}%';
 
     // Linha da lista, sem superfície própria (a caixa é a tabela inteira).
     // Sem o quadradinho azul atrás do ícone (DESIGN §2b) e sem o
@@ -291,46 +262,21 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    if (temOcupacao) ...[
-                      BarraOcupacao(ocupacao: ocupacao),
-                      const SizedBox(height: 4),
-                      Text(
-                        pctText,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: ocupacao.temExcedente
-                              ? AppColors.douradoTexto(theme.brightness)
-                              : theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.68),
-                        ),
-                      ),
-                      if (ocupacao.faltam > 0)
+                    Row(
+                      children: [
                         Text(
-                          'faltam ${ocupacao.faltam}',
+                          pctText,
                           style: theme.textTheme.labelSmall?.copyWith(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: theme.colorScheme.error,
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
                           ),
                         ),
-                    ] else
-                      Row(
-                        children: [
-                          Text(
-                            pctText,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.6),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                              child: BarraProgressoCartao(valor: visualPct)),
-                        ],
-                      ),
+                        const SizedBox(width: 6),
+                        Expanded(child: BarraProgressoCartao(valor: visualPct)),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -459,13 +405,8 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
                                       child: Text('GRANDES COMANDOS',
                                           style: estiloRotulo(context)),
                                     ),
-                                    ValueListenableBuilder<EfetivoEscopo?>(
-                                      valueListenable:
-                                          MapaEfetivoRepositorio.pmrr,
-                                      builder: (_, e, __) => Text(
-                                          e == null ? 'EFETIVO' : 'EXISTENTE',
-                                          style: estiloRotulo(context)),
-                                    ),
+                                    Text('EFETIVO',
+                                        style: estiloRotulo(context)),
                                   ],
                                 ),
                               ),
@@ -480,12 +421,8 @@ class _WidgetGrandesComandosState extends State<WidgetGrandesComandos> {
                                     color: theme.dividerColor
                                         .withValues(alpha: 0.2),
                                   ),
-                                  itemBuilder: (_, i) =>
-                                      ValueListenableBuilder<EfetivoEscopo?>(
-                                    valueListenable: MapaEfetivoRepositorio.pmrr,
-                                    builder: (_, efetivo, __) => _comandoCard(
-                                        list[i], total, theme, isDark, efetivo),
-                                  ),
+                                  itemBuilder: (_, i) => _comandoCard(
+                                      list[i], total, theme, isDark),
                                 ),
                               ),
                             ],

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:projetonovo/utils/app_theme.dart';
 import '../core/design/arte_cartao.dart';
-import '../features/mapa_efetivo/mapa_efetivo.dart';
 import '../core/erros/falha_de.dart';
 import 'cartao_painel.dart';
 import 'vidro.dart';
@@ -200,36 +199,6 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
               valor: '$total',
               complemento: 'militares',
               tamanhoComplemento: 14,
-            ),
-            ValueListenableBuilder<EfetivoEscopo?>(
-              valueListenable: MapaEfetivoRepositorio.pmrr,
-              builder: (context, e, __) {
-                final o = e?.total;
-                // Sem previsão, ou com previsão que não cobre o efetivo, o
-                // card não escreve percentual nenhum: ver EfetivoEscopo.
-                if (o == null || o.semPrevisao || (e?.fonteSuspeita ?? false)) {
-                  return const SizedBox.shrink();
-                }
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      BarraOcupacao(ocupacao: o, altura: 8),
-                      const SizedBox(height: 5),
-                      Text(
-                        '${o.existente} de ${o.previsto} previstos · '
-                        '${o.pct!.toStringAsFixed(0)}% ocupado'
-                        '${o.faltam > 0 ? ' · faltam ${o.faltam}' : ''}'
-                        '${o.temExcedente ? ' · excedente de ${o.excedente}' : ''}',
-                        style: TextStyle(
-                            fontSize: 12.5,
-                            color: Colors.white.withValues(alpha: 0.88)),
-                      ),
-                    ],
-                  ),
-                );
-              },
             ),
             if (top != null) ...[
               const SizedBox(height: 8),
@@ -582,77 +551,9 @@ class _WidgetGraficosState extends State<WidgetGraficos> {
           _chart == 'barra'
               ? _barChart(mapa, context)
               : _pieChart(mapa, context),
-          _ocupacaoPorGrupo(context),
           const SizedBox(height: 8),
         ],
       ),
-    );
-  }
-
-  /// Ocupação (previsto x existente) do agrupamento escolhido.
-  ///
-  /// Só aparece para **Comando** e **Posto/Graduação**, que são os cortes em
-  /// que a API devolve a previsão. Para **Unidade** não há dado neste nível, e
-  /// a seção some em vez de mostrar uma lista pela metade — meia lista parece
-  /// uma lista inteira, e foi assim que uma prévia de 20 nomes quase passou
-  /// por 129 (APRENDIZADOS §51).
-  Widget _ocupacaoPorGrupo(BuildContext context) {
-    if (_campo != 'comando' && _campo != 'posto_graduacao') {
-      return const SizedBox.shrink();
-    }
-    return ValueListenableBuilder<EfetivoEscopo?>(
-      valueListenable: MapaEfetivoRepositorio.pmrr,
-      builder: (context, e, __) {
-        if (e == null || e.fonteSuspeita) return const SizedBox.shrink();
-        final itens = _campo == 'comando' ? e.filhos : e.postos;
-        final comPrevisao =
-            itens.where((i) => !i.ocupacao.semPrevisao).toList();
-        if (comPrevisao.isEmpty) return const SizedBox.shrink();
-        final theme = Theme.of(context);
-        final semPrevisao = itens.length - comPrevisao.length;
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
-          child: CartaoVidro(
-            arte: Arte.de('gestao'),
-            padding: kPaddingCartao,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CabecalhoCartao(
-                  icone: Icons.donut_large_rounded,
-                  titulo: _campo == 'comando'
-                      ? 'Ocupação por comando'
-                      : 'Ocupação por posto e graduação',
-                  mostrarSeta: false,
-                ),
-                const SizedBox(height: 10),
-                for (final i in comPrevisao) ...[
-                  Text(i.nome,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 12.5, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 5),
-                  BarraOcupacao(ocupacao: i.ocupacao),
-                  const SizedBox(height: 4),
-                  LinhaOcupacao(ocupacao: i.ocupacao, mostrarPct: true),
-                  const SizedBox(height: 11),
-                ],
-                if (semPrevisao > 0)
-                  Text(
-                    semPrevisao == 1
-                        ? '1 grupo está fora desta conta por não ter previsão cadastrada no SIGRH.'
-                        : '$semPrevisao grupos estão fora desta conta por não terem previsão cadastrada no SIGRH.',
-                    style: TextStyle(
-                        fontSize: 11.5,
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.68)),
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 
