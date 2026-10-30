@@ -32,6 +32,7 @@ import 'package:projetonovo/widgets/vidro.dart';
 import 'package:projetonovo/widgets/widget_dicas_app.dart';
 import '../widgets/faixa_sem_conexao.dart';
 import '../features/carreira/carreira_page.dart' show CardCarreira;
+import '../features/operacoes/card_operacoes.dart';
 
 /// Blocos da Início sem o painel (§4): a ordem padrão do app. Comando,
 /// Comunicados e Suas pendências são fixos (o militar não esconde).
@@ -41,6 +42,9 @@ List<BlocoInicio> blocosPadrao() => [
         'home.anuncio',
         'home.dicas',
         'home.pendencias',
+        // Alto de propósito: no dia da operação é o que o militar abre primeiro.
+        // O card some sozinho quando ele não está escalado.
+        'home.operacoes',
         'home.atalhos',
         'home.contracheque',
         'home.tempo_servico',
@@ -122,6 +126,7 @@ const _arteDoCard = {
   'rh.tempo_servico': 'ts',
   'rh.ferias': 'fe',
   'rh.carreira': 'rh',
+  'op.operacoes': 'operacoes',
 };
 
 /// O selo de função bloqueada sobre um card ("Manutenção", "Em breve").
@@ -307,6 +312,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
         'home.contracheque' => const _Card(HomeContrachequeCard(), chave: 'rh.contracheques'),
         'home.tempo_servico' => _Card(CardTempoServico(), chave: 'rh.tempo_servico'),
         'home.ferias' => const _Card(HomePlanoFeriasCard(), chave: 'rh.ferias'),
+        'home.operacoes' => const _Card(CardOperacoes(), chave: 'op.operacoes'),
         'home.carreira' => const _Card(CardCarreira(), chave: 'rh.carreira'),
         _ when chave.startsWith('home.livre.') => switch (RepositorioConfig.atual.bloco(chave)) {
             final b? when CardPainel.desenha(b) => CardPainel(bloco: b),

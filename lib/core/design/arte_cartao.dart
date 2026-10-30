@@ -30,6 +30,12 @@ class Arte {
         [Icons.badge_outlined, Icons.receipt_long_outlined, Icons.verified_outlined]),
     'operacional': Arte(Color(0xFF071A33), Color(0xFF1D4ED8), Color(0xFFEF4444),
         [Icons.local_police_outlined, Icons.calendar_month_outlined, Icons.shield_outlined]),
+    // Verde de operação: o card de Operações saía azul como o Contracheque e
+    // quase igual ao índigo das Dicas, e os três empilhados viravam um bloco
+    // só (usuário, 30/10/2026). A arte `operacional` continua azul para as
+    // telas da área; só o card de resumo usa esta.
+    'operacoes': Arte(Color(0xFF07220F), Color(0xFF15692F), Color(0xFFB9F27C),
+        [Icons.shield_outlined, Icons.local_police_outlined, Icons.calendar_month_outlined]),
     'normas': Arte(Color(0xFF2A1704), Color(0xFFA15C07), Color(0xFFFCD34D),
         [Icons.gavel_outlined, Icons.menu_book_outlined, Icons.balance_outlined]),
     'gestao': Arte(Color(0xFF1A1405), Color(0xFF7A5800), Color(0xFFFFC233),
@@ -376,6 +382,7 @@ IconData iconePorChave(String? chave) => switch (chave) {
       'documento' => Icons.folder_open_rounded,
       'validar' => Icons.qr_code_scanner_rounded,
       'escala' => Icons.calendar_month_outlined,
+      'escudo' => Icons.shield_outlined,
       'svi' => Icons.more_time_rounded,
       'lei' => Icons.menu_book_outlined,
       'pop' => Icons.rule_rounded,

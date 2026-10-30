@@ -8,6 +8,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:projetonovo/features/avisos/avisos_api.dart';
+import 'package:projetonovo/features/operacoes/armazem_operar.dart';
+import 'package:projetonovo/features/operacoes/operar_api.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -587,7 +589,11 @@ class Auth with ChangeNotifier {
     emailUser = loginData['email'] ?? '';
   }
 
-  void logout() async {
+  /// [deliberado] é o "Sair" que o militar toca. A expiração automática chama
+  /// isto sem o sinal, e é diferente de propósito: ela não desfaz o acesso ao
+  /// Operar, porque é o mesmo militar voltando e pedir `/acesso` de novo
+  /// derrubaria o aparelho dele no navegador.
+  void logout({bool deliberado = false}) async {
     _expireDate = null;
     autorizado = false;
     hasCheckedBiometry = false;
@@ -606,6 +612,15 @@ class Auth with ChangeNotifier {
       userData['autorizado'] = 'false';
       userData['expireDate'] = '';
       await Store.saveMap('userData', userData);
+    }
+
+    // O módulo Operações não tem "sair" próprio: quem entra no Sou PM só usa
+    // a conta da matrícula que entrou, e o único logout é este (decisão do
+    // Lucas, 30/10/2026). Então sair daqui desfaz o acesso ao Operar — o
+    // token sai do cofre e o armazém da WebView fica marcado para esvaziar.
+    if (deliberado) {
+      await SessaoOperar.limparDoAparelho();
+      unawaited(limparArmazemOperar());
     }
   }
 
@@ -649,6 +664,9 @@ class Auth with ChangeNotifier {
       Sessao.matriculaAtual = null;
       // Certidões têm dados pessoais (a Ficha traz conta e endereço).
       await CertidaoService.apagarTudo();
+      // O token do Operar é um acesso a outro sistema: sai com quem o pediu.
+      await SessaoOperar.limparDoAparelho();
+      unawaited(limparArmazemOperar());
     } catch (e) {
       debugPrint('[LOG] Erro ao limpar dados: $e');
     }

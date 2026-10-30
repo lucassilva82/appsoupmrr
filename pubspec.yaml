@@ -2,7 +2,7 @@ name: projetonovo
 description: A new Flutter project.
 publish_to: "none"
 
-version: 2.2.1+59
+version: 2.3.0+60
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -61,6 +61,8 @@ dependencies:
   local_auth: ^2.3.0
   flutter_secure_storage: ^10.3.4
   mobile_scanner: ^7.4.2
+  flutter_inappwebview: ^6.1.5
+  geolocator: ^14.0.2
 
   # firebase_analytics: ^11.3.6
 

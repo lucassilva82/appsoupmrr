@@ -63,8 +63,8 @@ android {
         // decisão, com o número à vista — não um efeito colateral.
         minSdk = 24
         targetSdk = 36
-        versionCode = 59
-        versionName = "2.2.1"
+        versionCode = 60
+        versionName = "2.3.0"
     }
 }
 

@@ -14,8 +14,15 @@ import 'preferencias_inicio.dart';
 
 /// Atalhos padrão até o painel mandar os de cada nível (`home.atalhos`).
 /// O gestor troca o último pelo Mapa da Força (§4.4).
+///
+/// Contracheque e Operações à frente por decisão do usuário (30/10/2026): é o
+/// que o militar abre no dia a dia e no dia da operação. Quem não quiser,
+/// troca no "Editar" da Início — a escolha dele vence esta lista e a do painel.
+/// `op.operacoes` some sozinho enquanto o painel não o ligar: o
+/// [resolverAtalhos] só devolve chave que existe no menu em uso.
 List<String> atalhosPadrao({required bool gestor}) => [
       'rh.contracheques',
+      'op.operacoes',
       'rh.certidoes',
       'rh.ferias',
       'rh.ficha',

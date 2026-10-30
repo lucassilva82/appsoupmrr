@@ -19,11 +19,11 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.2.1</string>
+	<string>2.3.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>2.2.1</string>
+	<string>2.3.0</string>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<true/>
 	<!-- Conformidade de exportação de criptografia.
@@ -45,7 +45,9 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>A câmera é usada só para ler o QR Code de certidões e contracheques em Validar documento.</string>
+	<string>A câmera é usada para ler o QR Code de certidões e contracheques em Validar documento e para registrar fotos de serviço no módulo Operações (alteração, atestado e viatura).</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>A localização é usada no módulo Operações para registrar a sua apresentação no posto de serviço.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
 	<string>Permissão para acessar documentos no dispositivo.</string>
 	<key>NSFaceIDUsageDescription</key>
@@ -110,5 +112,18 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<!-- O módulo Operações abre o app de campo do Operar numa WebView, e o app
+	     dele guarda a ordem de operações e a escala para abrir sem sinal. Isso
+	     usa a Cache API, que o WKWebView só libera para domínios declarados
+	     aqui. Sem esta lista, "Guardar para ver sem sinal" não funciona no
+	     iPhone — e é justamente em operação, sem sinal, que ele serve.
+	     Um domínio só: a WebView não navega para mais nenhum (qualquer outro
+	     endereço vai para o navegador do sistema, em shouldOverrideUrlLoading).
+	     Só tem efeito junto com limitsNavigationsToAppBoundDomains, ligado em
+	     lib/features/operacoes/operacoes_page.dart. O limite da Apple é 10. -->
+	<key>WKAppBoundDomains</key>
+	<array>
+		<string>operar.pmrr.online</string>
+	</array>
 </dict>
 </plist>

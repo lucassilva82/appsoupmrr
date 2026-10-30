@@ -37,6 +37,17 @@ final registroModulos = RegistroModulos(const [
       prefixoErro: 'CM',
       rota: AppRoutes.COMUNICADOS,
       sinonimosPadrao: ['comunicado', 'aviso oficial', 'informe']),
+  // Serviço operacional: o Operar do GAPE (operar.pmrr.online), aberto numa
+  // tela interna. A chave é a mesma que o card da Início consulta para saber
+  // se o painel ligou ou desligou o módulo.
+  ModuloApp(
+      chave: 'op.operacoes',
+      rotuloPadrao: 'Operações',
+      icone: 'escudo',
+      prefixoErro: 'OP',
+      rota: AppRoutes.OPERACOES,
+      apelidos: ['operacoes'],
+      sinonimosPadrao: ['operação', 'escala da operação', 'expoferr', 'enem', 'serviço', 'posto']),
   ModuloApp(
       chave: 'rh.validar',
       rotuloPadrao: 'Validar documento',
@@ -259,4 +270,5 @@ final registroModulos = RegistroModulos(const [
 const prefixosConhecidos = {
   'LG', 'CF', 'CC', 'TS', 'CT', 'FE', 'FI', 'DC', 'NR', 'MF', 'AV', 'BU', //
   'FB', 'CH', 'PD', 'MD', 'AP', 'ES', 'SV', 'AJ', 'DO', 'NT', 'CM', 'CR', 'VD', 'BG', 'PT', 'LOG',
+  'OP', // Operações (operar_token.php e a tela do módulo)
 };
