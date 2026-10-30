@@ -567,7 +567,22 @@ void navegarPorNotificacao(String? rota) {
   final r = rotaDaNotificacao(rota);
   if (r == null) {
     if (rota != null && rota.trim().isNotEmpty) {
-      print('[NOTIF] Rota "${rota.trim()}" desconhecida — navegação ignorada.');
+      debugPrint('[NOTIF] Rota "${rota.trim()}" desconhecida — esta versão não '
+          'conhece essa função.');
+      // E DIZ ao militar, em vez de não fazer nada. Até 30/10/2026 isto era
+      // só um print: quem tocava a notificação via o app abrir na Início, ou
+      // nada acontecer, sem nenhuma explicação — e tocava de novo. O caso
+      // normal é notificação de função que chegou numa versão mais nova que a
+      // instalada, e para isso há resposta: atualize. Silêncio não é resposta.
+      final messenger = scaffoldMessengerKey.currentState;
+      final context = navigatorKey.currentContext;
+      if (messenger != null && context != null) {
+        avisoRapidoGlobal(messenger, Theme.of(context),
+            titulo: 'Atualize o SouPMRR',
+            texto: 'Este aviso abre uma função que a versão instalada ainda '
+                'não tem. Atualize na loja para usá-la.',
+            tipo: TipoAviso.info);
+      }
     }
     return;
   }
