@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/config/app_config.dart';
+import '../../core/erros/falha_app.dart';
 import '../../core/rede/api_client.dart';
 import '../../widgets/cartao_painel.dart';
 import '../../widgets/vidro.dart';
@@ -23,7 +24,7 @@ class CardOperacoes extends StatefulWidget {
 class _CardOperacoesState extends State<CardOperacoes> {
   static const _chaveFuncao = OperarApi.chaveLog;
 
-  Future<({MeuServicoOperacao servico, SessaoOperar sessao})?>? _futuro;
+  Future<({MeuServicoOperacao? servico, SessaoOperar? sessao})>? _futuro;
 
   @override
   void initState() {
@@ -31,35 +32,47 @@ class _CardOperacoesState extends State<CardOperacoes> {
     _futuro = _carregar();
   }
 
-  Future<({MeuServicoOperacao servico, SessaoOperar sessao})?> _carregar() async {
-    // Desligado no painel: nem chama o Operar. É assim que o módulo se liga e
-    // desliga sem publicar versão.
-    //
-    // Chave que o painel ainda não conhece NÃO esconde o card — é a mesma
-    // regra do `_Card` da Início (home_page.dart): item nulo vale como
-    // permitido. Esconder aqui deixaria o módulo morto até alguém cadastrar a
-    // chave, e o militar não saberia por quê.
+  /// Desligado no painel: nem chama o Operar, e o card some. É o único jeito de
+  /// ele sumir — ver [build].
+  ///
+  /// Chave que o painel ainda não conhece NÃO esconde o card: é a mesma regra
+  /// do `_Card` da Início (home_page.dart), item nulo vale como permitido.
+  bool get _desligadoNoPainel {
     final item = RepositorioConfig.atual.item(_chaveFuncao);
-    if (item != null && (!item.visivel || item.bloqueado)) return null;
+    return item != null && (!item.visivel || item.bloqueado);
+  }
+
+  Future<({MeuServicoOperacao? servico, SessaoOperar? sessao})> _carregar() async {
     final sessao = await SessaoOperar.doLoginAtual();
-    if (sessao == null) return null;
-    final api = MeuServicoApi(api: ApiClient(), sessao: sessao);
-    final s = await api.ler();
-    return s.temServico ? (servico: s, sessao: sessao) : null;
+    if (sessao == null) return (servico: null, sessao: null);
+    try {
+      final s = await MeuServicoApi(api: ApiClient(), sessao: sessao).ler();
+      return (servico: s, sessao: sessao);
+    } on FalhaApp {
+      // Operar fora do ar, aparelho desligado do outro lado, sem rede: o card
+      // continua na tela e diz o que sabe. Quem toca cai no Operar, que mostra
+      // o erro dele — melhor que um buraco na Início.
+      return (servico: null, sessao: sessao);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<({MeuServicoOperacao servico, SessaoOperar sessao})?>(
+    if (_desligadoNoPainel) return const SizedBox.shrink();
+    return FutureBuilder<({MeuServicoOperacao? servico, SessaoOperar? sessao})>(
       future: _futuro,
       builder: (context, snap) {
-        final d = snap.data;
-        // Enquanto carrega, e em qualquer falha, o card não ocupa espaço: a
-        // Início não pode ficar com um buraco por causa de outro sistema.
-        if (d == null) return const SizedBox.shrink();
+        // O card é FIXO (decisão do usuário, 30/10/2026): sem escala, sem rede
+        // ou ainda carregando, ele continua na tela e explica. Some só quando o
+        // painel desliga a função. Card que some é função que o militar deixa
+        // de descobrir.
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _Corpo(servico: d.servico, sessao: d.sessao),
+          child: _Corpo(
+            servico: snap.data?.servico,
+            sessao: snap.data?.sessao,
+            carregando: snap.connectionState != ConnectionState.done,
+          ),
         );
       },
     );
@@ -67,10 +80,11 @@ class _CardOperacoesState extends State<CardOperacoes> {
 }
 
 class _Corpo extends StatelessWidget {
-  const _Corpo({required this.servico, required this.sessao});
+  const _Corpo({required this.servico, required this.sessao, this.carregando = false});
 
-  final MeuServicoOperacao servico;
-  final SessaoOperar sessao;
+  final MeuServicoOperacao? servico;
+  final SessaoOperar? sessao;
+  final bool carregando;
 
   /// "2026-11-03" -> "03/11"
   static String _dia(String iso) =>
@@ -79,22 +93,66 @@ class _Corpo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final s = servico.proximo!;
+    final servico = this.servico;
+    final s = servico?.proximo;
+    void abrir() => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => OperacoesPage(sessao: sessao)),
+        );
+
+    // Sem serviço ainda: o card continua, dizendo o que há para dizer. É
+    // assim que o militar fica sabendo que o módulo existe antes de ser
+    // escalado pela primeira vez.
+    if (s == null) {
+      return CartaoVidro(
+        raio: 16,
+        padding: const EdgeInsets.all(14),
+        onTap: carregando ? null : abrir,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CabecalhoCartao(
+              icone: Icons.shield_outlined,
+              titulo: 'Operações',
+              meta: servico?.evento,
+              mostrarSeta: !carregando,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              carregando
+                  ? 'Procurando o seu serviço…'
+                  : servico == null
+                      ? 'Não deu para consultar agora. Toque para abrir.'
+                      : 'Sem escala para você ainda.',
+              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            if (!carregando) ...[
+              const SizedBox(height: 2),
+              Text(
+                servico == null
+                    ? 'O Operar não respondeu. Lá dentro ele explica o porquê.'
+                    : 'Quando você for escalado numa operação, o seu posto, o '
+                        'horário e a equipe aparecem aqui.',
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
     final horario = [s.horaInicio, s.horaFim].whereType<String>().join(' às ');
     final onde = s.local ?? s.posto;
     return CartaoVidro(
       raio: 16,
       padding: const EdgeInsets.all(14),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => OperacoesPage(sessao: sessao)),
-      ),
+      onTap: abrir,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CabecalhoCartao(
             icone: Icons.shield_outlined,
             titulo: 'Operações',
-            meta: servico.evento,
+            meta: servico!.evento,
           ),
           const SizedBox(height: 10),
           if (s.restrita)
