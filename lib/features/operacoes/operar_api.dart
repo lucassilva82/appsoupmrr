@@ -162,8 +162,13 @@ class SessaoOperar {
 
   /// Apaga o token deste aparelho. Chamado ao sair do Sou PM: o token do
   /// Operar não deve sobreviver à sessão de quem o pediu.
-  Future<void> limpar() async {
-    await _cofre.apagar(_chaveToken);
-    await _cofre.apagar(_chaveMatricula);
+  Future<void> limpar() => limparDoAparelho(cofre: _cofre);
+
+  /// A mesma limpeza, sem precisar de uma sessão montada — é o que o logout
+  /// do app chama, junto das certidões. Quem sai leva o acesso ao Operar
+  /// embora: o próximo militar neste aparelho pede o token dele.
+  static Future<void> limparDoAparelho({Cofre cofre = const CofreSeguro()}) async {
+    await cofre.apagar(_chaveToken);
+    await cofre.apagar(_chaveMatricula);
   }
 }

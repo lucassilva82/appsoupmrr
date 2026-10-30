@@ -78,6 +78,14 @@ class MeuServicoApi {
 
   /// Lê `/api/meu-servico`. Em 401 o aparelho foi desligado do outro lado:
   /// pede um token novo e tenta uma vez só, para não entrar em laço.
+  ///
+  /// Este caminho depende de o 401 chegar com content-type JSON: o
+  /// `ApiClient` só devolve status fora do 200 quando a resposta é JSON, e do
+  /// contrário lança antes. O Operar é FastAPI e responde `{"detail": ...}`,
+  /// então funciona — mas um 401 cuspido pelo Apache à frente dele viria em
+  /// HTML, e aí a renovação não aconteceria. Um teste cobre o caso bom
+  /// (`test/features/operacoes_test.dart`); o ruim vira falha comum, que a
+  /// tela trata abrindo o login do próprio Operar.
   Future<MeuServicoOperacao> ler() async {
     var r = await _pedir(await sessao.token());
     if (r.status == 401) {

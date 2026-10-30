@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:projetonovo/features/avisos/avisos_api.dart';
+import 'package:projetonovo/features/operacoes/operar_api.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -649,6 +650,8 @@ class Auth with ChangeNotifier {
       Sessao.matriculaAtual = null;
       // Certidões têm dados pessoais (a Ficha traz conta e endereço).
       await CertidaoService.apagarTudo();
+      // O token do Operar é um acesso a outro sistema: sai com quem o pediu.
+      await SessaoOperar.limparDoAparelho();
     } catch (e) {
       debugPrint('[LOG] Erro ao limpar dados: $e');
     }
