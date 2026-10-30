@@ -286,13 +286,14 @@ dentro do JSON de `soupm_config`. A causa e a regra para não repetir estão em
 `APRENDIZADOS.md` §45 — em resumo, **`LC_CTYPE=UTF-8 pbcopy`** e conferir o
 texto já colado antes de executar.
 
-**Os interruptores continuam todos desligados**, de propósito. Cada um muda o
-que o militar vê e tem uma condição antes:
+**Um interruptor foi ligado em 30/10/2026: o `notificacoes.envio_fcm`.** Os
+outros continuam desligados, de propósito. Cada um muda o que o militar vê e
+tem uma condição antes:
 
 | Interruptor | Antes de ligar |
 |---|---|
 | `comunicados.fonte_app` (`firestore` → `api`) | cadastrar as categorias e ao menos um comunicado pelo painel |
-| `notificacoes.envio_fcm` | `~/private/soupm_fcm.json` no servidor e o cron `envio_push.php` de pé |
+| ~~`notificacoes.envio_fcm`~~ **ligado em 30/10** | a conta de serviço entrou em `~/private/soupm_fcm.json` (600) e o cron `envio_push.php` já estava de pé. Medido, não suposto: o envio `id 2` saiu `concluido`, com **3 aparelhos aceitos e 0 falhas**, e o push chegou no aparelho do usuário. O tráfego que já existia migrou junto (envio `id 1`, "Certidão emitida", 1 aceito) |
 | `notificacoes.fonte_app` (`firestore` → `api`) | só depois do corte, com a 2.2 na loja |
 | `declaracoes.campanhas_ligadas` | cadastrar a campanha do ano em curso, senão ninguém consegue declarar |
 | `niveis.ligado` | comparar no painel a regra nova com a de hoje |
@@ -306,7 +307,7 @@ TO` um usuário que leia o esquema `qra` — o do cPanel não lê.
 | Arquivo | Para quê | Como |
 |---|---|---|
 | `~/private/config_painel.php` | Segredo do link assinado dos anexos e da prévia do PDF (painel ↔ API) | `<?php return ['segredo' => '<64+ caracteres aleatórios>'];` — o **mesmo valor** vai no `conex/painelsoupmrr_local.php` do painel |
-| `~/private/soupm_fcm.json` | Conta de serviço do Firebase, para a API mandar push sem as Cloud Functions (fase 4) | Console do Firebase › Configurações do projeto › Contas de serviço › Gerar nova chave privada. Permissão 600. Nunca no git |
+| ~~`~/private/soupm_fcm.json`~~ **feito em 30/10** | Conta de serviço do Firebase, para a API mandar push sem as Cloud Functions (fase 4) | Console do Firebase › Configurações do projeto › Contas de serviço › Gerar nova chave privada. Permissão 600. Nunca no git. **Já está lá**, em 600. O arquivo baixado continua em `~/Downloads` na máquina do usuário: apagar de lá, porque é a chave privada do projeto e a pasta de downloads não é lugar dela |
 
 ## 2b. Chave do app no SISCHAMADOS (Meus chamados, fase 3c) — fase futura, quando o painel for para a intranet
 
@@ -933,3 +934,31 @@ segunda mão. É o §50: tanto o retrato antigo quanto a correção precisam ser
 medidos na fonte. O `versao_min_app` nulo, que é o achado que importa aqui,
 só apareceu porque fui ao banco em vez de aceitar qualquer um dos dois
 relatos.
+
+## Segredo do push por módulo: entregar ao responsável pelo Operações (30/10/2026)
+
+O `sigrh/push_modulo.php` está no ar: outro sistema da PMRR pede um push, a
+API filtra (módulo ligado, tipo permitido, limite por hora e por dia, horário
+silencioso, aparelho existente) e entrega. Quem pede se identifica por um
+**segredo de 64 hex**, e o servidor guarda só o **SHA-256** dele, em
+`~/private/config_push_modulo.php`. Ler esse arquivo não dá a ninguém o poder
+de disparar push: é por isso que o hash fica lá e o segredo não.
+
+O par do módulo `operar` já foi gerado e o hash está no servidor. **O segredo
+em si ainda não chegou a quem vai usá-lo** (o responsável pelo módulo de
+Operações). Ele não está neste repositório, que é público, nem no banco, nem
+em nenhum documento: foi passado ao usuário na conversa. Falta:
+
+1. Entregar o segredo ao responsável por canal seguro (não por e-mail aberto
+   nem WhatsApp em grupo), para ele pôr na configuração do Operações.
+2. Guardar uma cópia na pasta "Arquivos SouPMRR/servidor-api" do Drive, junto
+   das outras credenciais.
+
+Trocar o segredo é trocar o hash em `~/private/config_push_modulo.php`: não há
+migração, e o modelo do arquivo (`sigrh/cron/config_push_modulo.exemplo.php`)
+traz o comando que gera um par novo.
+
+**Enquanto o segredo não chegar lá, o módulo não consegue pedir push** — e a
+recusa é explícita (`MODULO_NAO_AUTORIZADO`), não um silêncio. Foi de
+propósito: um filtro que recusa sem dizer por quê viraria o §27 na camada de
+entrega.
