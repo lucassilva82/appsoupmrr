@@ -277,7 +277,6 @@ class DadosSql {
     if (response.statusCode == 200) {
       try {
         var dados = _safeJsonDecode(response);
-        print(dados.toString());
         dados.forEach((element) {
           MesesContracheque mesContracheque = MesesContracheque(
             tipo: "B",
@@ -292,7 +291,7 @@ class DadosSql {
           );
           mesesContracheque.add(mesContracheque);
         });
-        print("Tamanho após API nova: ${mesesContracheque.length}");
+        debugPrint('[CC] meses pela API nova: ${mesesContracheque.length}');
       } catch (error) {
         // Mostra/log o erro se necessário
       }
@@ -302,7 +301,6 @@ class DadosSql {
     if (responseOld.statusCode == 200) {
       try {
         var dadosOld = _safeJsonDecode(responseOld);
-        print(dadosOld.toString());
         dadosOld.forEach((element) {
           MesesContracheque mesContracheque = MesesContracheque(
             tipo: "A",
@@ -317,7 +315,7 @@ class DadosSql {
           );
           mesesContracheque.add(mesContracheque);
         });
-        print("Tamanho após API antiga: ${mesesContracheque.length}");
+        debugPrint('[CC] meses pela API antiga: ${mesesContracheque.length}');
       } catch (error) {
         // Trate o erro se necessário
       }
@@ -342,15 +340,13 @@ class DadosSql {
       String relacaoTrabalho,
       String folha) async {
     mes = converteMes(mesExtenso); // Garante que 'mes' seja o número correto
-    print(
-        "Tipo de contracheque: $tipo e mes = $mes e mesExtenso = $mesExtenso, relacaoTrabalho = $relacaoTrabalho");
+    debugPrint('[CC] folha tipo $tipo, mes $mes ($mesExtenso), vinculo $relacaoTrabalho');
     // Se o tipo for "A", usamos a API antiga
     if (tipo == "A") {
       final String url =
           "${_Url}/exibecontracheque.php?cpf=$cpf&ano=$ano&mes=$mes&cod=$codProvento&matricula=$matricula&relacaoTrabalho=$relacaoTrabalho";
 
       final response = await http.get(Uri.parse(Uri.encodeFull(url)));
-      print("respsta foi = ${response.body}");
       ContrachequeModel contracheque = ContrachequeModel();
       contracheque.proventos = [];
 
@@ -370,11 +366,12 @@ class DadosSql {
 
             contracheque.proventos.add(dp);
           });
-          print('aqui ${contracheque.proventos}');
+          debugPrint('[CC] ${contracheque.proventos.length} rubricas lidas');
 
           return contracheque;
         } catch (error) {
-          print(error);
+          // Só o tipo: o objeto de erro pode arrastar a URL, e a URL leva o CPF.
+          debugPrint('[CC] falha ao ler as rubricas: ${error.runtimeType}');
           return contracheque;
         }
       } else {
@@ -436,7 +433,7 @@ class DadosSql {
           }
           return contracheque;
         } catch (error) {
-          print("Erro ao processar o contracheque: $error");
+          debugPrint('[CC] falha ao montar o contracheque: ${error.runtimeType}');
           return contracheque;
         }
       } else {
