@@ -555,8 +555,14 @@ String? rotaDaNotificacao(String? rota) {
   if (rota == null || rota.trim().isEmpty) return null;
   final r = rota.trim();
   if (kRotasNotificacaoPermitidas.contains(r)) return r;
-  final chave = r.startsWith('/') ? r.substring(1) : r;
-  final m = registroModulos.porRota(r) ?? registroModulos.porChave(chave);
+  // A rota pode trazer query ("/op/operacoes?abrir=escala"): o módulo se
+  // resolve pelo CAMINHO e a query segue adiante (ver navegarPorNotificacao).
+  // É o que deixa o Operar mandar o militar à tela certa dentro do módulo sem
+  // mexer no contrato de push, que só tem `route` — sem bloco de dados livre.
+  final caminho = Uri.tryParse(r)?.path ?? r;
+  if (kRotasNotificacaoPermitidas.contains(caminho)) return caminho;
+  final chave = caminho.startsWith('/') ? caminho.substring(1) : caminho;
+  final m = registroModulos.porRota(caminho) ?? registroModulos.porChave(chave);
   // Rota que precisa de argumentos (análise salarial) não abre por push.
   if (m == null || m.rota == null || m.chave == 'rh.contracheques.grafico') return null;
   return m.rota;
@@ -578,7 +584,12 @@ void navegarPorNotificacao(String? rota) {
     return;
   }
   print('[NOTIF] Navegando para "$r" via notificação.');
-  nav.pushNamed(r);
+  // A query só é repassada ao módulo que a entende. Mandar `arguments` a
+  // qualquer rota seria arriscado: a da análise salarial converte o argumento
+  // para Map e estouraria — ela já é recusada acima, mas a regra fica estreita
+  // de propósito.
+  final q = Uri.tryParse(rota!.trim())?.query ?? '';
+  nav.pushNamed(r, arguments: r == AppRoutes.OPERACOES && q.isNotEmpty ? q : null);
 }
 
 class MyApp extends StatefulWidget {
@@ -932,7 +943,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             AppRoutes.DOCUMENTOS: (_) => const DocumentosPage(),
             AppRoutes.VALIDAR: (_) => const ValidarDocumentoPage(),
             AppRoutes.COMUNICADOS: (_) => const CentralComunicadosPage(),
-            AppRoutes.OPERACOES: (_) => const OperacoesPage(),
+            // A query da notificação ("abrir=escala") vira o caminho que a
+            // WebView abre: /app/?abrir=escala. Sem ela, o app de campo na
+            // tela inicial dele.
+            AppRoutes.OPERACOES: (ctx) {
+              final q = ModalRoute.of(ctx)?.settings.arguments;
+              return OperacoesPage(
+                  caminho: q is String && q.isNotEmpty ? '/app/?$q' : '/app/');
+            },
             AppRoutes.CONTRACHEQUE_PAGE: (_) => Contracheque(),
             AppRoutes.CONTRACHEQUE_GRAFICO_PAGE: (ctx) {
               final args =

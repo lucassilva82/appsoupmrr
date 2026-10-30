@@ -21,4 +21,17 @@ void main() {
     expect(rotaDaNotificacao('  '), isNull);
     expect(rotaDaNotificacao('rh.contracheques.grafico'), isNull);
   });
+
+  // O push do Operar manda a tela dentro da rota, porque o contrato de push do
+  // app só tem `route` — não há bloco de dados livre. Antes, rota com query
+  // não casava com módulo nenhum e o toque não abria nada.
+  test('rota com query resolve o módulo pelo caminho', () {
+    expect(rotaDaNotificacao('/op/operacoes?abrir=escala'), AppRoutes.OPERACOES);
+    expect(rotaDaNotificacao('/op/operacoes'), AppRoutes.OPERACOES);
+    expect(rotaDaNotificacao('op.operacoes'), AppRoutes.OPERACOES);
+  });
+
+  test('query não faz rota desconhecida passar', () {
+    expect(rotaDaNotificacao('/qualquer-coisa?abrir=x'), isNull);
+  });
 }
