@@ -385,6 +385,10 @@ Falta, e depende de coisas que não estão na nossa mão:
 
 ## 5b. O que o Cap Stenio precisa mudar no Operar (30/10/2026)
 
+> O documento pronto para encaminhar está em
+> `docs/PEDIDO_OPERAR_DENTRO_DO_SOUPM.md`, e a lista do que falta no app em
+> `docs/OPERACOES_PARA_FECHAR.md`. O resumo abaixo fica como índice.
+
 O pedido grande — as notificações — já está em `docs/PEDIDO_PUSH_OPERAR.md`.
 Estes são curtos, todos no `operacoes/app_campo/app.js` (numeração do pacote
 r14 de 28/10).
