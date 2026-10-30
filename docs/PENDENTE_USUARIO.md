@@ -879,7 +879,10 @@ abrir Serviços: devem aparecer **6 áreas**, não 5.
 
 ## Reset dos atalhos e a versão mínima de Operações (30/10/2026)
 
-**Decisão do usuário:** "depois eu vejo isso". Fica aqui para não se perder.
+**DECIDIDO (30/10/2026):** o reset sai **junto com a versão** que levar o
+módulo de Operações — não agora. Palavras dele: *"junto com a versão"*.
+Nada a fazer até a branch `feature/modulo-operacoes` ir para merge; a sessão
+do módulo avisa, e esse é o primeiro sinal.
 
 **O problema, que é real e se repete.** A escolha de atalhos do militar
 **substitui** a lista do painel, não se mescla
@@ -904,7 +907,7 @@ apagar.
    salvamento, uma correção de rótulo apagaria dado de ~3 mil militares.
 3. Registrar **quantas** personalizações foram apagadas.
 
-**O que falta decidir, e é só isso: qual versão leva o módulo de Operações.**
+**Por que esperar — a razão que ficou de pé.**
 
 Medido no banco em 30/10/2026: `op.operacoes` está com `visivel_menu = TRUE`,
 estado `ativo`, e **`versao_min_app` NULL**. O módulo **não está na 2.2.x
@@ -914,9 +917,13 @@ Com `versao_min_app` nulo, o item é anunciado a **todo mundo**: a tropa, na
 versão da loja, vê um atalho que o app dela não sabe abrir e recebe "Atualize
 o app" para uma versão que não existe na loja.
 
-**Ordem que evita isso:** preencher `versao_min_app` com a versão que vai
-trazer o módulo → depois fazer o reset. Na ordem inversa, a tropa perde a
-organização dos atalhos e ganha um atalho morto.
+Hoje a tropa perderia a organização dos atalhos e ganharia uma chave que o
+build dela ignora. Com a versão publicada, perde a organização e **ganha a
+função** — que é a troca que o usuário quer fazer.
+
+**Ao lançar, nesta ordem:** preencher `versao_min_app` do `op.operacoes` com
+a versão que leva o módulo → publicar nas lojas → disparar o reset. Na ordem
+inversa, o atalho fica morto no aparelho de quem não atualizou.
 
 **Nota de método, porque custou duas correções no mesmo dia.** Eu afirmei ao
 usuário que `op.operacoes` estava invisível, lendo o relato de **outra
