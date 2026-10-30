@@ -355,6 +355,14 @@ class _OperacoesPageState extends State<OperacoesPage> {
             geolocationEnabled: true,
             allowsInlineMediaPlayback: true,
             transparentBackground: true,
+            // iPhone: o par do WKAppBoundDomains do Info.plist. É o que libera
+            // a Cache API para o Operar, e com ela o "Guardar para ver sem
+            // sinal" — a ordem de operações e a escala abertas no campo, sem
+            // rede. Em troca, esta WebView só navega para os domínios
+            // declarados lá; não é perda, porque qualquer outro endereço já
+            // ia para o navegador do sistema (shouldOverrideUrlLoading).
+            // No Android o campo é ignorado.
+            limitsNavigationsToAppBoundDomains: true,
           ),
           onWebViewCreated: (c) {
             _web = c;

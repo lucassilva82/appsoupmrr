@@ -74,32 +74,45 @@ teste.
 São as funções que mais dependem do aparelho e as que menos dá para garantir
 por teste automático. **Não ponha a tropa para usar antes disto.**
 
-## 3. `WKAppBoundDomains` no iPhone — **decisão sua, e eu recomendo fazer**
+## 3. ~~`WKAppBoundDomains` no iPhone~~ — **feito e conferido em 30/10**
 
-Sem essa declaração no `Info.plist`, o "Guardar para ver sem sinal" do Operar
-não funciona dentro do módulo: ele usa a Cache API, que o WKWebView só libera
-para domínios declarados. Quem está em operação sem sinal não abre a ordem de
-operações nem a escala guardada — que é exatamente para o que aquele botão
-existe.
+`operar.pmrr.online` declarado no `Info.plist` e o
+`limitsNavigationsToAppBoundDomains` ligado na WebView. Conferido no iPhone:
+"Guardar para ver sem sinal" agora funciona — o botão vira "Remover a cópia
+sem sinal". Antes a Cache API estava bloqueada e a ordem de operações não
+ficava no aparelho.
 
-Declarar custa pouco **no nosso caso**: a regra do iOS limita o que a WebView
-pode fazer fora dos domínios declarados, e a nossa só carrega o
-`operar.pmrr.online` — qualquer outro endereço já abre no navegador do
-sistema, de propósito. São duas linhas no `Info.plist` mais o
-`limitsNavigationsToAppBoundDomains` no plugin.
+Custo: esta WebView passa a navegar só para o domínio declarado. Não é perda —
+qualquer outro endereço já ia para o navegador do sistema.
 
-Não testei ainda. Se autorizar, faço e confiro no mesmo dia.
+## 4. Reset da personalização dos atalhos — **não é rápido, e precisa da sua decisão**
 
-## 4. Reset da personalização dos atalhos — **combinado para sair com a versão**
+Combinado para sair com a versão, mas ao ir fazer vi que não é um apagar
+local: a personalização da Início também fica **no servidor**
+(`inicio_preferencias.php`), e o `carregar()` dá prioridade à cópia de lá.
+Limpar só no aparelho não resolve — na próxima abertura a preferência volta.
 
-Quando o painel muda a ordem dos atalhos, a escolha que o militar tinha feito
-é apagada. Ficou para entrar junto com a versão, não antes.
+O caminho que funciona é o `restaurar()`, que é uma chamada de rede que
+**apaga a preferência do militar no servidor**. Na abertura seguinte a cada
+versão nova, para toda a tropa, com a falha de rede como modo de erro.
+
+Três coisas a decidir, e são suas:
+
+1. Apagar mesmo a cada versão, ou só quando o painel mudar a ordem?
+2. Apagar tudo (blocos e atalhos) ou só os atalhos?
+3. O que fazer quando a chamada falhar: tentar de novo na próxima abertura, ou
+   desistir daquela versão?
+
+Não fiz por conta própria porque apagar a Início de todo mundo no servidor não
+é coisa que se decide sozinho.
 
 ## 5. Antes do merge
 
 - **Conferir no painel** que a chave `op.operacoes` está registrada e ligada
   em produção — é o que liga e desliga o módulo.
-- **Versão nos três arquivos**, como manda o CLAUDE.md.
+- ~~**Versão nos três arquivos**~~ **feito**: `2.3.0+60` no `pubspec.yaml`, no
+  `Info.plist` (as duas chaves) e no `build.gradle.kts` (`versionCode = 60`).
+  Subi o minor porque entra um módulo inteiro; troque se preferir outro número.
 - Merge do `feature/modulo-operacoes`.
 
 ---
