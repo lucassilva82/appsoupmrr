@@ -15,6 +15,7 @@ import '../../utils/app_theme.dart';
 import '../../widgets/aviso_rapido.dart';
 import '../../widgets/custom_appbar.dart';
 import '../../widgets/vidro.dart';
+import 'guarda_dono.dart';
 import 'operar_api.dart';
 
 /// O módulo Operações: o app de campo do Operar dentro do Sou PM.
@@ -52,6 +53,10 @@ class _OperacoesPageState extends State<OperacoesPage> {
   bool _preparando = true;
   SessaoOperar? _sessao;
   String? _token;
+
+  /// O logout do Sou PM deixou marca: esvaziar o armazém do Operar antes de a
+  /// página dele rodar, mesmo que o militar que volta seja o mesmo.
+  bool _limparArmazem = false;
   FalhaApp? _falhaToken;
   InAppWebViewController? _web;
   bool _carregandoPagina = true;
@@ -63,6 +68,9 @@ class _OperacoesPageState extends State<OperacoesPage> {
   }
 
   Future<void> _preparar() async {
+    // Antes de qualquer coisa: a marca do logout. Ela vale mesmo quando o
+    // token falha depois — a guarda roda sozinha.
+    _limparArmazem = await SessaoOperar.consumirMarcaDeLimpeza();
     try {
       _sessao = widget.sessao ?? await SessaoOperar.doLoginAtual();
       final t = await _sessao?.token();
@@ -82,23 +90,33 @@ class _OperacoesPageState extends State<OperacoesPage> {
     }
   }
 
-  /// Planta o token do aparelho onde o app do Operar o procura.
+  /// A guarda de dono e, quando há token, o plantio dele onde o app do Operar
+  /// o procura.
   ///
   /// O Operar guarda tudo com `JSON.stringify` sob o prefixo `e26.`, então o
   /// valor vai codificado — gravar a string crua faria o `JSON.parse` dele
   /// falhar e o militar cairia no primeiro acesso. O sinal `e26.soupm` não vem
   /// daqui: o `?soupm=1` da URL é o próprio app dele que o grava.
-  UnmodifiableListView<UserScript> _scriptsIniciais(String token, String matricula) {
-    final t = jsonEncode(jsonEncode(token));
-    final m = jsonEncode(jsonEncode(matricula));
+  UnmodifiableListView<UserScript> _scriptsIniciais(String? token, String? matricula) {
     return UnmodifiableListView([
+      // A guarda vem primeiro e vai SEMPRE, com token ou sem: é ela que
+      // garante que a página não abre com dado de outro militar.
       UserScript(
-        source: 'try{'
-            'window.localStorage.setItem("e26.token", $t);'
-            'window.localStorage.setItem("e26.matricula", $m);'
-            '}catch(e){}',
+        source: guardaDeDonoJs(
+          matricula: matricula,
+          token: token,
+          forcar: _limparArmazem,
+        ),
         injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
       ),
+      if (token != null && matricula != null)
+        UserScript(
+          source: 'try{'
+              'window.localStorage.setItem("e26.token", ${jsonEncode(jsonEncode(token))});'
+              'window.localStorage.setItem("e26.matricula", ${jsonEncode(jsonEncode(matricula))});'
+              '}catch(e){}',
+          injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+        ),
       UserScript(
         source: _pontePonte,
         injectionTime: UserScriptInjectionTime.AT_DOCUMENT_END,
@@ -242,9 +260,8 @@ class _OperacoesPageState extends State<OperacoesPage> {
       children: [
         InAppWebView(
           initialUrlRequest: URLRequest(url: alvo),
-          initialUserScripts: (_token == null || _sessao == null)
-              ? null
-              : _scriptsIniciais(_token!, _sessao!.api.matricula),
+          initialUserScripts:
+              _scriptsIniciais(_token, _sessao?.api.matricula),
           initialSettings: InAppWebViewSettings(
             javaScriptEnabled: true,
             // Obrigatório: o token do aparelho mora no localStorage do Operar.

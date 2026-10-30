@@ -269,7 +269,7 @@ class _DrawerPersonalizadoState extends State<DrawerPersonalizado> {
                       ),
                     );
                     if (confirmed == true && context.mounted) {
-                      Provider.of<Auth>(context, listen: false).logout();
+                      Provider.of<Auth>(context, listen: false).logout(deliberado: true);
                     }
                   },
                 ),

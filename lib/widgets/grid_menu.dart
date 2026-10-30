@@ -163,7 +163,7 @@ class _GridMenuItem extends StatelessWidget {
           cor: Colors.redAccent,
         );
         if (confirmed && context.mounted) {
-          Provider.of<Auth>(context, listen: false).logout();
+          Provider.of<Auth>(context, listen: false).logout(deliberado: true);
         }
         break;
     }

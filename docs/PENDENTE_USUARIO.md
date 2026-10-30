@@ -362,6 +362,51 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
   ficaram inacessíveis (o servidor bloqueia esse nome de pasta). Pode apagar a
   pasta pelo cPanel; o que vale está em `sigrh/doc/`.
 
+## 5b. O que o Cap Stenio precisa mudar no Operar (30/10/2026)
+
+O pedido grande — as notificações — já está em `docs/PEDIDO_PUSH_OPERAR.md`.
+Estes são curtos, todos no `operacoes/app_campo/app.js` (numeração do pacote
+r14 de 28/10).
+
+1. **O PIN dentro do Sou PM.** Já combinado com ele, já em andamento: o militar
+   acabou de desbloquear o Sou PM e não deve criar nem digitar um segundo PIN.
+
+2. **"Sair deste aparelho" não pode aparecer dentro do Sou PM.** A linha 2377
+   esconde o botão só no modo "meu app no computador":
+
+   ```js
+   // hoje
+   h += (MEUAPP ? '' : '<button class="btn red" id="bSair">Sair deste aparelho</button>') + ...
+   // pedido
+   h += (MEUAPP || SOUPM ? '' : '<button class="btn red" id="bSair">Sair deste aparelho</button>') + ...
+   ```
+
+   O `SOUPM` já existe no arquivo (linha 29) e já serve para esconder o convite
+   de instalar (linha 2368), então é usar o que está lá.
+
+   Por quê: dentro do Sou PM o militar entra com a matrícula dele e só pode
+   usar a conta daquela matrícula — o único "sair" é o do Sou PM (decisão do
+   Lucas, 30/10/2026). E hoje o botão **não desloga de nada**: ele chama
+   `limparAparelho()`, que apaga os dados do aparelho, e na abertura seguinte o
+   Sou PM planta o token outra vez. Ou seja, o militar perde a escala guardada
+   e volta logado do mesmo jeito.
+
+   O "Esqueci o PIN" (linha 4445) chama o mesmo `limparAparelho()`, mas vive na
+   tela de PIN e sai junto com ela no item 1.
+
+3. **A fila órfã precisa ser devolvida também no caminho do Sou PM.** O
+   `entrar()` (linhas 4256–4269) é quem põe de lado os registros não enviados
+   do dono anterior (`e26.filaOrfa`) e quem os devolve quando aquele militar
+   volta. No Sou PM o `entrar()` **não roda**: o token é plantado direto no
+   `localStorage` pelo app.
+
+   Nosso lado já faz a primeira metade — ao trocar de dono, a guarda do Sou PM
+   guarda a fila em `e26.filaOrfa[matrícula]`, na mesma chave e no mesmo
+   formato do `entrar()`. Falta a devolução: na partida, com token já presente,
+   se houver `filaOrfa[matricula]`, concatenar na `fila` e remover a entrada —
+   as mesmas quatro linhas do `entrar()`. Sem isso, registros feitos no campo
+   por quem usou o aparelho antes ficam esperando um acesso pelo navegador.
+
 ## 6. Bloqueios do modo automático
 
 - **25/10/2026:** publicar mudança no painel de **produção** (Funções e menu,

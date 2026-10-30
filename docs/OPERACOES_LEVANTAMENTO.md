@@ -381,7 +381,14 @@ banco). Vale decidir qual dos dois vem primeiro.
 
 # Decisões pendentes
 
-1. **O PIN.** O militar já desbloqueou o Sou PM. Pular o PIN?
+1. ~~**O PIN.**~~ **decidido em 30/10/2026:** pular dentro do Sou PM — o militar
+   acabou de desbloquear o app. O Cap Stenio está fazendo
+   (`docs/PENDENTE_USUARIO.md` §5b).
+1b. ~~**Sair do módulo.**~~ **decidido em 30/10/2026:** não existe. Quem entra no
+   Sou PM com uma matrícula só usa a conta dela, e o único logout é o do Sou PM;
+   depois dele, o Operar entra de novo. Do nosso lado é a guarda de dono
+   (`lib/features/operacoes/guarda_dono.dart`); do lado do Operar é esconder o
+   "Sair deste aparelho" (§5b item 2).
 2. **Militar não escalado.** Crachá válido, matrícula fora da operação: o que ele vê?
 3. **A digital como prova** (Parte 5) — regra, não código. Decisão do GAPE.
 4. **Multi-operação antes ou depois das telas** (Parte 8).

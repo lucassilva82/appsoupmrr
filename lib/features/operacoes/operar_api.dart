@@ -140,6 +140,11 @@ class SessaoOperar {
   static const _chaveToken = 'operar_token';
   static const _chaveMatricula = 'operar_matricula';
 
+  /// Marca deixada pelo logout: o armazém do Operar DENTRO da WebView ainda
+  /// precisa ser esvaziado. Quem esvazia é a tela, no começo da próxima
+  /// abertura — ela é o único lugar onde aquele `localStorage` existe.
+  static const _chaveLimparWeb = 'operar_limpar_web';
+
   /// O token para a WebView e para as chamadas ao Operar.
   ///
   /// Reusa o que está no cofre; só pede um novo quando não há nenhum, ou
@@ -156,7 +161,13 @@ class SessaoOperar {
     }
     final t = await api.pedirToken();
     await _cofre.gravar(_chaveToken, t.token);
-    await _cofre.gravar(_chaveMatricula, t.matricula.isEmpty ? api.matricula : t.matricula);
+    // A etiqueta é a matrícula de QUEM PEDIU, a do Sou PM — não a que o
+    // servidor devolve. As duas costumam ser a mesma, mas o Operar também
+    // conhece o militar por uma matrícula interna de dez dígitos; se ela
+    // voltasse aqui, a comparação abaixo nunca mais casaria e o módulo pediria
+    // um token novo a cada abertura — derrubando o aparelho do militar no
+    // navegador toda vez, que é justamente a regra do alto deste arquivo.
+    await _cofre.gravar(_chaveMatricula, api.matricula);
     return t.token;
   }
 
@@ -170,5 +181,21 @@ class SessaoOperar {
   static Future<void> limparDoAparelho({Cofre cofre = const CofreSeguro()}) async {
     await cofre.apagar(_chaveToken);
     await cofre.apagar(_chaveMatricula);
+    await cofre.gravar(_chaveLimparWeb, '1');
+  }
+
+  /// Lê a marca do logout e a consome: devolve `true` uma única vez, para a
+  /// tela esvaziar o armazém do Operar antes de a página dele rodar.
+  ///
+  /// Por que a marca, e não a limpeza na hora: no logout não há WebView viva,
+  /// e aquele `localStorage` é dela. A limpeza nativa que o logout tenta
+  /// (`limparArmazemOperar`) é melhor esforço — não existe no Android por
+  /// origem e pode falhar calada. A marca é o que garante.
+  static Future<bool> consumirMarcaDeLimpeza({
+    Cofre cofre = const CofreSeguro(),
+  }) async {
+    if (await cofre.ler(_chaveLimparWeb) != '1') return false;
+    await cofre.apagar(_chaveLimparWeb);
+    return true;
   }
 }

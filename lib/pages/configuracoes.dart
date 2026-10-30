@@ -184,7 +184,7 @@ class SettingsBody extends StatelessWidget {
       if (context.mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
-      auth.logout();
+      auth.logout(deliberado: true);
     }
   }
 }

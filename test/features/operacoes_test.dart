@@ -125,6 +125,27 @@ void main() {
       expect(cofre.dados['operar_token'], 'tok-novo');
     });
 
+    // O Operar conhece o militar por duas representações da mesma matrícula.
+    // Se a etiqueta do cofre fosse a que o servidor devolve, ela nunca casaria
+    // com a do Sou PM e o módulo pediria token novo a cada abertura — que é o
+    // único jeito de quebrar a regra do /api/acesso sem querer.
+    test('matrícula devolvida diferente não faz pedir token de novo', () async {
+      var pedidos = 0;
+      final cofre = _CofreMemoria();
+      final cliente = _clienteQueResponde((_) {
+        pedidos++;
+        return _json(_ok(matricula: '0041096009'));
+      });
+      SessaoOperar nova() => SessaoOperar(
+            cofre: cofre,
+            api: OperarApi(api: cliente, matricula: '452955', senhaMd5: 'md5'),
+          );
+
+      expect(await nova().token(), 'tok-1');
+      expect(await nova().token(), 'tok-1');
+      expect(pedidos, 1);
+    });
+
     test('sair do app leva o token do Operar junto', () async {
       final cofre = _CofreMemoria()
         ..dados['operar_token'] = 'tok'
@@ -132,6 +153,25 @@ void main() {
 
       await SessaoOperar.limparDoAparelho(cofre: cofre);
 
+      expect(cofre.dados['operar_token'], isNull);
+      expect(cofre.dados['operar_matricula'], isNull);
+    });
+
+    // O token sai do cofre no logout, mas a escala, o PIN e as conversas do
+    // Operar ficam no `localStorage` da WebView, que o cofre não alcança. A
+    // marca é o que leva a tela a esvaziá-lo na próxima abertura — sem ela, a
+    // limpeza dependeria só do melhor esforço nativo do logout.
+    test('o logout deixa marca para esvaziar o armazém da WebView', () async {
+      final cofre = _CofreMemoria();
+
+      expect(await SessaoOperar.consumirMarcaDeLimpeza(cofre: cofre), isFalse);
+
+      await SessaoOperar.limparDoAparelho(cofre: cofre);
+
+      expect(await SessaoOperar.consumirMarcaDeLimpeza(cofre: cofre), isTrue);
+      // Consumida uma vez: a abertura seguinte não esvazia de novo, senão o
+      // militar perderia a escala guardada a cada entrada no módulo.
+      expect(await SessaoOperar.consumirMarcaDeLimpeza(cofre: cofre), isFalse);
       expect(cofre.dados, isEmpty);
     });
   });
