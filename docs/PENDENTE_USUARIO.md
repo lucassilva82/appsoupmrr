@@ -362,6 +362,27 @@ Ligar pelo painel, ou por SQL (`UPDATE public.soupm_config SET valor = valor || 
   ficaram inacessíveis (o servidor bloqueia esse nome de pasta). Pode apagar a
   pasta pelo cPanel; o que vale está em `sigrh/doc/`.
 
+## 5c. Módulo Operações: o que o teste em aparelho ainda não alcançou (30/10/2026)
+
+Testado no iPhone 17 Pro (simulador), com a conta do Lucas, em claro e escuro:
+login automático, a guarda de dono (o PIN e o evento sobreviveram a uma
+reinstalação, como devem), Documentos e o download de PDF — este último estava
+quebrado e foi corrigido no mesmo dia.
+
+Falta, e depende de coisas que não estão na nossa mão:
+
+- **GPS do "Cheguei", foto de alteração e Assumir viatura.** Precisam de um
+  militar **escalado**. O Lucas não está em escala nenhuma, e o app mostra
+  "Você ainda não está escalado" — as telas simplesmente não existem para ele.
+  Para testar: entrar numa escala da Expoferr, ou pedir ao Cap Stenio uma
+  matrícula de teste que esteja escalada.
+- **Android.** O módulo nunca rodou em Android. É lá que moram o seletor de
+  arquivo e o download nativo, que no iPhone passam por caminhos diferentes.
+- **`WKAppBoundDomains` no iPhone.** Sem essa declaração no `Info.plist`, o
+  "Guardar para ver sem sinal" do Operar (que usa a Cache API) não funciona
+  dentro da WebView. É decisão, não só configuração: declarar o domínio limita
+  o que a WebView pode fazer com outros sites.
+
 ## 5b. O que o Cap Stenio precisa mudar no Operar (30/10/2026)
 
 O pedido grande — as notificações — já está em `docs/PEDIDO_PUSH_OPERAR.md`.

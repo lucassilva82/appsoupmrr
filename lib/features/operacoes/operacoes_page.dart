@@ -193,22 +193,52 @@ class _OperacoesPageState extends State<OperacoesPage> {
       }
       return;
     }
+    // Gravar e compartilhar são passos diferentes e falham por motivos
+    // diferentes. Juntos num `catch` só, uma folha de compartilhar que não
+    // abre virava "libere espaço" — manda o militar mexer no armazenamento
+    // por um problema que não é dele.
+    final File arquivo;
     try {
       final bytes = base64Decode(b64);
       final pasta = await getTemporaryDirectory();
-      final arquivo = File('${pasta.path}/${_nomeLimpo(nome, tipo)}');
+      arquivo = File('${pasta.path}/${_nomeLimpo(nome, tipo)}');
       await arquivo.writeAsBytes(bytes, flush: true);
       registrar('operacoes.baixar', chave: _chaveLog, dados: {'bytes': bytes.length});
-      await Share.shareXFiles(
-        [XFile(arquivo.path, mimeType: tipo.isEmpty ? null : tipo)],
-      );
     } catch (e) {
-      registrar('operacoes.baixar', chave: _chaveLog, resultado: 'falhou', codigo: 'OP-GRAVAR');
+      registrar('operacoes.baixar', chave: _chaveLog, resultado: 'falhou',
+          codigo: 'OP-GRAVAR', dados: {'erro': '$e'});
       if (mounted) {
         avisoErro(context, 'Não foi possível guardar o arquivo',
             texto: 'O aparelho não deixou gravar. Libere espaço e tente de novo.');
       }
+      return;
     }
+    try {
+      await Share.shareXFiles(
+        [XFile(arquivo.path, mimeType: tipo.isEmpty ? null : tipo)],
+        sharePositionOrigin: _origemDaFolha(),
+      );
+    } catch (e) {
+      registrar('operacoes.baixar', chave: _chaveLog, resultado: 'falhou',
+          codigo: 'OP-ABRIR', dados: {'erro': '$e'});
+      if (mounted) {
+        avisoErro(context, 'O arquivo baixou, mas não deu para abrir',
+            texto: 'Tente de novo; se insistir, abra pelo navegador.');
+      }
+    }
+  }
+
+  /// Origem do popover que o iOS exige no `UIActivityViewController`. Sem
+  /// ela, a folha de compartilhar não abre: `sharePositionOrigin: argument
+  /// must be set`. No Android o parâmetro é ignorado, então vai sempre.
+  ///
+  /// Quando o `RenderBox` não serve, o retângulo é o pé da tela — nunca nulo,
+  /// porque nulo é justamente o que o iOS recusa.
+  Rect _origemDaFolha() {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box != null && box.hasSize) return box.localToGlobal(Offset.zero) & box.size;
+    final t = MediaQuery.sizeOf(context);
+    return Rect.fromLTWH(t.width / 2 - 1, t.height - 1, 2, 2);
   }
 
   /// Nome seguro para o sistema de arquivos, com extensão quando o Operar não
