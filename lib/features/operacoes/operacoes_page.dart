@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -145,11 +146,31 @@ class _OperacoesPageState extends State<OperacoesPage> {
     try { window.flutter_inappwebview.callHandler('baixarOperar', nome, tipo, b64); }
     catch (e) { /* sem ponte: nada a fazer */ }
   }
-  window.__soupmBaixar = function (url, nome) {
+  /* filename*=UTF-8''nome%20com%20acento  ou  filename="nome.pdf" */
+  function doCabecalho(cd) {
+    if (!cd) { return ''; }
+    var m = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(cd);
+    if (m) { try { return decodeURIComponent(m[1]); } catch (e) { return m[1]; } }
+    m = /filename\s*=\s*"([^"]+)"/i.exec(cd) || /filename\s*=\s*([^;]+)/i.exec(cd);
+    return m ? m[1].replace(/^\s+|\s+$/g, '') : '';
+  }
+  /* `doLink`: o nome veio do atributo download, escolhido pelo app do Operar.
+     Sem isso veio do palpite do WebView, que no Android é o último pedaço da
+     URL — e aí o bilhete vira nome de arquivo. */
+  window.__soupmBaixar = function (url, nome, doLink) {
     var op = {}, t = token();
     if (t && url.indexOf('blob:') !== 0) { op.headers = { 'Authorization': 'Bearer ' + t }; }
     fetch(url, op).then(function (r) {
       if (!r.ok) { throw 0; }
+      // O servidor do Operar manda o nome de verdade no Content-Disposition,
+      // em todas as rotas de arquivo. Ele ganha do palpite do WebView, que no
+      // Android salvava o PDF como "A4-gnnuF1RM0z_4O_glQov-l.pdf" — o
+      // bilhete da URL, que não diz nada a ninguém. Só o `download=` do link
+      // ganha do cabeçalho: ali o nome foi escolhido pelo app do Operar.
+      if (!nome || !doLink) {
+        var h = doCabecalho(r.headers.get('content-disposition'));
+        if (h) { nome = h; }
+      }
       return r.blob();
     }).then(function (b) {
       var fr = new FileReader();
@@ -169,7 +190,7 @@ class _OperacoesPageState extends State<OperacoesPage> {
     var h = n.getAttribute('href') || '';
     if (!h) { return; }
     e.preventDefault();
-    window.__soupmBaixar(h, n.getAttribute('download'));
+    window.__soupmBaixar(h, n.getAttribute('download'), true);
   }, true);
 }());
 ''';
@@ -225,6 +246,36 @@ class _OperacoesPageState extends State<OperacoesPage> {
         avisoErro(context, 'O arquivo baixou, mas não deu para abrir',
             texto: 'Tente de novo; se insistir, abra pelo navegador.');
       }
+    }
+  }
+
+  /// Pede ao SISTEMA a permissão que a WebView está pedindo à página.
+  ///
+  /// São duas permissões em camadas, e é fácil ver só uma. Dizer GRANT ao
+  /// pedido da página não dá câmera nem GPS nenhum se o app em si não tiver a
+  /// permissão do Android — o WebView não pode mais do que o app que o
+  /// hospeda, e o plugin não pede por conta própria. No Android isso aparecia
+  /// como "Câmera indisponível" dentro do Operar, sem nenhum diálogo do
+  /// sistema, porque não havia o que negar: ninguém tinha perguntado.
+  ///
+  /// No iPhone o sistema pergunta sozinho na primeira vez, então lá o
+  /// `request()` volta concedido sem diálogo nosso e nada muda.
+  ///
+  /// Negada de vez (`permanentlyDenied`), não insiste: quem decide é o
+  /// militar, nas Configurações do aparelho.
+  Future<bool> _permissaoDoSistema(Permission permissao) async {
+    try {
+      if (await permissao.isGranted) return true;
+      final r = await permissao.request();
+      if (!r.isGranted) {
+        registrar('operacoes.permissao', chave: _chaveLog, resultado: 'falhou',
+            codigo: 'OP-PERMISSAO', dados: {'qual': '$permissao', 'estado': '$r'});
+      }
+      return r.isGranted;
+    } catch (e) {
+      registrar('operacoes.permissao', chave: _chaveLog, resultado: 'falhou',
+          codigo: 'OP-PERMISSAO', dados: {'erro': '$e'});
+      return false;
     }
   }
 
@@ -324,20 +375,28 @@ class _OperacoesPageState extends State<OperacoesPage> {
           // Câmera (foto de alteração, atestado, viatura) só para o Operar.
           // O microfone não entra: a chamada de voz dele depende de um
           // servidor TURN que ainda não existe.
-          onPermissionRequest: (_, pedido) async => PermissionResponse(
-            resources: pedido.resources,
-            action: _daCasa(pedido.origin is String ? WebUri('${pedido.origin}') : null) ||
-                    '${pedido.origin}'.contains(_origem.host)
-                ? PermissionResponseAction.GRANT
-                : PermissionResponseAction.DENY,
-          ),
+          onPermissionRequest: (_, pedido) async {
+            if (!_daCasa(pedido.origin is String ? WebUri('${pedido.origin}') : null) &&
+                !'${pedido.origin}'.contains(_origem.host)) {
+              return PermissionResponse(
+                  resources: pedido.resources, action: PermissionResponseAction.DENY);
+            }
+            final ok = await _permissaoDoSistema(Permission.camera);
+            return PermissionResponse(
+              resources: pedido.resources,
+              action: ok ? PermissionResponseAction.GRANT : PermissionResponseAction.DENY,
+            );
+          },
           // GPS: é o "Cheguei" do militar no posto.
-          onGeolocationPermissionsShowPrompt: (_, origem) async =>
-              GeolocationPermissionShowPromptResponse(
-            origin: origem,
-            allow: origem.contains(_origem.host),
-            retain: true,
-          ),
+          onGeolocationPermissionsShowPrompt: (_, origem) async {
+            if (!origem.contains(_origem.host)) {
+              return GeolocationPermissionShowPromptResponse(
+                  origin: origem, allow: false, retain: true);
+            }
+            final ok = await _permissaoDoSistema(Permission.locationWhenInUse);
+            return GeolocationPermissionShowPromptResponse(
+                origin: origem, allow: ok, retain: ok);
+          },
           shouldOverrideUrlLoading: (_, acao) async {
             final u = acao.request.url;
             if (_daCasa(u)) return NavigationActionPolicy.ALLOW;
@@ -351,7 +410,7 @@ class _OperacoesPageState extends State<OperacoesPage> {
             final url = jsonEncode('${pedido.url}');
             final nome = jsonEncode(pedido.suggestedFilename ?? '');
             await _web?.evaluateJavascript(
-                source: 'window.__soupmBaixar && window.__soupmBaixar($url, $nome);');
+                source: 'window.__soupmBaixar && window.__soupmBaixar($url, $nome, false);');
           },
         ),
         if (_carregandoPagina) const _Preparando(),

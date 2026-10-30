@@ -23,20 +23,35 @@ Testado no iPhone 17 Pro (simulador), com conta real, em claro e escuro:
 
 ---
 
-## 1. Rodar no Android — **parado, esperando o Lucas**
+## 1. ~~Rodar no Android~~ — **feito em 30/10, e achou três defeitos**
 
-O emulador `Pixel_API_36` está no ar e o app instalado (`app-debug.apk`), na
-tela de login. A instalação anterior tinha assinatura diferente e foi preciso
-desinstalar, então os dados foram embora: **precisa de um login seu no
-emulador** para seguir.
+Rodado no emulador `Pixel_API_36` (Android 16). Login automático, guarda de
+dono, câmera, Documentos, download e o voltar: tudo conferido. Os três
+defeitos abaixo só apareciam no Android e foram corrigidos no mesmo dia.
 
-O que queremos ver lá, e que o iPhone não responde:
+**a) A câmera não abria — nem pedia permissão.** O Operar mostrava "Câmera
+indisponível" e nenhum diálogo do sistema aparecia. São duas permissões em
+camadas: dizer GRANT ao pedido da página não dá câmera nenhuma se o app em si
+não tem a permissão do Android, e o plugin não pede por conta própria. No
+iPhone o sistema pergunta sozinho, então o defeito não existia lá. Atinge
+também o **GPS do "Cheguei"**, pela mesma razão.
 
-- o **download do PDF** (no Android o caminho nativo é outro);
-- o **seletor de arquivo** para anexo e foto — no Android ele depende de um
-  tratamento próprio do WebView, e é o ponto em que mais desconfio;
-- o botão **voltar** do sistema andando dentro do Operar antes de fechar o
-  módulo.
+**b) O PDF era salvo com o nome do bilhete.** `A4-gnnuF1RM0z_4O_glQov-l.pdf`.
+O servidor do Operar manda o nome de verdade no `Content-Disposition`, em
+todas as rotas de arquivo, e a ponte estava ignorando. Agora sai
+`cpi-escala-eleicoes-gerais-2026-2t-vespera.pdf`.
+
+**c) O voltar do Android fechava o módulo inteiro.** Em vez de andar para trás
+dentro do Operar, um toque no voltar fechava tudo e o militar perdia o lugar.
+A causa não era do módulo: o `_voltar` do `MainShell` chamava `nav.pop()`, que
+tira a rota do topo **sem perguntar nada a ela** — e com isso todo `PopScope`
+de página aqui dentro era ignorado. Trocado por `nav.maybePop()`.
+
+> **Isso conserta outras quatro telas junto**, que tinham o mesmo problema sem
+> ninguém ter notado: o fechamento animado do comunicado, o passo a passo do
+> chamado (o voltar fechava o formulário em vez de voltar um passo) e o
+> bloqueio do voltar enquanto a certidão é emitida ou a Início é salva. Vale
+> um olhar nessas quatro antes de publicar.
 
 ## 2. GPS do "Cheguei", foto de alteração e assumir viatura — **parado, esperando escala**
 

@@ -163,7 +163,14 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   void _voltar() {
     final nav = _navegadores[_currentIndex].currentState;
     if (nav != null && nav.canPop()) {
-      nav.pop();
+      // `maybePop`, não `pop`: o `pop` tira a rota do topo sem perguntar nada
+      // a ela, e com isso todo `PopScope` de página aqui dentro era ignorado
+      // no voltar do Android. Era por isso que, no módulo Operações, o voltar
+      // fechava o módulo inteiro em vez de andar para trás dentro do Operar
+      // (visto no emulador em 30/10/2026). Também valia para o fechamento
+      // animado do comunicado, o passo a passo do chamado e o bloqueio do
+      // voltar enquanto a certidão é emitida ou a Início é salva.
+      nav.maybePop();
     } else if (_currentIndex != 0) {
       setState(() => _currentIndex = 0);
     } else {
