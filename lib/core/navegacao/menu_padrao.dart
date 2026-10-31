@@ -204,7 +204,7 @@ List<ItemMenu> menuPadrao({required bool gestor}) {
             ],
             apelidos: ['ajuda']),
         // "Em breve" até o build ter a chave do app no SISCHAMADOS
-        // (docs/PENDENTE_USUARIO.md §2b) e o painel liberar a função.
+        // (docs/PENDENTE_USUARIO.md §3) e o painel liberar a função.
         f('atend.chamados', 'Meus chamados', 'chamado',
             rota: '/atend/chamados',
             descricao: 'Suporte técnico: erro no app, acesso, senha, rede, equipamento',

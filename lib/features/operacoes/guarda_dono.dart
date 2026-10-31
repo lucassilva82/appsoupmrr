@@ -28,7 +28,7 @@
 // nome dele, na mesma chave e no mesmo formato do `entrar()` do Operar. Quem a
 // devolve é o Operar, no próximo acesso daquele militar; o caminho do Sou PM
 // não passa pelo `entrar()`, então hoje ela espera lá. Está anotado para o
-// Cap Stenio (`docs/PENDENTE_USUARIO.md`).
+// Cap Stenio (`docs/PEDIDO_OPERAR_DENTRO_DO_SOUPM.md`).
 // ─────────────────────────────────────────────────────────────────────────────
 import 'dart:convert';
 

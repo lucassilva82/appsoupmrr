@@ -2364,7 +2364,7 @@ antiga do app e o perfil da intranet (onde existir). "Função no SIGRH",
 lotação e quadro ficam cadastráveis e **ainda não foram implementadas**.
 O motivo que este plano dava ("o SIGRH não tem a tabela de função") é
 **falso**, e a fonte já está medida (27/10/2026; a medição inteira, com as
-contagens, está no `PENDENTE_USUARIO` §1, item 23): o comando está em
+contagens, está no `docs/MEDICAO_NIVEIS_SIGRH.md`): o comando está em
 **`escalaservico.funcoes_servico`**, pela lotação ativa
 (`policial_lotacao.fk_func_serv_cod`), e o cadastro é mantido — Comandante
 Geral tem exatamente 1. O outro catálogo (`tipo_funcao`, por
@@ -2538,8 +2538,8 @@ agora... Nesse momento vai ser só painel e app tudo no mesmo banco... Eu
 quero fazer tudo com esse usuário que tenho do cPanel." Consequências:
 
 - Painel e app usam o mesmo banco e o usuário de banco da API; todo SQL de
-  produção roda pela conta do cPanel (roteiro em `docs/PENDENTE_USUARIO.md`
-  §1). Nada em produção depende dos esquemas `intranet` nem `sccti`: o acesso
+  produção roda pela conta do cPanel (roteiro em `docs/PENDENTE_USUARIO.md`,
+  "Referência"). Nada em produção depende dos esquemas `intranet` nem `sccti`: o acesso
   do painel (papéis, recursos, auditoria) passa para tabelas `soupm_*`.
 - Ficam para quando o painel for para a intranet, e no app continuam
   bloqueadas com a folha e o código `MD-`: o login único (2.3, §6.6), Minhas

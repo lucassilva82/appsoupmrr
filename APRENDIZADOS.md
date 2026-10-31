@@ -1873,7 +1873,7 @@ seis comandantes perderiam o acesso e ninguém ligaria os pontos. Catálogo de
 sistema antigo acumula sinônimo por id; antes de escrever regra sobre um,
 contar quantos ids respondem ao **mesmo nome**. A medição inteira, com as
 contagens e a terceira fonte que apareceu (a subunidade chamada "Cmt
-Geral"), está no `docs/PENDENTE_USUARIO.md` §1, item 23.
+Geral"), está no `docs/MEDICAO_NIVEIS_SIGRH.md`.
 
 **Achado do mesmo dia, no mesmo arquivo.** Os cinco níveis nascem **sem
 nenhuma regra**. Ligar `niveis.ligado` hoje poria todo mundo no primeiro

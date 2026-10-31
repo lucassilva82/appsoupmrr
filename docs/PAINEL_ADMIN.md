@@ -148,7 +148,7 @@ resto deste documento diz sobre a intranet:
   (`lib/core/design/arte_cartao.dart:197`, `errorBuilder` para `SizedBox.shrink`),
   e o card aparece sem ela como se fosse o desenho previsto.
 - **Banco:** o mesmo usuário da API (§7, item 6), e **todo SQL de produção
-  roda com a conta do cPanel**, na ordem do `docs/PENDENTE_USUARIO.md` §1.
+  roda com a conta do cPanel**, como em `docs/PENDENTE_USUARIO.md`, "Referência".
 - **Caminho de volta (pronto, não feito):** o administrador do banco roda o
   `intranet_depois/B_intranet_acl_producao.sql` do painel e define
   `SOUPM_ACL_FONTE = 'intranet'`. As telas não mudam. Detalhe na spec P9 do

@@ -383,7 +383,7 @@ banco). Vale decidir qual dos dois vem primeiro.
 
 1. ~~**O PIN.**~~ **decidido em 30/10/2026:** pular dentro do Sou PM — o militar
    acabou de desbloquear o app. O Cap Stenio está fazendo
-   (`docs/PENDENTE_USUARIO.md` §5b).
+   (`docs/PEDIDO_OPERAR_DENTRO_DO_SOUPM.md`).
 1b. ~~**Sair do módulo.**~~ **decidido em 30/10/2026:** não existe. Quem entra no
    Sou PM com uma matrícula só usa a conta dela, e o único logout é o do Sou PM;
    depois dele, o Operar entra de novo. Do nosso lado é a guarda de dono
