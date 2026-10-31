@@ -64,7 +64,7 @@ de página aqui dentro era ignorado. Trocado por `nav.maybePop()`.
 > termina antes do toque. Pela leitura do código nenhum dos dois prende o
 > usuário (os dois acabam liberando o pop), mas isso é leitura, não teste.
 
-## 2. GPS do "Cheguei", foto de alteração e assumir viatura — **parado, esperando escala**
+## 2. GPS do "Cheguei", foto de alteração e assumir viatura — **o usuário testa quando houver escala (31/10)**
 
 Você não está em escala nenhuma; o app mostra "Você ainda não está escalado" e
 essas telas não existem para quem não tem serviço. É o pedido 4 do documento
@@ -85,7 +85,7 @@ ficava no aparelho.
 Custo: esta WebView passa a navegar só para o domínio declarado. Não é perda —
 qualquer outro endereço já ia para o navegador do sistema.
 
-## 4. Reset da personalização dos atalhos — **não é rápido, e precisa da sua decisão**
+## 4. ~~Reset da personalização dos atalhos~~ — **decidido em 31/10**: não se apaga a cada versão. A personalização volta ao padrão quando o painel restaura ou muda os blocos/atalhos, e vale para todos (feito no painel)
 
 Combinado para sair com a versão, mas ao ir fazer vi que não é um apagar
 local: a personalização da Início também fica **no servidor**

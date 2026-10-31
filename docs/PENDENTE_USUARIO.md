@@ -10,6 +10,48 @@ por conter estrutura do banco de produção). Rodar no phpPgAdmin, com o login
 do usuário, **desmarcando "Paginar resultados"**, na ordem da tabela. Todos
 podem rodar mais de uma vez sem estragar nada.
 
+## ⭐ Situação em 31/10/2026 — leia isto antes do resto
+
+O que está abaixo desta seção é histórico. A 2.3.0 foi enviada às duas lojas
+(Android aprovado, Apple em revisão) e leva tudo o que seria a 2.2.1. Respostas
+do usuário e medições deste dia:
+
+| Item | Situação |
+|---|---|
+| 2.2.1 | **Não vai existir.** Os seis commits dela saíram na 2.3.0, inclusive o crash ao fechar no iPhone |
+| Câmera do iPhone (Operações) | Resolvido no `2.3.0+61` (macros do `permission_handler` no Podfile); conferido no TestFlight |
+| Push direto pela API | **Funciona.** `~/private/soupm_fcm.json` está no servidor desde 30/10 10:06 e o `envio_push.log` registra 6 envios aceitos pelo FCM, sem falha |
+| Crons | Rodando: `sonda`, `cron_log` (02:10), `envio_push`, `comando_sigrh` (23:00), `reset_senha`, `lembretes` (log vazio = nada ligado). **Falta só o `versao_legada.php`** (a cada 10 min) |
+| SQL 22 (`soupm_e_gestor`) | **Perdeu o objeto.** Os SQL de 29/10 recriaram a função e o `EXCEPTION` não chama mais a legada |
+| "Avisar quando voltar" | **Decidido: não fazer.** Uma queda curta avisaria quem nem percebeu. A ponte "serviço fora → função bloqueada" automática também fica de fora pelo mesmo motivo |
+| Campanhas de declaração | **Ficam desligadas** até a administração lançar uma |
+| Personalização da Início | **Decidido:** não se apaga a cada versão. Some quando o painel restaura **ou muda** os blocos/atalhos — e aí muda para todo mundo (feito no painel em 31/10) |
+| Mapa da Força no log | Já existe desde a 2.2: `funcao.tocar` com a chave `gestao.mapa_forca` |
+| Operações | Testado. GPS, foto e viatura serão testados quando houver escala. Aguardando o Cap Stenio |
+
+**O que continua aberto de verdade:**
+
+1. **Painel logado no Chrome** para a IA: registrar 2.2.0 e 2.3.0 em Versões,
+   ligar o contracheque pela API, homologar e ligar as pendências do SouPMRR.
+2. **cPanel › Cron:** `versao_legada.php` (a cada 10 min) e o
+   `avaliar_alertas.php` do painel (a cada minuto). Com o primeiro, o mínimo
+   legado sobe para a 2.3.0 e as 2.1.x passam a pedir atualização — é o
+   caminho para o corte do Firestore, sem depender de contar aparelhos.
+3. **cPanel › Terminal:** `php ~/public_html/flutter/sigrh/cron/exportar_firestore.php`
+   (só conta) e depois com `--gravar`. Só então `notificacoes.fonte_app = api`,
+   junto com o lembrete de contracheque ligado (senão o aviso de contracheque,
+   que ainda sai pela Cloud Function, não aparece na aba Avisos da 2.3).
+4. **DBA:** dono da `soupm_conta_resumo` com leitura em `qra` (tela Militares).
+5. **Segurança, ainda aberto — medido em 31/10:** os cinco endpoints de
+   `sigrh/mapadaforca/` respondem a qualquer um que tenha o endereço. Os
+   níveis só escondem o menu. O app não manda credencial nenhuma a eles, então
+   a correção pede versão nova do app (mandar matrícula e senha) e depois a API
+   conferir `soupm_e_gestor`. Primeiro item da próxima branch.
+6. Terceiros: Cap Stenio (PIN, "Sair deste aparelho", fila órfã, push) e DTI
+   (`.well-known` ainda 404).
+7. Para depois: tudo que depende da intranet (2.3 com login único, Escalas,
+   SVI, SISCHAMADOS, Notícias).
+
 Última atualização: 28/10/2026 (a 2.2.1 fica para amanhã: seção logo abaixo).
 
 ## Para amanhã (29/10/2026): a 2.2.1
