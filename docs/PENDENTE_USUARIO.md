@@ -35,16 +35,20 @@ do usuário e medições deste dia:
    todos** (antes, prévia pela rotina da API: fictício, caso longo e a
    matrícula 452955, os três PDFs válidos); 5 pendências do SouPMRR
    homologadas e ligadas (e-mail não confirmado, ciência de comunicado,
-   certidão vencendo, resposta da equipe, app desatualizado). **Falta** rodar
-   `sql/2026-10-31_soupm_versoes_publicadas.sql` da API (2.2.0 publicada; 2.3.0
-   publicada na Play e em revisão na Apple) — o painel não tem formulário para
-   isso — e depois a recomendada do Android em 2.3.0. Se o PDF do contracheque
-   der erro para alguém, o app mostra o erro (não volta ao PDF do aparelho):
-   desligar em Documentos › Contracheque.
+   certidão vencendo, resposta da equipe, app desatualizado). Se o PDF do
+   contracheque der erro para alguém, o app mostra o erro (não volta ao PDF do
+   aparelho): desligar em Documentos › Contracheque.
+   **Versões, feito em 31/10:** a Apple aprovou a 2.3.0; as duas lojas estão
+   registradas como publicadas (`sql/2026-10-31_soupm_versoes_publicadas.sql`
+   e `2026-10-31_soupm_ios_230_publicada.sql`) e a **mínima e a recomendada
+   são 2.3.0** nas duas plataformas (o painel avisou: 956 aparelhos Android e
+   547 iOS passam a ver a tela obrigatória). Comunicado nº 3, "Operação
+   Expoferr 2026", no ar em modo cartaz, de abertura, abrindo `op.operacoes`.
 2. **cPanel › Cron:** `versao_legada.php` (a cada 10 min) e o
-   `avaliar_alertas.php` do painel (a cada minuto). Com o primeiro, o mínimo
-   legado sobe para a 2.3.0 e as 2.1.x passam a pedir atualização — é o
-   caminho para o corte do Firestore, sem depender de contar aparelhos.
+   `avaliar_alertas.php` do painel (a cada minuto). O painel já gravou o
+   mínimo legado em **2.3.0**, mas **sem o cron ele não chega ao Firestore**:
+   até lá, quem está na 2.1.x não é obrigado a atualizar. É também o caminho
+   para o corte do Firestore, sem depender de contar aparelhos.
 3. **cPanel › Terminal:** `php ~/public_html/flutter/sigrh/cron/exportar_firestore.php`
    (só conta) e depois com `--gravar`. Só então `notificacoes.fonte_app = api`,
    junto com o lembrete de contracheque ligado (senão o aviso de contracheque,
