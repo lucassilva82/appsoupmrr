@@ -31,8 +31,16 @@ do usuário e medições deste dia:
 
 **O que continua aberto de verdade:**
 
-1. **Painel logado no Chrome** para a IA: registrar 2.2.0 e 2.3.0 em Versões,
-   ligar o contracheque pela API, homologar e ligar as pendências do SouPMRR.
+1. ~~Painel logado~~ **Feito em 31/10:** contracheque pela API **ligado para
+   todos** (antes, prévia pela rotina da API: fictício, caso longo e a
+   matrícula 452955, os três PDFs válidos); 5 pendências do SouPMRR
+   homologadas e ligadas (e-mail não confirmado, ciência de comunicado,
+   certidão vencendo, resposta da equipe, app desatualizado). **Falta** rodar
+   `sql/2026-10-31_soupm_versoes_publicadas.sql` da API (2.2.0 publicada; 2.3.0
+   publicada na Play e em revisão na Apple) — o painel não tem formulário para
+   isso — e depois a recomendada do Android em 2.3.0. Se o PDF do contracheque
+   der erro para alguém, o app mostra o erro (não volta ao PDF do aparelho):
+   desligar em Documentos › Contracheque.
 2. **cPanel › Cron:** `versao_legada.php` (a cada 10 min) e o
    `avaliar_alertas.php` do painel (a cada minuto). Com o primeiro, o mínimo
    legado sobe para a 2.3.0 e as 2.1.x passam a pedir atualização — é o
