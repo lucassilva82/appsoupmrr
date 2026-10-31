@@ -49,6 +49,15 @@ post_install do |installer|
     # 🔥 Adicione essa configuração para evitar erro de duplicação de Swift
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+
+      # O permission_handler só pergunta no iPhone o que estiver ligado aqui.
+      # Sem a linha, request() volta "negada" sem diálogo nenhum, e a câmera e
+      # o GPS do Operações ficam bloqueados (TestFlight 2.3.0, 30/10/2026).
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] += [
+        'PERMISSION_CAMERA=1',
+        'PERMISSION_LOCATION_WHENINUSE=1',
+      ]
     end
   end
 end

@@ -258,8 +258,9 @@ class _OperacoesPageState extends State<OperacoesPage> {
   /// como "Câmera indisponível" dentro do Operar, sem nenhum diálogo do
   /// sistema, porque não havia o que negar: ninguém tinha perguntado.
   ///
-  /// No iPhone o sistema pergunta sozinho na primeira vez, então lá o
-  /// `request()` volta concedido sem diálogo nosso e nada muda.
+  /// No iPhone o `request()` só mostra o diálogo se a permissão estiver ligada
+  /// no `ios/Podfile` (`PERMISSION_CAMERA`, `PERMISSION_LOCATION_WHENINUSE`);
+  /// sem isso volta negada sem perguntar nada (TestFlight 2.3.0).
   ///
   /// Negada de vez (`permanentlyDenied`), não insiste: quem decide é o
   /// militar, nas Configurações do aparelho.
