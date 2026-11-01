@@ -75,6 +75,14 @@ que depende dela.
   para quando está sem internet. Campo novo na API não pode quebrar versão
   antiga do app nem depender da ordem do deploy (conferir a coluna em
   `pg_attribute`, como no `titulo_curto`).
+- **Tudo passa pela nossa API em `pmrr.online`** (decisão do usuário,
+  01/11/2026). Dado, configuração e aviso vêm da API do app, que lê do nosso
+  banco. Função nova não fala direto com serviço de fora (Firestore, API de
+  terceiro com chave no app). Se precisa de outro sistema, a API faz o meio de
+  campo e guarda a credencial no servidor. Do Firebase fica só o FCM, porque é
+  ele que entrega o push. O que ainda falta migrar (Firestore, Legislações e
+  POPs, fotos): `docs/PENDENTE_USUARIO.md` §1a. Exceção: sistemas com dono
+  próprio (Operar, intranet, SISCHAMADOS), que o app abre como módulo.
 - **Documento é da API, e o padrão dele é do painel.** Todo documento que o
   militar vê ou baixa (contracheque, certidões, declarações, comprovantes e os
   que vierem) segue o modelo das certidões (APRENDIZADOS §22–28, Anexo A do

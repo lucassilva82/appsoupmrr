@@ -31,8 +31,42 @@ git. A medição das fontes de nível no SIGRH foi para
 | Item | O que fazer |
 |---|---|
 | **Mapa da Força: segurança** | Os cinco endpoints de `sigrh/mapadaforca/` respondem a qualquer um que tenha o endereço; os níveis só escondem o menu. O app passa a mandar matrícula e senha, e a API passa a conferir `soupm_e_gestor`. É o primeiro item da próxima branch (`feature/mapa-da-forca`) |
-| **Avisos lidos pela API** | Hoje o push já sai pela API, e cada aviso é gravado também no Firestore (`escrita_firestore`). A aba Avisos ainda **lê** do Firestore (`notificacoes.fonte_app = firestore`). Para trocar: no terminal do cPanel, `php ~/public_html/flutter/sigrh/cron/exportar_firestore.php` (só conta) e depois com `--gravar`; então `fonte_app = api` e ligar o lembrete de contracheque (senão o aviso de contracheque, que ainda sai pela Cloud Function, some da aba). Depois disso: desligar as Cloud Functions e a escrita no Firestore |
+| **Sair do Firestore** | Ver a seção abaixo. O **FCM fica**, porque é ele que entrega o push. Sai só o **Firestore** (banco) |
 | **Nível por função ou lotação no SIGRH** | A fonte existe e foi medida (`docs/MEDICAO_NIVEIS_SIGRH.md`). A decisão do usuário foi estudar antes de montar a regra |
+
+### 1a. Centralizar na nossa API (decisão do usuário, 01/11/2026)
+
+O app fala com o **mínimo de serviços possível**. O que for dado ou
+configuração passa pela nossa API em `pmrr.online` (`/flutter/sigrh/`), que
+lê do nosso banco. A regra está no CLAUDE.md.
+
+**Sair do Firestore.** Fica no app só `firebase_core` + `firebase_messaging`
+(FCM, entrega do push); sai o pacote `cloud_firestore`. Os quatro usos da
+2.3.0, todos com substituto na API já pronto:
+
+| Uso no app | Arquivo | Vai para |
+|---|---|---|
+| Lista da aba Avisos (lida e não lida) | `lib/services/notification_service.dart` | `notificacoes.php`. Antes: no cPanel, `php ~/public_html/flutter/sigrh/cron/exportar_firestore.php` (só conta), depois com `--gravar`; então `notificacoes.fonte_app = api` e ligar o lembrete de contracheque (o aviso de contracheque ainda sai pela Cloud Function) |
+| Token do push gravado em `militares/{m}` | `lib/models/auth_model.dart`, `lib/main.dart` | Só `dispositivo.php` (`soupm_dispositivo`), que o app já chama |
+| Comando e dicas da Início quando o painel não tem nada aprovado; carrossel antigo | `lib/features/inicio/faixa_comando.dart`, `lib/widgets/widget_dicas_app.dart`, `lib/widgets/carouselSlider.dart` | Só o `app_config` (sem nada aprovado, o bloco some) |
+| `min_version` quando o app não leu o `app_config` | `lib/pages/auth_or_home.dart` (`_checkVersionFromFirestore`) | Só o `app_config` e a cópia guardada |
+
+Depois que a versão nova for a mínima nas duas lojas, no servidor:
+1. `notificacoes.escrita_firestore = false`.
+2. O `envio_push.php` para de usar os tokens do Firestore como reserva.
+3. Desligar as Cloud Functions (`notificarTodos`, `notificarMilitar`, `notificarEscala`).
+4. Deixar o Firestore só para leitura por 30 dias e então apagar.
+
+**Outros serviços que o app ainda chama direto:**
+
+| Serviço | Hoje | Proposta |
+|---|---|---|
+| Legislações e POPs | `pm.rr.gov.br/api/legislacoes.php`, com a chave compilada no app (APRENDIZADOS §3 e §41) | Endpoint na nossa API que repassa o pedido com a chave guardada no servidor. A chave sai do `env.json` e do binário |
+| Fotos dos militares | `rh.pmrr.online/_lib/file/img/wc2/pix_db/...` (ficha, Mapa da Força) | Avaliar uma rota da API que entrega a foto conferindo quem pede: hoje a foto é pública para quem tem o endereço |
+
+Ficam como estão, porque são sistemas próprios: o Operar
+(`operar.pmrr.online`, do Cap Stenio), a intranet e o SISCHAMADOS (fase da
+intranet) e os links das lojas.
 
 ## 2. Esperando terceiros
 
