@@ -70,12 +70,15 @@ Content-Type: application/json
 
 ```json
 {"code": 1, "pedido_id": 123, "envio_id": 456, "agendado_para": null}
-{"code": 1, "pedido_id": 123, "envio_id": 456, "agendado_para": "2026-10-31 06:00:00"}
+{"code": 1, "pedido_id": 123, "envio_id": 456, "agendado_para": "2026-10-31 06:00:00-04:00"}
 {"code": 0, "erro": "SEM_APARELHO", "message": "..."}
 ```
 
 `agendado_para` **nulo** = sai agora. Com data = aceito, mas guardado até
-aquela hora (é o horário de silêncio, seção 5). Nos dois casos a notificação
+aquela hora (é o horário de silêncio, seção 5). A data vem **com o
+deslocamento** (`-04:00`, Roraima) desde 03/11/2026: sem ele, o Postgres —
+cuja sessão está em `Brazil/East` (−03) — lia a hora como se fosse −03 e
+soltava o aviso às 05:00 em vez das 06:00. Nos dois casos a notificação
 **será entregue**; muda só o quando. Nada é perdido por chegar de madrugada.
 
 ### Os motivos de recusa
@@ -145,7 +148,8 @@ Já cadastrados do lado de cá, e conferidos no banco:
 |---|---|
 | **Tipos aceitos** (22) | `escalado`, `desescalado`, `alteracao`, `troca`, `permuta`, `dispensa`, `remanejamento`, `substituicao`, `apresentacao`, `presenca`, `falta`, `atestado`, `autorizacao`, `mensagem`, `comunicado`, `documento`, `despacho`, `viatura`, `pagamento`, `chamada`, `aviso`, `teste` |
 | **Limite** | 1.000.000 por hora e por dia (do módulo inteiro, não por militar) — na prática, sem limite |
-| **Silêncio** | 22:00 às 06:00 |
+| **Silêncio** | 22:00 às 06:00, hora de Roraima (−04) |
+| **Tipos que furam o silêncio** (10) | `escalado`, `desescalado`, `alteracao`, `remanejamento`, `substituicao`, `dispensa`, `permuta`, `troca`, `autorizacao`, `apresentacao` — saem na hora mesmo de madrugada, porque perdem o sentido às 06h. Os demais (mensagem, comunicado, documento, viatura, pagamento…) esperam o amanhecer |
 
 > **Medido no banco em 03/11/2026.** Até 30/10 eram 5 tipos e 120/h; o painel
 > ampliou para os 22 acima em 03/11, às 07:55. Esta tabela e o
