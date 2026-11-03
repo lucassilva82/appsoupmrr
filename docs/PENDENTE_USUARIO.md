@@ -95,6 +95,70 @@ referências a `push_web`. Quem entra o vigia pega (é um `lancamento` novo);
 nenhuma. Ficou fora do escopo de 03/11, que o usuário limitou a "somente novas
 escalas".
 
+## Painel: duas coisas para continuar de casa (03/11/2026)
+
+Medido nesta data, por sha256 nos **114 arquivos** do painel, comparando o
+servidor com o `origin/main` (`38c01e6`; o clone do iMac estava em dia, então
+não é atraso de clone).
+
+### 1. A produção do painel está À FRENTE do git
+
+**Uma feature inteira existe só no servidor, nunca commitada.** Se alguém
+publicar a partir do git ou restaurar um backup, ela desaparece:
+
+| Situação | Arquivos |
+|---|---|
+| **Só no servidor** | `app/Helpers/OrigemPush.php` (370 linhas), `app/Views/notificacoes_origens.php`, `app/Views/notificacoes_imprimir.php` |
+| **Diferentes do `HEAD`** | `app/Controllers/NotificacoesController.php`, `app/Controllers/PainelController.php`, `app/Views/notificacoes.php`, `app/Views/notificacoes_config.php`, `app/Views/painel.php`, `assets/painel.css`, `routes/web.php`, `nucleo/local.exemplo.php` |
+| Só no git, não publicado (parece certo) | `database/{migrate,massa_logs,avaliar_alertas,verificar_copias}.php` |
+
+`nucleo/local.php` também só existe no servidor, e isso **está certo**: é o
+segredo, e fica fora do git por regra.
+
+**A decisão é sua:** commitar o estado do servidor (protege a feature, mas pode
+conflitar com o que a sessão do painel tenha em andamento na máquina dela) ou
+pedir a ela que commite. A sessão do painel foi avisada em 03/11 com esta
+medição inteira; **a rota não confirma leitura**, então não se sabe se ela viu.
+
+### 2. O tipo de notificação no cartão do painel inicial
+
+O cartão **já existe** e está no ar desde 02/11 — foi pedido por você, e o
+comentário no código diz isso: *"Notificações nas últimas 24 h, por origem
+(pedido do Lucas, 02/11/2026)"*. Ele mostra, por origem: `rotulo`, `pedidos`,
+`aceitos`, `recusados`, `fcm_aceitos`, `falhas` e `alerta`.
+
+**O que falta** é o **tipo** (`escalado`, `sua escala mudou`, `aviso`…) ali no
+cartão. Hoje o tipo só aparece **um clique adentro**, no `lotes()` do
+`OrigemPush`, na aba Notificações › Por origem. O helper já traz o tipo, então
+é acréscimo pequeno — mas é código que **não está no git**, então depende do
+item 1 acima.
+
+Em 03/11 esta sessão começou a implementar um cartão novo, mediu antes de
+escrever e **descartou o próprio trabalho** ao achar o que já existia. O que
+pegou isso foi o passo 1 do roteiro de deploy (APRENDIZADOS §18): comparar o
+servidor com o git **antes** de sobrescrever. A leitura tinha sido feita no
+git, e o git estava atrás do servidor.
+
+### Para conferir o volume que o painel deve mostrar
+
+Nas últimas 24 h de 03/11, depois de o Operar passar a notificar por dentro:
+
+| Origem | Tipo | Envios |
+|---|---|---|
+| `operar` | `escalado` | 336 |
+| `operar` | `aviso` | 6 |
+| `certidao` | — | 15 |
+
+E **147 pedidos recusados** pelo filtro da API (140 `sem_aparelho`, 6
+`matricula`, 1 `tipo_recusado`), que **nunca viram envio**: se a tela só
+mostrar o que saiu, 140 militares sem o app ficam invisíveis e o cartão diz
+que tudo deu certo (APRENDIZADOS §27 e §37).
+
+**Atenção a um rótulo:** até 03/11 o `push_modulo.php` gravava
+`furou_silencio` sempre que o tipo era urgente, **inclusive às 11h da manhã**,
+quando não havia silêncio nenhum. Já corrigido, mas os registros de hoje
+anteriores ao conserto têm o rótulo errado.
+
 ## 1. Próxima versão do app
 
 | Item | O que fazer |
