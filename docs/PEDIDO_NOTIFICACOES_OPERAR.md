@@ -38,6 +38,12 @@ Operar mandar o `tipo` certo, pelo mesmo contrato do
 | 11 | **Substituição: quem entra** (`setor.py`) | "Você vai substituir um colega" | `inicio` | `escalado` |
 | 12 | **Retirado da escala pelo chefe** (`escala.py`, `retirar()`) | "Você saiu da escala" | `inicio` | `desescalado` |
 | 13 | **Desfeita a rodada automática** (`escala.py`) | "Você saiu da escala" | `inicio` | `desescalado` |
+| 14 | **Movido de posto, escala ou função** (`escala.py`, `mover()`) | "Sua escala mudou" | `inicio` | `escalado` |
+| 15 | **Movido ou trocado pelo voto** (`voto.py`, `_grava_movimento`) | "Sua escala mudou" | `inicio` | `escalado` |
+| 16 | **Liberado para entrar quem vota ali** (`voto.py`, `_aplica_banco`) | "Você saiu da escala" | `inicio` | `desescalado` |
+| 17 | **Movimento desfeito** (`voto.py`) | "Sua escala mudou" | `inicio` | `escalado` |
+| 18 | **Banco desfeito: o puxado sai** (`voto.py`) | "Você saiu da escala" | `inicio` | `desescalado` |
+| 19 | **Banco desfeito: o de antes volta** (`voto.py`) | "Você voltou para a escala" | `inicio` | `escalado` |
 
 **Medido no código instalado em 03/11/2026, não lido de documento.** Todas as
 notificações passam por **um portão único**, no `_processa0` do `push_web.py`:
@@ -94,16 +100,17 @@ exclusão deliberada. Não existe caminho paralelo mandando push por fora.
 
 ## 1b. O que ainda NÃO notifica (medido em 03/11/2026)
 
-Levantado por quem chama cada função de disparo, não de cabeça. Os 13 pontos
-acima estão no ar; faltam três famílias.
+Levantado por quem chama cada função de disparo, não de cabeça. Os **19**
+pontos acima estão no ar; os oito sítios que faltavam foram fechados em
+03/11, menos um — e o que resta são duas famílias.
 
-**Sai ou muda de posto sem passar pelo `autoriza` nem pelo `setor`:**
-
-| Sítio | O que é | Custo |
-|---|---|---|
-| `escala.py:2287` | trocar posto, escala, função ou prefixo | baixo: arquivo já divergente |
-| `voto.py:1006, 1108, 1245, 1268` | mover, liberar e desfazer pelo voto | baixo |
-| `comando_posto.py:40` | passar a ser Cmte do posto | baixo |
+**Um só, e por decisão:** `comando_posto.py:40` (virar Cmte do posto ou
+voltar a Auxiliar) **não avisa**, de propósito. Ele roda a cada mudança de
+equipe do posto: durante a montagem de uma escala o militar alternaria
+Auxiliar↔Cmte várias vezes, e sairia uma rajada de pushes por uma informação
+que ele lê no card da escala. A função **final** já vai no corpo do "Você foi
+escalado" — e foi para isso que a chamada passou a sair **depois** do
+`comando_posto.reordena`.
 
 **Nada que dependa de tempo tem mecanismo.** Medido: **0 timers do systemd e
 nenhum cron do Operar** no servidor. Então lembrete de apresentação, "Cheguei"

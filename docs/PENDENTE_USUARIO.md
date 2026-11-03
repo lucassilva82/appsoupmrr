@@ -52,6 +52,8 @@ Com o acesso SSH, a DTI passou a aplicar as atualizações e a mexer no Operar.
 | **"Você foi escalado" dentro do Operar** (`escala.py` → `push_web.escalado`): alcança Sou PM **e** Web Push | `api-soupmrr/operar/mudancas/README.md` |
 | **Substituição deixou de ser muda** (`setor.py`): quem sai e quem entra passam a ser avisados | idem |
 | **"Você saiu da escala"** (`escala.py`): retirado pelo chefe e desfazer da rodada automática. O `confirma` aprendeu a confirmar **ausência**, para funcionar em `DELETE` | idem |
+| **Mover, trocar, liberar e desfazer** (`escala.py` e `voto.py`): mais seis pontos. **19 cenários no ar**, 11 deles nossos | idem |
+| **`furou_silencio` deixou de mentir** (`push_modulo.php`): o motivo marcava "furou o silêncio" às 11h da manhã, quando não havia silêncio nenhum | `api-soupmrr/sigrh/push_modulo.php` |
 | **`conferir_mudancas.sh`**: confere as 7 marcas da DTI no Operar; sai 1 se um pacote apagou alguma. **No cron do root às 07:10**, e escreve `ATENCAO-MUDANCA-FALTANDO.txt` só quando há problema | idem |
 
 **Regra do usuário (03/11/2026): antes de lançar uma atualização do Operar,
