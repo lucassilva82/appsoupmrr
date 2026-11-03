@@ -2138,3 +2138,82 @@ que estava tudo bem, e teria razão sobre aquele trecho.
   nos estados em que você acha que ele não será rodado.
 - `LIMIT 1` sem `ORDER BY` numa consulta que decide permissão é um sorteio.
   Numa visão com mais de uma linha por chave, é um sorteio silencioso.
+
+---
+
+## 53. Quando o instrumento mente, a investigação anda para o lado errado
+
+**O dia (29 e 30/10/2026).** O §52 é sobre olhar um número e não ver nada.
+Este é o irmão dele: olhar pelo lugar certo e o **instrumento** devolver
+silêncio, que se lê como resposta. Seis vezes em dois dias, em seis camadas
+diferentes, sempre com a mesma forma — nada deu erro.
+
+| Camada | O que o instrumento fez | O que eu li |
+|---|---|---|
+| `debugPrint` | corta a linha perto de 1024 caracteres | "o servidor não devolveu os campos novos" → fui atrás de opcache, que não tinha nada a ver |
+| PHP → JSON | array vazio vira `[]`, que é **lista**, não objeto | `as Map?` explodiu, a carga morreu, e a tela seguiu mostrando o valor velho **sem nenhum erro visível** |
+| `str.replace` sem conferência | a substituição não casou e não avisou | o PHP subiu sem a função; `Call to undefined function` foi engolido por um `try/catch` de seção |
+| phpPgAdmin, "Paginar resultados" | embrulha o script num `SELECT COUNT(*) FROM (...)` | `syntax error at or near "INTO"`, num SQL correto |
+| phpPgAdmin, resultado | mostra só a **última** instrução, e o script terminava em `COMMIT` | "Nenhuma linha encontrada" depois de um `UPDATE` que tinha funcionado |
+| sonda | aceita qualquer HTTP abaixo de 500 | `fcm` com **404** e `legislacoes` com **401** marcados "Normal", 99–100% de disponibilidade |
+
+**O que quebrou o ciclo, nas duas vezes em que quebrou.** Não foi olhar mais
+fundo na mesma pista: foi **testar se a pista era confiável**. No caso do
+opcache, pus um header de marca (`X-Mapa-Efetivo: v2`) e ele apareceu — ou
+seja, o código novo estava rodando e o mentiroso era o log. No caso do
+`COMMIT`, li a tabela em vez de aceitar "SQL executado".
+
+**Regra:** quando a evidência for uma **ausência** (não apareceu, não
+retornou, não registrou), a primeira pergunta não é "por que o sistema não
+fez?" e sim "**o meu instrumento mostraria se tivesse feito?**". Uma marca
+conhecida responde isso em um passo.
+
+**Corolário para `replace` e `sed` em scripts de edição.** Toda substituição
+leva `assert` (ou conferência do resultado). Eu pus `assert` em duas de três e
+**a que ficou sem foi exatamente a que falhou** — não por azar: a que eu achei
+óbvia demais para conferir.
+
+---
+
+### A parte cara do dia: a fonte da previsão
+
+Fiz o Mapa da Força mostrar previsto × existente somando
+`vw_grade_mapa_forca_previsao_efetivo`: **1.579 vagas**. Contra os 2.459
+militares, a tela anunciou **"155% ocupado, excedente de 880"**.
+
+Era o contrário. Medido depois:
+
+| Fonte | O que é | Cobertura |
+|---|---|---|
+| `vw_grade_..._previsao_efetivo` | distribuição por unidade | **6 de 12 comandos, 15 de 46 unidades, 58 de 304 subunidades** |
+| `posto_quadro_previsao` | o quadro autorizado (Lei 904/2013 + Lei 969/2014) | **3.002**, PMRR inteira |
+
+Com a fonte certa: **82% ocupado, faltam 543**. A tela dizia sobra onde há
+falta, numa tela de comando. E não havia bug nenhum: o numerador contava a
+corporação toda e o denominador um terço dela.
+
+**O erro não foi somar errado, foi somar sem perguntar o que a fonte cobria.**
+Antes de usar uma tabela como denominador, medir a cobertura dela contra o
+numerador — e, se não cobrir, o número não serve, por mais que a consulta
+esteja correta.
+
+**Três detalhes que vieram junto:**
+
+- **Número redondo escrito à mão.** O banner dizia "Previsto 3.500 militares"
+  desde 12/06/2026, string literal num commit de interface, nunca calculada de
+  nada. É o §23 outra vez (os 15 dias por ano). O usuário é que perguntou "a
+  previsão não era 3.500?" — e a pergunta dele é que expôs o problema inteiro.
+- **Join sem chave declarada.** `posto_quadro_previsao.fk_post_quad_cod` só
+  *parece* apontar para `posto_quadro.poqu_cod`: `pg_constraint` devolve lista
+  vazia. O endpoint passou a **medir** (todas as 61 linhas têm de achar par) e
+  a recusar a consulta se não fecharem. Deu `true`, mas podia não dar — e um
+  join errado por nome não dá erro, devolve número plausível.
+- **A decisão final foi tirar a tela.** Construí a saída honesta (suprimir o
+  percentual onde a previsão é menor que o efetivo, escrever a cobertura).
+  Funcionava. O usuário cortou mais fundo: *"não faz sentido com dados
+  incompletos"*. **Uma tela que precisa de um parágrafo explicando por que os
+  números não fecham é uma tela que não devia mostrar aqueles números.**
+
+**E o que fecha o §53 com o §52:** número inventado é ruim porque é falso;
+número do banco com metade do cadastro vazio é ruim porque **parece medido**.
+O segundo engana mais, e engana justamente quem confere.

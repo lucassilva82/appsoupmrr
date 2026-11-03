@@ -116,6 +116,7 @@ bastaram as diretrizes acima e o DESIGN.md, que vale mais que qualquer skill.
 | Firestore sem regras no repositório e sem Firebase Auth | Média | console Firebase |
 | `notificarEscala` sem autenticação | Média | `functions/` |
 | Matrícula e e-mail em query string | Baixa | API (lista privada) |
+| **CPF completo em query string** (`exibecontracheque.php?cpf=…`, `listamesescontracheque.php?cpf=…`): entra no log de acesso do servidor, então o CPF de todo militar que abriu contracheque está em `/logs/pmrr.online-ssl_log-*.gz` | **Média** | API + `lib/services/dados_sql.dart` |
 
 As correções da API continuam numa sessão própria (PAINEL_ADMIN §11, item 6).
 A troca das credenciais que ficaram expostas (lista privada da API) fica para
@@ -1795,6 +1796,18 @@ Hoje o PDF do contracheque é montado **no aparelho**
 - **App:** só pede, mostra, guarda e compartilha. A tela continua mostrando os
   valores na própria tela (dados da API, sem PDF) e o PDF vem pronto.
 - **Vale para declarações e todo documento futuro.**
+- **O CPF sai da URL nesta fase** (decisão do usuário, 30/10/2026). Hoje o
+  app monta `exibecontracheque.php?cpf=…&matricula=…` e
+  `listamesescontracheque.php?cpf=…`, e query string entra no log de acesso do
+  servidor: o CPF de todo militar que abriu contracheque está nos
+  `/logs/pmrr.online-ssl_log-*.gz`. O `contracheque_pdf.php` já faz o certo —
+  **lê o CPF no SIGRH pela matrícula autenticada, e o app não manda CPF
+  nenhum** —, e os endpoints de lista e de exibição passam a seguir o mesmo
+  caminho: POST, com matrícula + senha, e o CPF resolvido no servidor. Ganho
+  de tábula: com o CPF fora do pedido, ninguém consulta o contracheque de
+  outro militar trocando um número na URL.
+  O `dados_sql.dart` já parou de imprimir o CPF e o contracheque no log
+  (30/10/2026); o que falta é tirá-lo do endereço.
 - **Versões antigas** (até 2.1.x) continuam gerando o PDF no aparelho até o
   corte por versão mínima; a API antiga de dados do contracheque fica no ar
   até lá.

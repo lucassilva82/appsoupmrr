@@ -150,8 +150,23 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
     ));
   }
 
-  // Topo com a arte da área de Gestão (padrão 2.2); o efetivo previsto,
-  // que o banner antigo mostrava, fica à direita do título.
+  // Topo com a arte da área de Gestão (padrão 2.2).
+  //
+  // SEM NÚMERO À DIREITA, de propósito. Até 29/10/2026 havia "Previsto
+  // 3.500 militares", escrito à mão num commit de interface de 12/06/2026 e
+  // nunca calculado de nada. Trocá-lo pelo previsto do SIGRH foi tentado e
+  // desfeito a pedido do usuário: medido em 30/10/2026, o SIGRH tem só
+  // **1.579 das 3.002 vagas autorizadas distribuídas por unidade** (53%), com
+  // 6 de 12 comandos e 58 de 304 subunidades sem nenhum lançamento — CPI,
+  // DEP, DRH e Corregedoria zerados. Percentual de ocupação sobre isso não
+  // mede ocupação: o CPI apareceria sem vaga nenhuma e a ASS MIL TJE com
+  // "989% ocupado", que é lançamento faltando lido como excedente.
+  //
+  // A decisão: enquanto o cadastro estiver incompleto, a tela não mostra
+  // previsão. Número redondo escrito à mão era pior; número do banco com
+  // metade do cadastro vazio é igualmente ruim, porque **parece** medido.
+  // Quando a DRH preencher o SIGRH, o endpoint sigrh/mapa_efetivo.php já
+  // está no ar e mede a cobertura (bloco `cobertura`) — é religar a tela.
   Widget _bannerEfetivo(BuildContext context) {
     return TopoArte(
       arte: Arte.de('gestao'),
@@ -159,34 +174,6 @@ class _MapadaforcaPageState extends State<MapadaforcaPage>
       titulo: 'Mapa da Força',
       subtitulo: 'Efetivo e situação dos militares, por comando e unidade.',
       margem: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      direita: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            'Previsto',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.78),
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const Text(
-            '3.500',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          Text(
-            'militares',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.78),
-              fontSize: 11,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
