@@ -36,6 +36,8 @@ Operar mandar o `tipo` certo, pelo mesmo contrato do
 | 9 | **Militar lançado numa escala** (`escala.py`, dentro do Operar) | "Você foi escalado" | `inicio` | `escalado` |
 | 10 | **Substituição: quem sai** (`setor.py`) | "Você saiu da escala" | `inicio` | `desescalado` |
 | 11 | **Substituição: quem entra** (`setor.py`) | "Você vai substituir um colega" | `inicio` | `escalado` |
+| 12 | **Retirado da escala pelo chefe** (`escala.py`, `retirar()`) | "Você saiu da escala" | `inicio` | `desescalado` |
+| 13 | **Desfeita a rodada automática** (`escala.py`) | "Você saiu da escala" | `inicio` | `desescalado` |
 
 **Medido no código instalado em 03/11/2026, não lido de documento.** Todas as
 notificações passam por **um portão único**, no `_processa0` do `push_web.py`:
@@ -89,6 +91,28 @@ exclusão deliberada. Não existe caminho paralelo mandando push por fora.
    movimentação, dispensa), para não avisar duas vezes. Documentação em
    `/opt/dti-soupm/LEIA-ME.md`. Ainda falta: **sair** da escala
    (`desescalado`) e o lembrete de apresentação.
+
+## 1b. O que ainda NÃO notifica (medido em 03/11/2026)
+
+Levantado por quem chama cada função de disparo, não de cabeça. Os 13 pontos
+acima estão no ar; faltam três famílias.
+
+**Sai ou muda de posto sem passar pelo `autoriza` nem pelo `setor`:**
+
+| Sítio | O que é | Custo |
+|---|---|---|
+| `escala.py:2287` | trocar posto, escala, função ou prefixo | baixo: arquivo já divergente |
+| `voto.py:1006, 1108, 1245, 1268` | mover, liberar e desfazer pelo voto | baixo |
+| `comando_posto.py:40` | passar a ser Cmte do posto | baixo |
+
+**Nada que dependa de tempo tem mecanismo.** Medido: **0 timers do systemd e
+nenhum cron do Operar** no servidor. Então lembrete de apresentação, "Cheguei"
+faltando depois do horário e "o militar escalado não chegou" (que avisa o
+chefe) não têm por onde sair — precisariam de um cron novo, no molde do vigia.
+
+**Sem fonte de dado ou sem fluxo:** falta registrada, atestado **analisado**
+(hoje só o "recebido", e para quem autoriza), viatura atribuída/transferida/
+devolvida, e pagamento do TRE (a `convocacao_tre` está vazia).
 
 ## 2. Todos os cenários que devem notificar
 
