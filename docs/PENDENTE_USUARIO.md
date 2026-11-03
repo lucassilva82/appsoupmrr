@@ -56,6 +56,12 @@ Com o acesso SSH, a DTI passou a aplicar as atualizações e a mexer no Operar.
 | **`furou_silencio` deixou de mentir** (`push_modulo.php`): o motivo marcava "furou o silêncio" às 11h da manhã, quando não havia silêncio nenhum | `api-soupmrr/sigrh/push_modulo.php` |
 | **`conferir_mudancas.sh`**: confere as 7 marcas da DTI no Operar; sai 1 se um pacote apagou alguma. **No cron do root às 07:10**, e escreve `ATENCAO-MUDANCA-FALTANDO.txt` só quando há problema | idem |
 
+**O mapa do servidor do Operar** (onde fica cada coisa, como rodar algo que
+precise do banco, os três relógios, as armadilhas de edição) está em
+`api-soupmrr/operar/SERVIDOR.md`. Os dados de conexão ficam **fora do git**,
+no Drive, em "Arquivos SouPMRR/servidor-api/LEIA-ME iMac.txt" — **falta
+acrescentar a linha do SSH lá**, senão o acesso não viaja para outra máquina.
+
 **Regra do usuário (03/11/2026): antes de lançar uma atualização do Operar,
 sempre conferir incompatibilidades.** Não é ritual: foi o passo 1 do roteiro do
 r17 que provou, por SHA-256, que os 18 arquivos no servidor eram exatamente os
