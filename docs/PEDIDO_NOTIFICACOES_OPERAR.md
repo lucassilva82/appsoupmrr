@@ -33,7 +33,7 @@ Operar mandar o `tipo` certo, pelo mesmo contrato do
 | 6 | Chamada (urgente) | — | `chamada` | **não passa pelo Sou PM**: só Web Push, por decisão da coordenação |
 | 7 | **Novo endereço do sistema** (`aviso_link.py:115`) | "Novo endereço do sistema" | (url) | `aviso` |
 | 8 | Teste (`push_web.teste`) | "Teste de notificação" | `mais` | `aviso` |
-| 9 | **Militar lançado numa escala** | "Você foi escalado" | `escala` | `escalado` |
+| 9 | **Militar lançado numa escala** | "Você foi escalado" | `inicio` | `escalado` |
 
 **Medido no código instalado em 03/11/2026, não lido de documento.** Todas as
 notificações passam por **um portão único**, no `_processa0` do `push_web.py`:
@@ -61,7 +61,14 @@ exclusão deliberada. Não existe caminho paralelo mandando push por fora.
    de chegar lá. O conserto é passar o tipo em **cada chamada**. (Do lado do
    Sou PM os 22 tipos já estão aceitos: medido no banco em 03/11.)
 3. **A escala não notifica sozinha** — contornado em 03/11, **sem tocar no
-   `escala.py`**. O `escala.py` é um dos 18 arquivos que os pacotes do GAPE
+   `escala.py`**, e a medição de 03/11 confirmou que essa foi a escolha certa:
+   o caminho de dentro alcançaria **18 militares a mais** (os que têm assinatura
+   de Web Push e não têm o Sou PM; 1.505 têm o Sou PM), ao custo de **parar a
+   instalação de todo pacote futuro**, porque o `escala.py` é seção 2 do
+   manifesto. A chamada de três linhas está pronta em
+   `api-soupmrr/operar/propostas/escalado_nativo.py.txt`, para o GAPE
+   incorporar — aí não há divergência nunca mais. Medição inteira em
+   `api-soupmrr/operar/relatorios/2026-11-03_vigia_ou_nativo.md`. O `escala.py` é um dos 18 arquivos que os pacotes do GAPE
    substituem (seção 2 do `MANIFESTO-SHA256.txt`): alterá-lo faria a
    pré-validação do próximo pacote **parar**. Em vez disso, um vigia da DTI em
    `/opt/dti-soupm/aviso_escala.py` lê a tabela `lancamento` e chama o
@@ -134,6 +141,13 @@ sugestões, sem CPF e sem texto de atestado.
 |---|---|---|
 | Chamada urgente | `chamada` | Liberado do nosso lado, mas **continua só no Web Push** até a coordenação decidir o contrário |
 
+**Buraco achado em 03/11, ainda aberto:** a substituição feita pelo
+`setor.py` (quem sai / quem entra) **não avisa ninguém** — o arquivo tem zero
+referências a `push_web`. Quem entra o vigia pega (é um `lancamento` novo);
+**quem sai não é avisado por nada**. O `setor.py` está **fora do manifesto**,
+então consertar não custa divergência nenhuma. Ficou fora do escopo de hoje
+("somente novas escalas"), e é o próximo item.
+
 ## 3. O que mudar no Operar (nós, por SSH)
 
 1. **`soupm_push.py`:** ampliar `TIPOS` para a lista da seção 2. Hoje o tipo
@@ -155,11 +169,12 @@ mensagem. Para mensagem, basta "Nova mensagem de {nome}".
 
 - **Horário de silêncio (22h às 06h):** vale para o módulo inteiro. Uma
   dispensa autorizada às 23h para um serviço às 05h só chegaria às 06h.
-  **Decidido pelo Lucas (03/11/2026): os tipos urgentes furam o silêncio.**
-  A fazer no `push_modulo.php` da API: uma lista de tipos que ignoram o
-  silêncio, por exemplo `dispensa`, `alteracao`, `remanejamento`,
-  `substituicao`, `desescalado`, `escalado` e `autorizacao`. A lista fica no
-  cadastro do módulo, não fixa no código.
+  **Decidido pelo Lucas (03/11/2026) e FEITO no mesmo dia:** os tipos urgentes
+  furam o silêncio. A lista fica no cadastro do módulo
+  (`soupm_push_modulo.tipos_urgentes`), não fixa no código, e o pedido registra
+  `furou_silencio`. Junto saiu um defeito real: o `agendado_para` saía como
+  carimbo pelado e o Postgres o lia como −03, então o que devia sair 06:00 em
+  Roraima saía 05:00. Corrigido com o `P` do `format()`.
 - **Limite:** hoje o módulo está sem limite prático, 1.000.000 por hora.
 - **Duplicidade:** continua a regra do `PEDIDO_PUSH_OPERAR.md`. Primeiro vai
   para o Sou PM; o Web Push só entra se vier `SEM_APARELHO`.

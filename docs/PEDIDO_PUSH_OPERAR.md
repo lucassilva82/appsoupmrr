@@ -52,7 +52,7 @@ Content-Type: application/json
   "tipo": "escalado",
   "titulo": "Você foi escalado",
   "mensagem": "Expoferr 2026 — Portão 2, dia 03/11, das 18h às 23h.",
-  "rota": "/op/operacoes?abrir=escala"
+  "rota": "/op/operacoes?abrir=inicio"
 }
 ```
 
@@ -125,7 +125,7 @@ Ou seja: **o `abrir=` é o mesmo que o Operar já usa** na notificação de hoje
 única diferença é que ele viaja dentro do campo `rota`:
 
 ```
-"rota": "/op/operacoes?abrir=escala"     →  /app/?abrir=escala&soupm=1
+"rota": "/op/operacoes?abrir=inicio"     →  /app/?abrir=inicio&soupm=1
 "rota": "/op/operacoes"                  →  /app/
 (sem o campo)                            →  /app/
 ```
@@ -137,6 +137,21 @@ interpreta o valor: ele repassa inteiro.
 campos fixos e nenhum bloco de dados livre, e ele já está publicado nas lojas.
 Mudar o contrato obrigaria a tropa a atualizar o app antes de qualquer
 notificação funcionar. A rota com query resolve sem mexer em nada publicado.
+
+**Só sete nomes valem depois do `?abrir=`**, e a lista autoritativa está no
+`app_campo/push.js:19` do Operar:
+
+```js
+var TELAS = { avisos: 1, conversa: 1, comunicados: 1, encaminhar: 1, mais: 1, inicio: 1, mapa: 1 };
+```
+
+O `abreTela(t)` **retorna sem fazer nada** quando o nome não está aí. Nome
+inventado não dá erro, não entra em log e não aparece em teste: a notificação
+chega, o militar toca e **nada abre** — ele cai na tela padrão e ninguém
+descobre por quê. Aconteceu com a gente em 03/11: o vigia da escala nasceu com
+`?abrir=escala`, que não existe. Para a escala, o nome certo é **`inicio`**, que
+é onde o card do serviço aparece no app de campo. Rota nova pede tela nova no
+`TELAS` e no `sw.js` (que valida com `^\?abrir=[a-z]+$`), do lado do Operar.
 
 ---
 
