@@ -2,7 +2,13 @@
 
 **Data:** 03/11/2026
 **Quem faz:** a própria equipe do Sou PM, pelo acesso SSH ao servidor do
-Operar (decisão do Lucas, 03/11/2026). Não é mais pedido ao Cap Stenio.
+Operar (decisão do Lucas, 03/11/2026). Não é mais pedido a terceiro.
+
+**Regra que saiu da aplicação do r17 e vale para tudo aqui:** antes de alterar
+um arquivo do Operar, conferir em qual seção do `MANIFESTO-SHA256.txt` ele
+está. Seção 2 (os 18 trocados pelo pacote) **para a instalação** do pacote
+seguinte; seção 3 (os 27 de referência) só **avisa**. O que der para fazer fora
+da árvore deles — como o vigia da escala — é feito fora.
 
 Pedido do Lucas: **toda mudança que afeta o militar deve chegar como
 notificação no Sou PM.** Isso inclui escala, dispensa, permuta, mensagem e
@@ -23,22 +29,48 @@ Operar mandar o `tipo` certo, pelo mesmo contrato do
 | 2 | Mensagem direta nova | "Nova mensagem de {nome}" | `conversa` | `aviso` |
 | 3 | Documento recebido ou encaminhado | "Documento recebido" | `encaminhar` | `aviso` |
 | 4 | Documento despachado | "Documento despachado" | `encaminhar` | `aviso` |
-| 5 | Aviso pessoal (`autoriza._avisa_militar`): dispensa, permuta, mudança de escala, digital substituída | "Aviso novo", com texto fixo | `avisos` | `alteracao` |
+| 5 | Aviso pessoal (`autoriza._avisa_militar`): dispensa, permuta, mudança de escala, digital substituída, encerramento antecipado, novo documento, avisos ao chefe | **o texto real do aviso**, com título próprio (03/11) | `avisos` | `alteracao` |
 | 6 | Chamada (urgente) | — | `chamada` | **não passa pelo Sou PM**: só Web Push, por decisão da coordenação |
-| — | "Você foi escalado: Expoferr 2026" | envio único por script em 02/11, não automático | `inicio` | `escalado` |
+| 7 | **Novo endereço do sistema** (`aviso_link.py:115`) | "Novo endereço do sistema" | (url) | `aviso` |
+| 8 | Teste (`push_web.teste`) | "Teste de notificação" | `mais` | `aviso` |
+| 9 | **Militar lançado numa escala** | "Você foi escalado" | `escala` | `escalado` |
 
-**Três problemas no que existe hoje:**
+**Medido no código instalado em 03/11/2026, não lido de documento.** Todas as
+notificações passam por **um portão único**, no `_processa0` do `push_web.py`:
 
-1. **O aviso pessoal não diz o que aconteceu.** Dispensa autorizada, dispensa
-   negada, permuta e mudança de escala chegam todas como "Aviso novo. Você tem
-   um aviso novo no app". O militar só fica sabendo do que se trata se abrir o
-   app.
-2. **O tipo se perde.** O `soupm_push.py` troca qualquer tipo que não esteja
-   na tupla `TIPOS` por `aviso`. Para os tipos novos chegarem, é preciso
-   ampliar essa tupla.
-3. **A escala não notifica sozinha.** Ser escalado, sair da escala ou ter o
-   posto ou o horário mudados não gera notificação automática. O envio de
-   02/11 foi feito à mão.
+```python
+if soupm_push.ligado() and job.get("url") != "?abrir=chamada":
+    return _processa_soupm(job, mats)
+```
+
+Tudo que chama `push_web.avisar` vai para o Sou PM; só a chamada de voz é
+exclusão deliberada. Não existe caminho paralelo mandando push por fora.
+
+**Os três problemas, e onde cada um está em 03/11/2026:**
+
+1. ~~**O aviso pessoal não diz o que aconteceu.**~~ **RESOLVIDO em 03/11.** O
+   texto já era específico (`"Você foi ESCALADO em …"`, `"Você foi PERMUTADO: …"`,
+   `"A sua digital foi SUBSTITUÍDA…"`) e era **descartado na saída**. Agora o
+   `push_web.py` lê o texto do próprio aviso, **depois** da confirmação de
+   commit, e o põe no corpo do push, com título por padrão de texto. Uma
+   mudança consertou sete cenários; nenhum chamador foi tocado. Detalhe em
+   `/root/backup_dti_push_texto_20261103_103415/RELATORIO.md` no servidor.
+2. **O tipo se perde — mas a causa não é a tupla `TIPOS`.** Ampliar a tupla do
+   `soupm_push.py` sozinha não muda nada: `avisar(..., tipo=None)` é o padrão e
+   **seis dos sete chamadores não passam tipo**, então tudo vira `aviso` antes
+   de chegar lá. O conserto é passar o tipo em **cada chamada**. (Do lado do
+   Sou PM os 22 tipos já estão aceitos: medido no banco em 03/11.)
+3. **A escala não notifica sozinha** — contornado em 03/11, **sem tocar no
+   `escala.py`**. O `escala.py` é um dos 18 arquivos que os pacotes do GAPE
+   substituem (seção 2 do `MANIFESTO-SHA256.txt`): alterá-lo faria a
+   pré-validação do próximo pacote **parar**. Em vez disso, um vigia da DTI em
+   `/opt/dti-soupm/aviso_escala.py` lê a tabela `lancamento` e chama o
+   `push_modulo.php` com tipo `escalado`. Marca d'água no maior id existente,
+   então **nada do que já estava escalado é notificado**; e ele se cala quando
+   o militar já recebeu o aviso pessoal daquele lançamento (permuta,
+   movimentação, dispensa), para não avisar duas vezes. Documentação em
+   `/opt/dti-soupm/LEIA-ME.md`. Ainda falta: **sair** da escala
+   (`desescalado`) e o lembrete de apresentação.
 
 ## 2. Todos os cenários que devem notificar
 

@@ -1,8 +1,13 @@
 # Notificações do Operar dentro do Sou PM — o que o Operar precisa fazer
 
-**Para:** Cap Stenio — responsável pelo OPERAR · PMRR
+**Para:** o responsável pelo OPERAR · PMRR
 **De:** DTI / equipe do Sou PM
-**Data:** 30/10/2026
+**Data:** 30/10/2026 · **atualizado em 03/11/2026**
+
+> **03/11/2026:** a DTI passou a ter acesso SSH ao servidor do Operar e é quem
+> aplica as atualizações. A parte "o que o Operar precisa fazer" deixou de ser
+> um pedido a terceiro: é trabalho nosso. O contrato das seções 3 a 8 continua
+> valendo como está — é ele que descreve a API do Sou PM.
 
 ---
 
@@ -138,17 +143,25 @@ Já cadastrados do lado de cá, e conferidos no banco:
 
 | | |
 |---|---|
-| **Tipos aceitos** | `escalado`, `troca`, `apresentacao`, `alteracao`, `aviso` |
-| **Limite** | 120 por hora, 1200 por dia (do módulo inteiro, não por militar) |
+| **Tipos aceitos** (22) | `escalado`, `desescalado`, `alteracao`, `troca`, `permuta`, `dispensa`, `remanejamento`, `substituicao`, `apresentacao`, `presenca`, `falta`, `atestado`, `autorizacao`, `mensagem`, `comunicado`, `documento`, `despacho`, `viatura`, `pagamento`, `chamada`, `aviso`, `teste` |
+| **Limite** | 1.000.000 por hora e por dia (do módulo inteiro, não por militar) — na prática, sem limite |
 | **Silêncio** | 22:00 às 06:00 |
+
+> **Medido no banco em 03/11/2026.** Até 30/10 eram 5 tipos e 120/h; o painel
+> ampliou para os 22 acima em 03/11, às 07:55. Esta tabela e o
+> `sql/2026-11-03_push_modulo_operar_tipos.sql` da API são a mesma coisa; se
+> divergirem, vale o banco (a consulta está no fim desta seção).
 
 - **`tipo` é obrigatório.** Não há valor padrão: pedido sem `tipo`, ou com um
   fora da lista, é recusado com `TIPO_RECUSADO` e o motivo fica registrado.
   Acrescentar um tipo novo é uma linha no banco do nosso lado, sem publicar
   versão — basta pedir.
-- **O limite é do módulo.** Um disparo em massa (um comunicado para a tropa
-  inteira) estoura os 120/h. Se for preciso notificar muita gente de uma vez,
-  avise antes que a gente ajusta a cota.
+- **O limite é do módulo.** Com a cota atual (1.000.000/h) um comunicado para
+  a tropa inteira passa sem esforço. Se um dia a cota voltar a ser apertada,
+  o excedente volta como `LIMITE_HORA` e aquelas pessoas não recebem.
+- **Para conferir a cota e os tipos de verdade**, sem acreditar em documento:
+  `SELECT tipos, limite_hora, limite_dia, silencio_inicio, silencio_fim
+   FROM soupm_push_modulo WHERE chave = 'operar';`
 - **Horário de silêncio: adia, não descarta.** Pedido feito entre 22h e 6h é
   **aceito** (`code: 1`) e entregue às 06:00; a resposta traz
   `agendado_para` com a hora em que vai sair. Um "você foi escalado" disparado
