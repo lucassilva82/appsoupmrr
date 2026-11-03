@@ -2323,3 +2323,29 @@ ninguém rodar nada.
 **Regra:** vigia que não tem como provar que está vivo é um indicador que só
 mente para cima. Marca positiva (um arquivo tocado, um header de marca) custa
 uma linha e responde em um passo.
+
+### O fecho, no dia seguinte à mesma lição: o guarda casou com o meu comentário
+
+Ao pôr o conferidor das mudanças no cron, o script tinha um guarda de
+idempotência: `grep -q 'conferir_mudancas'` no crontab, para não instalar duas
+vezes. Ele respondeu "já estava no cron, nada a fazer" — e **não havia
+instalado nada**. O que ele casou foi o **comentário que eu mesmo escrevera
+minutos antes**, ao desligar o vigia:
+
+```
+# o /opt/dti-soupm/conferir_mudancas.sh acusa, e basta descomentar esta linha.
+```
+
+Perguntar *"já está instalado?"* com `grep` por nome mede **menção**, não
+instalação — e a menção mais provável num arquivo de configuração é a do
+comentário que explica a coisa. O certo é procurar **linha ativa**:
+`grep -cE '^[^#]*conferir_mudancas'`. O mesmo vale para `systemctl cat | grep`,
+`crontab -l | grep` e qualquer `.conf`: **comentário é texto, e `grep` não sabe
+a diferença.**
+
+E a parte que fecha com o resto do §54: foi a **conferência depois** que pegou,
+não o cuidado antes. O script disse "nada a fazer" com exatidão — e eu só
+descobri que ele não tinha feito nada porque li a listagem que vinha logo
+abaixo e não achei a linha lá. Toda instalação idempotente tem de **imprimir o
+estado medido depois** (quantas linhas ativas existem agora), não só anunciar o
+que decidiu fazer.
