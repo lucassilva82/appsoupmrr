@@ -2217,3 +2217,109 @@ esteja correta.
 **E o que fecha o §53 com o §52:** número inventado é ruim porque é falso;
 número do banco com metade do cadastro vazio é ruim porque **parece medido**.
 O segundo engana mais, e engana justamente quem confere.
+
+---
+
+## 54. O custo eu media; a população que ele compra, não
+
+**O dia (03/11/2026).** Depois de aplicar o r17 do Operar e fazer o aviso
+pessoal carregar o texto real, o usuário fez a pergunta certa: *"esses vigias
+são a forma profissional de ter essas notificações? o Operar já não manda
+notificações web? não seria só incorporar junto à do Sou PM?"*
+
+Ele estava certo na direção, e eu estava errado na conta — e o erro tem uma
+forma nova, que não está no §52 nem no §53.
+
+### O argumento que parecia decisivo
+
+O "escalado" (militar lançado numa escala) era o único cenário sem aviso
+nenhum. Resolvemos por fora, com um vigia (cron) que lê a tabela `lancamento`
+e chama a nossa API. Ao ser questionado, eu defendi levar isso para **dentro**
+do Operar, e o argumento era funcional, não estético:
+
+> o vigia só alcança quem tem o Sou PM; chamar de dentro passa pelo portão
+> único do `push_web`, que entrega ao Sou PM **e**, para quem não tem o app,
+> cai no Web Push do navegador.
+
+Verdade em cada palavra. Eu já ia pagar o preço: o `escala.py` é um dos 18
+arquivos da **seção 2** do `MANIFESTO-SHA256.txt`, e divergência ali **para a
+instalação** do pacote seguinte — num sistema que recebeu r13, r14, r15 e r17
+em poucos dias.
+
+### A medição que derrubou o meu próprio argumento
+
+| | Militares |
+|---|---|
+| com o Sou PM e push ativo | **1.505** |
+| com assinatura de Web Push no Operar | **18** |
+| dos 18, quantos também têm o Sou PM | **0** |
+
+E a amostra real, o envio da Expoferr de 02/11: **331 aceitos, 140 recusados
+por `sem_aparelho`**. Eu havia tratado esses 140 como a população do Web Push.
+**Não são.** Eles não têm o Sou PM *nem* assinatura no navegador: hoje não
+recebem por caminho nenhum, e **nenhuma mudança de código os alcança**.
+
+O que o caminho de dentro compra são **18 pessoas** — 3,8% dos 471 escalados.
+O `escala.py` não foi tocado. A chamada de três linhas ficou guardada como
+proposta, para pedir ao GAPE que incorpore: incorporada, não há divergência
+nunca mais, e **essa** é a forma profissional.
+
+### A regra, que é diferente das do §52 e do §53
+
+O §52 é sobre ler um número e não ver nada. O §53 é sobre o instrumento
+devolver silêncio. Este é um terceiro: **a afirmação medida de um lado e
+estimada do outro.**
+
+Eu medi o custo com precisão (o manifesto, a seção, o que para a instalação) e
+**estimei** o benefício de cabeça, a partir de uma inferência que parecia
+óbvia — "quem não tem o app usa o navegador". A decisão é uma divisão, e eu
+tinha numerador medido e denominador palpitado.
+
+> Antes de pagar um custo de manutenção por um argumento de arquitetura,
+> **contar a população que o argumento alcança.** "Esse caminho atende mais
+> gente" é uma afirmação sobre quantas pessoas, e quantas pessoas se conta no
+> banco, não se deduz do desenho.
+
+### Três coisas que a mesma medição corrigiu de passagem
+
+**Eu disse "é um sítio só"; são três.** Medi o `escala.py` e generalizei. Os
+`INSERT INTO lancamento` são três (`escala.py:2082`, `autoriza.py:1031`,
+`setor.py:236`), e medir cada um **mudou a decisão dos três**:
+
+| Sítio | O que a medição disse |
+|---|---|
+| `escala.py` | o escalar normal, sem aviso — mas é seção 2 (acima) |
+| `autoriza.py` | **já coberto**: o `_avisa_mudanca` avisa quem sai *e quem entra*, com o texto real desde hoje. Pôr "escalado" ali avisaria **duas vezes** |
+| `setor.py` | **não avisa ninguém** (zero referências a `push_web`); e está **fora do manifesto**, então consertar é de graça |
+
+É o §50 outra vez — "não achei no arquivo que abri" lido como "não existe" —
+mas com um proveito que vale guardar: **medir sítio por sítio achou um já
+resolvido e um de graça.** A generalização teria produzido um aviso duplicado
+e deixado o gratuito de fora.
+
+**A rota não abria nada, e nada denunciava.** O vigia nasceu mandando
+`?abrir=escala`. O mapa autoritativo é o `app_campo/push.js:19` do Operar:
+
+```js
+var TELAS = { avisos: 1, conversa: 1, comunicados: 1, encaminhar: 1, mais: 1, inicio: 1, mapa: 1 };
+```
+
+e o `abreTela(t)` faz `if (!TELAS.hasOwnProperty(t)) { return; }`. `escala` não
+está na lista: a notificação chegava, o militar tocava e **nada abria** — sem
+erro, sem log, sem teste que pegasse. O documento do GAPE dizia `inicio`; eu
+escrevi `escala` porque soava melhor. **Lista branca que recusa em silêncio é
+um `[]` do §53 com outra roupa**, e a regra que fica é a do §50: nome
+plausível não é nome válido, e nome válido se lê na lista, não se deduz.
+
+**Log vazio não prova que o vigia rodou.** O log dele é silencioso de
+propósito (cron de um minuto; 1.440 linhas/dia dizendo "nada" não servem a
+ninguém) e o arquivo de estado só muda quando há envio. Então o vazio provava
+igualmente *"rodou 47 vezes e calou"* e *"nunca rodou"* — o §53 dentro da
+própria vigilância. Conserto: **toda execução toca um arquivo de batimento**
+(`/var/lib/dti-soupm/aviso_escala.vivo`), e o `mtime` responde num `ls`, sem
+inflar log. Provado logo depois: batimento às 11:50:01 e 11:51:01, sem
+ninguém rodar nada.
+
+**Regra:** vigia que não tem como provar que está vivo é um indicador que só
+mente para cima. Marca positiva (um arquivo tocado, um header de marca) custa
+uma linha e responde em um passo.

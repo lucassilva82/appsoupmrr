@@ -66,7 +66,22 @@ instalação seguinte; seção 3 (os 27 de referência) só **avisa**. O
 
 **Pedir ao GAPE:** incorporar a mudança do `push_web.py` no código-fonte dele,
 ou avisar quando esse arquivo entrar num pacote, senão ela é sobrescrita em
-silêncio.
+silêncio. **E incorporar a chamada de três linhas do "escalado"** no
+`escala.py` deles (pronta em `api-soupmrr/operar/propostas/escalado_nativo.py.txt`):
+é o que faria o aviso nascer dentro do Operar, alcançando também quem usa a PWA
+no navegador. Nós **não** mexemos nesse arquivo porque ele é seção 2 e a
+medição de 03/11 mostrou que o ganho são **18 militares** (os com Web Push e
+sem o Sou PM; 1.505 têm o Sou PM) contra parar a instalação de todo pacote
+futuro — a conta inteira está no APRENDIZADOS §54 e em
+`api-soupmrr/operar/relatorios/2026-11-03_vigia_ou_nativo.md`.
+
+**Buraco medido e ainda aberto, de graça:** a substituição feita pelo
+`setor.py` (quem sai / quem entra) **não avisa ninguém** — o arquivo tem zero
+referências a `push_web`. Quem entra o vigia pega (é um `lancamento` novo);
+**quem sai não é avisado por nada**. E o `setor.py` está **fora do manifesto**
+(o pacote nem troca nem confere), então consertar não custa divergência
+nenhuma. Ficou fora do escopo de 03/11, que o usuário limitou a "somente novas
+escalas".
 
 ## 1. Próxima versão do app
 
@@ -115,7 +130,7 @@ intranet) e os links das lojas.
 | Com quem | O quê | Documento |
 |---|---|---|
 | **GAPE / nós, com cuidado** | PIN dentro do Sou PM, esconder "Sair deste aparelho", devolver a fila órfã, matrícula de teste escalada. Com o SSH isto passou a ser possível do nosso lado, **mas mexe no `app_campo/app.js`, que é um dos 18 arquivos trocados pelos pacotes** (seção 2 do manifesto): alterá-lo faz a pré-validação do pacote seguinte **parar**. Ou o GAPE incorpora, ou combinamos antes | `docs/PEDIDO_OPERAR_DENTRO_DO_SOUPM.md`, `docs/OPERACOES_PARA_FECHAR.md` |
-| **Nós (SSH no servidor do Operar)** | **Feito em 03/11:** o aviso pessoal passou a levar o texto real (7 cenários de uma vez) e um vigia da DTI notifica quem é lançado numa escala. **Falta:** o tipo próprio em cada chamada (hoje 6 dos 7 chamadores não passam tipo, então tudo chega como `aviso`), os disparos que não existem (`desescalado`, lembrete de apresentação, presença, falta, atestado, viatura, pagamento) e a lista de tipos que furam o silêncio no nosso `push_modulo.php` | `docs/PEDIDO_NOTIFICACOES_OPERAR.md` |
+| **Nós (SSH no servidor do Operar)** | **Feito em 03/11:** o aviso pessoal passou a levar o texto real (7 cenários de uma vez) e um vigia da DTI notifica quem é lançado numa escala. **Também feito em 03/11:** o tipo é deduzido da etiqueta no próprio `push_web` (um lugar, em vez de 7 chamadores), e os tipos urgentes furam o horário de silêncio (`soupm_push_modulo.tipos_urgentes`, no cadastro, não no código) — junto saiu um defeito real: o `agendado_para` saía como carimbo pelado e o Postgres o lia como −03, então o que devia sair 06:00 em Roraima saía 05:00. **Falta:** os disparos que não existem (`desescalado`, lembrete de apresentação, presença, falta, atestado, viatura, pagamento) | `docs/PEDIDO_NOTIFICACOES_OPERAR.md` |
 | **Teste com escala** | GPS do "Cheguei", foto de alteração e "Assumir viatura": só aparecem para quem está escalado | `docs/OPERACOES_PARA_FECHAR.md` §2 |
 | **DTI** | `apple-app-site-association` e `assetlinks.json` em `pmrr.online/.well-known/` (conferido em 31/10: os dois **404**). Sem eles, o QR da viatura e o chip NFC abrem no navegador | — |
 | **DBA** | `ALTER FUNCTION public.soupm_conta_resumo(text) OWNER TO <usuário que lê qra>;`. A conta do cPanel não lê `qra`. Sem isso, a tela Militares do painel mostra a conta como indisponível | — |
