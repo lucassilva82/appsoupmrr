@@ -22,6 +22,20 @@ git. A medição das fontes de nível no SIGRH foi para
   - central de comunicados (`comunicados.fonte_app = api`).
 - Comunicado nº 3, "Operação Expoferr 2026": modo cartaz, aparece ao abrir o
   app e abre Operações.
+
+**Medido em 03/11/2026, 11h20** (retrato, não verdade permanente — a consulta
+para refazer está em `api-soupmrr/operar/relatorios/2026-11-03_estado_medido.md`):
+
+| | |
+|---|---|
+| Militares com aparelho registrado | **1.503** (1.552 tokens ativos) |
+| Fila de push | 350 envios, **todos `concluido`**, nada travado |
+| Pendências | 37 cadastradas, 5 confirmadas, **5 ligadas** |
+| Ainda no Firestore | a aba Avisos (`notificacoes.fonte_app = firestore`) e a escrita dupla |
+
+O histórico de notificações **não foi importado**: as 350 linhas de
+`soupm_notificacao` são só as novas, de 30/10 para cá. A saída do Firestore
+continua sendo o item aberto da seção 1a.
 - Campanhas de declaração **desligadas** até a administração lançar uma.
 
 ---
@@ -35,6 +49,14 @@ Com o acesso SSH, a DTI passou a aplicar as atualizações e a mexer no Operar.
 | **r17 aplicado** (18 arquivos, chave `apresentacao`, UPDATE de 18 postos, DELETE de 6 escalas vazias, reinício das duas unidades) | `/root/backup_r17_20261103_095649/RELATORIO.md` |
 | **Aviso pessoal com o texto real** (`push_web.py`): 7 cenários deixaram de chegar como "Aviso novo" | `/root/backup_dti_push_texto_20261103_103415/RELATORIO.md` |
 | **Vigia do lançamento na escala** (`/opt/dti-soupm/aviso_escala.py`, cron do root a cada minuto) | `/opt/dti-soupm/LEIA-ME.md` |
+
+**Regra do usuário (03/11/2026): antes de lançar uma atualização do Operar,
+sempre conferir incompatibilidades.** Não é ritual: foi o passo 1 do roteiro do
+r17 que provou, por SHA-256, que os 18 arquivos no servidor eram exatamente os
+do r15 e que não havia nenhuma modificação local nos outros 27. Sem essa
+conferência, uma mudança nossa teria sido sobrescrita em silêncio — e é
+exatamente o que vai acontecer com o `push_web.py` se um pacote futuro o
+incluir sem avisar.
 
 **Regra que nasceu daí:** antes de alterar arquivo do Operar, ver em que seção
 do `MANIFESTO-SHA256.txt` ele está. Seção 2 (os 18 do pacote) **para** a
