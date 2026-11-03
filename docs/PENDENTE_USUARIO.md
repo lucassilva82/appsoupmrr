@@ -72,7 +72,8 @@ intranet) e os links das lojas.
 
 | Com quem | O quê | Documento |
 |---|---|---|
-| **Cap Stenio** | PIN dentro do Sou PM, esconder "Sair deste aparelho", devolver a fila órfã, push do Operar pelo `push_modulo.php`, matrícula de teste escalada | `docs/PEDIDO_OPERAR_DENTRO_DO_SOUPM.md`, `docs/PEDIDO_PUSH_OPERAR.md`, `docs/OPERACOES_PARA_FECHAR.md` |
+| **Cap Stenio** | PIN dentro do Sou PM, esconder "Sair deste aparelho", devolver a fila órfã, matrícula de teste escalada | `docs/PEDIDO_OPERAR_DENTRO_DO_SOUPM.md`, `docs/OPERACOES_PARA_FECHAR.md` |
+| **Nós (SSH no servidor do Operar)** | Notificar todos os cenários do Operar pelo Sou PM (escala, dispensa, permuta, mensagem, documento…) e deixar os tipos urgentes furarem o silêncio das 22h às 06h. Os 22 tipos já estão liberados no módulo `operar` desde 03/11 | `docs/PEDIDO_NOTIFICACOES_OPERAR.md` |
 | **Teste com escala** | GPS do "Cheguei", foto de alteração e "Assumir viatura": só aparecem para quem está escalado | `docs/OPERACOES_PARA_FECHAR.md` §2 |
 | **DTI** | `apple-app-site-association` e `assetlinks.json` em `pmrr.online/.well-known/` (conferido em 31/10: os dois **404**). Sem eles, o QR da viatura e o chip NFC abrem no navegador | — |
 | **DBA** | `ALTER FUNCTION public.soupm_conta_resumo(text) OWNER TO <usuário que lê qra>;`. A conta do cPanel não lê `qra`. Sem isso, a tela Militares do painel mostra a conta como indisponível | — |
