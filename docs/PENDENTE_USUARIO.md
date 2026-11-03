@@ -26,6 +26,26 @@ git. A medição das fontes de nível no SIGRH foi para
 
 ---
 
+## Operar: o que a DTI fez em 03/11/2026
+
+Com o acesso SSH, a DTI passou a aplicar as atualizações e a mexer no Operar.
+
+| O quê | Onde fica o registro |
+|---|---|
+| **r17 aplicado** (18 arquivos, chave `apresentacao`, UPDATE de 18 postos, DELETE de 6 escalas vazias, reinício das duas unidades) | `/root/backup_r17_20261103_095649/RELATORIO.md` |
+| **Aviso pessoal com o texto real** (`push_web.py`): 7 cenários deixaram de chegar como "Aviso novo" | `/root/backup_dti_push_texto_20261103_103415/RELATORIO.md` |
+| **Vigia do lançamento na escala** (`/opt/dti-soupm/aviso_escala.py`, cron do root a cada minuto) | `/opt/dti-soupm/LEIA-ME.md` |
+
+**Regra que nasceu daí:** antes de alterar arquivo do Operar, ver em que seção
+do `MANIFESTO-SHA256.txt` ele está. Seção 2 (os 18 do pacote) **para** a
+instalação seguinte; seção 3 (os 27 de referência) só **avisa**. O
+`push_web.py` está na 3 — por isso foi alterado; o `escala.py` e o
+`app_campo/app.js` estão na 2 — por isso o vigia ficou fora da árvore deles.
+
+**Pedir ao GAPE:** incorporar a mudança do `push_web.py` no código-fonte dele,
+ou avisar quando esse arquivo entrar num pacote, senão ela é sobrescrita em
+silêncio.
+
 ## 1. Próxima versão do app
 
 | Item | O que fazer |
@@ -72,8 +92,8 @@ intranet) e os links das lojas.
 
 | Com quem | O quê | Documento |
 |---|---|---|
-| **Cap Stenio** | PIN dentro do Sou PM, esconder "Sair deste aparelho", devolver a fila órfã, matrícula de teste escalada | `docs/PEDIDO_OPERAR_DENTRO_DO_SOUPM.md`, `docs/OPERACOES_PARA_FECHAR.md` |
-| **Nós (SSH no servidor do Operar)** | Notificar todos os cenários do Operar pelo Sou PM (escala, dispensa, permuta, mensagem, documento…) e deixar os tipos urgentes furarem o silêncio das 22h às 06h. Os 22 tipos já estão liberados no módulo `operar` desde 03/11 | `docs/PEDIDO_NOTIFICACOES_OPERAR.md` |
+| **GAPE / nós, com cuidado** | PIN dentro do Sou PM, esconder "Sair deste aparelho", devolver a fila órfã, matrícula de teste escalada. Com o SSH isto passou a ser possível do nosso lado, **mas mexe no `app_campo/app.js`, que é um dos 18 arquivos trocados pelos pacotes** (seção 2 do manifesto): alterá-lo faz a pré-validação do pacote seguinte **parar**. Ou o GAPE incorpora, ou combinamos antes | `docs/PEDIDO_OPERAR_DENTRO_DO_SOUPM.md`, `docs/OPERACOES_PARA_FECHAR.md` |
+| **Nós (SSH no servidor do Operar)** | **Feito em 03/11:** o aviso pessoal passou a levar o texto real (7 cenários de uma vez) e um vigia da DTI notifica quem é lançado numa escala. **Falta:** o tipo próprio em cada chamada (hoje 6 dos 7 chamadores não passam tipo, então tudo chega como `aviso`), os disparos que não existem (`desescalado`, lembrete de apresentação, presença, falta, atestado, viatura, pagamento) e a lista de tipos que furam o silêncio no nosso `push_modulo.php` | `docs/PEDIDO_NOTIFICACOES_OPERAR.md` |
 | **Teste com escala** | GPS do "Cheguei", foto de alteração e "Assumir viatura": só aparecem para quem está escalado | `docs/OPERACOES_PARA_FECHAR.md` §2 |
 | **DTI** | `apple-app-site-association` e `assetlinks.json` em `pmrr.online/.well-known/` (conferido em 31/10: os dois **404**). Sem eles, o QR da viatura e o chip NFC abrem no navegador | — |
 | **DBA** | `ALTER FUNCTION public.soupm_conta_resumo(text) OWNER TO <usuário que lê qra>;`. A conta do cPanel não lê `qra`. Sem isso, a tela Militares do painel mostra a conta como indisponível | — |

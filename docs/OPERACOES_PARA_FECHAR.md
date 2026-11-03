@@ -122,5 +122,5 @@ Não fiz por conta própria porque apagar a Início de todo mundo no servidor n�
 | O quê | Com quem | Sem isso |
 |---|---|---|
 | PIN, "Sair deste aparelho", fila órfã, matrícula de teste | **Cap Stenio** — `docs/PEDIDO_OPERAR_DENTRO_DO_SOUPM.md` | O militar cria um segundo PIN, vê um botão que só faz estrago, e registros de campo ficam presos |
-| Push do Operar pelo `push_modulo.php` | **Cap Stenio** — `docs/PEDIDO_PUSH_OPERAR.md` | Nenhuma notificação do Operar chega a quem entra pelo Sou PM |
+| ~~Push do Operar pelo `push_modulo.php`~~ **feito** | o r15 ligou (`ELEICOES_PUSH_SOUPM=1`, chave em `/etc/operar-pmrr/operacoes/soupm_push.key`); em 03/11 a DTI fez o aviso pessoal levar o texto real e criou o vigia do lançamento na escala | — |
 | `apple-app-site-association` e `assetlinks.json` em `pmrr.online/.well-known/` | **DTI** | Conferido hoje: os dois seguem **404**. O QR da viatura e o chip NFC abrem no navegador em vez do Sou PM |
