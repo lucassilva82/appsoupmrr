@@ -33,7 +33,9 @@ Operar mandar o `tipo` certo, pelo mesmo contrato do
 | 6 | Chamada (urgente) | — | `chamada` | **não passa pelo Sou PM**: só Web Push, por decisão da coordenação |
 | 7 | **Novo endereço do sistema** (`aviso_link.py:115`) | "Novo endereço do sistema" | (url) | `aviso` |
 | 8 | Teste (`push_web.teste`) | "Teste de notificação" | `mais` | `aviso` |
-| 9 | **Militar lançado numa escala** | "Você foi escalado" | `inicio` | `escalado` |
+| 9 | **Militar lançado numa escala** (`escala.py`, dentro do Operar) | "Você foi escalado" | `inicio` | `escalado` |
+| 10 | **Substituição: quem sai** (`setor.py`) | "Você saiu da escala" | `inicio` | `desescalado` |
+| 11 | **Substituição: quem entra** (`setor.py`) | "Você vai substituir um colega" | `inicio` | `escalado` |
 
 **Medido no código instalado em 03/11/2026, não lido de documento.** Todas as
 notificações passam por **um portão único**, no `_processa0` do `push_web.py`:
@@ -60,15 +62,24 @@ exclusão deliberada. Não existe caminho paralelo mandando push por fora.
    **seis dos sete chamadores não passam tipo**, então tudo vira `aviso` antes
    de chegar lá. O conserto é passar o tipo em **cada chamada**. (Do lado do
    Sou PM os 22 tipos já estão aceitos: medido no banco em 03/11.)
-3. **A escala não notifica sozinha** — contornado em 03/11, **sem tocar no
-   `escala.py`**, e a medição de 03/11 confirmou que essa foi a escolha certa:
+3. ~~**A escala não notifica sozinha**~~ **RESOLVIDO DENTRO DO OPERAR em
+   03/11**, depois de o usuário autorizar mexer no sistema deles. O
+   `escala.py` chama `push_web.escalado` logo após o `INSERT`, e com isso o
+   aviso vai aos **dois** caminhos: Sou PM e Web Push. O vigia foi desligado
+   (duplicaria) e ficou como reserva, com a linha do crontab comentada. A
+   substituição do `setor.py`, que não avisava **ninguém**, passou a avisar
+   quem sai e quem entra. O material para reaplicar depois de um pacote está
+   em `api-soupmrr/operar/mudancas/`, e o `conferir_mudancas.sh` acusa se
+   alguma mudança sumir. O texto abaixo é o registro de por que, antes da
+   autorização, isso tinha ficado de fora:
    o caminho de dentro alcançaria **18 militares a mais** (os que têm assinatura
    de Web Push e não têm o Sou PM; 1.505 têm o Sou PM), ao custo de **parar a
    instalação de todo pacote futuro**, porque o `escala.py` é seção 2 do
    manifesto. A chamada de três linhas está pronta em
-   `api-soupmrr/operar/propostas/escalado_nativo.py.txt`, para o GAPE
-   incorporar — aí não há divergência nunca mais. Medição inteira em
-   `api-soupmrr/operar/relatorios/2026-11-03_vigia_ou_nativo.md`. O `escala.py` é um dos 18 arquivos que os pacotes do GAPE
+   `api-soupmrr/operar/mudancas/`. Medição inteira em
+   `api-soupmrr/operar/relatorios/2026-11-03_vigia_ou_nativo.md`. **Continua
+   valendo pedir ao GAPE que incorpore**: incorporada, o `escala.py` deixa de
+   divergir e a instalação dos pacotes volta a passar direto. O `escala.py` é um dos 18 arquivos que os pacotes do GAPE
    substituem (seção 2 do `MANIFESTO-SHA256.txt`): alterá-lo faria a
    pré-validação do próximo pacote **parar**. Em vez disso, um vigia da DTI em
    `/opt/dti-soupm/aviso_escala.py` lê a tabela `lancamento` e chama o
@@ -141,12 +152,11 @@ sugestões, sem CPF e sem texto de atestado.
 |---|---|---|
 | Chamada urgente | `chamada` | Liberado do nosso lado, mas **continua só no Web Push** até a coordenação decidir o contrário |
 
-**Buraco achado em 03/11, ainda aberto:** a substituição feita pelo
-`setor.py` (quem sai / quem entra) **não avisa ninguém** — o arquivo tem zero
-referências a `push_web`. Quem entra o vigia pega (é um `lancamento` novo);
-**quem sai não é avisado por nada**. O `setor.py` está **fora do manifesto**,
-então consertar não custa divergência nenhuma. Ficou fora do escopo de hoje
-("somente novas escalas"), e é o próximo item.
+**Buraco do `setor.py`: fechado em 03/11.** A substituição não avisava
+ninguém (zero referências a `push_web` no arquivo). Agora quem sai recebe
+"Você saiu da escala" e quem entra, "Você vai substituir um colega". O motivo
+(`ATESTADO`, `NAO_APRESENTOU`…) fica **fora** do corpo de propósito: push
+aparece na tela de bloqueio, e é dado de saúde ou disciplinar.
 
 ## 3. O que mudar no Operar (nós, por SSH)
 

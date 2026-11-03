@@ -48,7 +48,10 @@ Com o acesso SSH, a DTI passou a aplicar as atualizações e a mexer no Operar.
 |---|---|
 | **r17 aplicado** (18 arquivos, chave `apresentacao`, UPDATE de 18 postos, DELETE de 6 escalas vazias, reinício das duas unidades) | `/root/backup_r17_20261103_095649/RELATORIO.md` |
 | **Aviso pessoal com o texto real** (`push_web.py`): 7 cenários deixaram de chegar como "Aviso novo" | `/root/backup_dti_push_texto_20261103_103415/RELATORIO.md` |
-| **Vigia do lançamento na escala** (`/opt/dti-soupm/aviso_escala.py`, cron do root a cada minuto) | `/opt/dti-soupm/LEIA-ME.md` |
+| **Vigia do lançamento na escala** (`/opt/dti-soupm/aviso_escala.py`) — **desligado no mesmo dia**, quando o aviso passou para dentro do Operar; fica como reserva | `/opt/dti-soupm/LEIA-ME.md` |
+| **"Você foi escalado" dentro do Operar** (`escala.py` → `push_web.escalado`): alcança Sou PM **e** Web Push | `api-soupmrr/operar/mudancas/README.md` |
+| **Substituição deixou de ser muda** (`setor.py`): quem sai e quem entra passam a ser avisados | idem |
+| **`conferir_mudancas.sh`**: confere as 7 marcas da DTI no Operar; sai 1 se um pacote apagou alguma | idem |
 
 **Regra do usuário (03/11/2026): antes de lançar uma atualização do Operar,
 sempre conferir incompatibilidades.** Não é ritual: foi o passo 1 do roteiro do
