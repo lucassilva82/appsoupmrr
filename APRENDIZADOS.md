@@ -2417,3 +2417,43 @@ foi o ensaio que me deu confiança de seguir quando um número não bateu.
 frentes operacionais vão de 03 a 07/11), e 5 × 4 = 20 fecha com a regra do
 próprio roteiro. Seguir foi certo **porque a causa foi medida**, não porque o
 número era parecido.
+
+### A conferência cobriu o que eu tinha em mente, não o que o comando alcançou (04/11/2026)
+
+Escrevi um script para automatizar a remontagem do nosso código depois de um
+pacote do GAPE, e fui testá-lo com uma ideia que parecia à prova de falha: os
+serviços já rodam da memória, então um ciclo `--antes` + `--depois` mexe só em
+arquivos em disco e **tem de terminar byte a byte onde começou**. Guardei o
+sha256 **dos quatro arquivos que têm código nosso**, rodei o ciclo, comparei:
+idênticos. Serviços de pé, 27 marcas presentes. Declarei provado.
+
+Estava errado, e o erro não estava no script — estava na conferência. O
+`--antes` age sobre os **32** arquivos do manifesto, não sobre os nossos
+quatro. Com o pacote já instalado, todos os 32 divergiam da base esperada, e
+ele "restaurou" os 32 para a versão anterior. O `--depois` consertou só os 20
+que são `.py` de `servidor/app/` (um defeito do script: ele usava o **nome** do
+arquivo, não o caminho — e `index.html` existe em quatro pastas). Resultado: os
+**12 arquivos de front-end ficaram no r17** — inclusive o `sw.js` do app, que
+voltou a anunciar a versão antiga, e o `painel.js` e os `relatorios.js` da
+mudança que o pacote trazia.
+
+O que me salvou não foi a conferência: foi a guarda que escrevi **depois**, ao
+corrigir o script, que imprime "16 de 32 arquivos já são os do pacote". Aquele
+**16** era o número errado — devia ser 28 — e foi ele que me fez olhar o
+conjunto inteiro.
+
+**A regra.** Quando um comando alcança um conjunto, a conferência tem de cobrir
+**o conjunto**, não a parte que eu estava pensando. "Os quatro voltaram
+idênticos" é uma afirmação verdadeira e irrelevante quando o comando mexeu em
+trinta e dois. É parente do §52 (medida que não convive com outra não se
+corrige) e do §53 (o instrumento responde outra pergunta), com uma diferença
+que vale guardar: aqui o instrumento estava **certo**, e o recorte estava
+errado. Antes de rodar algo que mexe em muita coisa, a pergunta é "**o que este
+comando toca?**" — e é essa lista, não a minha lista mental, que vai para o
+antes-e-depois.
+
+**E uma segunda, sobre testar em produção:** a ideia de que "os serviços rodam
+da memória, então o disco é seguro" vale para o Python já importado e **não**
+vale para o que é servido do disco a cada pedido — JavaScript, HTML, service
+worker, arquivo de plano. Um teste "sem reiniciar" é inofensivo só para a parte
+que o processo já leu.
