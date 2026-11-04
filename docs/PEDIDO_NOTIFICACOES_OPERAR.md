@@ -95,16 +95,23 @@ exclusão deliberada. Não existe caminho paralelo mandando push por fora.
    então **nada do que já estava escalado é notificado**; e ele se cala quando
    o militar já recebeu o aviso pessoal daquele lançamento (permuta,
    movimentação, dispensa), para não avisar duas vezes. Documentação em
-   `/opt/dti-soupm/LEIA-ME.md`. Ainda falta: **sair** da escala
-   (`desescalado`) e o lembrete de apresentação.
+   `/opt/dti-soupm/LEIA-ME.md`.
 
-## 1b. O que ainda NÃO notifica (medido em 03/11/2026)
+   **Estado em 04/11/2026:** **sair** da escala (`desescalado`) foi fechado em
+   03/11, e o **lembrete de apresentação** em 04/11, como cron próprio e
+   ainda desligado. O vigia continua de pé como reserva, com a linha do
+   crontab comentada: se um pacote apagar a chamada do `escala.py`, basta
+   descomentá-la. O pedido ao GAPE agora vale para **dois** arquivos de
+   seção 2, o `escala.py` e o `campo.py`.
 
-Levantado por quem chama cada função de disparo, não de cabeça. Os **19**
-pontos acima estão no ar; os oito sítios que faltavam foram fechados em
-03/11, menos um — e o que resta são duas famílias.
+## 1b. O que ainda NÃO notifica (medido em 04/11/2026)
 
-**Um só, e por decisão:** `comando_posto.py:40` (virar Cmte do posto ou
+Levantado por quem chama cada função de disparo, não de cabeça. Em 04/11
+entraram **falta registrada**, **pedido de apoio** e **viatura**, como gancho
+no evento dentro do Operar, e o **lembrete de apresentação**, como o único
+cron. O que resta não é lacuna de código: é decisão medida.
+
+**Um por decisão de ruído:** `comando_posto.py:40` (virar Cmte do posto ou
 voltar a Auxiliar) **não avisa**, de propósito. Ele roda a cada mudança de
 equipe do posto: durante a montagem de uma escala o militar alternaria
 Auxiliar↔Cmte várias vezes, e sairia uma rajada de pushes por uma informação
@@ -112,14 +119,31 @@ que ele lê no card da escala. A função **final** já vai no corpo do "Você f
 escalado" — e foi para isso que a chamada passou a sair **depois** do
 `comando_posto.reordena`.
 
-**Nada que dependa de tempo tem mecanismo.** Medido: **0 timers do systemd e
-nenhum cron do Operar** no servidor. Então lembrete de apresentação, "Cheguei"
-faltando depois do horário e "o militar escalado não chegou" (que avisa o
-chefe) não têm por onde sair — precisariam de um cron novo, no molde do vigia.
+**Um por não ser prova do que afirma: "não se apresentou", ao comandante.**
+Medido em 04/11: dos **678** serviços já começados sem evento de APRESENTACAO,
+**328 dos 575 militares nunca registraram apresentação nenhuma**. Para eles a
+ausência do evento prova que não usam o app de campo, não que faltaram ao
+serviço — imprimir isso como "não se apresentou" é o erro do APRENDIZADOS §27 e
+§37, "não consegui medir" virando "não existe". A Visão geral do Operar já
+mostra `SEM_APRESENTACAO` para quem comanda (`visao_geral.py:512`, nível
+grave). O caminho medido, para quando valer a pena, é filtrar pelos **247** que
+usam o app.
 
-**Sem fonte de dado ou sem fluxo:** falta registrada, atestado **analisado**
-(hoje só o "recebido", e para quem autoriza), viatura atribuída/transferida/
-devolvida, e pagamento do TRE (a `convocacao_tre` está vazia).
+**Um por já estar coberto:** atestado **analisado** é a decisão do pedido, que
+o `autoriza._avisa_mudanca` já avisa com o texto real. Avisar de novo
+duplicaria.
+
+**Um por não ter fonte:** pagamento do TRE. A `convocacao_tre` é a única tabela
+de TRE e tem **0 linhas**.
+
+**Uma pendência de cadastro, não de código:** o `apoio` já é disparado com
+`tipo="apoio"`, mas esse tipo não está em `soupm_push_modulo.tipos` nem em
+`tipos_urgentes`. Até a linha de SQL rodar, o gateway recusa com
+`TIPO_RECUSADO` e **registra** o pedido (aparece no painel), então não é falha
+silenciosa — mas o aviso não chega. Mandar como `aviso` seria errado: **3 dos
+26** pedidos de apoio caíram entre 02h e 06h, dentro da janela de silêncio
+22h–06h, e `aviso` não fura o silêncio. O SQL está em
+`api-soupmrr/operar/mudancas/README.md` e em `docs/PENDENTE_USUARIO.md`.
 
 ## 2. Todos os cenários que devem notificar
 

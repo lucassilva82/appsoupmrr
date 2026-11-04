@@ -95,6 +95,76 @@ referências a `push_web`. Quem entra o vigia pega (é um `lancamento` novo);
 nenhuma. Ficou fora do escopo de 03/11, que o usuário limitou a "somente novas
 escalas".
 
+## Operar: três coisas que dependem de você (04/11/2026)
+
+Os quatro cenários novos de notificação do Operar estão **no ar** (falta,
+pedido de apoio, viatura) ou **prontos e desligados** (lembrete de
+apresentação). Três passos ficaram com você.
+
+### 1. Uma linha de SQL para o pedido de apoio chegar
+
+O código já dispara com `tipo="apoio"`, mas esse tipo não existe no cadastro do
+módulo: o gateway recusa com `TIPO_RECUSADO` e **registra** o pedido (aparece no
+painel), então nada falha em silêncio — mas o aviso não chega a quem comanda.
+
+Mandar como `aviso` seria errado, e isso é medido: **3 dos 26** pedidos de apoio
+caíram entre **02h e 06h**, dentro da janela de silêncio 22h–06h do módulo
+`operar`, e `aviso` não fura o silêncio. Um pedido de apoio entregue quatro
+horas depois não serve para nada. Por isso ele precisa entrar nas **duas**
+listas:
+
+```sql
+UPDATE soupm_push_modulo
+   SET tipos          = array_append(tipos, 'apoio'),
+       tipos_urgentes = array_append(tipos_urgentes, 'apoio'),
+       atualizado_por = 'dti', atualizado_em = NOW()
+ WHERE chave = 'operar' AND NOT ('apoio' = ANY(tipos));
+```
+
+Conferir depois (tem de voltar `t` nas duas colunas):
+
+```sql
+SELECT ('apoio' = ANY(tipos)) AS no_tipos,
+       ('apoio' = ANY(tipos_urgentes)) AS fura_silencio
+  FROM soupm_push_modulo WHERE chave = 'operar';
+```
+
+Roteiro de SQL de produção: a seção "Referência" deste arquivo. E atenção ao
+`LC_CTYPE=UTF-8 pbcopy` (APRENDIZADOS §45) — aqui não há acento, mas a regra
+vale sempre.
+
+### 2. Ligar (ou não) o lembrete de apresentação
+
+O cron está **instalado comentado**, de propósito: o envio é para a tropa e o
+pico é grande. Medido: **570 militares no maior lote de um mesmo minuto de
+início**, e **1.130** com serviço começando às 06h. Um lembrete 30 minutos
+antes de um serviço das 06h cai às **05h30** — dentro do silêncio, e por isso
+ele usa o tipo `apresentacao`, que já fura.
+
+Conferir o que sairia agora, sem enviar nada:
+
+```bash
+cd /opt/operar-pmrr/operacoes/servidor
+set -a; . /etc/operar-pmrr/operacoes/app.env; . /etc/operar-pmrr/operacoes/mysql.env; set +a
+/opt/operar-pmrr/venv-operacoes/bin/python /opt/dti-soupm/lembrete_apresentacao.py --simular
+```
+
+Ligar, e **medir** que ligou (a lição do §54: o `grep` não sabe a diferença
+entre linha ativa e comentário):
+
+```bash
+crontab -l | sed 's|^#\(\*/5 .*lembrete_apresentacao\)|\1|' | crontab -
+crontab -l | grep -cE '^[^#]*lembrete_apresentacao'     # tem de dar 1
+```
+
+### 3. Pedir ao GAPE que incorpore as chamadas
+
+Agora são **dois** arquivos de seção 2 do manifesto com código nosso: o
+`escala.py` e o `campo.py`. Enquanto divergirem, a pré-validação de **todo
+pacote novo para**. Incorporadas pelo GAPE, a instalação volta a passar direto
+e o `conferir_mudancas.sh` (26 marcas, cron às 07:10) deixa de ser a única
+rede. Os blocos exatos estão em `api-soupmrr/operar/mudancas/README.md`.
+
 ## Painel: duas coisas para continuar de casa (03/11/2026)
 
 Medido nesta data, por sha256 nos **114 arquivos** do painel, comparando o
