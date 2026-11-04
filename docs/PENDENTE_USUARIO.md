@@ -95,12 +95,12 @@ referências a `push_web`. Quem entra o vigia pega (é um `lancamento` novo);
 nenhuma. Ficou fora do escopo de 03/11, que o usuário limitou a "somente novas
 escalas".
 
-## Operar: duas coisas que dependem de você (04/11/2026)
+## Operar: uma coisa que depende de você (04/11/2026)
 
 Os quatro cenários novos de notificação do Operar estão **todos no ar**: falta
 registrada, pedido de apoio, viatura (só com a escala fechada) e o lembrete de
 apresentação. Duas pendências desta lista foram **resolvidas no mesmo dia**,
-com sua autorização. Restam um SQL para você rodar e um pedido ao GAPE.
+com sua autorização. O que resta é um pedido ao GAPE.
 
 ### Feito em 04/11: o tipo `apoio` no cadastro
 
@@ -145,45 +145,36 @@ set -a; . /etc/operar-pmrr/operacoes/app.env; . /etc/operar-pmrr/operacoes/mysql
 /opt/operar-pmrr/venv-operacoes/bin/python /opt/dti-soupm/lembrete_apresentacao.py --simular
 ```
 
-### Pendente: um SQL no phpPgAdmin (a view do caminho das notificações)
+### Guardada, não pendente: a view do caminho das notificações
 
-Arquivo: `api-soupmrr/sql/2026-11-04_soupm_vw_push_caminho.sql`. É um
-`CREATE OR REPLACE VIEW` + 6 comentários + 1 `GRANT` + 3 índices, numa
-transação só.
+Arquivo: `api-soupmrr/sql/2026-11-04_soupm_vw_push_caminho.sql`. Escrita e
+testada, **não aplicada** — e a decisão de não aplicar não é minha de origem: a
+sessão do painel dispensou a view e vai fazer o join na própria tela
+(*"o join fica aqui no painel, a tela lê as tabelas direto"*). Sem consumidor,
+uma view é manutenção sem quem pague.
 
-**Por que é você quem roda:** a conta de banco da API **não tem CREATE no
-esquema `soupm`** (medido: `has_schema_privilege` devolve false; o dono das
-tabelas é a conta do cPanel). A regra do §47 é que SQL novo nasce em `soupm.`,
-então criar em `public` para contornar seria dividir as coisas de propósito.
+Fica guardada e correta, para o dia em que aparecer um segundo consumidor. O
+argumento a favor dela continua de pé e vale registrar: ela guarda **num lugar
+só** dois fatos que, do jeito que ficou, passam a viver em dois — o corte do
+tipo confiável (`recebido_em >= 2026-11-04T14:07:12Z`) e a regra das linhas de
+teste. Agora eles estão no código do painel e neste repositório; se um dia
+divergirem, é aqui que se olha.
 
-**O que a view resolve.** Ela entrega o caminho real de cada notificação
-(`pedido → envio → aparelho`) com o tipo e a origem já resolvidos, para a tela
-do painel não precisar conhecer três armadilhas de nome que já me pegaram:
+**Se você quiser aplicá-la mesmo assim** (é um `CREATE OR REPLACE VIEW` + 6
+comentários + 1 `GRANT` + 3 índices, numa transação só), o arquivo tem no fim as
+duas conferências de depois: o **dono** da view (§46 — numa view o dono decide
+com que privilégios ela lê as tabelas de baixo) e um `SELECT COUNT(*)`, que em
+04/11/2026 dava **678**. Quem roda é você, porque a conta de banco da API não
+tem CREATE no esquema `soupm` (medido).
 
-1. `soupm_notificacao_envio.tipo` **não é** o tipo da notificação — é a forma do
-   envio (hoje só existe `militar`);
-2. "quem enviou" é `origem` (`operar`, `certidao`), não `tipo`;
-3. o que o próprio SouPM manda (certidão) não passa pelo portão dos módulos,
-   então não tem pedido, e o assunto dele vive em
-   `soupm_notificacao.tipo_evento` — campo **diferente** para a mesma pergunta.
-
-Ela também marca `tipo_confiavel = false` nos 649 pedidos anteriores a
-04/11 14:07:12Z (quando o Operar ainda rebaixava o tipo para `aviso`) e
-`teste_dti = true` nas linhas que eu criei de propósito com matrícula
-inexistente, para a tela não mostrar o `apresentacao` e o `viatura`
-"estreando" com uma recusa.
-
-**Como foi testada sem poder criar em `soupm`:** o corpo da view rodou em
-produção como leitura (678 linhas, 0,4 ms), e os comandos — `CREATE VIEW`, os 6
-`COMMENT` e o `GRANT` — foram rodados de verdade criando a view em `public`,
-conferidos (6 de 6 comentários, o grant no lugar) e a view de teste **apagada**,
-com a conferência de que não sobrou nada. Os três `CREATE INDEX` são as únicas
-linhas que eu não pude exercitar: são em tabelas de outro dono.
-
-**Depois de rodar**, as duas conferências que estão no fim do arquivo: o **dono**
-da view (§46 — para uma view o dono decide com que privilégios ela lê as
-tabelas de baixo; aqui a conta do cPanel lê tudo, que é o que se quer) e um
-`SELECT COUNT(*)`, que em 04/11/2026 dava **678**.
+**Um defeito meu que essa conversa pegou**, e que vale mais que a view: eu havia
+escrito a marca das linhas de teste como `matricula LIKE '999%'`. A sessão do
+painel descreveu a regra dela como "999 **depois de tirar os zeros**", e isso
+expôs o erro — medido, a minha marcava **2** das **8** linhas de teste que
+existem, porque os 6 pedidos foram gravados como `0999999999`, com zero à
+esquerda. É o APRENDIZADOS §46 outra vez: a matrícula chega do jeito que alguém
+digitou, e comparação de matrícula normaliza os dois lados ou erra calada.
+Corrigido no arquivo.
 
 ### Pendente: pedir ao GAPE que incorpore as chamadas
 
