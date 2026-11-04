@@ -95,53 +95,49 @@ referências a `push_web`. Quem entra o vigia pega (é um `lancamento` novo);
 nenhuma. Ficou fora do escopo de 03/11, que o usuário limitou a "somente novas
 escalas".
 
-## Operar: três coisas que dependem de você (04/11/2026)
+## Operar: uma coisa que depende de você (04/11/2026)
 
-Os quatro cenários novos de notificação do Operar estão **no ar** (falta,
-pedido de apoio, viatura) ou **prontos e desligados** (lembrete de
-apresentação). Três passos ficaram com você.
+Os quatro cenários novos de notificação do Operar estão **todos no ar**: falta
+registrada, pedido de apoio, viatura (só com a escala fechada) e o lembrete de
+apresentação. Duas pendências desta lista foram **resolvidas no mesmo dia**,
+com sua autorização; o que resta é um pedido ao GAPE.
 
-### 1. Uma linha de SQL para o pedido de apoio chegar
+### Feito em 04/11: o tipo `apoio` no cadastro
 
-O código já dispara com `tipo="apoio"`, mas esse tipo não existe no cadastro do
-módulo: o gateway recusa com `TIPO_RECUSADO` e **registra** o pedido (aparece no
-painel), então nada falha em silêncio — mas o aviso não chega a quem comanda.
+Rodado pela conexão da API, com medição antes e depois: `tipos` foi de **22
+para 23** e `tipos_urgentes` de **10 para 11**, com `apoio` nas duas listas.
+Provado em contraste, por dois pedidos com matrícula inexistente de propósito
+(ninguém foi notificado):
 
-Mandar como `aviso` seria errado, e isso é medido: **3 dos 26** pedidos de apoio
-caíram entre **02h e 06h**, dentro da janela de silêncio 22h–06h do módulo
-`operar`, e `aviso` não fura o silêncio. Um pedido de apoio entregue quatro
-horas depois não serve para nada. Por isso ele precisa entrar nas **duas**
-listas:
+| Pedido | Resultado registrado em `soupm_push_pedido` |
+|---|---|
+| `tipo=apoio` | recusado, motivo **`matricula`** — ou seja, **passou** da lista branca |
+| `tipo=xpto` (controle) | recusado, motivo **`tipo_recusado`** |
 
-```sql
-UPDATE soupm_push_modulo
-   SET tipos          = array_append(tipos, 'apoio'),
-       tipos_urgentes = array_append(tipos_urgentes, 'apoio'),
-       atualizado_por = 'dti', atualizado_em = NOW()
- WHERE chave = 'operar' AND NOT ('apoio' = ANY(tipos));
+O contraste é o que prova: sem o controle, "recusado" nos dois casos não
+distinguiria "o tipo não vale" de "a matrícula não existe".
+
+### Feito em 04/11: o lembrete de apresentação ligado
+
+Cron `*/5` no crontab do root, com a linha de instruções comentada logo acima.
+Conferido por **linha ativa**, não por menção (`grep -cE '^[^#]*'` = 1), que é
+a lição do APRENDIZADOS §54: comentário é texto, e o `grep` não sabe a
+diferença.
+
+Lembrando o que ele faz: avisa o militar **30 minutos antes** do serviço, com a
+hora e o local de apresentação do r16/r17 quando a escala tem. O pico medido é
+**570 militares no maior lote de um mesmo minuto de início** e 1.130 com
+serviço às 06h — o aviso das 05h30 fura o silêncio de propósito, pelo tipo
+`apresentacao`, que já estava em `tipos_urgentes`.
+
+Para desligar, se incomodar:
+
+```bash
+crontab -l | sed 's|^\(\*/5 .*lembrete_apresentacao\)|#\1|' | crontab -
+crontab -l | grep -cE '^[^#]*lembrete_apresentacao'     # tem de dar 0
 ```
 
-Conferir depois (tem de voltar `t` nas duas colunas):
-
-```sql
-SELECT ('apoio' = ANY(tipos)) AS no_tipos,
-       ('apoio' = ANY(tipos_urgentes)) AS fura_silencio
-  FROM soupm_push_modulo WHERE chave = 'operar';
-```
-
-Roteiro de SQL de produção: a seção "Referência" deste arquivo. E atenção ao
-`LC_CTYPE=UTF-8 pbcopy` (APRENDIZADOS §45) — aqui não há acento, mas a regra
-vale sempre.
-
-### 2. Ligar (ou não) o lembrete de apresentação
-
-O cron está **instalado comentado**, de propósito: o envio é para a tropa e o
-pico é grande. Medido: **570 militares no maior lote de um mesmo minuto de
-início**, e **1.130** com serviço começando às 06h. Um lembrete 30 minutos
-antes de um serviço das 06h cai às **05h30** — dentro do silêncio, e por isso
-ele usa o tipo `apresentacao`, que já fura.
-
-Conferir o que sairia agora, sem enviar nada:
+Para ver o que sairia agora, sem enviar nada:
 
 ```bash
 cd /opt/operar-pmrr/operacoes/servidor
@@ -149,21 +145,14 @@ set -a; . /etc/operar-pmrr/operacoes/app.env; . /etc/operar-pmrr/operacoes/mysql
 /opt/operar-pmrr/venv-operacoes/bin/python /opt/dti-soupm/lembrete_apresentacao.py --simular
 ```
 
-Ligar, e **medir** que ligou (a lição do §54: o `grep` não sabe a diferença
-entre linha ativa e comentário):
+### Pendente: pedir ao GAPE que incorpore as chamadas
 
-```bash
-crontab -l | sed 's|^#\(\*/5 .*lembrete_apresentacao\)|\1|' | crontab -
-crontab -l | grep -cE '^[^#]*lembrete_apresentacao'     # tem de dar 1
-```
-
-### 3. Pedir ao GAPE que incorpore as chamadas
-
-Agora são **dois** arquivos de seção 2 do manifesto com código nosso: o
+Agora são **dois** arquivos de seção 2 do manifesto com código nosso, o
 `escala.py` e o `campo.py`. Enquanto divergirem, a pré-validação de **todo
 pacote novo para**. Incorporadas pelo GAPE, a instalação volta a passar direto
 e o `conferir_mudancas.sh` (26 marcas, cron às 07:10) deixa de ser a única
-rede. Os blocos exatos estão em `api-soupmrr/operar/mudancas/README.md`.
+rede. Os blocos exatos, com o motivo de cada um, estão em
+`api-soupmrr/operar/mudancas/README.md`.
 
 ## Painel: duas coisas para continuar de casa (03/11/2026)
 
