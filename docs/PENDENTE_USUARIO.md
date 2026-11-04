@@ -95,6 +95,58 @@ referências a `push_web`. Quem entra o vigia pega (é um `lancamento` novo);
 nenhuma. Ficou fora do escopo de 03/11, que o usuário limitou a "somente novas
 escalas".
 
+## Para continuar de casa — onde tudo parou em 04/11/2026, 13h
+
+### No ar e funcionando
+
+| O quê | Estado |
+|---|---|
+| Pacote **r18** do Operar | instalado: 28 dos 32 arquivos idênticos ao pacote, e os 4 divergentes são os que têm código nosso. App em `campo-1.1.56-dti` |
+| Passo **6e** (renomear a frente) | gravado: 5 escalas, 20 postos, 6 postos de comando |
+| Passo **6f** (frentes sem hora de fim) | gravado: 210 postos. Os ids do desfazer estão em `/root/r18_dados/6f_ids_para_desfazer.txt` — **sem eles o rollback do 6f não existe** |
+| Avisos novos do Operar | falta, pedido de apoio, viatura (só com escala fechada) e o lembrete de apresentação (cron `*/5`, ligado) |
+| O nosso código de aviso | saiu do `push_web.py` e vive em `servidor/app/dti_avisos.py`, **fora do manifesto** |
+| Tipo `apoio` no cadastro | no ar (`tipos` 22→23, `tipos_urgentes` 10→11) |
+| Aba Avisos do app | deixa de listar o que é de módulo (`soupm_config.notificacoes.origens_ocultas = ["operar"]`) |
+| Painel | `notificacoes-por-origem` mesclada na `main` (`0c48c6f`) |
+
+### O que falta, em ordem de importância
+
+1. **Avisar o GAPE** de duas coisas: o 6e esperava 6 escalas e 24 postos, e a
+   produção tem 5 e 20 (a frente Dispersão não existe em 08/11, e 5 × 4 = 20
+   fecha com a regra do roteiro deles); e que as nossas chamadas continuam
+   dentro de `escala.py`, `campo.py` e `voto.py`, que são arquivos que o pacote
+   troca. Enquanto divergirem, a pré-validação de todo pacote novo para.
+2. **Depois de 07/11** (quando as frentes da Expoferr acabarem): tirar as duas
+   últimas mudanças nossas de dentro do `push_web.py`, embrulhando a função
+   `avisar` por fora. Feito isso, o `push_web.py` volta a ser idêntico ao do
+   pacote e sobra o mínimo em `escala.py` e `campo.py`. Não fiz agora para não
+   introduzir mágica na entrega de notificação com a operação em andamento.
+3. A sessão do painel está montando o catálogo de tipos, o tipo e a origem no
+   cartão de 24 h e a tela de tráfego. Ela tem a fronteira do tipo confiável
+   (`recebido_em >= 2026-11-04T14:07:12Z`) e sabe esconder as linhas de teste.
+
+### Três comandos para conferir de casa
+
+```bash
+# 1. o Operar está de pé e com as nossas 27 marcas?
+ssh root@<servidor> '/opt/dti-soupm/conferir_mudancas.sh'
+
+# 2. saiu algum aviso real? (o vigia que eu deixei rodando morre com a sessão do iMac)
+ssh root@<servidor> "php -f /root/_vigia_real.php '2026-11-04 12:50:00-03'"
+
+# 3. e se um pacote novo chegar
+ssh root@<servidor> '/opt/dti-soupm/reaplicar_apos_pacote.sh --antes /root/<pasta-do-pacote>'
+#   ... siga o roteiro do GAPE (backup, cópia, conferência) ...
+ssh root@<servidor> '/opt/dti-soupm/reaplicar_apos_pacote.sh --depois /root/<pasta-do-pacote>'
+```
+
+O passo 3 é a receita do r18 automatizada. **Leia o aviso do README antes**
+(`api-soupmrr/operar/mudancas/README.md`): o `--antes` roda **antes** de copiar
+o pacote, e a conferência de depois tem de cobrir **todos** os arquivos que o
+pacote toca, não só os nossos — foi exatamente esse recorte errado que me custou
+dez minutos de front-end na versão antiga hoje.
+
 ## Operar: uma coisa que depende de você (04/11/2026)
 
 Os quatro cenários novos de notificação do Operar estão **todos no ar**: falta
