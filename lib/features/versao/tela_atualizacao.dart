@@ -14,8 +14,15 @@ import '../../widgets/vidro.dart';
 import '../../core/design/viatura.dart';
 
 /// Link da loja da própria plataforma (cada loja só fala de si, §31).
+///
+/// O país no endereço da App Store **não é detalhe**: medido em 04/11/2026, o
+/// `/us/` responde **404** (no navegador e com User-Agent de iPhone), e o
+/// endereço sem país também. Só o `/br/` abre, e a página é a nossa ("App
+/// SouPMRR"). A causa é o app ser **não listado**: ele existe só na loja
+/// brasileira e não aparece em busca. Até aqui, o botão "Atualizar" desta tela
+/// levava o militar a um 404 — a tela obrigatória não tinha saída no iPhone.
 String get urlLoja => Platform.isIOS
-    ? 'https://apps.apple.com/us/app/soupmrr/id6466815434'
+    ? 'https://apps.apple.com/br/app/soupmrr/id6466815434'
     : 'https://play.google.com/store/apps/details?id=pm.rr.soupmrr';
 String get nomeLoja => Platform.isIOS ? 'App Store' : 'Google Play';
 

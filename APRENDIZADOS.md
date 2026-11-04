@@ -2457,3 +2457,26 @@ da memória, então o disco é seguro" vale para o Python já importado e **não
 vale para o que é servido do disco a cada pedido — JavaScript, HTML, service
 worker, arquivo de plano. Um teste "sem reiniciar" é inofensivo só para a parte
 que o processo já leu.
+
+### O botão "Atualizar" levava a um 404 no iPhone (04/11/2026)
+
+Achado ao preparar um link para mandar por WhatsApp a quem não tem o app. O
+`tela_atualizacao.dart` abria `https://apps.apple.com/**us**/app/soupmrr/id...`
+— e esse endereço responde **404**, no navegador e com User-Agent de iPhone. O
+endereço **sem país** também. Só o `/br/` abre, e a página é a nossa.
+
+A causa é o app ser **não listado** na App Store: ele existe só na loja
+brasileira e não aparece em busca. Num app listado, a Apple redirecionaria a
+loja errada para a certa e ninguém veria o problema; num app não listado, não
+há para onde redirecionar.
+
+O efeito é pior do que parece: a tela de atualização **obrigatória** só tem um
+botão, e no iPhone ele não levava a lugar nenhum. O militar ficava preso numa
+tela que manda atualizar e não deixa atualizar.
+
+**A regra.** Link de loja se **mede**, não se escreve de cabeça: um `curl` com
+`-o /dev/null -w '%{http_code}'` responde em um segundo. E, para app não
+listado, o país no endereço é parte do endereço, não enfeite — a pergunta
+"funciona?" tem de ser feita na loja de quem vai clicar. Vale para o link do
+app, para o da tela de atualização e para qualquer link que vá num texto
+mandado para a tropa.
