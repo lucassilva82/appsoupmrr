@@ -2381,3 +2381,39 @@ provam que o caminho está quebrado. Provam que o caminho **não está gravando 
 que eu esperava** — que é uma afirmação sobre o meu instrumento, não sobre o
 mundo (§53). O que desfez o engano foi perguntar o que os 71 `aviso`
 **diziam**, em vez de contar quantos eram.
+
+### O custo previsto se realizou, e o que o pagou (04/11/2026)
+
+O pacote r18 do Operar chegou no mesmo dia em que eu documentava que mexer em
+arquivo de seção 2 **para a instalação do pacote seguinte**. A pré-validação
+mediu: **28 OK e 4 DIFERENTE**, os quatro nossos. Três coisas resolveram, e são
+as que ficam:
+
+**Achar o original pelo HASH, não pelo backup mais recente.** O manifesto diz
+qual hash cada arquivo tem de ter; procurar por aquele hash desmontou o
+palpite — o `push_web.py` original estava no pacote do **r15** e o `voto.py` no
+do **r14**, porque o r17 não trocou esses dois. "Restaurar do backup mais
+recente" teria posto base errada.
+
+**Merge de três vias, não re-rodar o patch por âncora.** O impulso era
+re-executar os scripts que ancoram em texto — e o pacote mexe justamente nesses
+arquivos, então âncora é o lado frágil. `git merge-file` pega o **diff real**
+entre o original e a nossa versão e o aplica sobre o novo: 0 conflitos nos
+quatro.
+
+**0 conflitos não prova que nada se perdeu.** A conferência que fecha compara as
+duas direções: as linhas que o nosso acrescentou ao original têm de ser as
+mesmas que o merge acrescentou ao pacote novo (+18/−1, +44/−1, +360/−6, +25/−0,
+iguais dos dois lados). Sem isso, "merge limpo" é uma afirmação sobre a
+ferramenta, não sobre o conteúdo.
+
+**E o "COMMIT à mão" num passo de dados, sem sessão interativa:** rodar o
+`UPDATE` em `START TRANSACTION`, ler o `ROW_COUNT()`, dar `ROLLBACK` e conferir
+que voltou a zero; só então repetir com `COMMIT`. É o §6 aplicado a produção — e
+foi o ensaio que me deu confiança de seguir quando um número não bateu.
+
+**O número que não bateu.** O roteiro esperava 6 escalas e 24 postos; havia 5 e
+20. Em vez de aceitar ou abortar, medi a causa: a frente não existe em 08/11 (as
+frentes operacionais vão de 03 a 07/11), e 5 × 4 = 20 fecha com a regra do
+próprio roteiro. Seguir foi certo **porque a causa foi medida**, não porque o
+número era parecido.
