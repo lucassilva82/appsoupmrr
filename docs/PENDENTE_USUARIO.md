@@ -110,6 +110,32 @@ escalas".
 | Aba Avisos do app | deixa de listar o que é de módulo (`soupm_config.notificacoes.origens_ocultas = ["operar"]`) |
 | Painel | `notificacoes-por-origem` mesclada na `main` (`0c48c6f`) |
 
+### Lembretes automáticos: LIGADOS em 04/11/2026
+
+Os seis estavam desligados desde que foram criados. Ligados a seu pedido, com
+simulação antes (o `lembretes.php --simular` não grava nada; conferido: 0
+envios na fila e 0 marcados depois de simular).
+
+O cron é o `lembretes.php`, **todo dia às 07:00**, no crontab do `pmrronline`.
+O que sai na primeira execução:
+
+| Lembrete | Militares |
+|---|---|
+| Suas férias começam em **7 dias** | 5 |
+| Suas férias começam em **1 dia** | 20 |
+| Certidão vencendo (5 dias antes) | 0 |
+| Prazo da declaração (7 e 1 dia) | 0 — as campanhas estão fechadas |
+| Falta a sua ciência (2 dias antes) | 0 — não há comunicado com ciência |
+| A equipe respondeu (sugestão) | disparado pelo **painel** ao responder, não por este cron |
+| Contracheque disponível | outro cron (`notifica_contracheque.php`, a cada 15 min), só quando a folha nova chega |
+
+Sobre o do contracheque: ligá-lo **não cria aviso novo**. O aviso já existia; o
+que muda é o caminho (passa a entrar na fila de push da nossa API, em vez da
+Cloud Function) e o texto, que passa a vir do painel. Mesmo evento, mesma
+gente.
+
+Para desligar qualquer um: `UPDATE soupm_lembrete SET ativo = FALSE WHERE chave = '<chave>';`
+
 ### O que falta, em ordem de importância
 
 1. **Avisar o GAPE** de duas coisas: o 6e esperava 6 escalas e 24 postos, e a
