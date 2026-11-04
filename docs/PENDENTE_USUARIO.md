@@ -174,10 +174,21 @@ publicar a partir do git ou restaurar um backup, ela desaparece:
 `nucleo/local.php` também só existe no servidor, e isso **está certo**: é o
 segredo, e fica fora do git por regra.
 
-**A decisão é sua:** commitar o estado do servidor (protege a feature, mas pode
-conflitar com o que a sessão do painel tenha em andamento na máquina dela) ou
-pedir a ela que commite. A sessão do painel foi avisada em 03/11 com esta
-medição inteira; **a rota não confirma leitura**, então não se sabe se ela viu.
+**Resolvido em 04/11, e eu estava impreciso.** A sessão do painel respondeu: o
+drift era **de repositório, não de conteúdo**. Os commits dela tinham ido para a
+branch antiga, dentro da intranet; ela trouxe para
+`lucassilva82/painelsoupmrr`, branch **`notificacoes-por-origem`** (`0c48c6f`),
+e conferiu com `cmp` que os 10 arquivos ficam **idênticos** aos do servidor.
+Ou seja, nada estava perdido: estava no lugar errado.
+
+O que eu escrevi antes — "a produção do painel está à frente do git" — descreve
+o sintoma e erra a causa, e fica corrigido aqui para não circular. O que a
+medição por sha256 provou de verdade é que os arquivos do servidor não estavam
+no `origin/main` **daquele** repositório; ela não provou, e eu não media, em que
+repositório eles estavam.
+
+**O que depende de você agora:** autorizar a entrada da `notificacoes-por-origem`
+na `main` do `painelsoupmrr`. Nada a commitar à mão.
 
 ### 2. O tipo de notificação no cartão do painel inicial
 
@@ -189,8 +200,9 @@ comentário no código diz isso: *"Notificações nas últimas 24 h, por origem
 **O que falta** é o **tipo** (`escalado`, `sua escala mudou`, `aviso`…) ali no
 cartão. Hoje o tipo só aparece **um clique adentro**, no `lotes()` do
 `OrigemPush`, na aba Notificações › Por origem. O helper já traz o tipo, então
-é acréscimo pequeno — mas é código que **não está no git**, então depende do
-item 1 acima.
+é acréscimo pequeno. **Em 04/11 a sessão do painel assumiu esta peça**, junto
+com o catálogo de tipos e a tela de tráfego, e já tem a branch acima; esta
+sessão ficou de fora para não duplicar.
 
 Em 03/11 esta sessão começou a implementar um cartão novo, mediu antes de
 escrever e **descartou o próprio trabalho** ao achar o que já existia. O que
