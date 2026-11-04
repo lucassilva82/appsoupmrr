@@ -2349,3 +2349,35 @@ descobri que ele não tinha feito nada porque li a listagem que vinha logo
 abaixo e não achei a linha lá. Toda instalação idempotente tem de **imprimir o
 estado medido depois** (quantas linhas ativas existem agora), não só anunciar o
 que decidiu fazer.
+
+### O fecho do §54: a lista branca que não recusa, rebaixa (04/11/2026)
+
+Ao medir o tráfego de notificações para montar a tela do painel, `desescalado`
+aparecia com **0 pedidos** em todo o histórico, contra **160 `RETIROU`** no
+registro do Operar desde o deploy. Prova convincente de defeito — e eu estava a
+um passo de relatar assim.
+
+Era rótulo. O `soupm_push.py` do Operar tinha a própria lista de tipos, com
+cinco itens, e `tipo if tipo in TIPOS else "aviso"`: tudo fora dela era
+**entregue como `aviso`**, sem erro nem log. Os 71 envios de `aviso` das
+últimas 24 h tinham todos o título "Você saiu da escala". O cenário funcionava
+e entregava; só aparecia no banco como se nunca tivesse rodado.
+
+O segundo estrago é o que dói: **`aviso` não está em `tipos_urgentes`**, então
+nada disso furava a janela de silêncio 22h–06h — inclusive o pedido de apoio,
+que é o que não pode esperar o amanhecer. A medição que justificou cadastrar
+`apoio` como urgente estava sendo anulada por aquela linha.
+
+**A regra.** O §54 já dizia que lista branca que **recusa** em silêncio é um
+`[]` do §53 com outra roupa. Esta é pior: a que **rebaixa** entrega algo
+parecido com o certo, então não há buraco para alguém notar — o defeito só
+aparece quando se conta por tipo. Toda tradução de valor entre dois sistemas
+(tipo, estado, código de erro) precisa **falhar alto ou registrar o que
+trocou**. A correção manteve o rebaixamento, porque entregar vale mais que
+rotular, e acrescentou o `log.warning` que faltava.
+
+**E uma lição de leitura:** "0 no banco" e "160 no sistema de origem" não
+provam que o caminho está quebrado. Provam que o caminho **não está gravando o
+que eu esperava** — que é uma afirmação sobre o meu instrumento, não sobre o
+mundo (§53). O que desfez o engano foi perguntar o que os 71 `aviso`
+**diziam**, em vez de contar quantos eram.
