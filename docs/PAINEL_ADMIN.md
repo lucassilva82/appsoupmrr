@@ -1252,6 +1252,28 @@ Também ficam aqui o rodapé da Início, textos fixos que vêm para o painel (SO
 parâmetros técnicos do app no `app_config` (tempo limite das chamadas, lote e
 intervalo do log).
 
+**Chaves de texto já no ar** (`soupm_config`, chave `textos`; o app usa o valor
+do painel e, sem ele, o padrão do próprio app):
+
+| Chave | Onde aparece |
+|---|---|
+| `rodape_inicio` | rodapé da tela Início |
+| `botao_erro` | botão das telas de erro |
+| `operacoes_planejamento` | card de Operações, quando a escala **não** foi fechada |
+| `operacoes_planejamento_apoio` | a linha menor abaixo dela |
+| `operacoes_confirmada` | card de Operações, quando a escala **foi** fechada |
+| `operacoes_confirmada_apoio` | a linha menor abaixo dela (vazia por padrão) |
+
+As quatro de `operacoes_*` nasceram em 05/11/2026, de um relato real: o card
+mostrava um militar escalado num dia e, ao abrir, ele não estava — a escala
+ainda estava em montagem. **Os dois estados são ditos de propósito:** sem
+"Escala confirmada" quando está confirmada, a ausência do aviso viraria a
+mensagem, e ausência não é mensagem — é com isso que o militar decide se vai se
+apresentar ao serviço.
+
+O Operar tem os seus equivalentes fora do banco, porque é outro sistema:
+`ELEICOES_AVISO_PLANEJAMENTO`, `_APOIO` e `_CONFIRMADA` (vazio desliga).
+
 ### 5.13 Alertas
 
 Regras que vigiam o app sozinhas e avisam quem precisa agir, no **sino da
