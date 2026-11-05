@@ -160,6 +160,11 @@ class MeuServicoApi {
         'GET',
         Uri.parse('$urlOperar/api/meu-servico'),
         prefixo: prefixo,
-        cabecalhos: {'Authorization': 'Bearer $token'},
+        // X-App-Planejamento: esta versão desenha o aviso de "escala em
+        // planejamento" por conta própria (o campo `publicada`). Sem este
+        // cabeçalho o Operar embute o aviso no texto do posto, para o app que
+        // já está na loja mostrar alguma coisa — e é por ele que o servidor
+        // sabe que aqui não precisa, evitando o aviso em dobro.
+        cabecalhos: {'Authorization': 'Bearer $token', 'X-App-Planejamento': '1'},
       );
 }
