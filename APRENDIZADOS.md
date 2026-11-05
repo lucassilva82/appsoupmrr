@@ -1925,6 +1925,46 @@ isso, uma contagem por grupo em vez de três consultas pontuais.
 
 ---
 
+**A quarta vez, e agora o comentário contradizia o usuário (05/11/2026).** O
+usuário pediu que o militar fosse avisado da escala **no fechamento**, não ao
+ser lançado, porque na montagem tudo ainda muda. O comentário que eu havia
+escrito dizia o oposto, com a autoridade de uma medição:
+
+> *"NÃO condicionar a `escala.fechada` (…) Esperar o fechamento seria nunca
+> avisar ninguém."*
+
+A medição citada era verdadeira; a conclusão não vinha dela. Eu havia medido
+**quando o lançamento acontece** — na montagem, obviamente, é lá que se lança —
+e escrevi uma frase sobre **a escala ser fechada depois**, que eu nunca medi.
+São 463 fechamentos em 73 escalas. E o pior: a função vizinha, **no mesmo
+arquivo**, já usava a regra certa e a justificava com os números certos. Duas
+regras opostas conviveram ali um dia inteiro.
+
+O custo medido do engano: em 36 horas, **179 "Você foi escalado" contra 66
+"Você saiu da escala"** para 156 militares; 75 deles (48%) receberam mais de um
+aviso e um recebeu **onze**.
+
+**O que isso acrescenta ao §50:** quando o usuário pede algo e a resposta é
+"não dá", o primeiro lugar a procurar é **o próprio código**, não o mundo. Se a
+justificativa está num comentário meu, ela não foi medida por ninguém — e um
+comentário que afirma algo sobre o mundo tem a mesma fragilidade de uma
+conversa, com a aparência de um fato verificado. Vale também a conferência
+barata que eu não fiz: **duas funções do mesmo arquivo que tratam o mesmo
+estado têm de concordar**, e discordância entre vizinhas é mais fácil de ver
+que erro de lógica.
+
+**E o fecho que vale para qualquer "então é só mudar o gatilho":** o pedido era
+mover o aviso para o fechamento, e a medição mostrou que *fechar* também não
+significa o que parece — é a ferramenta de trabalho de quem monta (463 FECHOU e
+408 REABRIU, nenhuma escala fechada menos de 5 vezes, uma 18 vezes, 48% das
+reaberturas depois de 2 h). Trocar um gatilho por outro sem medir o segundo é
+repetir o erro com a cara de correção. O que funcionou foi parar de procurar o
+instante certo e **comparar estados**: avisar quem ainda não sabe, uma vez,
+derivando essa resposta do histórico que o sistema já grava — sem tabela de
+marca para dessincronizar, e idempotente por construção.
+
+---
+
 ## 51. "Acho que é falso positivo": era um crash real, em 156 aparelhos
 
 **O que aconteceu (28/10/2026).** O usuário relatou que, ao fechar o app no
