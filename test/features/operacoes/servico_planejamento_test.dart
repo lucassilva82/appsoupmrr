@@ -42,6 +42,14 @@ void main() {
       expect(s.emPlanejamento, isFalse);
     });
 
+    test('escala fechada: o card diz "confirmada", nao fica calado', () {
+      // A ausencia de aviso nao pode ser a mensagem: quem nao le nada nao sabe
+      // se o card esta velho, se o app falhou ou se esta tudo certo.
+      final s = ServicoOperacao.deJson(servicoJson(publicada: true))!;
+      expect(s.publicada, isTrue, reason: 'o card mostra "Escala confirmada"');
+      expect(s.emPlanejamento, isFalse);
+    });
+
     test('o resto do serviço continua lido', () {
       final s = ServicoOperacao.deJson(servicoJson(publicada: false))!;
       expect(s.data, '2026-11-06');

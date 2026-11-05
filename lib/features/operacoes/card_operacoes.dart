@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/design/arte_cartao.dart';
+import '../../core/config/app_config.dart';
 import '../../core/erros/falha_app.dart';
 import '../../core/rede/api_client.dart';
 import '../../utils/app_theme.dart';
@@ -163,40 +164,72 @@ class _Corpo extends StatelessWidget {
     ];
   }
 
-  /// A escala ainda não foi fechada pelo comando: o dia continua em destaque,
-  /// mas o card diz que aquilo pode mudar.
+  /// O estado da escala, dito com todas as letras — em planejamento ou
+  /// confirmada.
   ///
-  /// Por que avisar em vez de esconder o card (05/11/2026): medido no Operar,
-  /// 370 militares viam card de escala não fechada contra 109 de escala
-  /// fechada — esconder tiraria a informação da maioria. E o card é fixo por
-  /// decisão do usuário (30/10/2026): card que some é função que o militar
-  /// deixa de descobrir.
+  /// Por que os DOIS estados aparecem (usuário, 05/11/2026): sem dizer
+  /// "confirmada" quando está confirmada, a ausência do aviso vira a mensagem,
+  /// e ausência não é mensagem — o militar que não lê nada não sabe se o card
+  /// é antigo, se o app falhou ou se está tudo certo. Dizer os dois tira a
+  /// dúvida de quem precisa decidir se vai apresentar serviço.
   ///
-  /// Uma frase, não um selo (DESIGN §2b: frase explica mais e ocupa menos). O
-  /// âmbar claro vale aqui porque o card é arte escura nos dois temas
-  /// (DESIGN §6: as cores claras valem sobre a arte).
-  List<Widget> _emPlanejamento(BuildContext context, ServicoOperacao s) {
-    if (!s.emPlanejamento) return const [];
-    return const [
-      SizedBox(height: 8),
+  /// Duas linhas: o estado em destaque e o que fazer logo abaixo, menor. Os
+  /// textos vêm do painel (CLAUDE.md: nada de texto fixo no app); o que está
+  /// aqui é o padrão de reserva para quando falta configuração.
+  ///
+  /// As cores são as claras do DESIGN §3 — o card é arte escura nos dois
+  /// temas, e é lá que elas valem (DESIGN §6).
+  List<Widget> _estadoDaEscala(BuildContext context, ServicoOperacao s) {
+    if (s.publicada == null) return const [];      // o Operar não disse: não se inventa estado
+    final cfg = RepositorioConfig.atual;
+    final planejando = s.emPlanejamento;
+    final titulo = planejando
+        ? (cfg.texto('operacoes_planejamento') ?? 'Escala ainda em planejamento')
+        : (cfg.texto('operacoes_confirmada') ?? 'Escala confirmada');
+    final apoio = planejando
+        ? (cfg.texto('operacoes_planejamento_apoio') ??
+            'Aguarde a confirmação da escala. Você será notificado.')
+        : cfg.texto('operacoes_confirmada_apoio');
+    final cor = planejando ? AppColors.falhaEscuro : AppColors.sucessoEscuro;
+    return [
+      const SizedBox(height: 10),
       Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.only(top: 1),
-            child: Icon(Icons.edit_calendar_outlined,
-                size: AppIconSize.xs, color: AppColors.goldLight),
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(
+              planejando ? Icons.edit_calendar_outlined : Icons.verified_outlined,
+              size: AppIconSize.xs,
+              color: cor,
+            ),
           ),
-          SizedBox(width: 6),
+          const SizedBox(width: 6),
           Expanded(
-            child: Text(
-              'Escala em planejamento: pode mudar até o comando fechar.',
-              style: TextStyle(
-                fontSize: 12.5,
-                height: 1.3,
-                fontWeight: FontWeight.w600,
-                color: AppColors.goldLight,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titulo,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    height: 1.25,
+                    fontWeight: FontWeight.w700,
+                    color: cor,
+                  ),
+                ),
+                if (apoio != null && apoio.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    apoio,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      height: 1.3,
+                      color: TomCartao.medio(context),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],
@@ -213,7 +246,7 @@ class _Corpo extends StatelessWidget {
     if (s.restrita) {
       return [
         DestaqueCartao(valor: _dia(s.data), rotulo: rotulo),
-        ..._emPlanejamento(context, s),
+        ..._estadoDaEscala(context, s),
         const SizedBox(height: 10),
         RodapeCartao(icone: Icons.lock_outline, texto: s.escala, acaoTexto: 'Abrir'),
       ];
@@ -227,7 +260,7 @@ class _Corpo extends StatelessWidget {
         complemento: horario.isEmpty ? null : horario,
         rotulo: rotulo,
       ),
-      ..._emPlanejamento(context, s),
+      ..._estadoDaEscala(context, s),
       if (onde != null) ...[
         const SizedBox(height: 10),
         Text(
