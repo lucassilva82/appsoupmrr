@@ -1689,6 +1689,56 @@ digita. Por isso a normalização tem de estar em **quem recebe o que foi
 digitado** (login do app, login do painel), não só em quem consulta — senão
 alguém é aceito pela senha e recusado pelo perfil, sem nada que possa fazer.
 
+**O mesmo zero à esquerda, agora no CPF, e com uma agravante (05/11/2026).**
+Um militar relatou *"CPF não localizado no cadastro da PMRR. Procure o DTI"* no
+Primeiro acesso. O CPF dele começa com dois zeros; ele digitou sem eles, e a
+máscara do aplicativo empurrou tudo para a esquerda, completando com zeros no
+fim. O número que chegou ao servidor eram os mesmos dígitos **rodados**.
+
+A agravante é o que torna este caso diferente do da matrícula: **os dois
+números eram CPFs matematicamente válidos**. O dígito verificador não denuncia
+uma rotação quando ela também fecha, então nem o app, nem o cadastro, nem o
+servidor tinham como perceber. A pessoa lê que não está no cadastro da sua
+própria corporação.
+
+A dimensão: **1.124 dos 3.863 militares com login têm CPF começando em zero**,
+e **339 deles não tinham e-mail confirmado** — para esses, o Primeiro acesso
+era o único caminho, e ele falhava ao primeiro deslize de digitação, sem
+alternativa nenhuma depois. (339 é o teto, não o número de bloqueados: quem
+digitou com os zeros entrava normalmente. Mas é o grupo que ficava sem saída
+quando errava.)
+
+A correção, no servidor e sem versão nova do app: quando a busca exata falha e
+o digitado termina em zero, tentar também com os zeros recolocados à esquerda —
+**só** se a variante for um CPF válido e achar **exatamente um** militar.
+Medido antes de escrever: existe um par de militares cujos CPFs são rotação um
+do outro. Para esse par a busca exata acha os dois, então a alternativa nunca
+roda — mas a trava do "exatamente um" fica, porque o cadastro muda e um
+`LIMIT 1` ali escolheria a pessoa errada **em silêncio** (§52).
+
+**A regra que fica:** "não existe zero à esquerda em número" vale para
+matrícula e para CPF, e quem recebe o que a pessoa digitou tem de normalizar
+pelos dois lados. E, quando o dado tem dígito verificador, não confie nele para
+pegar erro de posição: o DV valida o conjunto, não a ordem.
+
+**Dois erros meus no mesmo diagnóstico, os dois do §52.**
+
+O primeiro: consultei se o e-mail dele estava confirmado usando um critério que
+**inventei** (`activation_code` nulo ou vazio) em vez do que o código usa (um
+valor sentinela específico). A resposta veio "confirmado", e com ela orientei o
+usuário a mandar o militar usar "Esqueci minha senha" — que teria recusado.
+Medir a fonte certa com o critério errado é tão ruim quanto medir a fonte
+errada, e soa igualmente convincente.
+
+O segundo: ao testar a função de validação, reescrevi o `preg_match` com aspas
+**duplas** no PHP, onde `\1` é escape octal e não retrovisor de regex. O teste
+passou a dizer que `00000000000` era um CPF válido. O código real usa aspas
+simples e está correto — **o defeito era do meu instrumento** (§53), e ele
+mentiu a favor de uma conclusão alarmante. Reescrevi o teste copiando a função
+do arquivo, em vez de redigitá-la.
+
+---
+
 ## 47. Mudar tabelas de esquema sem tirar o app do ar
 
 **O pedido (24/10/2026).** Tudo do SouPM sai de `public` e vai para um
