@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/design/arte_cartao.dart';
 import '../../core/erros/falha_app.dart';
 import '../../core/rede/api_client.dart';
+import '../../utils/app_theme.dart';
 import '../../widgets/cartao_painel.dart';
 import 'meu_servico.dart';
 import 'operacoes_page.dart';
@@ -162,6 +163,47 @@ class _Corpo extends StatelessWidget {
     ];
   }
 
+  /// A escala ainda não foi fechada pelo comando: o dia continua em destaque,
+  /// mas o card diz que aquilo pode mudar.
+  ///
+  /// Por que avisar em vez de esconder o card (05/11/2026): medido no Operar,
+  /// 370 militares viam card de escala não fechada contra 109 de escala
+  /// fechada — esconder tiraria a informação da maioria. E o card é fixo por
+  /// decisão do usuário (30/10/2026): card que some é função que o militar
+  /// deixa de descobrir.
+  ///
+  /// Uma frase, não um selo (DESIGN §2b: frase explica mais e ocupa menos). O
+  /// âmbar claro vale aqui porque o card é arte escura nos dois temas
+  /// (DESIGN §6: as cores claras valem sobre a arte).
+  List<Widget> _emPlanejamento(BuildContext context, ServicoOperacao s) {
+    if (!s.emPlanejamento) return const [];
+    return const [
+      SizedBox(height: 8),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(top: 1),
+            child: Icon(Icons.edit_calendar_outlined,
+                size: AppIconSize.xs, color: AppColors.goldLight),
+          ),
+          SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'Escala em planejamento: pode mudar até o comando fechar.',
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.3,
+                fontWeight: FontWeight.w600,
+                color: AppColors.goldLight,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ];
+  }
+
   /// Com escala: o dia em destaque, o posto como apoio, a função no rodapé.
   /// O rótulo nomeia a operação ("Seu serviço na Expoferr") — DESIGN §2b: o
   /// rótulo diz a posição, não só o nome.
@@ -171,6 +213,7 @@ class _Corpo extends StatelessWidget {
     if (s.restrita) {
       return [
         DestaqueCartao(valor: _dia(s.data), rotulo: rotulo),
+        ..._emPlanejamento(context, s),
         const SizedBox(height: 10),
         RodapeCartao(icone: Icons.lock_outline, texto: s.escala, acaoTexto: 'Abrir'),
       ];
@@ -184,6 +227,7 @@ class _Corpo extends StatelessWidget {
         complemento: horario.isEmpty ? null : horario,
         rotulo: rotulo,
       ),
+      ..._emPlanejamento(context, s),
       if (onde != null) ...[
         const SizedBox(height: 10),
         Text(

@@ -19,6 +19,7 @@ class ServicoOperacao {
     this.horaInicio,
     this.horaFim,
     this.restrita = false,
+    this.publicada,
   });
 
   final String data;
@@ -32,6 +33,18 @@ class ServicoOperacao {
 
   /// Escala restrita (Assessoria Militar): o Operar não manda o detalhe.
   final bool restrita;
+
+  /// A escala já foi FECHADA pelo comando? Enquanto não for, o lançamento é
+  /// montagem e pode mudar — foi o que um militar viu em 05/11/2026: o card
+  /// dizia que ele estava escalado em 06/11 e, ao abrir, não estava.
+  ///
+  /// **Nulo é "não sei", nunca "em planejamento"**: o campo nasceu no Operar
+  /// em 05/11/2026, e um Operar mais antigo não o manda. Acusar planejamento
+  /// por ausência seria afirmar sobre o mundo o que é falta do instrumento.
+  final bool? publicada;
+
+  /// Só quando o Operar disse que a escala ainda não fechou.
+  bool get emPlanejamento => publicada == false;
 
   static ServicoOperacao? deJson(Object? j) {
     if (j is! Map || j['data'] is! String) return null;
@@ -47,6 +60,7 @@ class ServicoOperacao {
       local: l is Map ? l['nome'] as String? : null,
       municipio: l is Map ? l['municipio'] as String? : null,
       restrita: j['restrita'] == true,
+      publicada: j['publicada'] is bool ? j['publicada'] as bool : null,
     );
   }
 }
