@@ -2692,3 +2692,51 @@ defeito em produção não foi a limitação: foi a plataforma declarar um recur
 que não entrega. Por isso a regra acima não é "desconfie do WebView", e sim:
 **quando o custo de errar é alto, teste o caminho, porque o símbolo pode
 mentir — e nem todas as plataformas mentem igual.**
+
+### O caminho que eu ia tornar obrigatório quebraria o acesso (06/11/2026)
+
+Resolvido o §55, faltava o que o usuário realmente queria: a digital **dentro**
+do app, não a confirmação pela sessão. Como o WebView não a oferece, a saída
+parecia óbvia — o app manda para o navegador tudo que não é
+`operar.pmrr.online`, e no navegador a digital funciona. Construí a ponte,
+testei no iPhone e no Android, e os dois abriram o navegador certo.
+
+Estava a um passo de torná-la o caminho **padrão e obrigatório** quando fui
+medir o efeito colateral:
+
+```
+campo.py, _novo_aparelho(): "Liga o aparelho novo e desliga os antigos da
+mesma matricula" — e e essa a rota que o operar_token.php chama.
+```
+
+E no banco: **1.827 militares, todos com exatamente 1 aparelho ativo**, nenhum
+com dois, 2.815 revogados no histórico. No Operar, um militar é **um aparelho
+só**.
+
+Então a ponte não era um atalho: era um ciclo de destruição. Ir ao navegador
+revoga o acesso de dentro do SouPMRR; voltar ao app revoga o do navegador.
+Cada ida e volta custa um Primeiro acesso — e como caminho obrigatório teria
+quebrado o acesso de todo comandante que usa os dois.
+
+**O que eu tinha medido e o que não tinha.** Medi com cuidado que a ponte
+*funciona*: abre o navegador certo, no domínio certo, nos dois sistemas. O que
+não medi foi o que ela *custa* ao recurso que os dois lados dividem — o token
+do aparelho. É o §54 outra vez, e por isso vale escrever a forma geral:
+
+> Provar que um caminho **funciona** não é provar que ele **convive**. Antes de
+> tornar um caminho o padrão, procure o recurso compartilhado entre o caminho
+> novo e o antigo — sessão, token, trava, cota, arquivo de estado — e meça o
+> que acontece com ele quando os dois existem ao mesmo tempo.
+
+**O sinal que estava na minha frente.** O próprio Operar avisa, em texto, na
+tela que eu vi duas vezes no teste: *"Trocou de celular? Faça o primeiro acesso
+de novo neste aparelho: o antigo é desligado."* Eu li aquilo como instrução
+para o militar, não como a regra do sistema que eu estava prestes a violar. Um
+aviso escrito para o usuário final também descreve o modelo de dados.
+
+**E o que salvou foi a pergunta do usuário, não a minha revisão.** Enquanto a
+ponte era um botão opcional, o estrago ficaria restrito a quem tocasse nele por
+curiosidade. Foi o pedido de torná-la obrigatória — "por padrão é usado a
+digital, é obrigatório" — que me obrigou a olhar o custo de verdade. Pedido que
+amplia o alcance de uma mudança é o momento certo para remedir as premissas
+dela, não para apressar a entrega.
