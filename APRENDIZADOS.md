@@ -2621,3 +2621,62 @@ sem ela, o defeito volta calado no próximo pacote.
   e um sucesso num deles não é prova para os outros — sobretudo quando a
   diferença é uma variável que faz o código escolher um canal pior **em vez de
   falhar**. Entrega degradada em silêncio é a forma mais cara do §54.
+
+## 55. "A API existe" não é "a API funciona": a digital dentro do WebView
+
+**O relato (06/11/2026).** O comandante toca em "Autorizar" dentro do SouPMRR
+e lê *"Desbloqueio cancelado. Nada foi autorizado."* sem ter cancelado nada. O
+mesmo em "Entrar no computador". O contorno que a tropa achou sozinha diz tudo:
+**estavam autorizando pelo navegador.**
+
+**A causa.** O SouPMRR abre o Operações num `InAppWebView` (WKWebView). O
+WebKit **expõe** a API da digital (WebAuthn) dentro do WebView e **recusa** a
+chamada. O guarda do Operar era:
+
+```js
+function waSuportado() { return !!(window.PublicKeyCredential && navigator.credentials && ...); }
+```
+
+Ele pergunta se a API **existe**, não se ela **funciona** — e a resposta é sim
+nos dois casos. Então o código tentava, levava `NotAllowedError`, e esse é
+exatamente o mesmo erro de quem recusa o Face ID de propósito. O código
+escolhia a leitura errada e fechava a porta: sem digital e sem alternativa.
+
+**A medição que fechou o caso**, no mesmo simulador, na mesma página, no mesmo
+minuto — e é o formato que vale repetir, porque isola **uma** variável:
+
+| Onde | Resposta | Erro |
+|---|---|---|
+| WebView (dentro do SouPMRR) | recusado em **9 ms**, sem nada aparecer | `NotAllowedError` |
+| Safari | **11.034 ms**: o iOS abriu a folha "Iniciar Sessão" e esperou | `NotAllowedError` |
+
+Mais de mil vezes de diferença no **mesmo** erro. E o campo
+`isUserVerifyingPlatformAuthenticatorAvailable()` devolveu `NÃO` nos **dois** —
+ele não serve para distinguir, porque o simulador não tem Face ID cadastrado.
+Quem distingue é o **tempo**.
+
+**A correção, sem versão nova do app na loja** (era sexta, a loja demora). O
+critério de 1,5 s já existia quatro linhas acima, escrito pelo próprio GAPE
+para outro fim. Recusa abaixo disso não é gente: o app.js passa a abrir a
+confirmação na tela (método `app`, que o servidor aceita desde 01/10 — *"se
+chegou no celular dele, desbloquear o celular já é a autenticidade"*) e o
+entrar_pc.js passa a dizer a verdade e apontar o PIN. Cancelamento de verdade,
+acima de 1,5 s, continua **não** autorizando.
+
+**O que isto ensina, e vale muito além da digital.**
+
+- **Detecção de recurso é uma pergunta sobre o ambiente, não sobre o objeto.**
+  `typeof x !== 'undefined'` responde "existe aqui?", nunca "funciona aqui?".
+  Num WebView, num iframe, num modo restrito, a plataforma deixa o objeto no
+  lugar e nega a chamada. Quando o custo de errar é alto, teste o **caminho**,
+  não o símbolo.
+- **O mesmo código de erro pode ter duas causas opostas, e o tempo separa.**
+  Aqui, 9 ms contra 11 s para o mesmíssimo `NotAllowedError`. Antes de tratar
+  um erro como intenção do usuário, pergunte se o relógio concorda com um ser
+  humano no meio.
+- **O contorno que os usuários inventam é um dado.** "Estão autorizando pelo
+  navegador" dizia, em cinco palavras, onde estava a variável — antes de
+  qualquer log.
+- **O §50 outra vez, pelo lado bom:** a saída já existia no código (o método
+  `app`, pronto e aceito pelo servidor) e nunca era oferecida. A correção não
+  inventou caminho novo; destravou o que estava escrito.
