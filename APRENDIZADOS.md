@@ -2013,6 +2013,34 @@ instante certo e **comparar estados**: avisar quem ainda não sabe, uma vez,
 derivando essa resposta do histórico que o sistema já grava — sem tabela de
 marca para dessincronizar, e idempotente por construção.
 
+### A quinta vez, e dentro do próprio vigia (06/11/2026)
+
+O `conferir_mudancas.sh` existe para pegar quando o nosso código sai de dentro
+do Operar. Ele carregava **dois fatos digitados por mim**, e por isso errava
+calado sobre si mesmo:
+
+| O que ele dizia | O que era |
+|---|---|
+| uma checagem presa ao literal `campo-1.1.57-dti` | acusava **FALTA em toda subida desde a .57**, 16 versões seguidas |
+| `verc()` imprimindo `[SECAO 2]`, com o comentário acima afirmando que os dois arquivos estão na seção 2 | medido nos quatro pacotes (r14, r15, r17, r18): o `entrar_pc.js` **não está em manifesto nenhum** e pacote nenhum o traz |
+
+O segundo custa decisão, não estética: aquele rótulo é o que diz a quem vem
+depois se mexer naquele arquivo é **de graça ou frágil**. Errado nas duas
+direções — fez o `entrar_pc.js` parecer frágil, o que desencoraja a correção;
+e, invertido, faria um arquivo que o pacote troca parecer seguro.
+
+**O que isto acrescenta ao §50:** o instrumento criado para impedir que
+comentário meu virasse fato era, ele mesmo, feito de comentário meu. Vigia não
+se escreve com afirmação: a seção passou a ser **lida** do manifesto do pacote
+mais novo, e a versão do cache passou a ser **comparada** entre os três arquivos
+que têm de concordar. Nenhuma das duas pode mais ser digitada.
+
+**E o sinal que eu tinha e ignorei:** uma checagem que responde FALTA há 16
+versões não é uma checagem, é ruído que a gente aprende a pular. Alarme que
+nunca apaga treina quem o lê a não ler — e no dia em que ele estiver certo,
+ninguém vai olhar. Quando um vigia acusa algo, a primeira pergunta é *desde
+quando ele acusa isso*.
+
 ---
 
 ## 51. "Acho que é falso positivo": era um crash real, em 156 aparelhos
