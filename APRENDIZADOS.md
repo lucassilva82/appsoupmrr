@@ -2740,3 +2740,40 @@ curiosidade. Foi o pedido de torná-la obrigatória — "por padrão é usado a
 digital, é obrigatório" — que me obrigou a olhar o custo de verdade. Pedido que
 amplia o alcance de uma mudança é o momento certo para remedir as premissas
 dela, não para apressar a entrega.
+
+### A marca que o cliente escreve não prova nada (06/11/2026)
+
+Para o "Entrar no computador" aceitar o PIN dentro do SouPMRR, o servidor
+precisava saber que o aparelho veio do SouPMRR. A resposta parecia pronta: a
+API do SouPM já mandava `'aparelho' => 'Sou PM'` ao criar o token, e **1.254 dos
+1.827** aparelhos ativos estavam marcados assim. Era só ler o campo.
+
+O que faltava perguntar: **quem escreve esse campo?** O cliente. E criar um
+aparelho em nome de qualquer militar exige apenas matrícula (está na escala),
+CPF (não é segredo entre colegas) e a senha da operação — que, nas palavras do
+próprio código do GAPE, *"e uma so para todos"*.
+
+Então aceitar o PIN por causa daquela marca abriria o caminho inteiro: forjar o
+aparelho num POST, definir o próprio PIN, pedir o QR do login com a matrícula
+alheia e entrar no Sistema como ela. Exatamente o que a regra da digital — que
+eu ia afrouxar — existe para impedir.
+
+**A regra.** Um campo só serve de prova se **quem o escreve** não for quem tem
+interesse no resultado. Antes de usar qualquer marca para decidir permissão,
+siga o caminho dela até a origem e pergunte quem pode escrevê-la. Marca escrita
+pelo cliente é declaração, não prova; vira prova quando passa a depender de um
+segredo que o cliente não tem — aqui, uma chave que mora nos dois servidores e
+nunca chega ao aparelho.
+
+**O que tornou o erro atraente** é a mesma forma do §53: a marca existia, estava
+no banco, tinha volume (69% dos aparelhos) e batia com a realidade. Tudo isso é
+verdade e nada disso a torna confiável. Dado abundante e correto ainda pode ser
+dado que o adversário escolhe.
+
+**E o detalhe que só apareceu ao medir a adoção:** a marca nasce quando o token
+do aparelho é criado, e o nosso próprio `operar_api.dart` diz, em caixa alta,
+que o app **não** pede token novo quando já tem um guardado — porque pedir
+revogaria o aparelho de quem usa o Operar pelo navegador. Ou seja, a proteção
+correta só alcança quem entrar de novo. Ao trocar o critério de uma permissão,
+meça também **quando o novo critério passa a valer para quem já está dentro**:
+uma regra certa que ninguém atende ainda é uma regra que não funciona hoje.
