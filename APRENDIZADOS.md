@@ -2680,3 +2680,15 @@ acima de 1,5 s, continua **não** autorizando.
 - **O §50 outra vez, pelo lado bom:** a saída já existia no código (o método
   `app`, pronto e aceito pelo servidor) e nunca era oferecida. A correção não
   inventou caminho novo; destravou o que estava escrito.
+
+**O Android mediu diferente, e isso fecha a lição.** No mesmo teste, dentro do
+WebView do Android, a resposta foi **"a API de digital nem existe"** (o user
+agent traz `wv`). Lá o `waSuportado()` devolvia `false` e o militar **já caía
+na confirmação** — no Android o defeito nunca existiu.
+
+Os dois WebViews fazem a mesma coisa (não deixam a página usar a digital) e
+**só um mente sobre isso**. O que transformou uma limitação conhecida num
+defeito em produção não foi a limitação: foi a plataforma declarar um recurso
+que não entrega. Por isso a regra acima não é "desconfie do WebView", e sim:
+**quando o custo de errar é alto, teste o caminho, porque o símbolo pode
+mentir — e nem todas as plataformas mentem igual.**
