@@ -2777,3 +2777,30 @@ revogaria o aparelho de quem usa o Operar pelo navegador. Ou seja, a proteção
 correta só alcança quem entrar de novo. Ao trocar o critério de uma permissão,
 meça também **quando o novo critério passa a valer para quem já está dentro**:
 uma regra certa que ninguém atende ainda é uma regra que não funciona hoje.
+
+### O teste que roda como root não testa o serviço (06/11/2026)
+
+A chave que prova ao Operar que o pedido veio do SouPMRR nasceu `600 root:root`.
+O serviço roda como **`operar`**. Ele nunca conseguiu ler, e **nada acusou**: o
+acesso continuou funcionando, o aparelho nascia sem a marca, e só o "Entrar no
+computador" seguia negando — que era exatamente o que eu estava consertando.
+
+O que me deu confiança foi o meu próprio teste: rodei a função de leitura no
+shell e ela respondeu `True`. Como root. O ambiente do teste não era o ambiente
+do serviço, e a resposta certa à pergunta errada parece uma resposta certa.
+
+Duas coisas tornam este caso exemplar:
+
+- **A especificação estava ao lado.** No mesmo diretório havia outra chave do
+  mesmo serviço, `640 root:operar`, funcionando há dias. Ao criar um arquivo que
+  um serviço vai ler, o vizinho que ele já lê **é** a especificação — compare
+  com ele antes de inventar a permissão.
+- **Só se descobriu porque o fim do caminho foi medido.** Eu podia ter parado em
+  "a chave existe nos dois lados, os hashes batem" — e estava tudo verdadeiro.
+  O que desfez o engano foi ir ver o que o banco gravou na ponta: `Sou PM` em
+  vez de `Sou PM (verificado)`.
+
+**A regra:** teste com a identidade de quem vai executar
+(`sudo -u <usuário do serviço>`), não com a sua. É o §53 na camada do sistema
+operacional: o instrumento (o meu shell) tinha um privilégio que o sujeito do
+teste não tem, e por isso respondia sim quando a resposta era não.
