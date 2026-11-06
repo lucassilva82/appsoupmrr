@@ -2570,3 +2570,54 @@ listado, o país no endereço é parte do endereço, não enfeite — a pergunta
 "funciona?" tem de ser feita na loja de quem vai clicar. Vale para o link do
 app, para o da tela de atualização e para qualquer link que vá num texto
 mandado para a tropa.
+
+### O mesmo código em dois ambientes: o aviso sai, para 18 em vez de 1.505 (06/11/2026)
+
+Dois defeitos no mesmo arquivo, e os dois só apareceram porque alguém foi
+olhar — nenhum deles acusa nada.
+
+**O primeiro: o batimento provava que rodava, não que dava certo.** O
+`lembrete_apresentacao.py` (avisa o militar 30 min antes do serviço) passou
+dois dias quebrado, com **84 falhas** no log, por uma refatoração **minha**:
+levei o `_lanc_corpo()` do `push_web.py` para o `dti_avisos.py` e não procurei
+quem mais o chamava. O batimento que eu mesmo criei no §54 estava sendo tocado
+a cada 5 minutos, exatamente como projetado — e marca positiva prova
+**execução**, nunca **sucesso**. O conferidor de mudanças também não pegava: ele
+responde "a marca está no arquivo?", e o que quebrou não foi um pacote do GAPE
+sobrescrevendo nada, foi código nosso mudando de lugar. A vigilância certa para
+script nosso não é procurar texto, é **rodá-lo em simulação e acusar exceção** —
+foi o que o conferidor passou a fazer, e na estreia ele já achou um segundo
+problema (o outro script não aceitava `--simular`).
+
+**O segundo, achado ao conferir o primeiro, e maior:** `ELEICOES_PUSH_SOUPM=1`
+e o caminho da chave **não estão** em `app.env` nem em `mysql.env` — estão em
+linhas `Environment=` do unit `operar-producao`. O **serviço** as vê; um **cron**
+que carrega os dois `.env` **não**. Medido nos dois ambientes:
+`soupm_push.ligado()` devolve `True` no serviço e `False` no cron.
+
+O efeito não é uma falha, é uma **entrega degradada**: sem a variável, o aviso
+sai pelo Web Push, que tem **18 assinaturas**, em vez do Sou PM, que alcança
+**1.505 aparelhos**. Ninguém vê erro. O log do push diz "enviado". Os 108
+militares com apresentação às 20h de hoje receberiam — 18 deles.
+
+E a razão de isso nunca ter aparecido é a parte que ensina: o aviso de
+fechamento de 05/11 **funcionou** porque quem o disparou foi o escalante, pelo
+`escala.py`, **dentro do serviço**. Eu li aquele sucesso como prova de que o
+caminho estava provado, quando o que estava provado era o caminho do serviço. O
+disparo por cron nunca havia rodado para valer.
+
+**A correção** é um `/opt/dti-soupm/ambiente_push.sh` que os crons carregam e
+que **lê as variáveis do próprio unit** (`systemctl show -p Environment`), sem
+copiar valor nenhum: se o GAPE mudar o unit, o cron acompanha. E o conferidor
+ganhou a pergunta que ninguém fazia — *"um cron alcança o Sou PM?"* — porque,
+sem ela, o defeito volta calado no próximo pacote.
+
+**As duas regras.**
+- **Marca positiva prova execução; só o resultado prova sucesso.** O §54 criou o
+  batimento para resolver "não sei se rodou", e ele resolve só isso. Vigia que
+  confere presença precisa de um irmão que confere funcionamento.
+- **Antes de confiar num caminho de entrega, medir no ambiente em que ele vai
+  rodar.** Serviço, cron, linha de comando e container são ambientes diferentes,
+  e um sucesso num deles não é prova para os outros — sobretudo quando a
+  diferença é uma variável que faz o código escolher um canal pior **em vez de
+  falhar**. Entrega degradada em silêncio é a forma mais cara do §54.
