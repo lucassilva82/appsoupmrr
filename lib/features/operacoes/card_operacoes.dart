@@ -28,8 +28,11 @@ class CardOperacoes extends StatefulWidget {
   State<CardOperacoes> createState() => _CardOperacoesState();
 }
 
+/// Um card: a operação (nula fora do modo evento) e o serviço lido nela.
+typedef _UmCard = ({EventoOperar? evento, MeuServicoOperacao? servico});
+
 class _CardOperacoesState extends State<CardOperacoes> {
-  Future<({MeuServicoOperacao? servico, SessaoOperar? sessao})>? _futuro;
+  Future<({List<_UmCard> cards, SessaoOperar? sessao})>? _futuro;
 
   @override
   void initState() {
@@ -37,39 +40,84 @@ class _CardOperacoesState extends State<CardOperacoes> {
     _futuro = _carregar();
   }
 
-  Future<({MeuServicoOperacao? servico, SessaoOperar? sessao})> _carregar() async {
+  /// Um card por operação aberta no Operar (usuário, 07/11/2026: Expoferr e
+  /// ENEM ao mesmo tempo, "o que muda é o conteúdo"). Cada uma é lida com o
+  /// próprio `X-Turno`; sem a lista (eleição, Operar antigo, falha), um card
+  /// só, lido sem turno, como sempre foi.
+  Future<({List<_UmCard> cards, SessaoOperar? sessao})> _carregar() async {
     final sessao = await SessaoOperar.doLoginAtual();
-    if (sessao == null) return (servico: null, sessao: null);
+    if (sessao == null) return (cards: const <_UmCard>[(evento: null, servico: null)], sessao: null);
+    final api = MeuServicoApi(api: ApiClient(), sessao: sessao);
+    var eventos = const <EventoOperar>[];
     try {
-      final s = await MeuServicoApi(api: ApiClient(), sessao: sessao).ler();
-      return (servico: s, sessao: sessao);
+      eventos = await api.eventos();
     } on FalhaApp {
-      // Operar fora do ar, aparelho desligado do outro lado, sem rede: o card
-      // continua e diz o que sabe. Quem toca cai no Operar, que explica o
-      // próprio erro melhor do que eu adivinharia daqui.
-      return (servico: null, sessao: sessao);
+      // Sem a lista, segue o caminho antigo: um card, sem turno.
     }
+    Future<MeuServicoOperacao?> ler(EventoOperar? e) async {
+      try {
+        return await api.ler(evento: e);
+      } on FalhaApp {
+        // Operar fora do ar, aparelho desligado do outro lado, sem rede: o
+        // card continua e diz o que sabe. Quem toca cai no Operar, que explica
+        // o próprio erro melhor do que eu adivinharia daqui.
+        return null;
+      }
+    }
+
+    if (eventos.isEmpty) {
+      return (cards: [(evento: null, servico: await ler(null))], sessao: sessao);
+    }
+    final servicos = await Future.wait(eventos.map(ler));
+    return (
+      cards: [
+        for (var i = 0; i < eventos.length; i++) (evento: eventos[i], servico: servicos[i]),
+      ],
+      sessao: sessao,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<({MeuServicoOperacao? servico, SessaoOperar? sessao})>(
+    return FutureBuilder<({List<_UmCard> cards, SessaoOperar? sessao})>(
       future: _futuro,
-      builder: (context, snap) => _Corpo(
-        servico: snap.data?.servico,
-        sessao: snap.data?.sessao,
-        carregando: snap.connectionState != ConnectionState.done,
-      ),
+      builder: (context, snap) {
+        final carregando = snap.connectionState != ConnectionState.done;
+        final cards = snap.data?.cards ?? const <_UmCard>[(evento: null, servico: null)];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < cards.length; i++) ...[
+              if (i > 0) const SizedBox(height: 12),
+              _Corpo(
+                evento: cards[i].evento,
+                servico: cards[i].servico,
+                sessao: snap.data?.sessao,
+                carregando: carregando,
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }
 
 class _Corpo extends StatelessWidget {
-  const _Corpo({required this.servico, required this.sessao, this.carregando = false});
+  const _Corpo({
+    required this.servico,
+    required this.sessao,
+    this.evento,
+    this.carregando = false,
+  });
 
   final MeuServicoOperacao? servico;
   final SessaoOperar? sessao;
   final bool carregando;
+
+  /// A operação deste card. Com ela, o título é o nome da operação e o toque
+  /// abre o Operar já nela.
+  final EventoOperar? evento;
 
   /// "2026-11-03" -> "03/11"
   static String _dia(String iso) =>
@@ -86,7 +134,9 @@ class _Corpo extends StatelessWidget {
       onTap: carregando
           ? null
           : () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => OperacoesPage(sessao: sessao)),
+                MaterialPageRoute(
+                  builder: (_) => OperacoesPage(sessao: sessao, turno: evento?.codigo),
+                ),
               ),
       child: Padding(
         padding: kPaddingCartao,
@@ -100,7 +150,9 @@ class _Corpo extends StatelessWidget {
             // na frente.
             CabecalhoCartao(
               icone: Icons.shield_outlined,
-              titulo: 'Operações',
+              // Com a operação, o nome dela ("Operação ENEM 2026"): os dois
+              // cards iguais, só o conteúdo muda (usuário, 07/11/2026).
+              titulo: evento?.titulo ?? 'Operações',
               mostrarSeta: !carregando,
             ),
             const SizedBox(height: 12),

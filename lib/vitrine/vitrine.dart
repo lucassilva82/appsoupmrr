@@ -49,6 +49,9 @@ http.Client clienteVitrine() {
     if (url.host.startsWith('intranet.') && url.path.contains('/api/v1/')) {
       return _responderIntranet(url, req);
     }
+    if (url.host.startsWith('operar.') && url.path.startsWith('/api/')) {
+      return _responderOperar(url, req);
+    }
     final ehSigrh = url.host.endsWith('pmrr.online') &&
         url.path.contains('/flutter/sigrh/');
     if (!ehSigrh || _liberados.any(url.path.endsWith)) {
@@ -242,9 +245,52 @@ http.Response _json(Object corpo) => http.Response.bytes(
       headers: {'content-type': 'application/json; charset=utf-8'},
     );
 
+/// O Operar do militar fictício: duas operações abertas ao mesmo tempo, uma
+/// com a escala confirmada e outra ainda em planejamento — os dois estados que
+/// o card de Operações desenha. Cada uma responde pelo `X-Turno` do pedido.
+http.Response _responderOperar(Uri url, http.Request req) {
+  switch (url.path) {
+    case '/api/eventos':
+      return _json({
+        'evento': {'modo_evento': true, 'nome': 'Expoferr 2026', 'curto': 'Expoferr'},
+        'meus': ['1T', '2T'],
+        'eventos': [
+          {'codigo': '1T', 'nome': 'Expoferr 2026', 'curto': 'Expoferr',
+           'inicio': '2026-11-03', 'fim': '2026-11-08', 'acesso': {'modo': 'atual'}},
+          {'codigo': '2T', 'nome': 'ENEM 2026', 'curto': 'ENEM',
+           'inicio': '2026-11-08', 'fim': '2026-11-15', 'acesso': {'modo': 'atual'}},
+        ],
+      });
+    case '/api/meu-servico':
+      final enem = req.headers['X-Turno'] == '2T';
+      return _json({
+        'militar': {'nome_guerra': 'STIVES'},
+        'evento': {'curto': 'Expoferr', 'nome': 'Expoferr 2026'},
+        'servicos': [
+          enem
+              ? {
+                  'data': '2026-11-08', 'escala': 'ENEM', 'funcao': 'Patrulheiro',
+                  'publicada': false,
+                  'posto': {'descricao': 'Escola Estadual Exemplo', 'hora_inicio': '11:00', 'hora_fim': '19:30'},
+                  'local': {'nome': 'Escola Estadual Exemplo', 'municipio': 'Boa Vista'},
+                }
+              : {
+                  'data': '2026-11-07', 'escala': 'Evento', 'funcao': 'Patrulheiro',
+                  'publicada': true,
+                  'posto': {'descricao': 'Portão 2', 'hora_inicio': '18:00', 'hora_fim': '23:00'},
+                },
+        ],
+      });
+  }
+  return _json({'detail': 'Indisponível no modo vitrine.'});
+}
+
 Object? _responder(Uri url, http.Request req) {
   final arquivo = url.pathSegments.last;
   switch (arquivo) {
+    // O token do Operar do militar fictício: nada sai do aparelho.
+    case 'operar_token.php':
+      return {'code': 1, 'token': 'vitrine', 'matricula': '1234567', 'nome': 'STIVES DA SILVA', 'posto': 'SD'};
     // O log do modo vitrine não vai a lugar nenhum: o militar é fictício.
     case 'log.php':
       return {'code': 1, 'aceitos': 0, 'recusados': 0};
@@ -325,6 +371,7 @@ Object? _responder(Uri url, http.Request req) {
             {'texto': 'Confira em Validar documento se uma certidão ou contracheque é autêntico.', 'icone': 'task_alt', 'tipo': 'dica', 'destino': 'rh.validar'},
           ]},
           {'chave': 'home.pendencias', 'ordem': 40, 'escondivel': false},
+          {'chave': 'home.operacoes', 'ordem': 45},
           {'chave': 'home.atalhos', 'ordem': 50},
           {'chave': 'home.livre.outubro_rosa', 'ordem': 55, 'modelo': 'campanha', 'arte': 'rosa',
            'dados': {'selo': 'Saúde', 'titulo': 'Outubro Rosa na PMRR', 'texto': 'Exames preventivos no HPM até 31/10. Agende pelo ramal da Diretoria de Saúde.'},

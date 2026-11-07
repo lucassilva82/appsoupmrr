@@ -31,7 +31,7 @@ import 'operar_api.dart';
 /// Lucas em 29/10/2026 — falha de login automático não pode deixar o militar
 /// de fora no dia da operação.
 class OperacoesPage extends StatefulWidget {
-  const OperacoesPage({super.key, this.sessao, this.caminho = '/app/'});
+  const OperacoesPage({super.key, this.sessao, this.caminho = '/app/', this.turno});
 
   /// Nulo quando a tela é aberta por rota (menu, atalho): ela mesma resolve a
   /// sessão do login atual. O card da Início já tem a dele e a passa pronta.
@@ -40,6 +40,12 @@ class OperacoesPage extends StatefulWidget {
   /// Caminho dentro do Operar. O padrão é o app de campo; o card da Início
   /// pode abrir direto numa tela (`/app/?abrir=...`).
   final String caminho;
+
+  /// A operação em que abrir ("1T", "2T"), quando o card é de uma delas. O
+  /// app de campo guarda a escolha em `e26.evtCod` e manda `X-Turno` com ela;
+  /// plantar a escolha antes de a página rodar faz o toque no card do ENEM
+  /// cair no ENEM, e não na operação que o militar escolheu da última vez.
+  final String? turno;
 
   @override
   State<OperacoesPage> createState() => _OperacoesPageState();
@@ -116,6 +122,17 @@ class _OperacoesPageState extends State<OperacoesPage> {
               'window.localStorage.setItem("e26.token", ${jsonEncode(jsonEncode(token))});'
               'window.localStorage.setItem("e26.matricula", ${jsonEncode(jsonEncode(matricula))});'
               '}catch(e){}',
+          injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+        ),
+      // Depois da guarda, que pode esvaziar o armazém: senão a escolha some
+      // junto. Mesmo formato JSON do resto (o app de campo lê com JSON.parse).
+      // Trocou de operação: some o serviço e os avisos guardados da outra,
+      // como o próprio app de campo faz ao trocar (apagar 'servico'/'avisos').
+      if (widget.turno != null)
+        UserScript(
+          source: 'try{var s=window.localStorage,v=${jsonEncode(jsonEncode(widget.turno))};'
+              'if(s.getItem("e26.evtCod")!==v){s.removeItem("e26.servico");s.removeItem("e26.avisos");}'
+              's.setItem("e26.evtCod",v);}catch(e){}',
           injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
         ),
       UserScript(

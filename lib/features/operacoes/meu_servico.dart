@@ -65,6 +65,49 @@ class ServicoOperacao {
   }
 }
 
+/// Uma operação aberta no Operar (`GET /api/eventos`), com o código que vai no
+/// cabeçalho `X-Turno` ("1T" Expoferr, "2T" ENEM).
+///
+/// O Operar corta toda leitura pelo evento do pedido; sem `X-Turno` ele cai no
+/// primeiro. Foi por isso que o card só mostrava a Expoferr enquanto o ENEM já
+/// tinha escala (usuário, 07/11/2026).
+class EventoOperar {
+  const EventoOperar({
+    required this.codigo,
+    required this.nome,
+    this.curto,
+    this.inicio,
+    this.fim,
+  });
+
+  final String codigo;
+  final String nome;
+  final String? curto;
+  final String? inicio;
+  final String? fim;
+
+  /// "Operação ENEM 2026": o título do card. Sem repetir a palavra quando o
+  /// próprio nome já a traz.
+  String get titulo =>
+      nome.toLowerCase().startsWith('operação') ? nome : 'Operação $nome';
+
+  static EventoOperar? deJson(Object? j) {
+    if (j is! Map) return null;
+    final codigo = j['codigo'], nome = j['nome'], acesso = j['acesso'];
+    if (codigo is! String || codigo.isEmpty || nome is! String || nome.isEmpty) return null;
+    // Só a operação ABERTA (o mesmo filtro do app de campo, evtAtuais):
+    // consulta, prévia e preparação não têm escala para o card mostrar.
+    if (acesso is! Map || acesso['modo'] != 'atual') return null;
+    return EventoOperar(
+      codigo: codigo,
+      nome: nome,
+      curto: j['curto'] as String?,
+      inicio: j['inicio'] as String?,
+      fim: j['fim'] as String?,
+    );
+  }
+}
+
 /// O que o card desenha: a operação em curso e o serviço mais próximo.
 class MeuServicoOperacao {
   const MeuServicoOperacao({
@@ -131,40 +174,75 @@ class MeuServicoApi {
   /// HTML, e aí a renovação não aconteceria. Um teste cobre o caso bom
   /// (`test/features/operacoes_test.dart`); o ruim vira falha comum, que a
   /// tela trata abrindo o login do próprio Operar.
-  Future<MeuServicoOperacao> ler() async {
-    var r = await _pedir(await sessao.token());
-    if (r.status == 401) {
-      r = await _pedir(await sessao.token(renovar: true));
-    }
-    if (r.status != 200) throw FalhaApp.httpStatus(prefixo, r.status);
+  ///
+  /// Com [evento], o pedido leva `X-Turno` e o Operar responde só daquela
+  /// operação; o nome e as datas do card vêm então do próprio [evento], como
+  /// o app de campo faz (evtInfo), e não do bloco `evento` da resposta.
+  Future<MeuServicoOperacao> ler({EventoOperar? evento}) async {
+    final r = await _comRenovacao('/api/meu-servico', turno: evento?.codigo);
     final j = r.corpo;
     if (j is! Map) {
       throw FalhaApp.respostaInvalida(prefixo, detalhe: 'meu-servico não devolveu objeto');
     }
     final lista = j['servicos'];
-    final evento = j['evento'];
+    final ev = j['evento'];
     final militar = j['militar'];
     return MeuServicoOperacao(
       servicos: [
         for (final s in (lista is List ? lista : const []))
           if (ServicoOperacao.deJson(s) case final v?) v,
       ],
-      evento: evento is Map ? '${evento['curto'] ?? evento['nome'] ?? ''}' : null,
-      eventoInicio: evento is Map ? evento['inicio'] as String? : null,
-      eventoFim: evento is Map ? evento['fim'] as String? : null,
+      evento: evento != null
+          ? (evento.curto ?? evento.nome)
+          : ev is Map ? '${ev['curto'] ?? ev['nome'] ?? ''}' : null,
+      eventoInicio: evento != null ? evento.inicio : ev is Map ? ev['inicio'] as String? : null,
+      eventoFim: evento != null ? evento.fim : ev is Map ? ev['fim'] as String? : null,
       nomeGuerra: militar is Map ? militar['nome_guerra'] as String? : null,
     );
   }
 
-  Future<({int status, dynamic corpo})> _pedir(String token) => api.requisicao(
+  /// As operações abertas agora (`GET /api/eventos`). Fora do modo evento (a
+  /// eleição) a lista vem vazia, e o card segue com um só, como antes.
+  Future<List<EventoOperar>> eventos() async {
+    final r = await _comRenovacao('/api/eventos');
+    final j = r.corpo;
+    if (j is! Map) {
+      throw FalhaApp.respostaInvalida(prefixo, detalhe: 'eventos não devolveu objeto');
+    }
+    final base = j['evento'];
+    final lista = j['eventos'];
+    if (base is! Map || base['modo_evento'] != true || lista is! List) return const [];
+    return [
+      for (final e in lista)
+        if (EventoOperar.deJson(e) case final v?) v,
+    ];
+  }
+
+  /// Em 401 o aparelho foi desligado do outro lado: pede um token novo e
+  /// tenta uma vez só, para não entrar em laço.
+  Future<({int status, dynamic corpo})> _comRenovacao(String caminho, {String? turno}) async {
+    var r = await _pedir(caminho, await sessao.token(), turno);
+    if (r.status == 401) {
+      r = await _pedir(caminho, await sessao.token(renovar: true), turno);
+    }
+    if (r.status != 200) throw FalhaApp.httpStatus(prefixo, r.status);
+    return r;
+  }
+
+  Future<({int status, dynamic corpo})> _pedir(String caminho, String token, String? turno) =>
+      api.requisicao(
         'GET',
-        Uri.parse('$urlOperar/api/meu-servico'),
+        Uri.parse('$urlOperar$caminho'),
         prefixo: prefixo,
         // X-App-Planejamento: esta versão desenha o aviso de "escala em
         // planejamento" por conta própria (o campo `publicada`). Sem este
         // cabeçalho o Operar embute o aviso no texto do posto, para o app que
         // já está na loja mostrar alguma coisa — e é por ele que o servidor
         // sabe que aqui não precisa, evitando o aviso em dobro.
-        cabecalhos: {'Authorization': 'Bearer $token', 'X-App-Planejamento': '1'},
+        cabecalhos: {
+          'Authorization': 'Bearer $token',
+          'X-App-Planejamento': '1',
+          if (turno != null) 'X-Turno': turno,
+        },
       );
 }

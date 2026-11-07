@@ -336,4 +336,86 @@ void main() {
       expect(tokens, 0);
     });
   });
+
+  // Expoferr (1T) e ENEM (2T) abertos ao mesmo tempo: sem X-Turno o Operar
+  // responde só da primeira, e o card do ENEM não existia (07/11/2026).
+  group('uma operação por card', () {
+    SessaoOperar sessaoCom(ApiClient c, _CofreMemoria cofre) => SessaoOperar(
+          cofre: cofre,
+          api: OperarApi(api: c, matricula: '0041096009', senhaMd5: 'md5'),
+        );
+    _CofreMemoria cofreComToken() => _CofreMemoria()
+      ..dados['operar_token'] = 'tok'
+      ..dados['operar_matricula'] = '0041096009';
+
+    test('lista só as operações abertas, com o código do turno', () async {
+      final cliente = _clienteQueResponde((_) => _json(
+          jsonEncode({
+            'evento': {'modo_evento': true, 'nome': 'Expoferr 2026'},
+            'meus': ['1T', '2T'],
+            'eventos': [
+              {'codigo': '1T', 'nome': 'Expoferr 2026', 'curto': 'Expoferr',
+               'inicio': '2026-11-03', 'fim': '2026-11-08', 'acesso': {'modo': 'atual'}},
+              {'codigo': '2T', 'nome': 'Operação ENEM 2026', 'curto': 'ENEM',
+               'inicio': '2026-11-08', 'fim': '2026-11-15', 'acesso': {'modo': 'atual'}},
+              {'codigo': '0T', 'nome': 'Eleições 2026', 'acesso': {'modo': 'consulta'}},
+            ],
+          }),
+          200));
+
+      final l = await MeuServicoApi(api: cliente, sessao: sessaoCom(cliente, cofreComToken())).eventos();
+
+      expect(l.map((e) => e.codigo), ['1T', '2T'], reason: 'a eleição encerrada não vira card');
+      expect(l[0].titulo, 'Operação Expoferr 2026');
+      expect(l[1].titulo, 'Operação ENEM 2026', reason: 'sem repetir "Operação"');
+    });
+
+    test('fora do modo evento a lista vem vazia: um card só, como antes', () async {
+      final cliente = _clienteQueResponde((_) => _json(
+          jsonEncode({'evento': {'modo_evento': false}, 'eventos': []}), 200));
+
+      final l = await MeuServicoApi(api: cliente, sessao: sessaoCom(cliente, cofreComToken())).eventos();
+
+      expect(l, isEmpty);
+    });
+
+    test('a leitura de uma operação leva X-Turno e o nome vem dela', () async {
+      String? turno;
+      final cliente = _clienteQueResponde((pedido) {
+        turno = pedido.headers['X-Turno'];
+        return _json(
+            jsonEncode({
+              // o bloco "evento" da resposta é o da instância, não o escolhido
+              'evento': {'curto': 'Expoferr', 'inicio': '2026-11-03', 'fim': '2026-11-08'},
+              'servicos': [
+                {'data': '2026-11-08', 'escala': 'ENEM', 'publicada': false},
+              ],
+            }),
+            200);
+      });
+      const enem = EventoOperar(
+          codigo: '2T', nome: 'Operação ENEM 2026', curto: 'ENEM',
+          inicio: '2026-11-08', fim: '2026-11-15');
+
+      final s = await MeuServicoApi(api: cliente, sessao: sessaoCom(cliente, cofreComToken()))
+          .ler(evento: enem);
+
+      expect(turno, '2T');
+      expect(s.evento, 'ENEM');
+      expect(s.periodoEvento, '08/11 a 15/11');
+      expect(s.proximo!.emPlanejamento, isTrue);
+    });
+
+    test('sem operação, o pedido não leva X-Turno', () async {
+      var temTurno = true;
+      final cliente = _clienteQueResponde((pedido) {
+        temTurno = pedido.headers.containsKey('X-Turno');
+        return _json(jsonEncode({'servicos': []}), 200);
+      });
+
+      await MeuServicoApi(api: cliente, sessao: sessaoCom(cliente, cofreComToken())).ler();
+
+      expect(temTurno, isFalse);
+    });
+  });
 }
