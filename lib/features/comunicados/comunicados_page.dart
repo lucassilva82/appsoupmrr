@@ -293,15 +293,41 @@ class CartaoComunicado extends StatelessWidget {
         raio: raio,
         icone: c.iconeAssunto,
         imagem: c.imagem,
-        comIlustracao: !compacto,
+        // Em modo cartaz a arte já diz tudo o que o cartão diria (o título, a
+        // data e o local estão desenhados nela). Repetir isso por cima, com o
+        // véu que o texto exige, tapava a arte e escrevia duas vezes a mesma
+        // coisa — foi o que o usuário viu na Exposição de Artes, 11/11/2026.
+        // Fica só a seta, que é a única parte que não é texto: diz que abre.
+        veu: !c.mostraCartaz,
+        ajuste: c.mostraCartaz ? BoxFit.contain : BoxFit.cover,
+        comIlustracao: !compacto && !c.mostraCartaz,
         child: Material(
           type: MaterialType.transparency,
           child: InkWell(
             onTap: aoTocar,
-            // Cartão de altura limitada (cresce até 310): a fonte do sistema
-            // vale até 1,2× aqui, como nos números herói (§15.2); o leitor de
-            // tela continua lendo tudo pelo rótulo acima.
-            child: MediaQuery.withClampedTextScaling(
+            child: c.mostraCartaz
+                ? Align(
+                    alignment: Alignment.bottomRight,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0x73000000),
+                          border: Border.all(color: branco.withValues(alpha: .42)),
+                        ),
+                        child: const SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: Icon(Icons.arrow_forward_rounded, size: 20, color: branco),
+                        ),
+                      ),
+                    ),
+                  )
+                // Cartão de altura limitada (cresce até 310): a fonte do
+                // sistema vale até 1,2× aqui, como nos números herói (§15.2);
+                // o leitor de tela continua lendo tudo pelo rótulo acima.
+                : MediaQuery.withClampedTextScaling(
               maxScaleFactor: 1.2,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
@@ -492,6 +518,8 @@ class FundoComunicado extends StatelessWidget {
     this.ilustracaoDireita = 10,
     this.borda = true,
     this.imagem,
+    this.veu = true,
+    this.ajuste = BoxFit.cover,
   });
 
   final Color cor;
@@ -508,6 +536,19 @@ class FundoComunicado extends StatelessWidget {
   /// painel), para o texto branco ler sobre qualquer foto. Enquanto carrega,
   /// ou se falhar, fica o degradê da categoria.
   final String? imagem;
+
+  /// O véu escuro sobre a foto. Só existe para o texto branco ler por cima:
+  /// sem texto (cartão em modo cartaz, §11/11/2026), ele apenas escurece a
+  /// arte sem motivo, e sai.
+  final bool veu;
+
+  /// Como a foto preenche o cartão. `cover` (padrão) recorta para não sobrar
+  /// borda — certo quando há texto por cima, porque a foto é só fundo. No
+  /// modo cartaz a arte **é** o conteúdo, e recortá-la corta justamente o
+  /// título que ela traz desenhado (medido em 11/11/2026: a do ENEM é 4:5 e
+  /// perderia a chamada), então ela entra inteira, com o degradê da
+  /// categoria nas sobras.
+  final BoxFit ajuste;
 
   @override
   Widget build(BuildContext context) {
@@ -530,23 +571,24 @@ class FundoComunicado extends StatelessWidget {
             Positioned.fill(
               child: Image.network(
                 foto,
-                fit: BoxFit.cover,
+                fit: ajuste,
                 excludeFromSemantics: true,
                 errorBuilder: (_, __, ___) => const SizedBox.shrink(),
               ),
             ),
-            const Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: [0, .55, 1],
-                    colors: [Color(0x40000000), Color(0xB8000000), Color(0xE6000000)],
+            if (veu)
+              const Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: [0, .55, 1],
+                      colors: [Color(0x40000000), Color(0xB8000000), Color(0xE6000000)],
+                    ),
                   ),
                 ),
               ),
-            ),
           ] else ...[
             // radial-gradient(110% 85% at 100% 0%, cor .46, 0 58%)
             Positioned.fill(
