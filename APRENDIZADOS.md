@@ -2806,6 +2806,38 @@ correta só alcança quem entrar de novo. Ao trocar o critério de uma permissã
 meça também **quando o novo critério passa a valer para quem já está dentro**:
 uma regra certa que ninguém atende ainda é uma regra que não funciona hoje.
 
+### `rsync -a` carrega o dono da SUA máquina, e derrubou a produção (11/11/2026)
+
+Publiquei um arquivo de uma linha no Operar com `rsync -av`. Cinquenta segundos
+depois a produção estava fora do ar, e o log do systemd dizia:
+
+```
+Failed at step CHDIR spawning /opt/.../python: Permission denied
+```
+
+O `-a` inclui `-o -g -p`: dono, grupo e permissão **da origem**. As pastas
+`servidor/` e `servidor/app` passaram de `root:operar` para **`501:games`** — o
+uid do meu Mac e o gid `staff`, que no Linux calhou de ser `games`. O serviço roda
+como `operar`, perdeu o acesso ao próprio diretório de trabalho e nem começou.
+
+**O que torna isso traiçoeiro:** o arquivo publicado estava perfeito — conteúdo
+certo, SHA-256 batendo com o git, a conferência do script dizendo "todos os
+arquivos batem byte a byte". O estrago não estava no conteúdo, estava no
+**metadado** que ninguém confere. E a ideia de "preservar tudo" soa cuidadosa:
+numa sincronia entre máquinas com usuários diferentes, preservar dono é
+justamente o erro.
+
+**A regra.** Publicar de uma máquina para outra vai com
+`--no-perms --no-owner --no-group`, e o dono/modo do destino se põe **explicitamente**,
+pelo padrão da árvore de lá (aqui, `root:operar`, 640 nos arquivos e 750 nas
+pastas). `rsync -a` é para cópia dentro da mesma máquina.
+
+**E a segunda lição, do mesmo minuto:** a conferência pós-reinicio do meu script
+dormia 4 segundos fixos e imprimiu `activating` com `HTTP 000`. Eu quase li como
+"ainda subindo" — era o serviço **falhando**. Espera com prazo fixo não distingue
+"demorou" de "morreu": o certo é esperar a porta responder 200, com teto, e dizer
+quantas tentativas levou.
+
 ### O teste que roda como root não testa o serviço (06/11/2026)
 
 A chave que prova ao Operar que o pedido veio do SouPMRR nasceu `600 root:root`.
