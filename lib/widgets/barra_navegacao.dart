@@ -39,6 +39,25 @@ class ItemNavegacao {
   });
 }
 
+/// A folga entre a barra solta e o fim da tela, a partir da área segura de baixo.
+///
+/// 11/11/2026: aqui havia `(base - 12).clamp(8.0, base)`, e `clamp` exige
+/// `mínimo <= máximo`. Com a área segura entre 0 e 8 — o que acontece em
+/// transição de teclado e de rotação — o mínimo (8) passava o máximo (base) e o
+/// Dart lançava `Invalid argument(s): 8.0`, derrubando o build da barra —
+/// a barra de abas deixava de desenhar. Medido no `soupm_erro`: **490 vezes,
+/// 119 militares, 121 aparelhos**, todos iPhone, nas versões 2.2.0, 2.2.1 e
+/// 2.3.0. Em toda a janela que o log guarda (desde 23/10/2026), *todo*
+/// `AP-FATAL-ArgumentError` da base é este defeito.
+///
+/// O limite de cima nunca serviu para nada: `base - 12` é sempre menor que
+/// `base`. O que importa é o piso de 8.
+double folgaDeBaixo(double base) {
+  if (base <= 0) return 16;
+  final folga = base - 12;
+  return folga < 8 ? 8 : folga;
+}
+
 class BarraNavegacao extends StatelessWidget {
   final List<ItemNavegacao> itens;
   final int indiceAtual;
@@ -184,7 +203,7 @@ class _BarraIos extends StatelessWidget {
           ];
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 0, 16, base > 0 ? (base - 12).clamp(8.0, base) : 16),
+      padding: EdgeInsets.fromLTRB(16, 0, 16, folgaDeBaixo(base)),
       child: Semantics(
         container: true,
         explicitChildNodes: true,
