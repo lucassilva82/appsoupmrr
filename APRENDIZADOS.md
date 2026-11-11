@@ -2864,3 +2864,74 @@ Duas coisas tornam este caso exemplar:
 (`sudo -u <usuário do serviço>`), não com a sua. É o §53 na camada do sistema
 operacional: o instrumento (o meu shell) tinha um privilégio que o sujeito do
 teste não tem, e por isso respondia sim quando a resposta era não.
+
+---
+
+## 56. O painel sabia há duas semanas; ninguém perguntou (11/11/2026)
+
+**O que estava acontecendo.** A barra de abas do iPhone deixava de desenhar. O
+`_BarraIos` calculava a folga de baixo assim:
+
+```dart
+base > 0 ? (base - 12).clamp(8.0, base) : 16
+```
+
+`clamp(min, max)` exige `min <= max`. Com a área segura de baixo entre 0 e 8 —
+o que o iOS produz em transição de teclado e de rotação — o mínimo (8) passava
+o máximo (`base`), e o Dart lançava `Invalid argument(s): 8.0` **dentro do
+build**. O militar via a barra de abas sumir.
+
+A medição, que estava no banco o tempo todo:
+
+| | |
+|---|---|
+| vezes | **490** |
+| militares | **119** |
+| aparelhos | **121** |
+| plataforma | **só iOS** (a barra solta de vidro é do `_BarraIos`) |
+| versões | 2.2.0, 2.2.1 e **2.3.0** — a que está nas lojas |
+| desde | 27/10/2026, e a base só guarda erro a partir de 23/10 |
+
+E o fecho que não deixa dúvida: em toda a janela de retenção, **todo**
+`AP-FATAL-ArgumentError` da base é este defeito. Não é um entre vários; é o
+único.
+
+### As três coisas que isto ensina
+
+**1. Ter log não é olhar o log.** Esta é a diferença entre o §51 e este. Lá, o
+defeito morava num relatório da Apple que a gente não lia — fonte externa,
+desculpa razoável. Aqui ele morava na **nossa** tabela, com o nosso código de
+erro, numa consulta de quatro linhas, por duas semanas e meia. O log foi
+construído na fase 0 da 2.2 justamente para isso, funcionou perfeitamente, e
+não serviu de nada, porque ninguém fez a pergunta.
+
+O plano já prevê o conserto, e ele não é "olhar mais": é o painel **empurrar**
+(PAINEL_ADMIN §5.13, alertas — "código de erro 3× acima da média"; e o
+relatório semanal do §5.16). Enquanto o número só existir para quem for buscar,
+ele vai continuar existindo para ninguém.
+
+**2. Esperar o militar avisar é esperar um canal que mede 5 em 13 dias.** Medido
+no mesmo minuto: `soupm_feedback` tem **5 mensagens no total**, de 29/10 a
+06/11, **nenhuma** citando barra, aba, menu, sumir, branco ou cinza. 119
+militares atingidos, zero relatos. E o que isso prova não é que o app esteja
+bom: prova que **o canal não é detector**. Um defeito mudo (a barra some, o
+militar fecha e abre, volta ao normal) nunca chega ao feedback.
+
+**3. O achado veio de outra pergunta.** Eu não estava procurando crash: o
+usuário pediu o status do SouPM, e a contagem de erro estava na mesma tela que
+a fila de push e a sonda. Painel que mostra coisas vizinhas faz achado por
+colisão — é o §52 item 4 ("medida que não convive com outra não se corrige")
+funcionando a favor, pela primeira vez neste arquivo.
+
+### E a regra de código, que é pequena mas vale
+
+**`clamp` cujos limites vêm de fora pode não ter resposta.** `base` é a área
+segura: quem decide é o iOS, em pleno meio de uma animação. Todo `clamp(a, b)`
+com `a` ou `b` calculados precisa que `a <= b` seja **garantido**, não provável.
+Aqui o limite de cima era inútil de qualquer jeito (`base - 12` é sempre menor
+que `base`): o que a linha queria dizer era só "no mínimo 8".
+
+A conta saiu para uma função com nome (`folgaDeBaixo`) e cinco testes. Três
+falham contra o código antigo, e o de `base = 4` reproduz, no `flutter test`, a
+mensagem exata que estava em 490 linhas do banco — que é o que separa "corrigi"
+de "acho que corrigi".
