@@ -2935,3 +2935,93 @@ A conta saiu para uma função com nome (`folgaDeBaixo`) e cinco testes. Três
 falham contra o código antigo, e o de `base = 4` reproduz, no `flutter test`, a
 mensagem exata que estava em 490 linhas do banco — que é o que separa "corrigi"
 de "acho que corrigi".
+
+---
+
+## 57. O prazo não era nosso, e por isso ninguém olhou (18/11/2026)
+
+**O que aconteceu.** O usuário pediu para incluir uma matrícula na lista que
+recebe aviso de escala. Instalei o Firebase CLI para publicar, e o deploy
+morreu numa linha:
+
+```
+Error: Runtime Node.js 20 was decommissioned on 2026-10-30.
+To deploy you must first upgrade your runtime version.
+```
+
+Conferido na tabela oficial do Google (`docs.cloud.google.com/functions/docs/runtime-support`):
+
+| Runtime | Depreciação | Descontinuação |
+|---|---|---|
+| nodejs20 | 2026-04-30 | **2026-10-30** |
+| nodejs22 | 2027-04-30 | 2027-10-31 |
+| nodejs24 | 2028-04-30 | 2028-10-31 |
+
+As três Cloud Functions de push do app (`notificarEscala`, `notificarTodos`,
+`notificarMilitar`) estão em `nodejs20`. **Nenhuma pode ser republicada desde
+30/10** — e ninguém notou por 19 dias, porque elas continuam funcionando: o
+SIGE chamou a `notificarEscala` seis vezes só no dia em que isto foi escrito.
+
+**Por que passou em branco.** Não houve erro, não houve queda, não houve
+linha em log nenhum nosso. Um prazo de descontinuação não acusa nada: ele
+simplesmente **retira uma capacidade futura**, e o sistema de hoje não muda de
+comportamento. Os dois avisos que existiram — a depreciação em 30/04 e a
+descontinuação em 30/10 — eram do Google, no painel dele e no e-mail da conta
+`dtipmrr.developer@gmail.com`, não no nosso.
+
+É o §16 outra vez ("ler os avisos de depreciação, não só os erros"), com uma
+diferença que vale guardar: lá o aviso saía **na nossa saída de build**, a cada
+`flutter run`. Aqui não sai em lugar nenhum que a gente abra. Depender de ler
+o aviso só funciona quando o aviso passa na nossa frente.
+
+**O risco que fica.** A política do Google é que, depois da descontinuação,
+não se cria nem se atualiza, e workloads existentes **podem ser
+desabilitados** — sem data anunciada. Ou seja: hoje funciona, amanhã pode não
+funcionar, e no dia em que parar **não dá para corrigir rápido**, porque
+corrigir exige justamente o deploy que está bloqueado. O conserto tem de ser
+feito antes de precisar dele.
+
+**O que a mesma medição mostrou, e é a saída.** A nossa API já manda push pelo
+FCM direto, e isso não é projeto: é produção.
+
+| | |
+|---|---|
+| `soupm_config` `notificacoes` | `envio_fcm: true` |
+| conta de serviço | `~/private/soupm_fcm.json`, desde 30/10/2026 |
+| cron | instalado (linha ativa) |
+| pedidos registrados | **2.409 aceitos**, 465 recusados (módulo `operar`) |
+| `push_modulo.php` | endpoint para outro sistema pedir, com chave por módulo, filtro e registro de cada pedido |
+| `soupm_push_modulo` | o **SIGE já está cadastrado**, com limites, só `ativo = false` |
+
+Então o caminho não é ressuscitar o runtime: é ligar o SIGE no caminho que já
+existe (PAINEL_ADMIN §4.1b). Decisão do usuário em 18/11/2026: **migrar para a
+nossa API** depois da apresentação dele. Subir o runtime para `nodejs24` fica
+como conserto de emergência, se o Google desligar antes.
+
+**As regras.**
+
+- **Serviço de terceiro tem calendário, e calendário não dispara alarme.** Todo
+  runtime, SDK ou API hospedada que o projeto usa entra numa lista com a data
+  de descontinuação, revisada de tempos em tempos. Hoje são as Cloud Functions
+  (`nodejs`), o Firebase (Firestore e FCM), o `targetSdk` da Play (SETUP §2) e
+  o iOS mínimo.
+- **"Funciona" e "pode ser consertado" são duas perguntas.** Um sistema pode
+  estar de pé e já ter perdido a capacidade de receber correção. A segunda não
+  aparece em monitoramento nenhum — só tentando publicar. Vale tentar um deploy
+  de nada, de vez em quando, só para provar que o caminho de correção ainda
+  existe.
+- **Descobrir por acidente é sorte, não método.** Este achado veio de um pedido
+  de cadastrar uma matrícula. Se o pedido não tivesse vindo, a próxima
+  descoberta seria no dia em que o push parasse.
+
+**Detalhe de operação.** O `firebase functions:log` **não devolve o texto das
+mensagens** da função (só os eventos de infraestrutura: "Starting new
+instance", "STARTUP TCP probe"). Procurar conteúdo ali é perder tempo — e pior,
+um `grep` por matrícula casa no **timestamp**, que também é número, e devolve
+linhas vazias que parecem achados. O texto está no Cloud Logging, no console.
+
+**Três nomes de coluna que eu adivinhei no mesmo dia**, cada um custando uma
+ida ao banco: `vw_buscar_policial.posto_graduacao` (é `post_grad_sigla`),
+`soupm_push_pedido.criado_em` (é `recebido_em`) e, antes, o nome na mesma view
+(é `poli_mili_nome`). Medir as colunas primeiro —
+`information_schema.columns` — é uma consulta e resolve as três.
