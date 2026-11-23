@@ -5,7 +5,6 @@ class AppRoutes {
   static const AUTH_OR_HOME = '/';
   static const PAGE_MILITAR = '/page-militar';
   static const CONFIGURACOES = '/configuracoes';
-  static const PLANODEFERIAS = '/planodeferias';
   static const PLANTAO = '/plantao';
   static const ESCALAS = '/escalas';
   static const ESCALA_DETALHE = '/escala-detalhe';

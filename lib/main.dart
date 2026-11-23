@@ -68,7 +68,6 @@ import 'package:projetonovo/pages/mapa_da_forca.dart';
 import 'package:projetonovo/pages/notifications_page.dart';
 import 'package:projetonovo/pages/page_contracheque.dart';
 import 'package:projetonovo/pages/page_militar.dart';
-import 'package:projetonovo/pages/plano_de_ferias.dart';
 import 'package:projetonovo/pages/plantao_page.dart';
 import 'package:projetonovo/pages/escala_page.dart';
 import 'package:projetonovo/pages/escala_detalhe_page.dart';
@@ -937,7 +936,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             AppRoutes.BIOMETRIA: (_) => const BiometriaPage(),
             AppRoutes.NOTIF_PREFERENCIAS: (_) => const NotificacoesPreferenciasPage(),
             AppRoutes.APARENCIA: (_) => const AparenciaPage(),
-            AppRoutes.PLANODEFERIAS: (_) => const PlanoDeFerias(),
             AppRoutes.HOME_PAGE: (_) => MainShell(),
             AppRoutes.PLANTAO: (_) => PlantaoPage(),
             AppRoutes.ESCALAS: (_) => const EscalasPage(),
