@@ -11,7 +11,7 @@ import '../core/design/arte_cartao.dart';
 import '../models/auth_model.dart';
 import '../models/inatividade_model.dart';
 import '../utils/app_theme.dart';
-import '../utils/store.dart';
+import '../data/store.dart';
 import '../widgets/barra_vidro.dart';
 import '../widgets/cartao_painel.dart';
 import '../widgets/vidro.dart';

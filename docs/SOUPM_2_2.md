@@ -104,17 +104,26 @@ bastaram as diretrizes acima e o DESIGN.md, que vale mais que qualquer skill.
     (`Contracheque`, `CONTRACHEQUE_PAGE`) e o detalhe de um mês
     (`PageContracheque`, `PAGE_VIEW_CONTRACHEQUE`), as duas vivas e
     complementares. Não mexer.
-  - `utils/store.dart` e `data/store.dart` **são duplicata de verdade, e a pior
-    das quatro**: a mesma classe `Store`, com APIs **incompatíveis** —
-    `getString` devolve `String?` num e `String` no outro, `saveString` devolve
-    `void` num e `bool` no outro, e só o `data/` tem `remove`. As duas estão em
-    uso: `data/store.dart` em 8 arquivos, `utils/store.dart` só no
-    `calculo_inatividade_page.dart`. Trocar um import pelo outro não dá erro de
-    compilação em todo caso: dá comportamento diferente. E o do `utils/`
-    imprime o valor guardado no log
-    (`print('[DEBUG] Store.saveString($key) salvando: $value')`), sendo que o
-    único cliente dele guarda data de nascimento, data de incorporação, sexo e
-    posto — contra a regra "sem dado sensível no log" (§9.2).
+  - `utils/store.dart` e `data/store.dart` era a duplicata **pior das quatro**,
+    e **o `utils/` foi apagado**: a mesma classe `Store` nos dois, com APIs
+    **incompatíveis** — `getString` devolvia `String?` num e `String` no outro,
+    `saveString` devolvia `void` num e `bool` no outro, e só o `data/` tem
+    `remove`. Trocar um import pelo outro não dava erro de compilação em todo
+    caso: dava comportamento diferente. O que obrigou a mexer agora não foi a
+    arrumação: o do `utils/` imprimia no log o valor que guardava
+    (`print('[DEBUG] Store.saveString($key) salvando: $value')`), e o único
+    cliente dele, o Cálculo de Inatividade, guarda data de nascimento, data de
+    incorporação, sexo e posto — contra a regra "sem dado sensível no log"
+    (§9.2). Esse cliente passou para o `data/Store`; o formato gravado é o
+    mesmo (`jsonEncode` na mesma chave), então quem já tinha um cálculo salvo
+    no aparelho não perdeu nada, e `test/data/store_test.dart` prova isso
+    lendo um valor gravado como o Store antigo gravava.
+    **Ficou uma dívida dentro do `data/Store`:** o `getMap` tem
+    `catch (_) { return {}; }`, que é o §27 e o §37 em miniatura — "não
+    consegui ler" devolvido como "não existe". Aqui o risco é baixo (é o
+    rascunho de um formulário, e voltar aos valores do SIGRH é o certo), mas
+    são 9 clientes lendo por ele, e um deles um dia vai guardar algo em que o
+    silêncio custa. O conserto é registrar a falha antes de devolver vazio.
   Pastas legadas: `components/`, `data/`, `view/`, `animation/`.
 - **Sem cliente HTTP central.** Três classes (`api_services.dart`,
   `dados_sql.dart`, `escala_service.dart`) e chamadas `http.get` soltas em
