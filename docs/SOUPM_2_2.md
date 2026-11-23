@@ -82,10 +82,40 @@ bastaram as diretrizes acima e o DESIGN.md, que vale mais que qualquer skill.
   arquivo. As maiores: `calculo_inatividade_page.dart` (2.025 linhas),
   `escala_page.dart` (1.933), `page_contracheque.dart` (1.784),
   `certidoes_page.dart` (1.456).
-- **Duplicatas:** `plano_de_ferias.dart` e `planodeferias.dart`,
-  `pdf_view_page.dart` e `Pdf_Viewer_Page.dart`, `contracheque.dart` e
-  `page_contracheque.dart`, `utils/store.dart` e `data/store.dart`. Pastas
-  legadas: `components/`, `data/`, `view/`, `animation/`.
+- **Duplicatas.** Os quatro pares desta lista foram medidos um por um em
+  23/11/2026, e **só três eram duplicata**; dois já saíram:
+  - `plano_de_ferias.dart` (`PlanoDeFerias`, com o título
+    `TESTANDOdsfsdfdsf`) e `Pdf_Viewer_Page.dart` (`PdfViewerPage`, sobre o
+    pacote `pdfx`) **foram apagados**: nenhum código navegava para eles. O
+    primeiro era o pior dos dois, porque estava **registrado numa rota**
+    (`/planodeferias`), e o app abre rota por nome vinda do `app_config` e do
+    push — uma rota cadastrada por engano no painel levaria o militar à tela de
+    teste. Saíram com eles as constantes `PLANODEFERIAS` e `PAGE_PDF_VIEW`, e
+    esta segunda não estava em roteador nenhum: nome de rota órfão, que cai na
+    rota desconhecida ("Atualize o app"). A tela boa do Plano de férias é
+    `planodeferias.dart` (`PlanoDeFeriasPage`, `/plano-de-ferias-page`), e é a
+    que o `soupm_menu_item` aponta em `rh.ferias`. **Pendente:** com o
+    `Pdf_Viewer_Page.dart` fora, `pdfx: ^2.6.0` ficou sem nenhum uso no
+    `pubspec.yaml` (o visualizador vivo usa `flutter_pdfview`); tirar a
+    dependência mexe no `pubspec.lock` e no `Podfile.lock`, então espera uma
+    janela com teste de build.
+  - `contracheque.dart` e `page_contracheque.dart` **não são duplicatas**, e a
+    linha antiga deduziu isso pelo nome do arquivo: são a lista de meses
+    (`Contracheque`, `CONTRACHEQUE_PAGE`) e o detalhe de um mês
+    (`PageContracheque`, `PAGE_VIEW_CONTRACHEQUE`), as duas vivas e
+    complementares. Não mexer.
+  - `utils/store.dart` e `data/store.dart` **são duplicata de verdade, e a pior
+    das quatro**: a mesma classe `Store`, com APIs **incompatíveis** —
+    `getString` devolve `String?` num e `String` no outro, `saveString` devolve
+    `void` num e `bool` no outro, e só o `data/` tem `remove`. As duas estão em
+    uso: `data/store.dart` em 8 arquivos, `utils/store.dart` só no
+    `calculo_inatividade_page.dart`. Trocar um import pelo outro não dá erro de
+    compilação em todo caso: dá comportamento diferente. E o do `utils/`
+    imprime o valor guardado no log
+    (`print('[DEBUG] Store.saveString($key) salvando: $value')`), sendo que o
+    único cliente dele guarda data de nascimento, data de incorporação, sexo e
+    posto — contra a regra "sem dado sensível no log" (§9.2).
+  Pastas legadas: `components/`, `data/`, `view/`, `animation/`.
 - **Sem cliente HTTP central.** Três classes (`api_services.dart`,
   `dados_sql.dart`, `escala_service.dart`) e chamadas `http.get` soltas em
   mais de dez telas. Timeouts de 4 a 30 s, vários sem nenhum. Algumas passam

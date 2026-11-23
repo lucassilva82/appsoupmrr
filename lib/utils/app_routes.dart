@@ -15,7 +15,6 @@ class AppRoutes {
   static const AJUDA_PAGE = '/ajuda-page';
   static const CONTRACHEQUE_PAGE = '/contracheque-page';
   static const CONFIGURA_PLANTAO = '/configura-plantao';
-  static const PAGE_PDF_VIEW = '/page-pdf-view';
   static const ENDERECO_PAGE = '/endereco-page';
   static const PAGE_VIEW_CONTRACHEQUE = '/page-view-contracheque';
   static const DECLARACOES_PAGE = "/declaracoes-page";
