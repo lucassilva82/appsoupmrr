@@ -180,14 +180,17 @@ bastaram as diretrizes acima e o DESIGN.md, que vale mais que qualquer skill.
     chega ao `_pasta()` (`getApplicationSupportDirectory`), que não existe no
     `flutter test`; cobri-lo pede injetar a pasta no `CertidaoService`, como o
     `DocumentosLocais(raiz: ...)` já faz.
-    **Falta um pedaço, e está marcado no código:** na **central de
-    documentos** (`documentos_page.dart`), com o índice ilegível a seção de
-    certidões fica vazia em silêncio — a falha aparece no painel como
-    `ST-LEITURA`, mas o militar não é avisado nessa tela. O padrão a seguir é
-    o das pendências (§4.3): uma linha "Não foi possível conferir", com o
-    código, em vez de nenhuma. Não entrou agora porque a página injeta o
-    carregador nos testes (`carregar:`) e mudar a assinatura dele é outra
-    fatia.
+    **A central de documentos fechou no mesmo dia**, e sem mexer na
+    assinatura do carregador que os testes injetam: a falha entra como um
+    **item da lista** (`tipo: 'falha'`), que é o padrão das pendências
+    (§4.3) — "Não foi possível conferir suas certidões", com `CT-INDICE`, no
+    topo. Ela não abre nada (sem seta e sem toque, para não prometer tela que
+    não existe) e **não é filtrada pela busca**: se saísse, a tela diria
+    "Nenhum documento com …" justamente com as certidões ilegíveis, que é a
+    afirmação sem leitura que a linha existe para evitar. O evento
+    `documentos.ver` passou a mandar `falhas`, e o `total` conta só documentos
+    de verdade. Testado em `documentos_test.dart`, inclusive em widget (a
+    linha aparece, com o ícone, sem seta, e com `onTap` nulo).
   Pastas legadas: `components/`, `data/`, `view/`, `animation/`.
 - **Sem cliente HTTP central.** Três classes (`api_services.dart`,
   `dados_sql.dart`, `escala_service.dart`) e chamadas `http.get` soltas em

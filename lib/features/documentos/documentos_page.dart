@@ -34,15 +34,25 @@ String _semAcento(String s) {
   return b.toString().toLowerCase();
 }
 
-/// Um item da Central: certidão ou contracheque, com o que a tela precisa.
+/// Um item da Central: certidão, contracheque, ou a **linha de falha** de uma
+/// origem que não respondeu.
+///
+/// A falha é um item como os outros, de propósito: é o padrão das pendências
+/// (SOUPM_2_2 §4.3) e a regra do §27 e do §37 — origem que não respondeu
+/// aparece dizendo isso, com o código, em vez de simplesmente não aparecer.
+/// Uma seção que some em silêncio afirma "você não tem nenhum" sem ninguém
+/// ter lido.
 class ItemDocumento {
   const ItemDocumento({required this.titulo, required this.detalhe, required this.data, required this.tipo, this.certidao, this.contracheque});
   final String titulo;
   final String detalhe;
   final DateTime data;
-  final String tipo; // certidao | contracheque
+  final String tipo; // certidao | contracheque | falha
   final CertidaoGuardada? certidao;
   final ContrachequeGuardado? contracheque;
+
+  /// Linha de falha: não abre, não compartilha, não conta como documento.
+  bool get ehFalha => tipo == 'falha';
 }
 
 /// Filtra pelo texto digitado, sem acento e sem caixa, em qualquer palavra.
@@ -51,7 +61,10 @@ List<ItemDocumento> filtrarDocumentos(List<ItemDocumento> itens, String busca) {
   if (termos.isEmpty) return itens;
   return [
     for (final i in itens)
-      if (termos.every(_semAcento('${i.titulo} ${i.detalhe}').contains)) i,
+      // A linha de falha nunca é filtrada: se ela saísse na busca, a tela
+      // diria "Nenhum documento com ..." enquanto as certidões estão
+      // ilegíveis — a mesma afirmação sem leitura que ela existe para evitar.
+      if (i.ehFalha || termos.every(_semAcento('${i.titulo} ${i.detalhe}').contains)) i,
   ];
 }
 
@@ -81,14 +94,20 @@ class _DocumentosPageState extends State<DocumentosPage> {
 
   static Future<List<ItemDocumento>> _padrao(String matricula) async {
     final guardadas = await CertidaoService.guardadas(matricula);
-    // Falta aqui o que a tela de Certidões já faz: com o índice ilegível
-    // (`indiceLido` falso) a seção de certidões fica vazia em silêncio. A
-    // falha aparece no painel como `ST-LEITURA`, mas o militar não é avisado
-    // nesta tela. O padrão a seguir é o das pendências (SOUPM_2_2 §4.3): uma
-    // linha "Não foi possível conferir", com o código, em vez de nenhuma.
     final certidoes = guardadas.lista;
     final cc = await DocumentosLocais().contracheques(matricula);
     return [
+      // Índice ilegível: a lista de certidões chega vazia, e calar isso aqui
+      // seria dizer que o militar não tem nenhuma (§27, §37). A falha vem
+      // como linha, no topo, do jeito que as pendências fazem (§4.3).
+      if (!guardadas.indiceLido)
+        ItemDocumento(
+          titulo: 'Não foi possível conferir suas certidões',
+          detalhe: 'Elas continuam válidas e o PDF está no e-mail da emissão. '
+              'Nada foi apagado · CT-INDICE',
+          data: DateTime.now(),
+          tipo: 'falha',
+        ),
       for (final c in certidoes)
         ItemDocumento(
           titulo: c.tituloCurto ?? c.titulo,
@@ -105,11 +124,16 @@ class _DocumentosPageState extends State<DocumentosPage> {
 
   Future<void> _carregar() async {
     final itens = await (widget.carregar ?? _padrao)(_matricula);
-    registrar('documentos.ver', chave: _chave, dados: {'total': itens.length});
+    final falhas = itens.where((i) => i.ehFalha).length;
+    registrar('documentos.ver', chave: _chave, dados: {
+      'total': itens.length - falhas,
+      if (falhas > 0) 'falhas': falhas,
+    });
     if (mounted) setState(() => _itens = itens);
   }
 
   Future<void> _abrir(ItemDocumento i) async {
+    if (i.ehFalha) return;
     registrar('documentos.abrir', chave: _chave, dados: {'tipo': i.tipo});
     if (i.certidao != null) {
       await Navigator.of(context).push(MaterialPageRoute(
@@ -211,12 +235,22 @@ class _DocumentosPageState extends State<DocumentosPage> {
                             if (n > 0) const Divider(height: 1, indent: 56),
                             ListTile(
                               minVerticalPadding: 10,
-                              leading: Icon(i.tipo == 'certidao' ? Icons.verified_outlined : Icons.request_quote_outlined,
-                                  size: AppIconSize.md, color: theme.colorScheme.primary),
+                              leading: Icon(
+                                  i.ehFalha
+                                      ? Icons.folder_off_rounded
+                                      : i.tipo == 'certidao'
+                                          ? Icons.verified_outlined
+                                          : Icons.request_quote_outlined,
+                                  size: AppIconSize.md,
+                                  color: i.ehFalha ? theme.colorScheme.error : theme.colorScheme.primary),
                               title: Text(i.titulo, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
                               subtitle: Text(i.detalhe, style: theme.textTheme.bodySmall),
-                              onTap: () => _abrir(i),
-                              trailing: i.contracheque == null
+                              // Linha de falha não abre nada: sem toque e sem
+                              // seta, para não prometer uma tela que não existe.
+                              onTap: i.ehFalha ? null : () => _abrir(i),
+                              trailing: i.ehFalha
+                                  ? null
+                                  : i.contracheque == null
                                   ? const Icon(Icons.chevron_right_rounded, size: AppIconSize.sm)
                                   : PopupMenuButton<String>(
                                       tooltip: 'Mais ações',

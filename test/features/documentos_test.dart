@@ -1,8 +1,11 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:projetonovo/features/documentos/documentos_locais.dart';
 import 'package:projetonovo/features/documentos/documentos_page.dart';
+import 'package:projetonovo/models/auth_model.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   test('busca sem acento, em qualquer palavra', () {
@@ -30,5 +33,42 @@ void main() {
     await docs.remover('123', lista.first.id);
     expect((await docs.contracheques('123')).length, DocumentosLocais.limite - 1);
     expect(await docs.contracheques('outra'), isEmpty);
+  });
+
+  // Origem que não respondeu aparece dizendo isso, com o código, em vez de
+  // simplesmente não aparecer (SOUPM_2_2 §4.3; APRENDIZADOS §27 e §37).
+  final falha = ItemDocumento(
+    titulo: 'Não foi possível conferir suas certidões',
+    detalhe: 'Nada foi apagado · CT-INDICE',
+    data: DateTime(2026, 11, 24),
+    tipo: 'falha',
+  );
+
+  test('a linha de falha não é filtrada pela busca', () {
+    final itens = [
+      falha,
+      ItemDocumento(titulo: 'Contracheque Março/2026', detalhe: 'Contracheque', data: DateTime(2026, 3), tipo: 'contracheque'),
+    ];
+    // Busca que não casa com o texto da falha: ela fica, senão a tela diria
+    // "Nenhum documento com ..." com as certidões ilegíveis.
+    final r = filtrarDocumentos(itens, 'marco');
+    expect(r.map((i) => i.tipo), ['falha', 'contracheque']);
+    expect(filtrarDocumentos(itens, 'nao existe nada assim').single.ehFalha, isTrue);
+  });
+
+  testWidgets('a linha de falha não abre nada: sem seta e sem toque', (t) async {
+    await t.pumpWidget(ChangeNotifierProvider<Auth>.value(
+      value: Auth(),
+      child: MaterialApp(
+        home: DocumentosPage(carregar: (_) async => [falha]),
+      ),
+    ));
+    await t.pumpAndSettle();
+
+    expect(find.text('Não foi possível conferir suas certidões'), findsOneWidget);
+    expect(find.byIcon(Icons.folder_off_rounded), findsOneWidget);
+    // Sem seta: prometer uma tela que não existe é pior que a falha.
+    expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
+    expect(t.widget<ListTile>(find.byType(ListTile)).onTap, isNull);
   });
 }
