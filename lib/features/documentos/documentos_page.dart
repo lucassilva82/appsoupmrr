@@ -80,7 +80,13 @@ class _DocumentosPageState extends State<DocumentosPage> {
   }
 
   static Future<List<ItemDocumento>> _padrao(String matricula) async {
-    final certidoes = await CertidaoService.guardadas(matricula);
+    final guardadas = await CertidaoService.guardadas(matricula);
+    // Falta aqui o que a tela de Certidões já faz: com o índice ilegível
+    // (`indiceLido` falso) a seção de certidões fica vazia em silêncio. A
+    // falha aparece no painel como `ST-LEITURA`, mas o militar não é avisado
+    // nesta tela. O padrão a seguir é o das pendências (SOUPM_2_2 §4.3): uma
+    // linha "Não foi possível conferir", com o código, em vez de nenhuma.
+    final certidoes = guardadas.lista;
     final cc = await DocumentosLocais().contracheques(matricula);
     return [
       for (final c in certidoes)

@@ -226,6 +226,16 @@ class EnvioEmailCertidao {
 }
 
 /// Resultado da emissão: a certidão guardada e o envio por e-mail.
+/// O que o aparelho tem guardado: a lista **e se o índice foi lido**.
+///
+/// Os dois andam juntos de propósito. Com o índice ilegível, a lista volta
+/// vazia; regravar essa lista vazia apaga o registro de todas as certidões,
+/// que é como elas sumiram do aparelho em 2026 (APRENDIZADOS §26). Então
+/// quem regrava o índice — emitir, remover, sincronizar, limpar as vencidas —
+/// confere o `indiceLido` antes, e a tela usa o mesmo campo para dizer "não
+/// foi possível ler" em vez de "você não tem nenhuma" (§27 e §37).
+typedef IndiceCertidoes = ({List<CertidaoGuardada> lista, bool indiceLido});
+
 class EmissaoCertidao {
   final CertidaoGuardada certidao;
   final EnvioEmailCertidao email;
@@ -356,7 +366,18 @@ class CertidaoService {
     );
 
     final Future<CertidaoGuardada> gravar = _emFila(() async {
-      final lista = await _lerGuardadas(matricula);
+      final guardado = await _lerIndice(matricula);
+      if (!guardado.indiceLido) {
+        // Regravar o índice aqui trocaria uma falha de leitura pela perda do
+        // registro das outras certidões — e a falha pode ser transitória
+        // (SharedPreferences), com o índice intacto no disco. A certidão
+        // existe no servidor e já foi para o e-mail.
+        throw CertidaoErro(
+            'A certidão foi emitida, mas não foi possível ler as certidões '
+            'guardadas neste aparelho, então ela não entrou na sua lista. '
+            '${envio.enviado ? 'A cópia enviada para ${envio.emailMascarado ?? 'o seu e-mail'} é válida.' : 'Abra Certidões de novo em alguns instantes.'}');
+      }
+      final lista = guardado.lista;
       final arquivo =
           File('${(await _pasta(matricula)).path}/${certidao.codigo}.pdf');
       await arquivo.writeAsBytes(bytes, flush: true);
@@ -374,6 +395,9 @@ class CertidaoService {
     final CertidaoGuardada guardada;
     try {
       guardada = await gravar;
+    } on CertidaoErro {
+      // Já diz o que aconteceu (ex.: índice ilegível): não troca a mensagem.
+      rethrow;
     } catch (e) {
       // Ex.: aparelho sem espaço. No servidor a certidão já existe.
       debugPrint('[CERTIDAO] falha ao salvar: $e');
@@ -486,16 +510,31 @@ class CertidaoService {
 
   /// Certidões ainda válidas, mais recentes primeiro. Remove as vencidas e
   /// as que perderam o arquivo.
-  static Future<List<CertidaoGuardada>> guardadas(String matricula) =>
-      _emFila(() => _lerGuardadas(matricula));
+  ///
+  /// Devolve também se o índice **foi lido**: a tela precisa disso para não
+  /// dizer "nenhuma certidão guardada" quando o que houve foi uma falha de
+  /// leitura (APRENDIZADOS §27 e §37).
+  static Future<IndiceCertidoes> guardadas(String matricula) =>
+      _emFila(() => _lerIndice(matricula));
 
-  static Future<List<CertidaoGuardada>> _lerGuardadas(String matricula) async {
+  static Future<IndiceCertidoes> _lerIndice(String matricula) async {
     if (modoVitrine) {
-      return [
-        for (final c in certidoesVitrine()) CertidaoGuardada.fromJson(c, '')
-      ];
+      return (
+        lista: [
+          for (final c in certidoesVitrine()) CertidaoGuardada.fromJson(c, '')
+        ],
+        indiceLido: true,
+      );
     }
-    final indice = await Store.getMap(_chaveIndice(matricula));
+    // `lerMapa`, não `getMap`: com `{}` para a chave ilegível, a lista volta
+    // vazia e quem regrava o índice a partir dela apaga o registro de todas
+    // as certidões (APRENDIZADOS §26).
+    final indice = await Store.lerMapa(_chaveIndice(matricula));
+    if (indice == null) {
+      // O ST-LEITURA já foi para o log. Daqui não sai regravação nem
+      // exclusão de arquivo.
+      return (lista: const <CertidaoGuardada>[], indiceLido: false);
+    }
     final itens = (indice['itens'] as List?) ?? const [];
     final pasta = (await _pasta(matricula)).path;
 
@@ -540,7 +579,7 @@ class CertidaoService {
 
     if (mudou) await _salvarIndice(matricula, ultimas);
 
-    return ultimas;
+    return (lista: ultimas, indiceLido: true);
   }
 
   static Future<void> _salvarIndice(
@@ -554,7 +593,11 @@ class CertidaoService {
   static Future<List<({CertidaoGuardada certidao, String? motivo})>>
       sincronizar(String matricula, PainelCertidoes painel) =>
           _emFila(() async {
-            final lista = await _lerGuardadas(matricula);
+            final guardado = await _lerIndice(matricula);
+            // Índice ilegível: não regrava (zeraria o registro de todas) e
+            // não há como saber o que foi revogado.
+            if (!guardado.indiceLido) return const [];
+            final lista = guardado.lista;
             final saem = lista
                 .where((c) => painel.revogadas.containsKey(c.codigo))
                 .toList();
@@ -575,12 +618,19 @@ class CertidaoService {
 
   /// Tira uma certidão do aparelho (lista e arquivo). No servidor ela
   /// continua registrada e válida para quem já a recebeu.
-  static Future<List<CertidaoGuardada>> remover(
+  static Future<IndiceCertidoes> remover(
           String matricula, String codigo) =>
       _emFila(() async {
-        final lista = await _lerGuardadas(matricula);
+        final guardado = await _lerIndice(matricula);
+        if (!guardado.indiceLido) {
+          // Tirar **uma** certidão não pode apagar o registro das outras:
+          // sem o índice lido, `resto` sairia vazio e o `_salvarIndice`
+          // gravaria `{itens: []}` (APRENDIZADOS §26). Nada sai do aparelho,
+          // e a tela avisa pelo `indiceLido`.
+          return guardado;
+        }
         final resto = <CertidaoGuardada>[];
-        for (final c in lista) {
+        for (final c in guardado.lista) {
           if (c.codigo == codigo) {
             final arquivo = File(c.caminho);
             if (await arquivo.exists()) await arquivo.delete();
@@ -589,7 +639,7 @@ class CertidaoService {
           }
         }
         await _salvarIndice(matricula, resto);
-        return resto;
+        return (lista: resto, indiceLido: true);
       });
 
   /// Apaga todas as certidões do aparelho (logout).

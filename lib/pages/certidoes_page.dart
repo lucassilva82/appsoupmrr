@@ -103,6 +103,11 @@ class CertidoesPage extends StatefulWidget {
 class _CertidoesPageState extends State<CertidoesPage> {
   PainelCertidoes? _painel;
   List<CertidaoGuardada> _guardadas = const [];
+
+  /// Falso quando o índice do aparelho não pôde ser lido. A lista vem vazia
+  /// nesse caso, e dizer "você não tem nenhuma certidão" seria afirmar o que
+  /// ninguém leu (APRENDIZADOS §27 e §37).
+  bool _indiceLido = true;
   bool _carregando = true;
   String? _erro;
 
@@ -128,7 +133,10 @@ class _CertidoesPageState extends State<CertidoesPage> {
 
     final guardadas = await CertidaoService.guardadas(_matricula);
     if (!mounted) return;
-    setState(() => _guardadas = guardadas);
+    setState(() {
+      _guardadas = guardadas.lista;
+      _indiceLido = guardadas.indiceLido;
+    });
 
     try {
       final painel = await CertidaoService.painel(
@@ -142,7 +150,10 @@ class _CertidoesPageState extends State<CertidoesPage> {
       if (!mounted) return;
       setState(() {
         _painel = painel;
-        if (atuais != null) _guardadas = atuais;
+        if (atuais != null) {
+          _guardadas = atuais.lista;
+          _indiceLido = atuais.indiceLido;
+        }
       });
       if (revogadas.isNotEmpty) {
         final r = revogadas.first;
@@ -202,7 +213,8 @@ class _CertidoesPageState extends State<CertidoesPage> {
     if (!mounted) return;
     HapticFeedback.mediumImpact();
     setState(() {
-      _guardadas = guardadas;
+      _guardadas = guardadas.lista;
+      _indiceLido = guardadas.indiceLido;
       _recente = emitida;
     });
   }
@@ -223,7 +235,8 @@ class _CertidoesPageState extends State<CertidoesPage> {
     final guardadas = await CertidaoService.guardadas(_matricula);
     if (!mounted) return;
     setState(() {
-      _guardadas = guardadas;
+      _guardadas = guardadas.lista;
+      _indiceLido = guardadas.indiceLido;
       if (_recente?.certidao.codigo == c.codigo) _recente = null;
     });
     avisoSucesso(
@@ -335,6 +348,31 @@ class _CertidoesPageState extends State<CertidoesPage> {
 
   List<Widget> _listaGuardadas() {
     final theme = Theme.of(context);
+
+    // "Não consegui ler" não é "você não tem nenhuma": com o índice
+    // ilegível, a lista chega vazia e o texto de lista vazia afirmaria o que
+    // ninguém leu (APRENDIZADOS §27 e §37). As certidões continuam válidas e
+    // o PDF está no e-mail que foi enviado.
+    if (!_indiceLido) {
+      return [
+        _Aviso(
+          cor: theme.colorScheme.error,
+          icone: Icons.folder_off_rounded,
+          texto: 'Não foi possível ler as certidões guardadas neste '
+              'aparelho. Elas continuam válidas, e o PDF de cada uma está no '
+              'e-mail que foi enviado na emissão. Nada foi apagado · '
+              'CT-INDICE',
+        ),
+        const SizedBox(height: 10),
+        Align(
+          child: OutlinedButton.icon(
+            onPressed: _carregar,
+            icon: const Icon(Icons.refresh_rounded, size: AppIconSize.sm),
+            label: const Text('Tentar de novo'),
+          ),
+        ),
+      ];
+    }
 
     if (_guardadas.isEmpty) {
       return [
@@ -1206,9 +1244,22 @@ class _CertidaoVisualizarPageState extends State<CertidaoVisualizarPage> {
     );
     if (!ok || !mounted) return;
     final matricula = Provider.of<Auth>(context, listen: false).matricula ?? '';
-    await CertidaoService.remover(matricula, c.codigo);
+    final resto = await CertidaoService.remover(matricula, c.codigo);
+    if (!mounted) return;
+    if (!resto.indiceLido) {
+      // Nada foi removido: sem o índice lido o serviço recusa a regravação,
+      // que zeraria o registro de **todas** as certidões por causa de uma
+      // remoção (APRENDIZADOS §26). Dizer "removida" aqui seria mentir.
+      avisoErro(
+        context,
+        'Não foi possível remover',
+        texto: 'O app não conseguiu ler as certidões guardadas neste '
+            'aparelho, e nada foi apagado. Tente de novo (CT-INDICE).',
+      );
+      return;
+    }
     HapticFeedback.mediumImpact();
-    if (mounted) Navigator.of(context).pop(true);
+    Navigator.of(context).pop(true);
   }
 
   // Origem do popover exigida pelo iPad (UIActivityViewController).

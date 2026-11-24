@@ -153,18 +153,41 @@ bastaram as diretrizes acima e o DESIGN.md, que vale mais que qualquer skill.
     Em `test/data/store_test.dart`, o teste `ler-modificar-gravar: getMap
     apaga a sessão, lerMapa não` **executa o defeito** antes de provar o
     conserto.
-    **Pendente, medido no mesmo dia:** o índice das certidões
-    (`certidao_service.dart`) é regravado em **quatro** lugares — emissão
-    (`:366`), `_lerGuardadas` (`:542`), `sincronizar` (`:573`) e `remover`
-    (`:596`) — todos a partir da lista lida. Com o índice ilegível, `remover`
-    grava `{itens: []}` e o militar que tira **uma** certidão perde a lista
-    inteira: é o §26 pela porta de trás. Hoje o comportamento é o mesmo de
-    antes (o `getMap` segue tolerante), então nada piorou; o conserto é
-    `_lerIndice` devolver se o índice foi lido e os quatro recusarem a
-    regravação quando não foi. Não entrou junto porque `guardadas()` e
-    `remover()` são chamados **fora** de try/catch na `certidoes_page`
-    (`:129`, `:141`, `:198`, `:223`, `:1209`): lançar dali viraria
-    `AP-FATAL`, então o conserto mexe também no estado da tela.
+    **O índice das certidões foi consertado junto, em 24/11/2026.** Ele era
+    regravado em **quatro** lugares a partir da lista lida — emissão,
+    `_lerGuardadas`, `sincronizar` e `remover` — e com o índice ilegível a
+    lista chegava vazia. O pior era o `remover`: gravava `{itens: []}`, então
+    o militar que tirava **uma** certidão perdia o registro de **todas**. É o
+    §26 pela porta de trás, e não era hipótese de JSON corrompido: o `catch`
+    engolia também falha do `SharedPreferences`, que é transitória e acontece
+    com o índice intacto no disco.
+    `CertidaoService.guardadas` e `remover` passaram a devolver
+    `IndiceCertidoes` — `({lista, indiceLido})` —, e **o tipo obriga quem
+    chama a decidir**: os quatro sítios recusam a regravação quando
+    `indiceLido` é falso, e nada sai do aparelho. A emissão lança
+    `CertidaoErro` com a mensagem certa (o `catch` dela ganhou um
+    `on CertidaoErro { rethrow; }`, senão a mensagem virava "verifique o
+    espaço livre"). Na tela, o estado vazio deixou de dizer "as certidões que
+    você emitir ficam aqui": com o índice ilegível ela diz que **não foi
+    possível ler**, que nada foi apagado e que o PDF está no e-mail, com o
+    código `CT-INDICE` e "Tentar de novo"; e o toque em Remover que não pôde
+    acontecer mostra `avisoErro` em vez de fechar a tela como se tivesse
+    removido. Nada foi lançado de `guardadas()`, porque ela é chamada **fora**
+    de try/catch em `certidoes_page` (`:129`, `:141`, `:198`, `:223`) e na
+    `documentos_page`: lançar dali viraria `AP-FATAL`.
+    `test/features/certidoes_indice_test.dart` guarda os dois caminhos
+    perigosos. O legível não está coberto, e isso está escrito no arquivo: ele
+    chega ao `_pasta()` (`getApplicationSupportDirectory`), que não existe no
+    `flutter test`; cobri-lo pede injetar a pasta no `CertidaoService`, como o
+    `DocumentosLocais(raiz: ...)` já faz.
+    **Falta um pedaço, e está marcado no código:** na **central de
+    documentos** (`documentos_page.dart`), com o índice ilegível a seção de
+    certidões fica vazia em silêncio — a falha aparece no painel como
+    `ST-LEITURA`, mas o militar não é avisado nessa tela. O padrão a seguir é
+    o das pendências (§4.3): uma linha "Não foi possível conferir", com o
+    código, em vez de nenhuma. Não entrou agora porque a página injeta o
+    carregador nos testes (`carregar:`) e mudar a assinatura dele é outra
+    fatia.
   Pastas legadas: `components/`, `data/`, `view/`, `animation/`.
 - **Sem cliente HTTP central.** Três classes (`api_services.dart`,
   `dados_sql.dart`, `escala_service.dart`) e chamadas `http.get` soltas em
