@@ -3025,3 +3025,90 @@ ida ao banco: `vw_buscar_policial.posto_graduacao` (é `post_grad_sigla`),
 `soupm_push_pedido.criado_em` (é `recebido_em`) e, antes, o nome na mesma view
 (é `poli_mili_nome`). Medir as colunas primeiro —
 `information_schema.columns` — é uma consulta e resolve as três.
+
+---
+
+## 58. Apagar um pacote morto levou um vivo, e os dois testes passaram limpos
+
+**O dia (24/11/2026).** Depois de apagar o `Pdf_Viewer_Page.dart` (órfão, zero
+importadores), o `pdfx` ficou sem nenhum uso no `pubspec.yaml`. Tirar uma
+dependência sem cliente parece a mudança mais segura que existe: uma linha
+fora, binário menor, nada a testar além do build.
+
+O `flutter pub get` respondeu **"Changed 3 dependencies"** — `pdfx`,
+`extension` e `universal_platform`. Os três eram do `pdfx`. Mas o
+`Podfile.lock` perdeu **quatro** pods, e o quarto era **`device_info_plus`**,
+que o app usa em dois arquivos vivos.
+
+**A causa, em uma frase:** `device_info_plus` está só em
+`dependency_overrides`, nunca em `dependencies`, e chegava ao app como
+**transitiva do `pdfx`**. **Override não declara dependência** — ele só prende
+a versão de algo que já existe no grafo. Tirado o `pdfx`, ninguém mais pedia o
+pacote, e ele saiu do registro nativo (`.flutter-plugins-dependencies`) e do
+`Podfile.lock`.
+
+**O que torna isto perigoso é que nada acusa.** O pacote continua resolvível
+(o lock ainda o lista como `direct overridden`), então o `import` compila:
+
+| Instrumento | Resposta |
+|---|---|
+| `flutter analyze` | 444 avisos, **sem erro nem warning** |
+| `flutter test` | **256 testes, todos passando** |
+| `Podfile.lock` | é o único que denuncia, e só se alguém ler o diff |
+
+No aparelho seria `MissingPluginException` em `iniciar_log.dart:82` e
+`home_page.dart:292`. E o do log é o pior dos dois, porque o `_modelo()`
+termina em `catch (_) {}`: o painel perderia o **modelo do aparelho** em todo
+registro, **em silêncio** — um campo que o `SOUPM_2_2 §9.2` lista como
+obrigatório. É a entrega degradada do §54, agora criada por uma remoção que eu
+chamei de limpeza.
+
+**O conserto** foi declarar `device_info_plus: ^9.1.2` em `dependencies`, com
+o comentário dizendo por quê. Medido depois: `pod install` de volta em 28
+dependências e 54 pods, e o `.flutter-plugins-dependencies` com
+`device_info_plus` nas duas plataformas e nenhum `pdfx`. O override ficou onde
+estava — ele existe para prender a versão, e tirá-lo é outra decisão.
+
+**E o ganho que justificava a remoção não existia.** Eu havia dito que "o peso
+de verdade é o pdfium nativo no Android". Medido no APK depois do build: os
+**15,6 MB** de `libmodpdfium.so` em três ABIs **continuam lá**, porque quem os
+traz é o `flutter_pdfview` (`com.github.mhiew:android-pdf-viewer`), que está
+vivo e fica. Tirar o `pdfx` economiza praticamente nada de binário; o que ele
+dá é uma dependência a menos para manter. É o §54 ao contrário: lá eu medi o
+custo e estimei o benefício; aqui estimei o benefício, e ele era zero — e o
+custo, que eu não tinha olhado, era um plugin vivo.
+
+**Duas medições minhas que não mediram nada, no caminho.** Vale como receita
+do que não fazer: procurei `device_info` na **lista de entradas** do APK
+(`unzip -l`) e achei zero — mas classe Java não aparece como arquivo no zip,
+vai dentro do `.dex`. Procurei então no `classes.dex` e achei zero também —
+mas o APK de debug tem **23** arquivos `.dex`, e o `device_info` está no 8, no
+17, no 18 e no 21. Duas respostas "zero" seguidas, as duas sobre a pergunta
+errada, as duas soando como confirmação (§53). O que mede é o
+`.flutter-plugins-dependencies` e, para o nativo, varrer **todos** os dex.
+
+**As regras.**
+
+- **`dependency_overrides` não é lista de dependências.** Antes de tirar
+  qualquer pacote, ver **o que ele trazia atrás de si**: o `pub get` conta
+  quantos saíram, e a lista de quem saiu se lê no diff do `pubspec.lock`.
+  Pacote que aparece como `direct overridden` e **não** está em `dependencies`
+  é um pacote pendurado em outro: achar em quem.
+- **Para plugin, o lock do Dart não é a medida; o registro nativo é.** O
+  `pubspec.lock` pode manter o pacote resolvível depois de ele deixar de ser
+  dependência de verdade, e aí o `import` compila e os dois testes passam.
+  Quem responde é o `.flutter-plugins-dependencies` (e o `Podfile.lock`, no
+  iOS). Depois de mexer em dependência, conferir que **cada plugin que o
+  código usa ainda está registrado nas duas plataformas** — é uma consulta ao
+  JSON e responde em um passo (§53: o instrumento tem de poder mostrar).
+- **Remoção também é mudança que "convive".** O §54 e o §55 dizem que provar
+  que um caminho funciona não é provar que ele convive com o que já existe.
+  Vale para o que se tira: o `pdfx` não tinha cliente **no nosso código**, e
+  ainda assim era o único a sustentar um plugin que o nosso código usa.
+
+**E o detalhe de operação que custou dois minutos:** o `pod install` falhou com
+`Unicode Normalization not appropriate for ASCII-8BIT`. Não é o projeto, é o
+shell sem locale — o `SETUP.md §4.2` já manda `export LANG=en_US.UTF-8
+LC_ALL=en_US.UTF-8`, e o shell das ferramentas não tem. É o mesmo pecado do
+§45 (`pbcopy` sem locale), noutra ferramenta: rodar com
+`LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 pod install` resolve.

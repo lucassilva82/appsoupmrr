@@ -94,11 +94,24 @@ bastaram as diretrizes acima e o DESIGN.md, que vale mais que qualquer skill.
     esta segunda não estava em roteador nenhum: nome de rota órfão, que cai na
     rota desconhecida ("Atualize o app"). A tela boa do Plano de férias é
     `planodeferias.dart` (`PlanoDeFeriasPage`, `/plano-de-ferias-page`), e é a
-    que o `soupm_menu_item` aponta em `rh.ferias`. **Pendente:** com o
-    `Pdf_Viewer_Page.dart` fora, `pdfx: ^2.6.0` ficou sem nenhum uso no
-    `pubspec.yaml` (o visualizador vivo usa `flutter_pdfview`); tirar a
-    dependência mexe no `pubspec.lock` e no `Podfile.lock`, então espera uma
-    janela com teste de build.
+    que o `soupm_menu_item` aponta em `rh.ferias`.
+    **O `pdfx` saiu em 24/11/2026, e não era uma linha.** Com o
+    `Pdf_Viewer_Page.dart` fora, `pdfx: ^2.6.0` ficou sem nenhum uso (o
+    visualizador vivo usa `flutter_pdfview`). Tirá-lo levou embora **três**
+    pacotes (`pdfx`, `extension`, `universal_platform`) — e, sem ninguém
+    pedir, um quarto: **`device_info_plus`**, que está só em
+    `dependency_overrides` e chegava ao app como **transitiva do `pdfx`**.
+    Override não declara dependência. O plugin saiu do registro nativo
+    (`.flutter-plugins-dependencies`) e do `Podfile.lock`, com o import
+    continuando a compilar: `flutter analyze` e `flutter test` passaram
+    limpos nos dois lados. No aparelho seria `MissingPluginException` em
+    `iniciar_log.dart:82` e `home_page.dart:292`, e o `_modelo()` do log tem
+    `catch (_) {}`, então o painel perderia o **modelo do aparelho** em todo
+    registro, calado (§9.2 lista o campo como obrigatório). O conserto foi
+    declarar `device_info_plus: ^9.1.2` em `dependencies`; o `pod install`
+    voltou a 28 dependências e 54 pods, e o registro de plugins tem o
+    `device_info_plus` nas duas plataformas e nenhum `pdfx`. O override ficou
+    onde estava: ele existe para prender a versão, e tirá-lo é outra decisão.
   - `contracheque.dart` e `page_contracheque.dart` **não são duplicatas**, e a
     linha antiga deduziu isso pelo nome do arquivo: são a lista de meses
     (`Contracheque`, `CONTRACHEQUE_PAGE`) e o detalhe de um mês
