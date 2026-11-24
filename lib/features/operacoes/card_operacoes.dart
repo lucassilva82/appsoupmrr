@@ -31,6 +31,34 @@ class CardOperacoes extends StatefulWidget {
 /// Um card: a operação (nula fora do modo evento) e o serviço lido nela.
 typedef _UmCard = ({EventoOperar? evento, MeuServicoOperacao? servico});
 
+/// A operação já terminou? Compara o `fim` dela com a data de hoje.
+///
+/// Por que o app precisa decidir isto (24/11/2026): o Operar continuava
+/// anunciando a Operação ENEM 2026, com `fim` em 15/11, **nove dias depois**.
+/// O `evento_ativo()` de lá só pergunta se existe evento no arquivo de modo,
+/// nunca a data, e o arquivo não tem estado "nenhum evento": a lista exige 1 ou
+/// 2 entradas, e apagá-lo devolve o sistema ao modo eleição. Ou seja, lá não há
+/// como desligar sem quebrar — o conserto de raiz é com o GAPE.
+///
+/// Então o card para de confiar que a lista vem limpa. Some a operação vencida
+/// e, quando não sobra nenhuma, volta o card geral de Operações, que é o que o
+/// militar precisa ver fora de operação.
+///
+/// Conservador de propósito: **sem `fim`, ou com data que não dá para ler, o
+/// evento FICA**. Esconder o que não se sabe é o erro do §27 e do §37 — "não
+/// consegui ler a data" não pode virar "a operação acabou". O dia do `fim`
+/// conta inteiro: uma operação que termina hoje aparece até a virada.
+bool operacaoVencida(EventoOperar e, {DateTime? hoje}) {
+  final texto = e.fim?.trim();
+  if (texto == null || texto.isEmpty) return false;
+  final fim = DateTime.tryParse(texto);
+  if (fim == null) return false;
+  final agora = hoje ?? DateTime.now();
+  final diaDoFim = DateTime(fim.year, fim.month, fim.day);
+  final diaDeHoje = DateTime(agora.year, agora.month, agora.day);
+  return diaDeHoje.isAfter(diaDoFim);
+}
+
 class _CardOperacoesState extends State<CardOperacoes> {
   Future<({List<_UmCard> cards, SessaoOperar? sessao})>? _futuro;
 
@@ -50,7 +78,8 @@ class _CardOperacoesState extends State<CardOperacoes> {
     final api = MeuServicoApi(api: ApiClient(), sessao: sessao);
     var eventos = const <EventoOperar>[];
     try {
-      eventos = await api.eventos();
+      // A operação que já terminou sai aqui: ver `operacaoVencida`.
+      eventos = (await api.eventos()).where((e) => !operacaoVencida(e)).toList();
     } on FalhaApp {
       // Sem a lista, segue o caminho antigo: um card, sem turno.
     }
