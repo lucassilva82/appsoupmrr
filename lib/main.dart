@@ -805,8 +805,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     // Se o sistema retornar autorizado, atualiza o Store e não exibe o diálogo.
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      var userData = await Store.getMap('userData');
-      if (userData['notificationsChoice'] != 'authorized') {
+      // `lerMapa`, não `getMap`: isto regrava a sessão inteira por cima do
+      // que leu, e `{}` de uma leitura que falhou apagaria matrícula, nome e
+      // posto para guardar uma escolha de notificação (ST-LEITURA).
+      final userData = await Store.lerMapa('userData');
+      if (userData != null &&
+          userData['notificationsChoice'] != 'authorized') {
         userData['notificationsChoice'] = 'authorized';
         await Store.saveMap('userData', userData);
       }
@@ -874,9 +878,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         return;
       }
 
-      var userData = await Store.getMap('userData');
-      userData['notificationsChoice'] = 'denied';
-      await Store.saveMap('userData', userData);
+      final userData = await Store.lerMapa('userData');
+      if (userData != null) {
+        userData['notificationsChoice'] = 'denied';
+        await Store.saveMap('userData', userData);
+      }
       try {
         (await SharedPreferences.getInstance()).setBool(_chaveNotificacaoRecusada, true);
       } catch (_) {/* sem preferências, pergunta de novo na próxima vez */}

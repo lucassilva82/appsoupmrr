@@ -494,9 +494,11 @@ class Auth with ChangeNotifier {
         await File(filePath).writeAsBytes(response.bodyBytes);
         localImagePath = filePath;
 
-        final userData = await Store.getMap('userData');
-        userData['localImagePath'] = filePath;
-        await Store.saveMap('userData', userData);
+        final userData = await Store.lerMapa('userData');
+        if (userData != null) {
+          userData['localImagePath'] = filePath;
+          await Store.saveMap('userData', userData);
+        }
 
         return true;
       }
@@ -607,8 +609,8 @@ class Auth with ChangeNotifier {
     unawaited(_desligarPushDaConta(matricula));
 
     // Salva o logout no storage em background
-    final userData = await Store.getMap('userData');
-    if (userData.isNotEmpty) {
+    final userData = await Store.lerMapa('userData');
+    if (userData != null && userData.isNotEmpty) {
       userData['autorizado'] = 'false';
       userData['expireDate'] = '';
       await Store.saveMap('userData', userData);

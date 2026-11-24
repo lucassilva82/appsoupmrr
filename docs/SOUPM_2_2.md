@@ -118,12 +118,40 @@ bastaram as diretrizes acima e o DESIGN.md, que vale mais que qualquer skill.
     mesmo (`jsonEncode` na mesma chave), então quem já tinha um cálculo salvo
     no aparelho não perdeu nada, e `test/data/store_test.dart` prova isso
     lendo um valor gravado como o Store antigo gravava.
-    **Ficou uma dívida dentro do `data/Store`:** o `getMap` tem
-    `catch (_) { return {}; }`, que é o §27 e o §37 em miniatura — "não
-    consegui ler" devolvido como "não existe". Aqui o risco é baixo (é o
-    rascunho de um formulário, e voltar aos valores do SIGRH é o certo), mas
-    são 9 clientes lendo por ele, e um deles um dia vai guardar algo em que o
-    silêncio custa. O conserto é registrar a falha antes de devolver vazio.
+    **A dívida que isso expôs foi paga em 24/11/2026, e era maior do que
+    parecia.** O `getMap` tinha `catch (_) { return {}; }` — o §27 e o §37 em
+    miniatura. Escrevemos que "o risco é baixo, é o rascunho de um
+    formulário": isso valia para **um** dos 11 chamadores. Medidos os outros
+    dez, eles leem a **sessão** (`userData`: matrícula, nome, posto), o
+    plantão e o **índice das certidões**. E quatro deles fazem
+    ler-modificar-gravar: liam com `getMap`, mexiam num campo e gravavam de
+    volta. Com a leitura falhando, o `{}` era gravado por cima — a sessão
+    inteira apagada para guardar uma escolha de notificação, sem erro em
+    lugar nenhum.
+    O conserto não é só registrar a falha, porque registrar não impede a
+    gravação: `Store.lerMapa` devolve `{}` para a chave **ausente** e
+    **`null`** para a **ilegível**, e os quatro sítios (dois no `main.dart`,
+    dois no `auth_model.dart`) passaram a só gravar quando leram. O `getMap`
+    continua tolerante, para os outros sete chamadores não mudarem de
+    comportamento, e a falha vai ao log como **`ST-LEITURA`** (§9.1), com a
+    chave e o tamanho — nunca o valor, que foi o pecado do `utils/store.dart`.
+    O `getString` ficou **dentro** do `try`: falha do `SharedPreferences` é
+    "não consegui ler", não um estouro para os 11 chamadores.
+    Em `test/data/store_test.dart`, o teste `ler-modificar-gravar: getMap
+    apaga a sessão, lerMapa não` **executa o defeito** antes de provar o
+    conserto.
+    **Pendente, medido no mesmo dia:** o índice das certidões
+    (`certidao_service.dart`) é regravado em **quatro** lugares — emissão
+    (`:366`), `_lerGuardadas` (`:542`), `sincronizar` (`:573`) e `remover`
+    (`:596`) — todos a partir da lista lida. Com o índice ilegível, `remover`
+    grava `{itens: []}` e o militar que tira **uma** certidão perde a lista
+    inteira: é o §26 pela porta de trás. Hoje o comportamento é o mesmo de
+    antes (o `getMap` segue tolerante), então nada piorou; o conserto é
+    `_lerIndice` devolver se o índice foi lido e os quatro recusarem a
+    regravação quando não foi. Não entrou junto porque `guardadas()` e
+    `remover()` são chamados **fora** de try/catch na `certidoes_page`
+    (`:129`, `:141`, `:198`, `:223`, `:1209`): lançar dali viraria
+    `AP-FATAL`, então o conserto mexe também no estado da tela.
   Pastas legadas: `components/`, `data/`, `view/`, `animation/`.
 - **Sem cliente HTTP central.** Três classes (`api_services.dart`,
   `dados_sql.dart`, `escala_service.dart`) e chamadas `http.get` soltas em
@@ -1253,6 +1281,7 @@ Prefixos por módulo (o sufixo segue o padrão `LG-`: `REDE`, `FORA`,
 | `CM` | comunicados | `CR` | linha do tempo da carreira |
 | `VD` | validar documento | `BG` | boletins (reservado) |
 | `PT` | patrimônio e frota (reservado) | `OP` | Operações (token do aparelho e tela do módulo) |
+| `ST` | leitura do que o app guarda no aparelho (`Store`) | | |
 
 ### 9.2 Logs
 
