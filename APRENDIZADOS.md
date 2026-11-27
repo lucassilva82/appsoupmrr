@@ -3025,3 +3025,59 @@ ida ao banco: `vw_buscar_policial.posto_graduacao` (é `post_grad_sigla`),
 `soupm_push_pedido.criado_em` (é `recebido_em`) e, antes, o nome na mesma view
 (é `poli_mili_nome`). Medir as colunas primeiro —
 `information_schema.columns` — é uma consulta e resolve as três.
+
+---
+
+## 58. O aviso do contracheque derrubou o HTTPS (26/11/2026)
+
+**O sintoma.** "Ninguém consegue entrar no app." O pmrr.online não respondia
+em HTTPS. As outras portas (80, cPanel, SSH) respondiam normalmente, e a
+máquina estava folgada: carga 0,44 e quase 2 GB de memória livres.
+
+**O que parecia e não era.** Porta só a 443 fechada tem cara de firewall
+bloqueando o nosso IP. Não era: no servidor, a 443 estava aberta e com
+**362 conexões na fila**, enquanto a fila da 80 estava vazia. O Apache
+simplesmente não chamava ninguém da fila.
+
+**A causa.** Às 13:30 o `notifica_contracheque.php` avisou 3.271 militares de
+que o contracheque de novembro tinha saído. Em 10 minutos chegaram **2.397
+pedidos** do app, contra uns 300 em 10 minutos no resto do dia. Às 13:31 o
+Apache bateu no `MaxRequestWorkers 150`. O placar mostrou os 149 processos no
+estado **R** (lendo o pedido), parados por até 294 s, porque o `Timeout` é
+300 e o `mod_reqtimeout` não estava instalado. Todos os clientes que seguravam
+processo eram o próprio app (`Dart/3.13`, `Dart/3.7`). Não era ataque, e o
+servidor não se recuperou sozinho em 40 minutos.
+
+**Por que não se recupera.** Com o Apache cheio, o app desiste do pedido e
+tenta de novo. Cada tentativa vira mais uma conexão na fila. Quando o Apache
+finalmente a atende, ela fica parada em leitura até o `Timeout`. Um pico de 4
+pedidos por segundo, que é pouco, se torna permanente.
+
+**O que resolveu na hora.** `systemctl restart httpd`, depois de `httpd -t`.
+O pico já tinha passado, e o servidor voltou com 4 a 13 processos ocupados.
+
+**O que fica para o responsável pelo servidor** (o usuário preferiu que ele
+mude; o ajuste foi desfeito e as cópias de antes estão no servidor):
+- instalar e ligar o `mod_reqtimeout`;
+- baixar o `Timeout` para 120. Os proxies do Operar e do nomear têm
+  `ProxyTimeout` próprio;
+- subir o `MaxRequestWorkers`. No `/etc/cpanel/ea4/ea4.conf` a chave é
+  **`maxclients`**, não `maxrequestworkers`: com o nome errado, o
+  `rebuildhttpdconf` ignora o valor sem avisar;
+- mudar pelo WHM (Apache Configuration › Global Configuration), nunca no
+  `httpd.conf`, que o cPanel reescreve.
+
+**Regras.**
+- Push para a tropa inteira é um pico de carga marcado no relógio. Antes de
+  ligar um aviso para todos, conferir se o servidor aguenta a resposta, não só
+  o envio.
+- Porta que não conecta: olhar a fila (`ss -ltn`, coluna Recv-Q) antes de
+  culpar o firewall. Fila cheia é o serviço que não atende; fila vazia com
+  conexão recusada é o firewall.
+- Estado do Apache sem depender da 443: `curl -s
+  "http://127.0.0.1/whm-server-status?auto"` no servidor. Linha cheia de `R` =
+  conexões paradas em leitura; de `W` = respostas demorando (PHP ou banco).
+- Quatro sinais que **não** foram a causa, para não se perder na próxima vez:
+  a reconstrução do `httpd.conf` de manhã, sites novos de outra pessoa no
+  mesmo servidor, a atualização do Imunify de madrugada e o banco (com 11
+  processos, folgado).
